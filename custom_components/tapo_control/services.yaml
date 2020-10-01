@@ -16,3 +16,12 @@ ptz:
     distance:
       description: "Distance coefficient. Sets how much PTZ should be executed in one request. Allowed values: floating point numbers, 0 to 1"
       example: "0.1"
+set_privacy_mode:
+  description: Sets privacy mode
+  fields:
+    entity_id:
+      description: "Name of the entity to set privacy mode for"
+      example: "tapo_control.living_room"
+    privacy_mode: 
+      description: "Sets privacy mode for camera. Possible values: on, off"
+      example: "on"

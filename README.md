@@ -42,6 +42,15 @@ Data:
 - **preset** Optional: PTZ preset ID, starts at 1
 - **distance** Optional: Distance coefficient. Sets how much PTZ should be executed in one request. Allowed values: floating point numbers, 0 to 1 
 
+
+**set_privacy_mode**
+
+Sets privacy mode.
+
+Data:
+- **entity_id** Required: Name of the entity to rotate
+- **privacy_mode** Optional: Sets privacy mode for camera. Possible values: on, off
+
 ## Have a comment or a suggestion?
 
 Please [open a new issue](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new), or discuss on [Home Assistant: Community Forum](https://community.home-assistant.io/t/tapo-cameras-control/231795).

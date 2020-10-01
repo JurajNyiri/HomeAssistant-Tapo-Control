@@ -8,6 +8,7 @@ import homeassistant.helpers.config_validation as cv
 _LOGGER = logging.getLogger(__name__)
 DOMAIN = "tapo_control"
 PRESET = "preset"
+PRIVACY_MODE = "privacy_mode"
 DISTANCE = "distance"
 TILT = "tilt"
 PAN = "pan"
@@ -57,46 +58,69 @@ def setup(hass, config):
     def handle_ptz(call):
         if ENTITY_ID in call.data:
             entity_id = call.data.get(ENTITY_ID)
-            if PRESET in call.data:
-                preset = call.data.get(PRESET)
-                tapo[entity_id].setPreset(preset)
-            elif TILT in call.data:
-                tilt = call.data.get(TILT)
-                if DISTANCE in call.data:
-                    distance = float(call.data.get(DISTANCE))
-                    if(distance >= 0 and distance <= 1):
-                        degrees = 68 * distance
+            if entity_id in tapo:
+                if PRESET in call.data:
+                    preset = call.data.get(PRESET)
+                    tapo[entity_id].setPreset(preset)
+                elif TILT in call.data:
+                    tilt = call.data.get(TILT)
+                    if DISTANCE in call.data:
+                        distance = float(call.data.get(DISTANCE))
+                        if(distance >= 0 and distance <= 1):
+                            degrees = 68 * distance
+                        else:
+                            degrees = 5
                     else:
                         degrees = 5
-                else:
-                    degrees = 5
-                if tilt == "UP":
-                    tapo[entity_id].moveMotor(0,degrees)
-                elif tilt == "DOWN":
-                    tapo[entity_id].moveMotor(0,-degrees)
-                else:
-                    _LOGGER.error("Incorrect tilt value. Possible values: UP, DOWN")
-            elif PAN in call.data:
-                pan = call.data.get(PAN)
-                if DISTANCE in call.data:
-                    distance = float(call.data.get(DISTANCE))
-                    if(distance >= 0 and distance <= 1):
-                        degrees = 360 * distance
+                    if tilt == "UP":
+                        tapo[entity_id].moveMotor(0,degrees)
+                    elif tilt == "DOWN":
+                        tapo[entity_id].moveMotor(0,-degrees)
+                    else:
+                        _LOGGER.error("Incorrect "+TILT+" value. Possible values: UP, DOWN.")
+                elif PAN in call.data:
+                    pan = call.data.get(PAN)
+                    if DISTANCE in call.data:
+                        distance = float(call.data.get(DISTANCE))
+                        if(distance >= 0 and distance <= 1):
+                            degrees = 360 * distance
+                        else:
+                            degrees = 5
                     else:
                         degrees = 5
+                    if pan == "RIGHT":
+                        tapo[entity_id].moveMotor(degrees,0)
+                    elif pan == "LEFT":
+                        tapo[entity_id].moveMotor(-degrees,0)
+                    else:
+                        _LOGGER.error("Incorrect "+PAN+" value. Possible values: RIGHT, LEFT.")
                 else:
-                    degrees = 5
-                if pan == "RIGHT":
-                    tapo[entity_id].moveMotor(degrees,0)
-                elif pan == "LEFT":
-                    tapo[entity_id].moveMotor(-degrees,0)
-                else:
-                    _LOGGER.error("Incorrect pan value. Possible values: RIGHT, LEFT")
+                    _LOGGER.error("Incorrect additional PTZ properties. You need to specify at least one of " + TILT + ", " + PAN + ", " + PRESET + ".")
             else:
-                _LOGGER.error("Incorrect additional PTZ properties. You need to specify at least one of " + TILT + ", " + PAN + ", " + PRESET + ".")
+                _LOGGER.error("Entity "+entity_id+" does not exist.")
         else:
-            _LOGGER.error("Incorrect entity_id value.")
+            _LOGGER.error("Please specify "+ENTITY_ID+" value.")
+
+    def handle_set_privacy_mode(call):
+        if ENTITY_ID in call.data:
+            entity_id = call.data.get(ENTITY_ID)
+            if entity_id in tapo:
+                if(PRIVACY_MODE in call.data):
+                    privacy_mode = call.data.get(PRIVACY_MODE)
+                    if(privacy_mode == "on"):
+                        tapo[entity_id].setPrivacyMode(True)
+                    elif(privacy_mode == "off"):
+                        tapo[entity_id].setPrivacyMode(False)
+                    else:
+                        _LOGGER.error("Incorrect "+PRIVACY_MODE+" value. Possible values: on, off.")
+                else:
+                    _LOGGER.error("Please specify "+PRIVACY_MODE+" value.")
+            else:
+                _LOGGER.error("Entity "+entity_id+" does not exist.")
+        else:
+            _LOGGER.error("Please specify "+ENTITY_ID+" value.")
 
     hass.services.register(DOMAIN, "ptz", handle_ptz)
+    hass.services.register(DOMAIN, "set_privacy_mode", handle_set_privacy_mode)
     
     return True
