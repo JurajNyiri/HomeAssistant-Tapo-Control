@@ -50,8 +50,6 @@ def setup(hass, config):
 
         tapo[entity_id] = tapoConnector
         hass.states.set(entity_id, "monitoring", basicInfo['device_info']['basic_info']) # todo: better state
-    
-    print(tapo)
 
     def handle_set_preset(call):
         if ENTITY_ID in call.data and PRESET_ID in call.data:
