@@ -93,7 +93,7 @@ def setup(hass, config):
                 else:
                     _LOGGER.error("Incorrect pan value. Possible values: RIGHT, LEFT")
             else:
-                _LOGGER.error("Incorrect additional PTZ values. You need to specify at least one of preset_")
+                _LOGGER.error("Incorrect additional PTZ properties. You need to specify at least one of " + TILT + ", " + PAN + ", " + PRESET + ".")
         else:
             _LOGGER.error("Incorrect entity_id value.")
 
