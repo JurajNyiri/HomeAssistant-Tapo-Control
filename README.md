@@ -31,17 +31,16 @@ You are able to add multiple cameras.
 
 This custom component creates tapo_control.* entities in your Home Assistant. Use these entity_id(s) in following service calls.
 
-**set_preset**
+**ptz**
 
-Rotates your camera to preset.
+Pan and tilt camera.
 
-Example:
-```
-{
-  "preset_id":1,
-  "entity_id":"tapo_control.living_room"
-}
-```
+Data:
+- **entity_id** Required: Name of the entity to rotate
+- **tilt** Optional: Tilt direction. Allowed values: UP, DOWN 
+- **pan** Optional: Pan direction. Allowed values: RIGHT, LEFT
+- **preset** Optional: PTZ preset ID, starts at 1
+- **distance** Optional: Distance coefficient. Sets how much PTZ should be executed in one request. Allowed values: floating point numbers, 0 to 1 
 
 ## Have a comment or a suggestion?
 
