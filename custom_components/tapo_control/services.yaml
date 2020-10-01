@@ -1,0 +1,10 @@
+set_preset:
+    description: Rotates your camera to preset.
+    # Different fields that your service accepts
+    fields:
+      entity_id:
+        description: Name of the entity to rotate
+        example: "tapo_control.living_room"
+      preset_id:
+        description: Preset ID, starts at 1
+        example: "1"

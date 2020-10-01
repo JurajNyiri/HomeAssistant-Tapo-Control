@@ -1,0 +1,9 @@
+{
+    "domain": "tapo_control",
+    "name": "Tapo Control",
+    "documentation": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control",
+    "dependencies": [],
+    "codeowners": ["@JurajNyiri"],
+    "requirements": ["pytapo==0.5"]
+  }
+  
