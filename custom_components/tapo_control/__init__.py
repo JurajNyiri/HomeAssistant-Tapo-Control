@@ -58,6 +58,8 @@ def setup(hass, config):
     def handle_ptz(call):
         if ENTITY_ID in call.data:
             entity_id = call.data.get(ENTITY_ID)
+            if(isinstance(entity_id, list)):
+                entity_id = entity_id[0]
             if entity_id in tapo:
                 if PRESET in call.data:
                     preset = call.data.get(PRESET)
@@ -104,6 +106,8 @@ def setup(hass, config):
     def handle_set_privacy_mode(call):
         if ENTITY_ID in call.data:
             entity_id = call.data.get(ENTITY_ID)
+            if(isinstance(entity_id, list)):
+                entity_id = entity_id[0]
             if entity_id in tapo:
                 if(PRIVACY_MODE in call.data):
                     privacy_mode = call.data.get(PRIVACY_MODE)
