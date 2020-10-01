@@ -2,7 +2,9 @@
 
 Custom component - Tapo: Cameras Control - to control Tapo camera features
 
-**This custom component is in very early development right now. A lot of things will be changing and a lot of new features will be added.**
+**This custom component is in very early development right now.**
+
+**A lot of things will be changing and a lot of new features will be added.**
 
 Because of that, HACS, versioning etc will come after a first stable release soon.
 
