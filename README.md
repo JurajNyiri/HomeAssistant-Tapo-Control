@@ -2,7 +2,7 @@
 
 Custom component - Tapo: Cameras Control - to control Tapo camera features
 
-**This custom component is in very early development right now. A lot of things will be changing.**
+**This custom component is in very early development right now. A lot of things will be changing and a lot of new features will be added.**
 
 Because of that, HACS, versioning etc will come after a first stable release soon.
 
@@ -40,6 +40,10 @@ Example:
   "entity_id":"tapo_control.living_room"
 }
 ```
+
+## Have a comment or a suggestion?
+
+Please [open a new issue](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new), or discuss on [Home Assistant: Community Forum](https://community.home-assistant.io/t/tapo-cameras-control/231795).
 
 ## Installation using HACS
 
