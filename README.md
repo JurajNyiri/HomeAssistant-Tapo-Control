@@ -3,7 +3,9 @@
 Custom component - Tapo control - to control Tapo camera features
 
 **This custom component is in very early development right now. A lot of things will be changing.**
+
 Because of that, HACS, versioning etc will come after a first stable release soon.
+
 Use at your own risk.
 
 ## Installation:
@@ -28,6 +30,7 @@ You are able to add multiple cameras.
 This custom component creates tapo_control.* entities in your Home Assistant. Use these entity_id(s) in following service calls.
 
 **set_preset**
+
 Rotates your camera to preset.
 
 Example:
