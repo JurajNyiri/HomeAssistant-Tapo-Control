@@ -31,12 +31,13 @@ You are able to add multiple cameras.
 
 This custom component creates tapo_control.* entities in your Home Assistant. Use these entity_id(s) in following service calls.
 
-**ptz**
-
 <details>
-  <summary>Pan and tilt camera. You are also able to use presets and set distance the ptz should travel.</summary>
+  <summary>tapo_control.ptz</summary>
+
+  Pan and tilt camera. 
   
-  Data:
+  You are also able to use presets and set distance the ptz should travel.
+
   - **entity_id** Required: Name of the entity to rotate
   - **tilt** Optional: Tilt direction. Allowed values: UP, DOWN 
   - **pan** Optional: Pan direction. Allowed values: RIGHT, LEFT
@@ -44,34 +45,39 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
   - **distance** Optional: Distance coefficient. Sets how much PTZ should be executed in one request. Allowed values: floating point numbers, 0 to 1 
 </details>
 
-**set_privacy_mode**
-
 <details>
-  <summary>Sets privacy mode. If privacy mode is turned on, camera does not record anything and does not respond to anything other than turning off privacy mode.</summary>
+  <summary>tapo_control.set_privacy_mode</summary>
+
+  Sets privacy mode. 
   
-  Data:
+  If privacy mode is turned on, camera does not record anything and does not respond to anything other than turning off privacy mode.
+
   - **entity_id** Required: Name of the entity to set privacy mode for
   - **privacy_mode** Required: Sets privacy mode for camera. Possible values: on, off
 </details>
 
-**set_alarm_mode**
-
 <details>
-  <summary>Sets alarm mode. If camera detects motion, it will sound an alarm, blink the LED or both.</summary>
+  <summary>tapo_control.set_alarm_mode</summary>
+
+  Sets alarm mode. 
   
-  Data:
+  If camera detects motion, it will sound an alarm, blink the LED or both.
+
   - **entity_id** Required: Name of the entity to set alarm mode for
   - **alarm_mode** Required: Sets alarm mode for camera. Possible values: on, off
   - **sound** Optional: Sets whether the alarm should use sound on motion detected. Possible values: on, off
   - **light** Optional: Sets whether the alarm should use light on motion detected. Possible values: on, off
 </details>
 
-**set_led_mode**
-
 <details>
-  <summary>Sets LED mode. When on, LED is turned on when camera is on. When off, LED is always off.</summary>
+  <summary>tapo_control.set_led_mode</summary>
+
+  Sets LED mode. 
   
-  Data:
+  When on, LED is turned on when camera is on. 
+  
+  When off, LED is always off.
+
   - **entity_id** Required: Name of the entity to set LED mode for
   - **led_mode** Required: Sets LED mode for camera. Possible values: on, off
 </details>
