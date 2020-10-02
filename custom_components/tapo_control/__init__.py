@@ -15,6 +15,7 @@ LIGHT = "light"
 SOUND = "sound"
 PRIVACY_MODE = "privacy_mode"
 LED_MODE = "led_mode"
+NAME = "name"
 DISTANCE = "distance"
 TILT = "tilt"
 PAN = "pan"
@@ -278,6 +279,26 @@ def setup(hass, config):
         else:
             _LOGGER.error("Please specify "+ENTITY_ID+" value.")
 
+    def handle_save_preset(call):
+        if ENTITY_ID in call.data:
+            entity_id = call.data.get(ENTITY_ID)
+            if(isinstance(entity_id, list)):
+                entity_id = entity_id[0]
+            if entity_id in tapo:
+                if(NAME in call.data):
+                    name = call.data.get(NAME)
+                    if(not name == "" and not name.isnumeric()):
+                        tapo[entity_id].savePreset(name)
+                        update(None)
+                    else:
+                        _LOGGER.error("Incorrect "+NAME+" value. It cannot be empty or a number.")
+                else:
+                    _LOGGER.error("Please specify "+NAME+" value.")
+            else:
+                _LOGGER.error("Entity "+entity_id+" does not exist.")
+        else:
+            _LOGGER.error("Please specify "+ENTITY_ID+" value.")
+
 
     for camera in config[DOMAIN]:
         host = camera[CONF_HOST]
@@ -303,6 +324,7 @@ def setup(hass, config):
     hass.services.register(DOMAIN, "set_motion_detection_mode", handle_set_motion_detection_mode)
     hass.services.register(DOMAIN, "set_auto_track_mode", handle_set_auto_track_mode)
     hass.services.register(DOMAIN, "reboot", handle_reboot)
+    hass.services.register(DOMAIN, "save_preset", handle_save_preset)
 
     track_time_interval(hass, update, timedelta(seconds=DEFAULT_SCAN_INTERVAL))
     

@@ -124,6 +124,15 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
   - **entity_id** Required: Entity to reboot
 </details>
 
+<details>
+  <summary>tapo_control.save_preset</summary>
+
+  Saves the current PTZ position to a preset
+
+  - **entity_id** Required: Entity to save preset for
+  - **name** Required: Name of preset. Cannot be empty or a number
+</details>
+
 ## Have a comment or a suggestion?
 
 Please [open a new issue](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new), or discuss on [Home Assistant: Community Forum](https://community.home-assistant.io/t/tapo-cameras-control/231795).
