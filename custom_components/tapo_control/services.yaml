@@ -49,3 +49,12 @@ set_led_mode:
     led_mode: 
       description: "Sets LED mode for camera. Possible values: on, off"
       example: "on"
+set_motion_detection_mode:
+  description: Sets motion detection mode
+  fields:
+    entity_id:
+      description: "Name of the entity to set LED mode for"
+      example: "tapo_control.living_room"
+    motion_detection_mode: 
+      description: "Sets motion detection mode for camera. Possible values: high, normal, low, off"
+      example: "normal"

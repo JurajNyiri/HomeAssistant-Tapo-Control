@@ -82,6 +82,25 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
   - **led_mode** Required: Sets LED mode for camera. Possible values: on, off
 </details>
 
+<details>
+  <summary>tapo_control.set_motion_detection_mode</summary>
+
+  Sets motion detection mode. 
+  
+  Ability to set "high", "normal" or "low". 
+  
+  These turn on motion detection and set senstitivty to corresponding values in the app.
+
+  Also ability to set to "off", this turns off motion detection completely. 
+  
+  Turning motion detection off does not affect settings for recordings so you do not need to re-set those unless you open the settings through Tapo app.
+  
+  Notice: If you use motion detection triggered recording and you turn off motion recording, it will no longer record! 
+
+  - **entity_id** Required: Name of the entity to set motion detection mode for
+  - **motion_detection_mode** Required: Sets motion detection mode for camera. Possible values: high, normal, low, off
+</details>
+
 ## Have a comment or a suggestion?
 
 Please [open a new issue](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new), or discuss on [Home Assistant: Community Forum](https://community.home-assistant.io/t/tapo-cameras-control/231795).

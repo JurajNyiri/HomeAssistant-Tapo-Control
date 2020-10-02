@@ -17,6 +17,7 @@ DISTANCE = "distance"
 TILT = "tilt"
 PAN = "pan"
 ENTITY_ID = "entity_id"
+MOTION_DETECTION_MODE = "motion_detection_mode"
 
 CONFIG_SCHEMA = vol.Schema(
     {
@@ -176,9 +177,31 @@ def setup(hass, config):
         else:
             _LOGGER.error("Please specify "+ENTITY_ID+" value.")
 
+    def handle_set_motion_detection_mode(call):
+        if ENTITY_ID in call.data:
+            entity_id = call.data.get(ENTITY_ID)
+            if(isinstance(entity_id, list)):
+                entity_id = entity_id[0]
+            if entity_id in tapo:
+                if(MOTION_DETECTION_MODE in call.data):
+                    motion_detection_mode = call.data.get(MOTION_DETECTION_MODE)
+                    if(motion_detection_mode == "high" or motion_detection_mode == "normal" or motion_detection_mode == "low"):
+                        tapo[entity_id].setMotionDetection(True, motion_detection_mode)
+                    elif(motion_detection_mode == "off"):
+                        tapo[entity_id].setMotionDetection(False)
+                    else:
+                        _LOGGER.error("Incorrect "+MOTION_DETECTION_MODE+" value. Possible values: high, normal, low, off.")
+                else:
+                    _LOGGER.error("Please specify "+MOTION_DETECTION_MODE+" value.")
+            else:
+                _LOGGER.error("Entity "+entity_id+" does not exist.")
+        else:
+            _LOGGER.error("Please specify "+ENTITY_ID+" value.")
+
     hass.services.register(DOMAIN, "ptz", handle_ptz)
     hass.services.register(DOMAIN, "set_privacy_mode", handle_set_privacy_mode)
     hass.services.register(DOMAIN, "set_alarm_mode", handle_set_alarm_mode)
     hass.services.register(DOMAIN, "set_led_mode", handle_set_led_mode)
+    hass.services.register(DOMAIN, "set_motion_detection_mode", handle_set_motion_detection_mode)
     
     return True
