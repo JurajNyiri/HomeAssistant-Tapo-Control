@@ -129,8 +129,8 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
 
   Saves the current PTZ position to a preset
 
-  - **entity_id** Required: Entity to save preset for
-  - **name** Required: Name of preset. Cannot be empty or a number
+  - **entity_id** Required: Entity to save the preset for
+  - **name** Required: Name of the preset. Cannot be empty or a number
 </details>
 
 ## Have a comment or a suggestion?

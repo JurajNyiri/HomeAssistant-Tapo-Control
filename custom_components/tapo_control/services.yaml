@@ -79,8 +79,8 @@ save_preset:
   description: Saves the current PTZ position to a preset
   fields:
     entity_id:
-      description: "Entity to save preset for"
+      description: "Entity to save the preset for"
       example: "tapo_control.living_room"
     name:
-      description: "Name of preset. Cannot be empty or a number"
+      description: "Name of the preset. Cannot be empty or a number"
       example: "tapo_control.living_room"
