@@ -101,6 +101,21 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
   - **motion_detection_mode** Required: Sets motion detection mode for camera. Possible values: high, normal, low, off
 </details>
 
+<details>
+  <summary>tapo_control.set_auto_track_mode</summary>
+
+  **Warning: This mode is not available in Tapo app and we do not know why. Use at your own risk and please report any success or failures in [Home Assistant: Community Forum](https://community.home-assistant.io/t/tapo-cameras-control/231795).**
+
+  Sets auto track mode. 
+  
+  With this mode, camera will be adjusting ptz to track whatever moving object it sees.
+  
+  Motion detection setting does not affect this mode.
+
+  - **entity_id** Required: Name of the entity to set auto track mode for
+  - **auto_track_mode** Required: Sets auto track mode for camera. Possible values: on, off
+</details>
+
 ## Have a comment or a suggestion?
 
 Please [open a new issue](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new), or discuss on [Home Assistant: Community Forum](https://community.home-assistant.io/t/tapo-cameras-control/231795).

@@ -18,6 +18,7 @@ TILT = "tilt"
 PAN = "pan"
 ENTITY_ID = "entity_id"
 MOTION_DETECTION_MODE = "motion_detection_mode"
+AUTO_TRACK_MODE = "auto_track_mode"
 
 CONFIG_SCHEMA = vol.Schema(
     {
@@ -198,10 +199,32 @@ def setup(hass, config):
         else:
             _LOGGER.error("Please specify "+ENTITY_ID+" value.")
 
+    def handle_set_auto_track_mode(call):
+        if ENTITY_ID in call.data:
+            entity_id = call.data.get(ENTITY_ID)
+            if(isinstance(entity_id, list)):
+                entity_id = entity_id[0]
+            if entity_id in tapo:
+                if(AUTO_TRACK_MODE in call.data):
+                    auto_track_mode = call.data.get(AUTO_TRACK_MODE)
+                    if(auto_track_mode == "on"):
+                        tapo[entity_id].setAutoTrackTarget(True)
+                    elif(auto_track_mode == "off"):
+                        tapo[entity_id].setAutoTrackTarget(False)
+                    else:
+                        _LOGGER.error("Incorrect "+AUTO_TRACK_MODE+" value. Possible values: on, off.")
+                else:
+                    _LOGGER.error("Please specify "+AUTO_TRACK_MODE+" value.")
+            else:
+                _LOGGER.error("Entity "+entity_id+" does not exist.")
+        else:
+            _LOGGER.error("Please specify "+ENTITY_ID+" value.")
+
     hass.services.register(DOMAIN, "ptz", handle_ptz)
     hass.services.register(DOMAIN, "set_privacy_mode", handle_set_privacy_mode)
     hass.services.register(DOMAIN, "set_alarm_mode", handle_set_alarm_mode)
     hass.services.register(DOMAIN, "set_led_mode", handle_set_led_mode)
     hass.services.register(DOMAIN, "set_motion_detection_mode", handle_set_motion_detection_mode)
+    hass.services.register(DOMAIN, "set_auto_track_mode", handle_set_auto_track_mode)
     
     return True
