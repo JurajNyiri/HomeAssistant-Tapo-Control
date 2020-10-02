@@ -1,5 +1,5 @@
 ptz:
-  description: Pan and tilt camera.
+  description: Pan and tilt camera
   fields:
     entity_id:
       description: "Name of the entity to rotate"
@@ -24,4 +24,19 @@ set_privacy_mode:
       example: "tapo_control.living_room"
     privacy_mode: 
       description: "Sets privacy mode for camera. Possible values: on, off"
+      example: "on"
+set_alarm_mode:
+  description: Sets alarm mode
+  fields:
+    entity_id:
+      description: "Name of the entity to set alarm mode for"
+      example: "tapo_control.living_room"
+    alarm_mode: 
+      description: "Sets alarm mode for camera. Possible values: on, off"
+      example: "on"
+    sound: 
+      description: "Sets whether the alarm should use sound on motion detected. Possible values: on, off"
+      example: "on"
+    light: 
+      description: "Sets whether the alarm should use light on motion detected. Possible values: on, off"
       example: "on"

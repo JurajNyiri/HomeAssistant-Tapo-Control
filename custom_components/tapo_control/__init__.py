@@ -7,7 +7,10 @@ import homeassistant.helpers.config_validation as cv
 
 _LOGGER = logging.getLogger(__name__)
 DOMAIN = "tapo_control"
+ALARM_MODE = "alarm_mode"
 PRESET = "preset"
+LIGHT = "light"
+SOUND = "sound"
 PRIVACY_MODE = "privacy_mode"
 DISTANCE = "distance"
 TILT = "tilt"
@@ -124,7 +127,35 @@ def setup(hass, config):
         else:
             _LOGGER.error("Please specify "+ENTITY_ID+" value.")
 
+    def handle_set_alarm_mode(call):
+        if ENTITY_ID in call.data:
+            entity_id = call.data.get(ENTITY_ID)
+            if(isinstance(entity_id, list)):
+                entity_id = entity_id[0]
+            if entity_id in tapo:
+                if(ALARM_MODE in call.data):
+                    alarm_mode = call.data.get(ALARM_MODE)
+                    sound = "on"
+                    light = "on"
+                    if(LIGHT in call.data):
+                        light = call.data.get(LIGHT)
+                    if(SOUND in call.data):
+                        sound = call.data.get(SOUND)
+                    if(alarm_mode == "on"):
+                        tapo[entity_id].setAlarm(True, True if sound == "on" else False, True if light == "on" else False)
+                    elif(alarm_mode == "off"):
+                        tapo[entity_id].setAlarm(False, True if sound == "on" else False, True if light == "on" else False)
+                    else:
+                        _LOGGER.error("Incorrect "+ALARM_MODE+" value. Possible values: on, off.")
+                else:
+                    _LOGGER.error("Please specify "+ALARM_MODE+" value.")
+            else:
+                _LOGGER.error("Entity "+entity_id+" does not exist.")
+        else:
+            _LOGGER.error("Please specify "+ENTITY_ID+" value.")
+
     hass.services.register(DOMAIN, "ptz", handle_ptz)
     hass.services.register(DOMAIN, "set_privacy_mode", handle_set_privacy_mode)
+    hass.services.register(DOMAIN, "set_alarm_mode", handle_set_alarm_mode)
     
     return True

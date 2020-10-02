@@ -48,8 +48,18 @@ Data:
 Sets privacy mode.
 
 Data:
-- **entity_id** Required: Name of the entity to rotate
-- **privacy_mode** Optional: Sets privacy mode for camera. Possible values: on, off
+- **entity_id** Required: Name of the entity to set privacy mode for
+- **privacy_mode** Required: Sets privacy mode for camera. Possible values: on, off
+
+**set_alarm_mode**
+
+Sets alarm mode.
+
+Data:
+- **entity_id** Required: Name of the entity to set alarm mode for
+- **alarm_mode** Required: Sets alarm mode for camera. Possible values: on, off
+- **sound** Optional: Sets whether the alarm should use sound on motion detected. Possible values: on, off
+- **light** Optional: Sets whether the alarm should use light on motion detected. Possible values: on, off
 
 ## Have a comment or a suggestion?
 
