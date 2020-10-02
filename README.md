@@ -41,7 +41,7 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
   - **entity_id** Required: Entity to adjust
   - **tilt** Optional: Tilt direction. Allowed values: UP, DOWN 
   - **pan** Optional: Pan direction. Allowed values: RIGHT, LEFT
-  - **preset** Optional: PTZ preset ID, starts at 1
+  - **preset** Optional: PTZ preset ID or a Name. See possible presets in entity attributes.
   - **distance** Optional: Distance coefficient. Sets how much PTZ should be executed in one request. Allowed values: floating point numbers, 0 to 1 
 </details>
 

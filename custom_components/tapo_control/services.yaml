@@ -11,7 +11,7 @@ ptz:
       description: "Pan direction. Allowed values: RIGHT, LEFT"
       example: "RIGHT"
     preset:
-      description: "PTZ preset ID, starts at 1"
+      description: "PTZ preset ID or a Name. See possible presets in entity attributes"
       example: "1"
     distance:
       description: "Distance coefficient. Sets how much PTZ should be executed in one request. Allowed values: floating point numbers, 0 to 1"

@@ -42,6 +42,7 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 tapo = {}
+tapoData = {}
 
 def setup(hass, config):
     def update(event_time):
@@ -53,7 +54,11 @@ def setup(hass, config):
         basicInfo = tapoConnector.getBasicInfo()
         attributes = basicInfo['device_info']['basic_info']
         attributes['presets'] = tapoConnector.getPresets()
-        hass.states.set(entity_id, "monitoring", attributes) # todo: better state
+        tapoData[entity_id] = {}
+        tapoData[entity_id]['state'] = "monitoring" # todo: better state
+        tapoData[entity_id]['attributes'] = attributes
+
+        hass.states.set(entity_id, tapoData[entity_id]['state'], tapoData[entity_id]['attributes'])
 
     def getIncrement(entity_id):
         lastNum = entity_id[entity_id.rindex('_')+1:]
@@ -99,7 +104,18 @@ def setup(hass, config):
             if entity_id in tapo:
                 if PRESET in call.data:
                     preset = call.data.get(PRESET)
-                    tapo[entity_id].setPreset(preset)
+                    if(preset.isnumeric()):
+                        tapo[entity_id].setPreset(preset)
+                    else:
+                        foundKey = False
+                        presets = tapoData[entity_id]['attributes']['presets']
+                        for key, value in presets.items():
+                            if value == preset:
+                                foundKey = key
+                        if(foundKey):
+                            tapo[entity_id].setPreset(foundKey)
+                        else:
+                            _LOGGER.error("Preset "+preset+" does not exist.")
                 elif TILT in call.data:
                     tilt = call.data.get(TILT)
                     if DISTANCE in call.data:
@@ -270,8 +286,6 @@ def setup(hass, config):
 
         tapoConnector = Tapo(host, username, password)
         basicInfo = tapoConnector.getBasicInfo()
-        attributes = basicInfo['device_info']['basic_info']
-        attributes['presets'] = tapoConnector.getPresets()
 
         entity_id = DOMAIN+"."+basicInfo['device_info']['basic_info']['device_alias'].replace(".","_").replace(" ", "_").lower()
         # handles conflicts if entity_id the same
