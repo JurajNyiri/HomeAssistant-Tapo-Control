@@ -89,11 +89,11 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
   
   Ability to set "high", "normal" or "low". 
   
-  These turn on motion detection and set senstitivty to corresponding values in the app.
+  These turn on motion detection and set sensitivity to corresponding values in the app.
 
   Also ability to set to "off", this turns off motion detection completely. 
   
-  Turning motion detection off does not affect settings for recordings so you do not need to re-set those unless you open the settings through Tapo app.
+  Turning motion detection off does not affect settings for recordings so you do not need to re-set those unless you open the settings through the Tapo app.
   
   Notice: If you use motion detection triggered recording and you turn off motion recording, it will no longer record! 
 
