@@ -38,7 +38,7 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
   
   You are also able to use presets and set distance the ptz should travel.
 
-  - **entity_id** Required: Name of the entity to rotate
+  - **entity_id** Required: Entity to adjust
   - **tilt** Optional: Tilt direction. Allowed values: UP, DOWN 
   - **pan** Optional: Pan direction. Allowed values: RIGHT, LEFT
   - **preset** Optional: PTZ preset ID, starts at 1
@@ -52,7 +52,7 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
   
   If privacy mode is turned on, camera does not record anything and does not respond to anything other than turning off privacy mode.
 
-  - **entity_id** Required: Name of the entity to set privacy mode for
+  - **entity_id** Required: Entity to set privacy mode for
   - **privacy_mode** Required: Sets privacy mode for camera. Possible values: on, off
 </details>
 
@@ -63,7 +63,7 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
   
   If camera detects motion, it will sound an alarm, blink the LED or both.
 
-  - **entity_id** Required: Name of the entity to set alarm mode for
+  - **entity_id** Required: Entity to set alarm mode for
   - **alarm_mode** Required: Sets alarm mode for camera. Possible values: on, off
   - **sound** Optional: Sets whether the alarm should use sound on motion detected. Possible values: on, off
   - **light** Optional: Sets whether the alarm should use light on motion detected. Possible values: on, off
@@ -78,7 +78,7 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
   
   When off, LED is always off.
 
-  - **entity_id** Required: Name of the entity to set LED mode for
+  - **entity_id** Required: Entity to set LED mode for
   - **led_mode** Required: Sets LED mode for camera. Possible values: on, off
 </details>
 
@@ -97,7 +97,7 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
   
   Notice: If you use motion detection triggered recording and you turn off motion recording, it will no longer record! 
 
-  - **entity_id** Required: Name of the entity to set motion detection mode for
+  - **entity_id** Required: Entity to set motion detection mode for
   - **motion_detection_mode** Required: Sets motion detection mode for camera. Possible values: high, normal, low, off
 </details>
 
@@ -112,8 +112,16 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
   
   Motion detection setting does not affect this mode.
 
-  - **entity_id** Required: Name of the entity to set auto track mode for
+  - **entity_id** Required: Entity to set auto track mode for
   - **auto_track_mode** Required: Sets auto track mode for camera. Possible values: on, off
+</details>
+
+<details>
+  <summary>tapo_control.reboot</summary>
+
+  Reboots the camera
+
+  - **entity_id** Required: Entity to reboot
 </details>
 
 ## Have a comment or a suggestion?

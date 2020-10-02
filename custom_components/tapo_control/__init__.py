@@ -220,11 +220,24 @@ def setup(hass, config):
         else:
             _LOGGER.error("Please specify "+ENTITY_ID+" value.")
 
+    def handle_reboot(call):
+        if ENTITY_ID in call.data:
+            entity_id = call.data.get(ENTITY_ID)
+            if(isinstance(entity_id, list)):
+                entity_id = entity_id[0]
+            if entity_id in tapo:
+                tapo[entity_id].reboot()
+            else:
+                _LOGGER.error("Entity "+entity_id+" does not exist.")
+        else:
+            _LOGGER.error("Please specify "+ENTITY_ID+" value.")
+
     hass.services.register(DOMAIN, "ptz", handle_ptz)
     hass.services.register(DOMAIN, "set_privacy_mode", handle_set_privacy_mode)
     hass.services.register(DOMAIN, "set_alarm_mode", handle_set_alarm_mode)
     hass.services.register(DOMAIN, "set_led_mode", handle_set_led_mode)
     hass.services.register(DOMAIN, "set_motion_detection_mode", handle_set_motion_detection_mode)
     hass.services.register(DOMAIN, "set_auto_track_mode", handle_set_auto_track_mode)
+    hass.services.register(DOMAIN, "reboot", handle_reboot)
     
     return True

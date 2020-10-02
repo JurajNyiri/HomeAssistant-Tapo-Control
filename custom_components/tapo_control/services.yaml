@@ -2,7 +2,7 @@ ptz:
   description: Pan and tilt camera
   fields:
     entity_id:
-      description: "Name of the entity to rotate"
+      description: "Entity to adjust"
       example: "tapo_control.living_room"
     tilt: 
       description: "Tilt direction. Allowed values: UP, DOWN"
@@ -20,7 +20,7 @@ set_privacy_mode:
   description: Sets privacy mode
   fields:
     entity_id:
-      description: "Name of the entity to set privacy mode for"
+      description: "Entity to set privacy mode for"
       example: "tapo_control.living_room"
     privacy_mode: 
       description: "Sets privacy mode for camera. Possible values: on, off"
@@ -29,7 +29,7 @@ set_alarm_mode:
   description: Sets alarm mode
   fields:
     entity_id:
-      description: "Name of the entity to set alarm mode for"
+      description: "Entity to set alarm mode for"
       example: "tapo_control.living_room"
     alarm_mode: 
       description: "Sets alarm mode for camera. Possible values: on, off"
@@ -44,7 +44,7 @@ set_led_mode:
   description: Sets LED mode
   fields:
     entity_id:
-      description: "Name of the entity to set LED mode for"
+      description: "Entity to set LED mode for"
       example: "tapo_control.living_room"
     led_mode: 
       description: "Sets LED mode for camera. Possible values: on, off"
@@ -53,7 +53,7 @@ set_motion_detection_mode:
   description: Sets motion detection mode
   fields:
     entity_id:
-      description: "Name of the entity to set motion detection mode for"
+      description: "Entity to set motion detection mode for"
       example: "tapo_control.living_room"
     motion_detection_mode: 
       description: "Sets motion detection mode for camera. Possible values: high, normal, low, off"
@@ -64,8 +64,14 @@ set_auto_track_mode:
   WARNING: This mode is not available in Tapo app and we do not know why. Use at your own risk and please report any success or failures in GitHub."
   fields:
     entity_id:
-      description: "Name of the entity to set auto track mode for"
+      description: "Entity to set auto track mode for"
       example: "tapo_control.living_room"
     auto_track_mode: 
       description: "Sets auto track mode for camera. Possible values: on, off"
       example: "on"
+reboot:
+  description: Reboots the camera
+  fields:
+    entity_id:
+      description: "Entity to reboot"
+      example: "tapo_control.living_room"
