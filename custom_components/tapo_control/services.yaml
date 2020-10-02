@@ -83,4 +83,13 @@ save_preset:
       example: "tapo_control.living_room"
     name:
       description: "Name of the preset. Cannot be empty or a number"
+      example: "Entry Door"
+delete_preset:
+  description: Deletes a preset
+  fields:
+    entity_id:
+      description: "Entity to delete the preset for"
       example: "tapo_control.living_room"
+    preset:
+      description: "PTZ preset ID or a Name. See possible presets in entity attributes"
+      example: "1"

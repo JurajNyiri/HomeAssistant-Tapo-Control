@@ -133,6 +133,15 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
   - **name** Required: Name of the preset. Cannot be empty or a number
 </details>
 
+<details>
+  <summary>tapo_control.delete_preset</summary>
+
+  Deletes a preset
+
+  - **entity_id** Required: Entity to delete the preset for
+  - **preset** Required: PTZ preset ID or a Name. See possible presets in entity attributes
+</details>
+
 ## Have a comment or a suggestion?
 
 Please [open a new issue](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new), or discuss on [Home Assistant: Community Forum](https://community.home-assistant.io/t/tapo-cameras-control/231795).

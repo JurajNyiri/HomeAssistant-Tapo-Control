@@ -104,7 +104,7 @@ def setup(hass, config):
                 entity_id = entity_id[0]
             if entity_id in tapo:
                 if PRESET in call.data:
-                    preset = call.data.get(PRESET)
+                    preset = str(call.data.get(PRESET))
                     if(preset.isnumeric()):
                         tapo[entity_id].setPreset(preset)
                     else:
@@ -299,6 +299,33 @@ def setup(hass, config):
         else:
             _LOGGER.error("Please specify "+ENTITY_ID+" value.")
 
+    def handle_delete_preset(call):
+        if ENTITY_ID in call.data:
+            entity_id = call.data.get(ENTITY_ID)
+            if(isinstance(entity_id, list)):
+                entity_id = entity_id[0]
+            if entity_id in tapo:
+                if(PRESET in call.data):
+                    preset = str(call.data.get(PRESET))
+                    if(preset.isnumeric()):
+                        tapo[entity_id].deletePreset(preset)
+                    else:
+                        foundKey = False
+                        presets = tapoData[entity_id]['attributes']['presets']
+                        for key, value in presets.items():
+                            if value == preset:
+                                foundKey = key
+                        if(foundKey):
+                            tapo[entity_id].deletePreset(foundKey)
+                        else:
+                            _LOGGER.error("Preset "+preset+" does not exist.")
+                else:
+                    _LOGGER.error("Please specify "+PRESET+" value.")
+            else:
+                _LOGGER.error("Entity "+entity_id+" does not exist.")
+        else:
+            _LOGGER.error("Please specify "+ENTITY_ID+" value.")
+
 
     for camera in config[DOMAIN]:
         host = camera[CONF_HOST]
@@ -325,6 +352,7 @@ def setup(hass, config):
     hass.services.register(DOMAIN, "set_auto_track_mode", handle_set_auto_track_mode)
     hass.services.register(DOMAIN, "reboot", handle_reboot)
     hass.services.register(DOMAIN, "save_preset", handle_save_preset)
+    hass.services.register(DOMAIN, "delete_preset", handle_delete_preset)
 
     track_time_interval(hass, update, timedelta(seconds=DEFAULT_SCAN_INTERVAL))
     
