@@ -142,7 +142,7 @@ Please [open a new issue](https://github.com/JurajNyiri/HomeAssistant-Tapo-Contr
 
 Integration is not yet included in default repositories in HACS. [PR](https://github.com/hacs/default/pull/643) has been opened and is waiting for merge.
 
-In the meantime, [you can add it to your local HACS](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control) or install manually.
+In the meantime, [you can add it to your local HACS](https://hacs.xyz/docs/faq/custom_repositories) or install manually.
 
 ## Thank you
 
