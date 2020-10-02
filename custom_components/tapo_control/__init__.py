@@ -1,9 +1,11 @@
-from homeassistant.helpers import entity
 from pytapo import Tapo
 from homeassistant.const import (CONF_HOST, CONF_USERNAME, CONF_PASSWORD)
 import logging
+import re
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.event import track_time_interval
+from datetime import timedelta
 
 _LOGGER = logging.getLogger(__name__)
 DOMAIN = "tapo_control"
@@ -19,6 +21,7 @@ PAN = "pan"
 ENTITY_ID = "entity_id"
 MOTION_DETECTION_MODE = "motion_detection_mode"
 AUTO_TRACK_MODE = "auto_track_mode"
+DEFAULT_SCAN_INTERVAL = 10
 
 CONFIG_SCHEMA = vol.Schema(
     {
@@ -41,25 +44,52 @@ CONFIG_SCHEMA = vol.Schema(
 tapo = {}
 
 def setup(hass, config):
-    host = config.get(CONF_HOST)
-    username = config.get(CONF_USERNAME)
-    password = config.get(CONF_PASSWORD)
+    def update(event_time):
+        for entity_id in tapo:
+            tapoConnector = tapo[entity_id]
+            manualUpdate(entity_id, tapoConnector)
 
-    for camera in config[DOMAIN]:
-        host = camera[CONF_HOST]
-        username = camera[CONF_USERNAME]
-        password = camera[CONF_PASSWORD]
-
-        tapoConnector = Tapo(host, username, password)
+    def manualUpdate(entity_id, tapoConnector):
         basicInfo = tapoConnector.getBasicInfo()
+        attributes = basicInfo['device_info']['basic_info']
+        attributes['presets'] = tapoConnector.getPresets()
+        hass.states.set(entity_id, "monitoring", attributes) # todo: better state
 
-        entity_id = DOMAIN+"."+basicInfo['device_info']['basic_info']['device_alias'].replace(".","_").replace(" ", "_").lower()
-        if(entity_id in tapo):
-            # if two entities have the same name, add ip to the next one
-            entity_id = entity_id+"_"+host.replace(".","_")
+    def getIncrement(entity_id):
+        lastNum = entity_id[entity_id.rindex('_')+1:]
+        if(lastNum.isnumeric()):
+            return int(lastNum)+1
+        return 1
 
-        tapo[entity_id] = tapoConnector
-        hass.states.set(entity_id, "monitoring", basicInfo['device_info']['basic_info']) # todo: better state
+    def addTapoEntityID(requested_entity_id, requested_value):
+        regex = r"^"+requested_entity_id.replace(".","\.")+"_[0-9]+$"
+        if(requested_entity_id in tapo):
+            biggestIncrement = 0
+            for id in tapo:
+                r1 = re.findall(regex,id)
+                if r1:
+                    inc = getIncrement(requested_entity_id) 
+                    if(inc > biggestIncrement):
+                        biggestIncrement = inc
+            if(biggestIncrement == 0):
+                oldVal = tapo[requested_entity_id]
+                tapo.pop(requested_entity_id, None)
+                tapo[requested_entity_id+"_1"] = oldVal
+                tapo[requested_entity_id+"_2"] = requested_value
+            else:
+                tapo[requested_entity_id+"_"+str(biggestIncrement)] = requested_value
+        else:
+            biggestIncrement = 0
+            for id in tapo:
+                r1 = re.findall(regex,id)
+                if r1:
+                    inc = getIncrement(id) 
+                    if(inc > biggestIncrement):
+                        biggestIncrement = inc
+            if(biggestIncrement == 0):
+                tapo[requested_entity_id] = requested_value
+            else:
+                tapo[requested_entity_id+"_"+str(biggestIncrement)] = requested_value
 
     def handle_ptz(call):
         if ENTITY_ID in call.data:
@@ -232,6 +262,26 @@ def setup(hass, config):
         else:
             _LOGGER.error("Please specify "+ENTITY_ID+" value.")
 
+
+    for camera in config[DOMAIN]:
+        host = camera[CONF_HOST]
+        username = camera[CONF_USERNAME]
+        password = camera[CONF_PASSWORD]
+
+        tapoConnector = Tapo(host, username, password)
+        basicInfo = tapoConnector.getBasicInfo()
+        attributes = basicInfo['device_info']['basic_info']
+        attributes['presets'] = tapoConnector.getPresets()
+
+        entity_id = DOMAIN+"."+basicInfo['device_info']['basic_info']['device_alias'].replace(".","_").replace(" ", "_").lower()
+        # handles conflicts if entity_id the same
+        addTapoEntityID(entity_id,tapoConnector)
+
+
+    for entity_id in tapo:
+        tapoConnector = tapo[entity_id]
+        manualUpdate(entity_id, tapoConnector)
+
     hass.services.register(DOMAIN, "ptz", handle_ptz)
     hass.services.register(DOMAIN, "set_privacy_mode", handle_set_privacy_mode)
     hass.services.register(DOMAIN, "set_alarm_mode", handle_set_alarm_mode)
@@ -239,5 +289,7 @@ def setup(hass, config):
     hass.services.register(DOMAIN, "set_motion_detection_mode", handle_set_motion_detection_mode)
     hass.services.register(DOMAIN, "set_auto_track_mode", handle_set_auto_track_mode)
     hass.services.register(DOMAIN, "reboot", handle_reboot)
+
+    track_time_interval(hass, update, timedelta(seconds=DEFAULT_SCAN_INTERVAL))
     
     return True
