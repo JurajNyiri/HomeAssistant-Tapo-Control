@@ -40,3 +40,12 @@ set_alarm_mode:
     light: 
       description: "Sets whether the alarm should use light on motion detected. Possible values: on, off"
       example: "on"
+set_led_mode:
+  description: Sets LED mode
+  fields:
+    entity_id:
+      description: "Name of the entity to set LED mode for"
+      example: "tapo_control.living_room"
+    led_mode: 
+      description: "Sets LED mode for camera. Possible values: on, off"
+      example: "on"

@@ -61,6 +61,14 @@ Data:
 - **sound** Optional: Sets whether the alarm should use sound on motion detected. Possible values: on, off
 - **light** Optional: Sets whether the alarm should use light on motion detected. Possible values: on, off
 
+**set_led_mode**
+
+Sets LED mode.
+
+Data:
+- **entity_id** Required: Name of the entity to set LED mode for
+- **led_mode** Required: Sets LED mode for camera. Possible values: on, off
+
 ## Have a comment or a suggestion?
 
 Please [open a new issue](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new), or discuss on [Home Assistant: Community Forum](https://community.home-assistant.io/t/tapo-cameras-control/231795).

@@ -12,6 +12,7 @@ PRESET = "preset"
 LIGHT = "light"
 SOUND = "sound"
 PRIVACY_MODE = "privacy_mode"
+LED_MODE = "led_mode"
 DISTANCE = "distance"
 TILT = "tilt"
 PAN = "pan"
@@ -154,8 +155,30 @@ def setup(hass, config):
         else:
             _LOGGER.error("Please specify "+ENTITY_ID+" value.")
 
+    def handle_set_led_mode(call):
+        if ENTITY_ID in call.data:
+            entity_id = call.data.get(ENTITY_ID)
+            if(isinstance(entity_id, list)):
+                entity_id = entity_id[0]
+            if entity_id in tapo:
+                if(LED_MODE in call.data):
+                    led_mode = call.data.get(LED_MODE)
+                    if(led_mode == "on"):
+                        tapo[entity_id].setLEDEnabled(True)
+                    elif(led_mode == "off"):
+                        tapo[entity_id].setLEDEnabled(False)
+                    else:
+                        _LOGGER.error("Incorrect "+LED_MODE+" value. Possible values: on, off.")
+                else:
+                    _LOGGER.error("Please specify "+LED_MODE+" value.")
+            else:
+                _LOGGER.error("Entity "+entity_id+" does not exist.")
+        else:
+            _LOGGER.error("Please specify "+ENTITY_ID+" value.")
+
     hass.services.register(DOMAIN, "ptz", handle_ptz)
     hass.services.register(DOMAIN, "set_privacy_mode", handle_set_privacy_mode)
     hass.services.register(DOMAIN, "set_alarm_mode", handle_set_alarm_mode)
+    hass.services.register(DOMAIN, "set_led_mode", handle_set_led_mode)
     
     return True
