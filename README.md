@@ -6,6 +6,12 @@ Custom component - Tapo: Cameras Control - to control Tapo camera features
 
 Copy contents of custom_components/tapo_control/ to custom_components/tapo_control/ in your Home Assistant config folder.
 
+## Installation using HACS
+
+Integration is not yet included in default repositories in HACS. [PR](https://github.com/hacs/default/pull/643) has been opened and is waiting for merge.
+
+In the meantime, [you can add it to your local HACS](https://hacs.xyz/docs/faq/custom_repositories) or install manually.
+
 ## Usage:
 
 Add to configuration.yaml:
@@ -137,12 +143,6 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
 ## Have a comment or a suggestion?
 
 Please [open a new issue](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new), or discuss on [Home Assistant: Community Forum](https://community.home-assistant.io/t/tapo-cameras-control/231795).
-
-## Installation using HACS
-
-Integration is not yet included in default repositories in HACS. [PR](https://github.com/hacs/default/pull/643) has been opened and is waiting for merge.
-
-In the meantime, [you can add it to your local HACS](https://hacs.xyz/docs/faq/custom_repositories) or install manually.
 
 ## Thank you
 
