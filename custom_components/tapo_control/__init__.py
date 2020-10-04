@@ -6,23 +6,9 @@ import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.event import track_time_interval
 from datetime import timedelta
+from .const import *
 
 _LOGGER = logging.getLogger(__name__)
-DOMAIN = "tapo_control"
-ALARM_MODE = "alarm_mode"
-PRESET = "preset"
-LIGHT = "light"
-SOUND = "sound"
-PRIVACY_MODE = "privacy_mode"
-LED_MODE = "led_mode"
-NAME = "name"
-DISTANCE = "distance"
-TILT = "tilt"
-PAN = "pan"
-ENTITY_ID = "entity_id"
-MOTION_DETECTION_MODE = "motion_detection_mode"
-AUTO_TRACK_MODE = "auto_track_mode"
-DEFAULT_SCAN_INTERVAL = 10
 
 CONFIG_SCHEMA = vol.Schema(
     {
