@@ -5,7 +5,7 @@
     "dependencies": [],
     "issue_tracker": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues",
     "codeowners": ["@JurajNyiri"],
-    "requirements": ["pytapo==0.6"],
+    "requirements": ["pytapo==0.10","unidecode"],
     "config_flow": true
   }
   

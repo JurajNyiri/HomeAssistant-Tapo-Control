@@ -4,6 +4,7 @@ import logging
 import re
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
+import unidecode
 from homeassistant.helpers.event import track_time_interval
 from datetime import timedelta
 from .const import *
@@ -40,7 +41,8 @@ def setup(hass, config):
     def manualUpdate(entity_id, tapoConnector):
         basicInfo = tapoConnector.getBasicInfo()
         attributes = basicInfo['device_info']['basic_info']
-        attributes['presets'] = tapoConnector.getPresets()
+        if(not basicInfo['device_info']['basic_info']['device_model'] in DEVICES_WITH_NO_PRESETS):
+            attributes['presets'] = tapoConnector.getPresets()
         tapoData[entity_id] = {}
         tapoData[entity_id]['state'] = "monitoring" # todo: better state
         tapoData[entity_id]['attributes'] = attributes
@@ -312,6 +314,10 @@ def setup(hass, config):
         else:
             _LOGGER.error("Please specify "+ENTITY_ID+" value.")
 
+    def generateEntityIDFromName(name):
+        str = unidecode.unidecode(name.rstrip().replace(".","_").replace(" ", "_").lower())
+        str = re.sub("_"+'{2,}',"_",''.join(filter(ENTITY_CHAR_WHITELIST.__contains__, str)))
+        return DOMAIN+"."+str
 
     for camera in config[DOMAIN]:
         host = camera[CONF_HOST]
@@ -321,7 +327,7 @@ def setup(hass, config):
         tapoConnector = Tapo(host, username, password)
         basicInfo = tapoConnector.getBasicInfo()
 
-        entity_id = DOMAIN+"."+basicInfo['device_info']['basic_info']['device_alias'].replace(".","_").replace(" ", "_").lower()
+        entity_id = generateEntityIDFromName(basicInfo['device_info']['basic_info']['device_alias'])
         # handles conflicts if entity_id the same
         addTapoEntityID(entity_id,tapoConnector)
 
