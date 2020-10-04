@@ -4,10 +4,10 @@ import logging
 import re
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
-import unidecode
 from homeassistant.helpers.event import track_time_interval
 from datetime import timedelta
 from .const import *
+from .utils import *
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,42 +48,6 @@ def setup(hass, config):
         tapoData[entity_id]['attributes'] = attributes
 
         hass.states.set(entity_id, tapoData[entity_id]['state'], tapoData[entity_id]['attributes'])
-
-    def getIncrement(entity_id):
-        lastNum = entity_id[entity_id.rindex('_')+1:]
-        if(lastNum.isnumeric()):
-            return int(lastNum)+1
-        return 1
-
-    def addTapoEntityID(requested_entity_id, requested_value):
-        regex = r"^"+requested_entity_id.replace(".","\.")+"_[0-9]+$"
-        if(requested_entity_id in tapo):
-            biggestIncrement = 0
-            for id in tapo:
-                r1 = re.findall(regex,id)
-                if r1:
-                    inc = getIncrement(requested_entity_id) 
-                    if(inc > biggestIncrement):
-                        biggestIncrement = inc
-            if(biggestIncrement == 0):
-                oldVal = tapo[requested_entity_id]
-                tapo.pop(requested_entity_id, None)
-                tapo[requested_entity_id+"_1"] = oldVal
-                tapo[requested_entity_id+"_2"] = requested_value
-            else:
-                tapo[requested_entity_id+"_"+str(biggestIncrement)] = requested_value
-        else:
-            biggestIncrement = 0
-            for id in tapo:
-                r1 = re.findall(regex,id)
-                if r1:
-                    inc = getIncrement(id) 
-                    if(inc > biggestIncrement):
-                        biggestIncrement = inc
-            if(biggestIncrement == 0):
-                tapo[requested_entity_id] = requested_value
-            else:
-                tapo[requested_entity_id+"_"+str(biggestIncrement)] = requested_value
 
     def handle_ptz(call):
         if ENTITY_ID in call.data:
@@ -314,10 +278,6 @@ def setup(hass, config):
         else:
             _LOGGER.error("Please specify "+ENTITY_ID+" value.")
 
-    def generateEntityIDFromName(name):
-        str = unidecode.unidecode(name.rstrip().replace(".","_").replace(" ", "_").lower())
-        str = re.sub("_"+'{2,}',"_",''.join(filter(ENTITY_CHAR_WHITELIST.__contains__, str)))
-        return DOMAIN+"."+str
 
     for camera in config[DOMAIN]:
         host = camera[CONF_HOST]
@@ -329,7 +289,7 @@ def setup(hass, config):
 
         entity_id = generateEntityIDFromName(basicInfo['device_info']['basic_info']['device_alias'])
         # handles conflicts if entity_id the same
-        addTapoEntityID(entity_id,tapoConnector)
+        addTapoEntityID(tapo, entity_id,tapoConnector)
 
 
     for entity_id in tapo:
