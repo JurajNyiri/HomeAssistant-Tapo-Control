@@ -25,6 +25,9 @@ MOTION_DETECTION_MODE = "motion_detection_mode"
 AUTO_TRACK_MODE = "auto_track_mode"
 DEFAULT_SCAN_INTERVAL = 10
 ENTITY_CHAR_WHITELIST = set('abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_')
+DEVICE_MODEL_C100 = "C100"
+DEVICE_MODEL_C200 = "C200"
+DEVICES_WITH_NO_PRESETS = [DEVICE_MODEL_C100]
 
 CONFIG_SCHEMA = vol.Schema(
     {
@@ -56,7 +59,8 @@ def setup(hass, config):
     def manualUpdate(entity_id, tapoConnector):
         basicInfo = tapoConnector.getBasicInfo()
         attributes = basicInfo['device_info']['basic_info']
-        attributes['presets'] = tapoConnector.getPresets()
+        if(not basicInfo['device_info']['basic_info']['device_model'] in DEVICES_WITH_NO_PRESETS):
+            attributes['presets'] = tapoConnector.getPresets()
         tapoData[entity_id] = {}
         tapoData[entity_id]['state'] = "monitoring" # todo: better state
         tapoData[entity_id]['attributes'] = attributes
