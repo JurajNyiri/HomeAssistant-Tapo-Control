@@ -51,7 +51,7 @@ class TapoCameraControl(Entity):
         self._controller = controller
         self._attributes = self._basic_info
         self._entry = entry
-        self._state = "Monitoring"
+        self._state = "idle"
         if(self._basic_info['device_model'] in DEVICES_WITH_NO_PRESETS):
             self._attributes['presets'] = {}
         else:
@@ -85,7 +85,7 @@ class TapoCameraControl(Entity):
         self._basic_info = self._controller.getBasicInfo()['device_info']['basic_info']
         self._name = self._basic_info['device_alias']
         self._attributes = self._basic_info
-        self._state = "Monitoring"
+        self._state = "idle"
         if(self._basic_info['device_model'] in DEVICES_WITH_NO_PRESETS):
             self._attributes['presets'] = {}
         else:
