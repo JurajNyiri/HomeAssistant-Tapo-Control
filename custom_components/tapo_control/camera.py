@@ -17,6 +17,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities
     platform.async_register_entity_service(
         SERVICE_SET_LED_MODE, SCHEMA_SERVICE_SET_LED_MODE, "set_led_mode",
     )
+    platform.async_register_entity_service(
+        SERVICE_PTZ, SCHEMA_SERVICE_PTZ, "ptz",
+    )
 
 
 class TapoCameraControl(Entity):
@@ -28,8 +31,10 @@ class TapoCameraControl(Entity):
         self._attributes = self._basic_info
         self._entry = entry
         self._state = "Monitoring"
-        if(not self._basic_info['device_model'] in DEVICES_WITH_NO_PRESETS):
-            self._attributes['presets'] = controller.getPresets()
+        if(self._basic_info['device_model'] in DEVICES_WITH_NO_PRESETS):
+            self._attributes['presets'] = {}
+        else:
+            self._attributes['presets'] = self._controller.getPresets()
     
     @property
     def icon(self) -> str:
@@ -60,7 +65,9 @@ class TapoCameraControl(Entity):
         self._name = self._basic_info['device_alias']
         self._attributes = self._basic_info
         self._state = "Monitoring"
-        if(not self._basic_info['device_model'] in DEVICES_WITH_NO_PRESETS):
+        if(self._basic_info['device_model'] in DEVICES_WITH_NO_PRESETS):
+            self._attributes['presets'] = {}
+        else:
             self._attributes['presets'] = self._controller.getPresets()
 
     def set_led_mode(self, led_mode: str):
@@ -68,3 +75,45 @@ class TapoCameraControl(Entity):
             self._controller.setLEDEnabled(True)
         else:
             self._controller.setLEDEnabled(False)
+
+    def ptz(self, tilt = None, pan = None, preset = None, distance = None):
+        if preset:
+            if(preset.isnumeric()):
+                self._controller.setPreset(preset)
+            else:
+                foundKey = False
+                for key, value in self._attributes['presets'].items():
+                    if value == preset:
+                        foundKey = key
+                if(foundKey):
+                    self._controller.setPreset(foundKey)
+                else:
+                    _LOGGER.error("Preset "+preset+" does not exist.")
+        elif tilt:
+            if distance:
+                distance = float(distance)
+                if(distance >= 0 and distance <= 1):
+                    degrees = 68 * distance
+                else:
+                    degrees = 5
+            else:
+                degrees = 5
+            if tilt == "UP":
+                self._controller.moveMotor(0,degrees)
+            else:
+                self._controller.moveMotor(0,-degrees)
+        elif pan:
+            if distance:
+                distance = float(distance)
+                if(distance >= 0 and distance <= 1):
+                    degrees = 360 * distance
+                else:
+                    degrees = 5
+            else:
+                degrees = 5
+            if pan == "RIGHT":
+                self._controller.moveMotor(degrees,0)
+            else:
+                self._controller.moveMotor(-degrees,0)
+        else:
+            _LOGGER.error("Incorrect additional PTZ properties. You need to specify at least one of " + TILT + ", " + PAN + ", " + PRESET + ".")

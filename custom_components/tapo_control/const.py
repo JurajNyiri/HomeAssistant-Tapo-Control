@@ -24,9 +24,17 @@ DEVICES_WITH_NO_PRESETS = [DEVICE_MODEL_C100]
 
 TOGGLE_STATES = ["on", "off"]
 
-SERVICE_SET_LED_MODE = "set_led_mode"
+SERVICE_PTZ = "ptz"
+SCHEMA_SERVICE_PTZ = {
+    vol.Required(ENTITY_ID): cv.string,
+    vol.Optional(TILT): vol.In(["UP", "DOWN"]),
+    vol.Optional(PAN): vol.In(["RIGHT", "LEFT"]),
+    vol.Optional(PRESET): cv.string,
+    vol.Optional(DISTANCE): cv.string
+}
 
+SERVICE_SET_LED_MODE = "set_led_mode"
 SCHEMA_SERVICE_SET_LED_MODE = {
     vol.Required(ENTITY_ID): cv.string,
-    vol.Required(LED_MODE): vol.In(TOGGLE_STATES),
+    vol.Required(LED_MODE): vol.In(TOGGLE_STATES)
 }
