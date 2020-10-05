@@ -63,7 +63,7 @@ class TapoCam(Entity):
 
     @property
     def name(self) -> str:
-        return f"{self._name}"
+        return self._name
 
     @property
     def unique_id(self) -> str:
@@ -76,6 +76,17 @@ class TapoCam(Entity):
     @property
     def state(self):
         return self._state
+    
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {(DOMAIN, slugify(f"{self._mac}_tapo"))},
+            "name": self._name,
+            "manufacturer": "TP-Link",
+            "model": self._basic_info['device_model'],
+            "sw_version": self._basic_info['sw_version']
+        }
+    
     
     def update(self):
         self.manualUpdate()
