@@ -1,3 +1,7 @@
+import voluptuous as vol
+
+from homeassistant.helpers import config_validation as cv
+
 DOMAIN = "tapo_control"
 ALARM_MODE = "alarm_mode"
 PRESET = "preset"
@@ -17,3 +21,12 @@ ENTITY_CHAR_WHITELIST = set('abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWX
 DEVICE_MODEL_C100 = "C100"
 DEVICE_MODEL_C200 = "C200"
 DEVICES_WITH_NO_PRESETS = [DEVICE_MODEL_C100]
+
+TOGGLE_STATES = ["on", "off"]
+
+SERVICE_SET_LED_MODE = "set_led_mode"
+
+SCHEMA_SERVICE_SET_LED_MODE = {
+    vol.Required(ENTITY_ID): cv.string,
+    vol.Required(LED_MODE): vol.In(TOGGLE_STATES),
+}

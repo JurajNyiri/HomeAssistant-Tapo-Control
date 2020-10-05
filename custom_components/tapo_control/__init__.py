@@ -1,34 +1,42 @@
 from pytapo import Tapo
-from homeassistant.const import (CONF_HOST, CONF_USERNAME, CONF_PASSWORD)
+from homeassistant.const import (CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD)
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.exceptions import ConfigEntryNotReady
 import logging
-import re
-import voluptuous as vol
-import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.event import track_time_interval
-from datetime import timedelta
 from .const import *
 from .utils import *
 
 _LOGGER = logging.getLogger(__name__)
 
-CONFIG_SCHEMA = vol.Schema(
-    {
-        DOMAIN: vol.All(
-            cv.ensure_list,
-            [
-                vol.Schema(
-                    {
-                        vol.Required(CONF_HOST): cv.string,
-                        vol.Required(CONF_USERNAME): cv.string,
-                        vol.Required(CONF_PASSWORD): cv.string
-                    }
-                )
-            ],
-        )
-    },
-    extra=vol.ALLOW_EXTRA,
-)
+async def async_setup(hass: HomeAssistant, config: dict):
+    """Set up the Tapo: Cameras Control component from YAML."""
+    return True
 
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+    """Set up the Tapo: Cameras Control component from a config entry."""
+    hass.data.setdefault(DOMAIN, {})
+
+    host = entry.data.get(CONF_IP_ADDRESS)
+    username = entry.data.get(CONF_USERNAME)
+    password = entry.data.get(CONF_PASSWORD)
+    try:
+        tapoController = Tapo(host, username, password)
+
+        hass.data[DOMAIN][entry.entry_id] = tapoController
+
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, "camera")
+        )
+
+    except Exception as e:
+        _LOGGER.error("Unable to connect to Tapo: Cameras Control controller: %s", str(e))
+        raise ConfigEntryNotReady
+
+    return True
+
+"""
 tapo = {}
 tapoData = {}
 
@@ -309,3 +317,4 @@ def setup(hass, config):
     track_time_interval(hass, update, timedelta(seconds=DEFAULT_SCAN_INTERVAL))
     
     return True
+"""
