@@ -38,6 +38,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities
     platform.async_register_entity_service(
         SERVICE_SAVE_PRESET, SCHEMA_SERVICE_SAVE_PRESET, "save_preset",
     )
+    platform.async_register_entity_service(
+        SERVICE_DELETE_PRESET, SCHEMA_SERVICE_DELETE_PRESET, "delete_preset",
+    )
 
 
 class TapoCameraControl(Entity):
@@ -173,3 +176,19 @@ class TapoCameraControl(Entity):
             self.manualUpdate()
         else:
             _LOGGER.error("Incorrect "+NAME+" value. It cannot be empty or a number.")
+
+    def delete_preset(self, preset):
+        if(preset.isnumeric()):
+            self._controller.deletePreset(preset)
+            self.manualUpdate()
+        else:
+            foundKey = False
+            for key, value in self._attributes['presets'].items():
+                if value == preset:
+                    foundKey = key
+            if(foundKey):
+                self._controller.deletePreset(foundKey)
+                self.manualUpdate()
+            else:
+                _LOGGER.error("Preset "+preset+" does not exist.")
+                

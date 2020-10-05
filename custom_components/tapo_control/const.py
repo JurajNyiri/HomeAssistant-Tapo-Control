@@ -75,3 +75,9 @@ SCHEMA_SERVICE_SAVE_PRESET = {
     vol.Required(ENTITY_ID): cv.string,
     vol.Required(NAME): cv.string
 }
+
+SERVICE_DELETE_PRESET = "delete_preset"
+SCHEMA_SERVICE_DELETE_PRESET = {
+    vol.Required(ENTITY_ID): cv.string,
+    vol.Required(PRESET): cv.string
+}
