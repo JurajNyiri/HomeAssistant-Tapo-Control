@@ -26,6 +26,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities
     platform.async_register_entity_service(
         SERVICE_SET_ALARM_MODE, SCHEMA_SERVICE_SET_ALARM_MODE, "set_alarm_mode",
     )
+    platform.async_register_entity_service(
+        SERVICE_SET_MOTION_DETECTION_MODE, SCHEMA_SERVICE_SET_MOTION_DETECTION_MODE, "set_motion_detection_mode",
+    )
 
 
 class TapoCameraControl(Entity):
@@ -139,3 +142,9 @@ class TapoCameraControl(Entity):
             self._controller.setLEDEnabled(True)
         else:
             self._controller.setLEDEnabled(False)
+
+    def set_motion_detection_mode(self, motion_detection_mode):
+        if(motion_detection_mode == "off"):
+            self._controller.setMotionDetection(False)
+        else:
+            self._controller.setMotionDetection(True, motion_detection_mode)

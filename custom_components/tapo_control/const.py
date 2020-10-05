@@ -47,9 +47,14 @@ SCHEMA_SERVICE_SET_ALARM_MODE = {
     vol.Optional(LIGHT): vol.In(TOGGLE_STATES)
 }
 
-
 SERVICE_SET_LED_MODE = "set_led_mode"
 SCHEMA_SERVICE_SET_LED_MODE = {
     vol.Required(ENTITY_ID): cv.string,
     vol.Required(LED_MODE): vol.In(TOGGLE_STATES)
+}
+
+SERVICE_SET_MOTION_DETECTION_MODE = "set_motion_detection_mode"
+SCHEMA_SERVICE_SET_MOTION_DETECTION_MODE = {
+    vol.Required(ENTITY_ID): cv.string,
+    vol.Required(MOTION_DETECTION_MODE): vol.In(["high","normal","low","off"])
 }
