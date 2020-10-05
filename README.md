@@ -1,7 +1,3 @@
-# WORK IN PROGRESS
-
-Do not use, this branch is unstable and possibly does not work.
-
 # HomeAssistant - Tapo: Cameras Control
 
 Custom component - Tapo: Cameras Control - to control Tapo camera features
