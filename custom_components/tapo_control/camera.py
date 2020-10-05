@@ -35,6 +35,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities
     platform.async_register_entity_service(
         SERVICE_REBOOT, SCHEMA_SERVICE_REBOOT, "reboot",
     )
+    platform.async_register_entity_service(
+        SERVICE_SAVE_PRESET, SCHEMA_SERVICE_SAVE_PRESET, "save_preset",
+    )
 
 
 class TapoCameraControl(Entity):
@@ -163,3 +166,10 @@ class TapoCameraControl(Entity):
 
     def reboot(self):
         self._controller.reboot()
+
+    def save_preset(self, name):
+        if(not name == "" and not name.isnumeric()):
+            self._controller.savePreset(name)
+            self.manualUpdate()
+        else:
+            _LOGGER.error("Incorrect "+NAME+" value. It cannot be empty or a number.")

@@ -69,3 +69,9 @@ SERVICE_REBOOT = "reboot"
 SCHEMA_SERVICE_REBOOT = {
     vol.Required(ENTITY_ID): cv.string
 }
+
+SERVICE_SAVE_PRESET = "save_preset"
+SCHEMA_SERVICE_SAVE_PRESET = {
+    vol.Required(ENTITY_ID): cv.string,
+    vol.Required(NAME): cv.string
+}
