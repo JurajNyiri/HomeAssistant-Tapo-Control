@@ -39,6 +39,15 @@ SCHEMA_SERVICE_SET_PRIVACY_MODE = {
     vol.Required(PRIVACY_MODE): vol.In(TOGGLE_STATES)
 }
 
+SERVICE_SET_ALARM_MODE = "set_alarm_mode"
+SCHEMA_SERVICE_SET_ALARM_MODE = {
+    vol.Required(ENTITY_ID): cv.string,
+    vol.Required(ALARM_MODE): vol.In(TOGGLE_STATES),
+    vol.Optional(SOUND): vol.In(TOGGLE_STATES),
+    vol.Optional(LIGHT): vol.In(TOGGLE_STATES)
+}
+
+
 SERVICE_SET_LED_MODE = "set_led_mode"
 SCHEMA_SERVICE_SET_LED_MODE = {
     vol.Required(ENTITY_ID): cv.string,

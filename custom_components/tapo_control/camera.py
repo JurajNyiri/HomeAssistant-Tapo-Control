@@ -23,6 +23,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities
     platform.async_register_entity_service(
         SERVICE_PTZ, SCHEMA_SERVICE_PTZ, "ptz",
     )
+    platform.async_register_entity_service(
+        SERVICE_SET_ALARM_MODE, SCHEMA_SERVICE_SET_ALARM_MODE, "set_alarm_mode",
+    )
 
 
 class TapoCameraControl(Entity):
@@ -115,14 +118,24 @@ class TapoCameraControl(Entity):
         else:
             _LOGGER.error("Incorrect additional PTZ properties. You need to specify at least one of " + TILT + ", " + PAN + ", " + PRESET + ".")
 
-    def set_led_mode(self, led_mode: str):
-        if(led_mode == "on"):
-            self._controller.setLEDEnabled(True)
-        else:
-            self._controller.setLEDEnabled(False)
-
     def set_privacy_mode(self, privacy_mode: str):
         if(privacy_mode == "on"):
             self._controller.setPrivacyMode(True)
         else:
             self._controller.setPrivacyMode(False)
+
+    def set_alarm_mode(self, alarm_mode, sound = None, light = None):
+        if(not light):
+            light = "on"
+        if(not sound):
+            sound = "on"
+        if(alarm_mode == "on"):
+            self._controller.setAlarm(True, True if sound == "on" else False, True if light == "on" else False)
+        else:
+            self._controller.setAlarm(False, True if sound == "on" else False, True if light == "on" else False)
+
+    def set_led_mode(self, led_mode: str):
+        if(led_mode == "on"):
+            self._controller.setLEDEnabled(True)
+        else:
+            self._controller.setLEDEnabled(False)
