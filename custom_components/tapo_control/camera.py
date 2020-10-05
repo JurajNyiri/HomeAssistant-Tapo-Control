@@ -1,16 +1,20 @@
+from homeassistant.helpers.config_validation import boolean
 from .const import *
 from homeassistant.core import HomeAssistant
+from homeassistant.const import (CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD)
 from typing import Callable
 from homeassistant.helpers.entity import Entity
 from pytapo import Tapo
 from homeassistant.util import slugify
 from homeassistant.helpers import entity_platform
+from homeassistant.components.camera import SUPPORT_STREAM, Camera
 import logging
 
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities: Callable):
-    async_add_entities([TapoCam(entry, hass.data[DOMAIN][entry.entry_id])])
+    async_add_entities([TapoCam(entry, hass.data[DOMAIN][entry.entry_id],True)])
+    async_add_entities([TapoCam(entry, hass.data[DOMAIN][entry.entry_id],False)])
 
     platform = entity_platform.current_platform.get()
     platform.async_register_entity_service(
@@ -45,31 +49,41 @@ async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities
     )
 
 
-class TapoCam(Entity):
-    def __init__(self, entry: dict, controller: Tapo):
+class TapoCam(Camera):
+    def __init__(self, entry: dict, controller: Tapo, HDStream: boolean):
+        super().__init__()
         self._basic_info = controller.getBasicInfo()['device_info']['basic_info']
-        self._name = self._basic_info['device_alias']
         self._mac = self._basic_info['mac']
         self._controller = controller
         self._attributes = self._basic_info
         self._entry = entry
+        self._hdstream = HDStream
         self._state = "idle"
+        self._host = entry.data.get(CONF_IP_ADDRESS)
+        self._username = entry.data.get(CONF_USERNAME)
+        self._password = entry.data.get(CONF_PASSWORD)
+
+        self.access_tokens = [controller.stok] #todo: changeme
         if(self._basic_info['device_model'] in DEVICES_WITH_NO_PRESETS):
             self._attributes['presets'] = {}
         else:
             self._attributes['presets'] = self._controller.getPresets()
     
     @property
+    def supported_features(self):
+        return SUPPORT_STREAM
+
+    @property
     def icon(self) -> str:
         return "mdi:cctv"
 
     @property
     def name(self) -> str:
-        return self._name
+        return self.getName()
 
     @property
     def unique_id(self) -> str:
-        return slugify(f"{self._mac}_tapo_control")
+        return self.getUniqueID()
 
     @property
     def device_state_attributes(self):
@@ -83,26 +97,66 @@ class TapoCam(Entity):
     @property
     def device_info(self):
         return {
-            "identifiers": {(DOMAIN, slugify(f"{self._mac}_tapo"))},
-            "name": self._name,
+            "identifiers": {(DOMAIN, self.getUniqueID())},
+            "name": self.getName(),
             "manufacturer": "TP-Link",
             "model": self._basic_info['device_model'],
             "sw_version": self._basic_info['sw_version']
         }
     
+    @property
+    def is_recording(self):
+        """TODO"""
+        return True
+
+    @property
+    def motion_detection_enabled(self):
+        """TODO"""
+        return True
+    
+    @property
+    def brand(self):
+        return "TP-Link"
+    
+    @property
+    def model(self):
+        return self._basic_info['device_model']
+
+    async def stream_source(self):
+        if(self._hdstream):
+            streamType = "stream1"
+        else:
+            streamType = "stream2"
+        streamURL = f"rtsp://{self._username}:{self._password}@{self._host}:554/{streamType}"
+        return streamURL
     
     def update(self):
         self.manualUpdate()
 
     def manualUpdate(self):
         self._basic_info = self._controller.getBasicInfo()['device_info']['basic_info']
-        self._name = self._basic_info['device_alias']
         self._attributes = self._basic_info
         self._state = "idle"
         if(self._basic_info['device_model'] in DEVICES_WITH_NO_PRESETS):
             self._attributes['presets'] = {}
         else:
             self._attributes['presets'] = self._controller.getPresets()
+
+    def getName(self):
+        name = self._basic_info['device_alias']
+        if(self._hdstream):
+            name += " - HD"
+        else:
+            name += " - SD"
+        return name
+    
+    def getUniqueID(self):
+        if(self._hdstream):
+            streamType = "hd"
+        else:
+            streamType = "sd"
+        return slugify(f"{self._mac}_{streamType}_tapo_control")
+
 
     def ptz(self, tilt = None, pan = None, preset = None, distance = None):
         if preset:
