@@ -58,3 +58,9 @@ SCHEMA_SERVICE_SET_MOTION_DETECTION_MODE = {
     vol.Required(ENTITY_ID): cv.string,
     vol.Required(MOTION_DETECTION_MODE): vol.In(["high","normal","low","off"])
 }
+
+SERVICE_SET_AUTO_TRACK_MODE = "set_auto_track_mode"
+SCHEMA_SERVICE_SET_AUTO_TRACK_MODE = {
+    vol.Required(ENTITY_ID): cv.string,
+    vol.Required(AUTO_TRACK_MODE): vol.In(TOGGLE_STATES)
+}

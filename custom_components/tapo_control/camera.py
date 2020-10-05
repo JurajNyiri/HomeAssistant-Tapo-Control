@@ -29,6 +29,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities
     platform.async_register_entity_service(
         SERVICE_SET_MOTION_DETECTION_MODE, SCHEMA_SERVICE_SET_MOTION_DETECTION_MODE, "set_motion_detection_mode",
     )
+    platform.async_register_entity_service(
+        SERVICE_SET_AUTO_TRACK_MODE, SCHEMA_SERVICE_SET_AUTO_TRACK_MODE, "set_auto_track_mode",
+    )
 
 
 class TapoCameraControl(Entity):
@@ -148,3 +151,9 @@ class TapoCameraControl(Entity):
             self._controller.setMotionDetection(False)
         else:
             self._controller.setMotionDetection(True, motion_detection_mode)
+
+    def set_auto_track_mode(self, auto_track_mode: str):
+        if(auto_track_mode == "on"):
+            self._controller.setAutoTrackTarget(True)
+        else:
+            self._controller.setAutoTrackTarget(False)
