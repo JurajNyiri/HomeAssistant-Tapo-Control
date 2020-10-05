@@ -52,21 +52,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities
 class TapoCamEntity(Camera):
     def __init__(self, entry: dict, controller: Tapo, HDStream: boolean):
         super().__init__()
-        self._basic_info = controller.getBasicInfo()['device_info']['basic_info']
-        self._mac = self._basic_info['mac']
+        self._attributes = {}
+        self._motion_detection_enabled = None
+        self._motion_detection_sensitivity = None
+        self._basic_info = {}
+        self._mac = ""
+
         self._controller = controller
-        self._attributes = self._basic_info
         self._entry = entry
         self._hdstream = HDStream
-        self._state = "idle"
         self._host = entry.data.get(CONF_IP_ADDRESS)
         self._username = entry.data.get(CONF_USERNAME)
         self._password = entry.data.get(CONF_PASSWORD)
-
-        if(self._basic_info['device_model'] in DEVICES_WITH_NO_PRESETS):
-            self._attributes['presets'] = {}
-        else:
-            self._attributes['presets'] = self._controller.getPresets()
+        self.manualUpdate()
     
     @property
     def supported_features(self):
@@ -110,8 +108,7 @@ class TapoCamEntity(Camera):
 
     @property
     def motion_detection_enabled(self):
-        """TODO"""
-        return True
+        return self._motion_detection_enabled
     
     @property
     def brand(self):
@@ -120,6 +117,10 @@ class TapoCamEntity(Camera):
     @property
     def model(self):
         return self._basic_info['device_model']
+    
+    @property
+    def should_poll(self):
+        return True
 
     async def stream_source(self):
         if(self._hdstream):
@@ -135,7 +136,24 @@ class TapoCamEntity(Camera):
     def manualUpdate(self):
         self._basic_info = self._controller.getBasicInfo()['device_info']['basic_info']
         self._attributes = self._basic_info
+        self._mac = self._basic_info['mac']
         self._state = "idle"
+        try:
+            motionDetectionData = self._controller.getMotionDetection()
+            self._motion_detection_enabled = motionDetectionData['enabled']
+            if(motionDetectionData['digital_sensitivity'] == "20"):
+                self._motion_detection_sensitivity = "low"
+            elif(motionDetectionData['digital_sensitivity'] == "50"):
+                self._motion_detection_sensitivity = "normal"
+            elif(motionDetectionData['digital_sensitivity'] == "80"):
+                self._motion_detection_sensitivity = "high"
+            else:
+                self._motion_detection_sensitivity = None
+        except:
+            self._motion_detection_enabled = None
+            self._motion_detection_sensitivity = None
+        self._attributes['motion_detection_sensitivity'] = self._motion_detection_sensitivity
+
         if(self._basic_info['device_model'] in DEVICES_WITH_NO_PRESETS):
             self._attributes['presets'] = {}
         else:
@@ -204,6 +222,7 @@ class TapoCamEntity(Camera):
             self._controller.setPrivacyMode(True)
         else:
             self._controller.setPrivacyMode(False)
+        self.manualUpdate()
 
     def set_alarm_mode(self, alarm_mode, sound = None, light = None):
         if(not light):
@@ -214,24 +233,28 @@ class TapoCamEntity(Camera):
             self._controller.setAlarm(True, True if sound == "on" else False, True if light == "on" else False)
         else:
             self._controller.setAlarm(False, True if sound == "on" else False, True if light == "on" else False)
+        self.manualUpdate()
 
     def set_led_mode(self, led_mode: str):
         if(led_mode == "on"):
             self._controller.setLEDEnabled(True)
         else:
             self._controller.setLEDEnabled(False)
+        self.manualUpdate()
 
     def set_motion_detection_mode(self, motion_detection_mode):
         if(motion_detection_mode == "off"):
             self._controller.setMotionDetection(False)
         else:
             self._controller.setMotionDetection(True, motion_detection_mode)
+        self.manualUpdate()
 
     def set_auto_track_mode(self, auto_track_mode: str):
         if(auto_track_mode == "on"):
             self._controller.setAutoTrackTarget(True)
         else:
             self._controller.setAutoTrackTarget(False)
+        self.manualUpdate()
 
     def reboot(self):
         self._controller.reboot()

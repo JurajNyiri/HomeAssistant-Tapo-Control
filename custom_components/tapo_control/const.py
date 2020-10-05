@@ -1,5 +1,5 @@
 import voluptuous as vol
-
+from datetime import timedelta
 from homeassistant.helpers import config_validation as cv
 
 DOMAIN = "tapo_control"
@@ -21,6 +21,7 @@ ENTITY_CHAR_WHITELIST = set('abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWX
 DEVICE_MODEL_C100 = "C100"
 DEVICE_MODEL_C200 = "C200"
 DEVICES_WITH_NO_PRESETS = [DEVICE_MODEL_C100]
+SCAN_INTERVAL = timedelta(seconds=30)
 
 TOGGLE_STATES = ["on", "off"]
 
