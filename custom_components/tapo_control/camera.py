@@ -11,7 +11,7 @@ import logging
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities: Callable):
-    async_add_entities([TapoCameraControl(entry, hass.data[DOMAIN][entry.entry_id])])
+    async_add_entities([TapoCam(entry, hass.data[DOMAIN][entry.entry_id])])
 
     platform = entity_platform.current_platform.get()
     platform.async_register_entity_service(
@@ -43,7 +43,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities
     )
 
 
-class TapoCameraControl(Entity):
+class TapoCam(Entity):
     def __init__(self, entry: dict, controller: Tapo):
         self._basic_info = controller.getBasicInfo()['device_info']['basic_info']
         self._name = self._basic_info['device_alias']
