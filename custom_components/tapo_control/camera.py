@@ -58,6 +58,10 @@ class TapoCamEntity(Camera):
         self._privacy_mode = None
         self._basic_info = {}
         self._mac = ""
+        self._alarm = None
+        self._alarm_mode = None
+        self._led = None
+        self._auto_track = None
 
         self._controller = controller
         self._entry = entry
@@ -161,6 +165,27 @@ class TapoCamEntity(Camera):
             self._privacy_mode = None
         self._attributes['privacy_mode'] = self._privacy_mode
 
+        try:
+            alarmData = self._controller.getAlarm()
+            self._alarm = alarmData['enabled']
+            self._alarm_mode = alarmData['alarm_mode']
+        except:
+            self._alarm = None
+            self._alarm_mode = None
+        self._attributes['alarm'] = self._alarm
+        self._attributes['alarm_mode'] = self._alarm_mode
+
+        try:
+            self._led = self._controller.getLED()['enabled']
+        except:
+            self._led = None
+        self._attributes['led'] = self._led
+
+        try:
+            self._auto_track = self._controller.getAutoTrackTarget()['enabled']
+        except:
+            self._auto_track = None
+        self._attributes['auto_track'] = self._auto_track
         
 
         if(self._basic_info['device_model'] in DEVICES_WITH_NO_PRESETS):
