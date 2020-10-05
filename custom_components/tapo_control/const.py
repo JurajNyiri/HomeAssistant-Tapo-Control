@@ -64,3 +64,8 @@ SCHEMA_SERVICE_SET_AUTO_TRACK_MODE = {
     vol.Required(ENTITY_ID): cv.string,
     vol.Required(AUTO_TRACK_MODE): vol.In(TOGGLE_STATES)
 }
+
+SERVICE_REBOOT = "reboot"
+SCHEMA_SERVICE_REBOOT = {
+    vol.Required(ENTITY_ID): cv.string
+}

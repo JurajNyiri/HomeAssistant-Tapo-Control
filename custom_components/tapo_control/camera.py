@@ -32,6 +32,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities
     platform.async_register_entity_service(
         SERVICE_SET_AUTO_TRACK_MODE, SCHEMA_SERVICE_SET_AUTO_TRACK_MODE, "set_auto_track_mode",
     )
+    platform.async_register_entity_service(
+        SERVICE_REBOOT, SCHEMA_SERVICE_REBOOT, "reboot",
+    )
 
 
 class TapoCameraControl(Entity):
@@ -157,3 +160,6 @@ class TapoCameraControl(Entity):
             self._controller.setAutoTrackTarget(True)
         else:
             self._controller.setAutoTrackTarget(False)
+
+    def reboot(self):
+        self._controller.reboot()
