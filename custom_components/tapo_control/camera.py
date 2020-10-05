@@ -105,11 +105,6 @@ class TapoCamEntity(Camera):
             "model": self._basic_info['device_model'],
             "sw_version": self._basic_info['sw_version']
         }
-    
-    @property
-    def is_recording(self):
-        """TODO"""
-        return True
 
     @property
     def motion_detection_enabled(self):
