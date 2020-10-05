@@ -1,6 +1,6 @@
 # HomeAssistant - Tapo: Cameras Control
 
-Custom component - Tapo: Cameras Control - to control Tapo camera features
+Custom component - Tapo: Cameras Control - to add Tapo cameras into Home Assistant
 
 ## Installation
 
