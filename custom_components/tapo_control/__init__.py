@@ -5,7 +5,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 import logging
 from .const import *
-from .utils import *
 
 _LOGGER = logging.getLogger(__name__)
 

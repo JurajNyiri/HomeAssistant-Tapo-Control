@@ -81,3 +81,8 @@ SCHEMA_SERVICE_DELETE_PRESET = {
     vol.Required(ENTITY_ID): cv.string,
     vol.Required(PRESET): cv.string
 }
+
+SERVICE_FORMAT = "format"
+SCHEMA_SERVICE_FORMAT = {
+    vol.Required(ENTITY_ID): cv.string
+}

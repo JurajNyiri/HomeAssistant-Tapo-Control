@@ -1,5 +1,4 @@
 from .const import *
-from .utils import *
 from homeassistant.core import HomeAssistant
 from typing import Callable
 from homeassistant.helpers.entity import Entity
@@ -40,6 +39,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities
     )
     platform.async_register_entity_service(
         SERVICE_DELETE_PRESET, SCHEMA_SERVICE_DELETE_PRESET, "delete_preset",
+    )
+    platform.async_register_entity_service(
+        SERVICE_FORMAT, SCHEMA_SERVICE_FORMAT, "format",
     )
 
 
@@ -202,4 +204,7 @@ class TapoCam(Entity):
                 self.manualUpdate()
             else:
                 _LOGGER.error("Preset "+preset+" does not exist.")
+
+    def format(self):
+        self._controller.format()
                 
