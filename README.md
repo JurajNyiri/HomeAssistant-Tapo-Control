@@ -76,6 +76,14 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
 </details>
 
 <details>
+  <summary>tapo_control.format</summary>
+
+  Formats SD card of a camera
+
+  - **entity_id** Required: Entity to format
+</details>
+
+<details>
   <summary>tapo_control.set_motion_detection_mode</summary>
 
   Sets motion detection mode. 
