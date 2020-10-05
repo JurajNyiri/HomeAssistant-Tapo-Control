@@ -33,6 +33,12 @@ SCHEMA_SERVICE_PTZ = {
     vol.Optional(DISTANCE): cv.string
 }
 
+SERVICE_SET_PRIVACY_MODE = "set_privacy_mode"
+SCHEMA_SERVICE_SET_PRIVACY_MODE = {
+    vol.Required(ENTITY_ID): cv.string,
+    vol.Required(PRIVACY_MODE): vol.In(TOGGLE_STATES)
+}
+
 SERVICE_SET_LED_MODE = "set_led_mode"
 SCHEMA_SERVICE_SET_LED_MODE = {
     vol.Required(ENTITY_ID): cv.string,
