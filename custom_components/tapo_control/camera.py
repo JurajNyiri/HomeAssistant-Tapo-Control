@@ -67,7 +67,7 @@ class TapoCam(Entity):
 
     @property
     def unique_id(self) -> str:
-        return slugify(f"{self._mac}_tapo")
+        return slugify(f"{self._mac}_tapo_control")
 
     @property
     def device_state_attributes(self):
@@ -75,6 +75,7 @@ class TapoCam(Entity):
 
     @property
     def state(self):
+        """Return the state of the sensor."""
         return self._state
     
     @property

@@ -10,12 +10,12 @@ from .utils import *
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass: HomeAssistant, config: dict):
-    """Set up the Tapo: Cameras component from YAML."""
+    """Set up the Tapo: Cameras Control component from YAML."""
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    """Set up the Tapo: Cameras component from a config entry."""
+    """Set up the Tapo: Cameras Control component from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
     host = entry.data.get(CONF_IP_ADDRESS)
@@ -31,7 +31,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
 
     except Exception as e:
-        _LOGGER.error("Unable to connect to Tapo: Cameras controller: %s", str(e))
+        _LOGGER.error("Unable to connect to Tapo: Cameras Control controller: %s", str(e))
         raise ConfigEntryNotReady
 
     return True

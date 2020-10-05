@@ -1,6 +1,6 @@
 {
-    "domain": "tapo",
-    "name": "Tapo: Cameras",
+    "domain": "tapo_control",
+    "name": "Tapo: Cameras Control",
     "documentation": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control",
     "dependencies": [],
     "issue_tracker": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues",

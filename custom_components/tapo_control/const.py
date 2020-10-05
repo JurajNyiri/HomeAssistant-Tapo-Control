@@ -2,7 +2,7 @@ import voluptuous as vol
 
 from homeassistant.helpers import config_validation as cv
 
-DOMAIN = "tapo"
+DOMAIN = "tapo_control"
 ALARM_MODE = "alarm_mode"
 PRESET = "preset"
 LIGHT = "light"
