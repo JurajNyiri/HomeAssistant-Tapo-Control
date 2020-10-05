@@ -55,6 +55,7 @@ class TapoCamEntity(Camera):
         self._attributes = {}
         self._motion_detection_enabled = None
         self._motion_detection_sensitivity = None
+        self._privacy_mode = None
         self._basic_info = {}
         self._mac = ""
 
@@ -153,6 +154,14 @@ class TapoCamEntity(Camera):
             self._motion_detection_enabled = None
             self._motion_detection_sensitivity = None
         self._attributes['motion_detection_sensitivity'] = self._motion_detection_sensitivity
+
+        try:
+            self._privacy_mode = self._controller.getPrivacyMode()['enabled']
+        except:
+            self._privacy_mode = None
+        self._attributes['privacy_mode'] = self._privacy_mode
+
+        
 
         if(self._basic_info['device_model'] in DEVICES_WITH_NO_PRESETS):
             self._attributes['presets'] = {}
