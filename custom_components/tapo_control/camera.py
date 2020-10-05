@@ -13,8 +13,8 @@ import logging
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities: Callable):
-    async_add_entities([TapoCam(entry, hass.data[DOMAIN][entry.entry_id],True)])
-    async_add_entities([TapoCam(entry, hass.data[DOMAIN][entry.entry_id],False)])
+    async_add_entities([TapoCamEntity(entry, hass.data[DOMAIN][entry.entry_id],True)])
+    async_add_entities([TapoCamEntity(entry, hass.data[DOMAIN][entry.entry_id],False)])
 
     platform = entity_platform.current_platform.get()
     platform.async_register_entity_service(
@@ -49,7 +49,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities
     )
 
 
-class TapoCam(Camera):
+class TapoCamEntity(Camera):
     def __init__(self, entry: dict, controller: Tapo, HDStream: boolean):
         super().__init__()
         self._basic_info = controller.getBasicInfo()['device_info']['basic_info']
@@ -63,7 +63,6 @@ class TapoCam(Camera):
         self._username = entry.data.get(CONF_USERNAME)
         self._password = entry.data.get(CONF_PASSWORD)
 
-        self.access_tokens = [controller.stok] #todo: changeme
         if(self._basic_info['device_model'] in DEVICES_WITH_NO_PRESETS):
             self._attributes['presets'] = {}
         else:
@@ -97,8 +96,8 @@ class TapoCam(Camera):
     @property
     def device_info(self):
         return {
-            "identifiers": {(DOMAIN, self.getUniqueID())},
-            "name": self.getName(),
+            "identifiers": {(DOMAIN, slugify(f"{self._mac}_tapo_control"))},
+            "name": self._basic_info['device_alias'],
             "manufacturer": "TP-Link",
             "model": self._basic_info['device_model'],
             "sw_version": self._basic_info['sw_version']
