@@ -12,16 +12,9 @@ HACS is a community store for Home Assistant. You can install [HACS](https://git
 
 ## Usage
 
-Add to configuration.yaml:
+Add cameras via Integrations (search for Tapo) in Home Assistant UI.
 
-```
-tapo_control:
-  - host: [IP ADDRESS TO TAPO CAMERA]
-    username: [USERNAME SET IN ADVANCED OPTIONS IN CAMERA APP]
-    password: [PASSWORD SET IN ADVANCED OPTIONS IN CAMERA APP]
-```
-
-You are able to add multiple cameras.
+To add multiple cameras, add integration multiple times.
 
 ## Services
 
@@ -76,6 +69,14 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
 
   - **entity_id** Required: Entity to set LED mode for
   - **led_mode** Required: Sets LED mode for camera. Possible values: on, off
+</details>
+
+<details>
+  <summary>tapo_control.format</summary>
+
+  Formats SD card of a camera
+
+  - **entity_id** Required: Entity to format
 </details>
 
 <details>

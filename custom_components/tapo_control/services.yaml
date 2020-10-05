@@ -3,7 +3,7 @@ ptz:
   fields:
     entity_id:
       description: "Entity to adjust"
-      example: "tapo_control.living_room"
+      example: "camera.living_room"
     tilt: 
       description: "Tilt direction. Allowed values: UP, DOWN"
       example: "UP"
@@ -21,7 +21,7 @@ set_privacy_mode:
   fields:
     entity_id:
       description: "Entity to set privacy mode for"
-      example: "tapo_control.living_room"
+      example: "camera.living_room"
     privacy_mode: 
       description: "Sets privacy mode for camera. Possible values: on, off"
       example: "on"
@@ -30,7 +30,7 @@ set_alarm_mode:
   fields:
     entity_id:
       description: "Entity to set alarm mode for"
-      example: "tapo_control.living_room"
+      example: "camera.living_room"
     alarm_mode: 
       description: "Sets alarm mode for camera. Possible values: on, off"
       example: "on"
@@ -45,7 +45,7 @@ set_led_mode:
   fields:
     entity_id:
       description: "Entity to set LED mode for"
-      example: "tapo_control.living_room"
+      example: "camera.living_room"
     led_mode: 
       description: "Sets LED mode for camera. Possible values: on, off"
       example: "on"
@@ -54,7 +54,7 @@ set_motion_detection_mode:
   fields:
     entity_id:
       description: "Entity to set motion detection mode for"
-      example: "tapo_control.living_room"
+      example: "camera.living_room"
     motion_detection_mode: 
       description: "Sets motion detection mode for camera. Possible values: high, normal, low, off"
       example: "normal"
@@ -65,7 +65,7 @@ set_auto_track_mode:
   fields:
     entity_id:
       description: "Entity to set auto track mode for"
-      example: "tapo_control.living_room"
+      example: "camera.living_room"
     auto_track_mode: 
       description: "Sets auto track mode for camera. Possible values: on, off"
       example: "on"
@@ -74,13 +74,13 @@ reboot:
   fields:
     entity_id:
       description: "Entity to reboot"
-      example: "tapo_control.living_room"
+      example: "camera.living_room"
 save_preset:
   description: Saves the current PTZ position to a preset
   fields:
     entity_id:
       description: "Entity to save the preset for"
-      example: "tapo_control.living_room"
+      example: "camera.living_room"
     name:
       description: "Name of the preset. Cannot be empty or a number"
       example: "Entry Door"
@@ -89,7 +89,13 @@ delete_preset:
   fields:
     entity_id:
       description: "Entity to delete the preset for"
-      example: "tapo_control.living_room"
+      example: "camera.living_room"
     preset:
       description: "PTZ preset ID or a Name. See possible presets in entity attributes"
       example: "1"
+format:
+  description: Formats the SD card of a camera
+  fields:
+    entity_id:
+      description: "Entity to format"
+      example: "camera.living_room"
