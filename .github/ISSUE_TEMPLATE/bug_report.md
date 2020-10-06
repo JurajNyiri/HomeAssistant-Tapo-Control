@@ -50,5 +50,14 @@ Exception: Error: -1337 Response:{"error": "Not enough pixels!!", "error_code": 
  - Device Model: [e.g. C200]
  - FW: [e.g. 1.0.14 Build 200720 Rel.38552n(4555)]
 
+**Using stream component**
+[yes/no]
+
+**Camera has all attributes filled out properly in developer tools**
+[yes/no - provide more info]
+
+**HASS Environment**
+[Describe the environment where you are running camera in, for example: Docker on Synology NAS]
+
 **Additional context**
 Add any other context about the problem here.

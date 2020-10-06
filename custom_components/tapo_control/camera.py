@@ -7,8 +7,13 @@ from pytapo import Tapo
 from homeassistant.util import slugify
 from homeassistant.helpers import entity_platform
 from homeassistant.components.camera import SUPPORT_STREAM, Camera
+from homeassistant.components.ffmpeg import DATA_FFMPEG
+from homeassistant.helpers.aiohttp_client import (
+    async_aiohttp_proxy_stream
+)
+from haffmpeg.camera import CameraMjpeg
 from .utils import getCamData
-import logging
+import logging 
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,6 +61,7 @@ class TapoCamEntity(Camera):
     def __init__(self, hass: HomeAssistant, entry: dict, controller: Tapo, HDStream: boolean, camData):
         super().__init__()
         self._controller = controller
+        self._ffmpeg = hass.data[DATA_FFMPEG]
         self._entry = entry
         self._hdstream = HDStream
         self._host = entry.data.get(CONF_IP_ADDRESS)
@@ -115,7 +121,25 @@ class TapoCamEntity(Camera):
     def should_poll(self):
         return True
 
-    async def stream_source(self):
+    async def async_camera_image(self):
+        return None
+
+    async def handle_async_mjpeg_stream(self, request):
+        streaming_url = self.getStreamSource()
+        stream = CameraMjpeg(self._ffmpeg.binary, loop=self.hass.loop)
+        await stream.open_camera(streaming_url)
+        try:
+            stream_reader = await stream.get_reader()
+            return await async_aiohttp_proxy_stream(
+                self.hass,
+                request,
+                stream_reader,
+                self._ffmpeg.ffmpeg_stream_content_type,
+            )
+        finally:
+            await stream.close()
+
+    def getStreamSource(self):
         if(self._hdstream):
             streamType = "stream1"
         else:
@@ -126,6 +150,9 @@ class TapoCamEntity(Camera):
     async def async_update(self):
         camData = await getCamData(self.hass, self._controller)
         self.updateCam(camData)
+
+    async def stream_source(self):
+        return self.getStreamSource()
 
     def updateCam(self, camData):
         self._state = "idle"
