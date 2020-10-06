@@ -3,19 +3,16 @@ from .const import *
 from homeassistant.core import HomeAssistant
 from homeassistant.const import (CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD)
 from typing import Callable
-from homeassistant.helpers.entity import Entity
 from pytapo import Tapo
 from homeassistant.util import slugify
 from homeassistant.helpers import entity_platform
 from homeassistant.components.camera import SUPPORT_STREAM, Camera
+from .utils import getCamData
 import logging
 
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities: Callable):
-    async_add_entities([TapoCamEntity(entry, hass.data[DOMAIN][entry.entry_id],True)])
-    async_add_entities([TapoCamEntity(entry, hass.data[DOMAIN][entry.entry_id],False)])
-
     platform = entity_platform.current_platform.get()
     platform.async_register_entity_service(
         SERVICE_SET_LED_MODE, SCHEMA_SERVICE_SET_LED_MODE, "set_led_mode",
@@ -48,28 +45,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities
         SERVICE_FORMAT, SCHEMA_SERVICE_FORMAT, "format",
     )
 
+    camData = await getCamData(hass, hass.data[DOMAIN][entry.entry_id])
+
+    async_add_entities([TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id],True,camData)])
+    async_add_entities([TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id],False,camData)])
+
+
 
 class TapoCamEntity(Camera):
-    def __init__(self, entry: dict, controller: Tapo, HDStream: boolean):
+    def __init__(self, hass: HomeAssistant, entry: dict, controller: Tapo, HDStream: boolean, camData):
         super().__init__()
-        self._attributes = {}
-        self._motion_detection_enabled = None
-        self._motion_detection_sensitivity = None
-        self._privacy_mode = None
-        self._basic_info = {}
-        self._mac = ""
-        self._alarm = None
-        self._alarm_mode = None
-        self._led = None
-        self._auto_track = None
-
         self._controller = controller
         self._entry = entry
         self._hdstream = HDStream
         self._host = entry.data.get(CONF_IP_ADDRESS)
         self._username = entry.data.get(CONF_USERNAME)
         self._password = entry.data.get(CONF_PASSWORD)
-        self.manualUpdate()
+
+        self.updateCam(camData)
     
     @property
     def supported_features(self):
@@ -99,11 +92,11 @@ class TapoCamEntity(Camera):
     @property
     def device_info(self):
         return {
-            "identifiers": {(DOMAIN, slugify(f"{self._mac}_tapo_control"))},
-            "name": self._basic_info['device_alias'],
+            "identifiers": {(DOMAIN, slugify(f"{self._attributes['mac']}_tapo_control"))},
+            "name": self._attributes['device_alias'],
             "manufacturer": "TP-Link",
-            "model": self._basic_info['device_model'],
-            "sw_version": self._basic_info['sw_version']
+            "model": self._attributes['device_model'],
+            "sw_version": self._attributes['sw_version']
         }
 
     @property
@@ -116,7 +109,7 @@ class TapoCamEntity(Camera):
     
     @property
     def model(self):
-        return self._basic_info['device_model']
+        return self._attributes['device_model']
     
     @property
     def should_poll(self):
@@ -130,66 +123,25 @@ class TapoCamEntity(Camera):
         streamURL = f"rtsp://{self._username}:{self._password}@{self._host}:554/{streamType}"
         return streamURL
     
-    def update(self):
-        self.manualUpdate()
+    async def async_update(self):
+        camData = await getCamData(self.hass, self._controller)
+        self.updateCam(camData)
 
-    def manualUpdate(self):
-        self._basic_info = self._controller.getBasicInfo()['device_info']['basic_info']
-        self._attributes = self._basic_info
-        self._mac = self._basic_info['mac']
+    def updateCam(self, camData):
         self._state = "idle"
-        try:
-            motionDetectionData = self._controller.getMotionDetection()
-            self._motion_detection_enabled = motionDetectionData['enabled']
-            if(motionDetectionData['digital_sensitivity'] == "20"):
-                self._motion_detection_sensitivity = "low"
-            elif(motionDetectionData['digital_sensitivity'] == "50"):
-                self._motion_detection_sensitivity = "normal"
-            elif(motionDetectionData['digital_sensitivity'] == "80"):
-                self._motion_detection_sensitivity = "high"
-            else:
-                self._motion_detection_sensitivity = None
-        except:
-            self._motion_detection_enabled = None
-            self._motion_detection_sensitivity = None
-        self._attributes['motion_detection_sensitivity'] = self._motion_detection_sensitivity
+        self._motion_detection_enabled = camData['motion_detection_enabled']
 
-        try:
-            self._privacy_mode = self._controller.getPrivacyMode()['enabled']
-        except:
-            self._privacy_mode = None
-        self._attributes['privacy_mode'] = self._privacy_mode
-
-        try:
-            alarmData = self._controller.getAlarm()
-            self._alarm = alarmData['enabled']
-            self._alarm_mode = alarmData['alarm_mode']
-        except:
-            self._alarm = None
-            self._alarm_mode = None
-        self._attributes['alarm'] = self._alarm
-        self._attributes['alarm_mode'] = self._alarm_mode
-
-        try:
-            self._led = self._controller.getLED()['enabled']
-        except:
-            self._led = None
-        self._attributes['led'] = self._led
-
-        try:
-            self._auto_track = self._controller.getAutoTrackTarget()['enabled']
-        except:
-            self._auto_track = None
-        self._attributes['auto_track'] = self._auto_track
-        
-
-        if(self._basic_info['device_model'] in DEVICES_WITH_NO_PRESETS):
-            self._attributes['presets'] = {}
-        else:
-            self._attributes['presets'] = self._controller.getPresets()
+        self._attributes = camData['basic_info']
+        self._attributes['motion_detection_sensitivity'] = camData['motion_detection_sensitivity']
+        self._attributes['privacy_mode'] = camData['privacy_mode']
+        self._attributes['alarm'] = camData['alarm']
+        self._attributes['alarm_mode'] = camData['alarm_mode']
+        self._attributes['led'] = camData['led']
+        self._attributes['auto_track'] = camData['auto_track']
+        self._attributes['presets'] = camData['presets']
 
     def getName(self):
-        name = self._basic_info['device_alias']
+        name = self._attributes['device_alias']
         if(self._hdstream):
             name += " - HD"
         else:
@@ -201,7 +153,7 @@ class TapoCamEntity(Camera):
             streamType = "hd"
         else:
             streamType = "sd"
-        return slugify(f"{self._mac}_{streamType}_tapo_control")
+        return slugify(f"{self._attributes['mac']}_{streamType}_tapo_control")
 
 
     def ptz(self, tilt = None, pan = None, preset = None, distance = None):
@@ -251,7 +203,7 @@ class TapoCamEntity(Camera):
             self._controller.setPrivacyMode(True)
         else:
             self._controller.setPrivacyMode(False)
-        self.manualUpdate()
+        self.async_schedule_update_ha_state(True)
 
     def set_alarm_mode(self, alarm_mode, sound = None, light = None):
         if(not light):
@@ -262,28 +214,28 @@ class TapoCamEntity(Camera):
             self._controller.setAlarm(True, True if sound == "on" else False, True if light == "on" else False)
         else:
             self._controller.setAlarm(False, True if sound == "on" else False, True if light == "on" else False)
-        self.manualUpdate()
+        self.async_schedule_update_ha_state(True)
 
     def set_led_mode(self, led_mode: str):
         if(led_mode == "on"):
             self._controller.setLEDEnabled(True)
         else:
             self._controller.setLEDEnabled(False)
-        self.manualUpdate()
+        self.async_schedule_update_ha_state(True)
 
     def set_motion_detection_mode(self, motion_detection_mode):
         if(motion_detection_mode == "off"):
             self._controller.setMotionDetection(False)
         else:
             self._controller.setMotionDetection(True, motion_detection_mode)
-        self.manualUpdate()
+        self.async_schedule_update_ha_state(True)
 
     def set_auto_track_mode(self, auto_track_mode: str):
         if(auto_track_mode == "on"):
             self._controller.setAutoTrackTarget(True)
         else:
             self._controller.setAutoTrackTarget(False)
-        self.manualUpdate()
+        self.async_schedule_update_ha_state(True)
 
     def reboot(self):
         self._controller.reboot()
@@ -291,14 +243,14 @@ class TapoCamEntity(Camera):
     def save_preset(self, name):
         if(not name == "" and not name.isnumeric()):
             self._controller.savePreset(name)
-            self.manualUpdate()
+            self.async_schedule_update_ha_state(True)
         else:
             _LOGGER.error("Incorrect "+NAME+" value. It cannot be empty or a number.")
 
     def delete_preset(self, preset):
         if(preset.isnumeric()):
             self._controller.deletePreset(preset)
-            self.manualUpdate()
+            self.async_schedule_update_ha_state(True)
         else:
             foundKey = False
             for key, value in self._attributes['presets'].items():
@@ -306,7 +258,7 @@ class TapoCamEntity(Camera):
                     foundKey = key
             if(foundKey):
                 self._controller.deletePreset(foundKey)
-                self.manualUpdate()
+                self.async_schedule_update_ha_state(True)
             else:
                 _LOGGER.error("Preset "+preset+" does not exist.")
 

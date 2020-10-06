@@ -1,10 +1,10 @@
-from pytapo import Tapo
 from homeassistant.const import (CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD)
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 import logging
 from .const import *
+from .utils import registerController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
     try:
-        tapoController = Tapo(host, username, password)
+        tapoController = await hass.async_add_executor_job(registerController, host, username, password)
 
         hass.data[DOMAIN][entry.entry_id] = tapoController
 
@@ -34,3 +34,4 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         raise ConfigEntryNotReady
 
     return True
+
