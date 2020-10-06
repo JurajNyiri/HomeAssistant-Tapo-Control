@@ -151,6 +151,9 @@ class TapoCamEntity(Camera):
         camData = await getCamData(self.hass, self._controller)
         self.updateCam(camData)
 
+    async def stream_source(self):
+        return self.getStreamSource()
+
     def updateCam(self, camData):
         self._state = "idle"
         self._motion_detection_enabled = camData['motion_detection_enabled']
