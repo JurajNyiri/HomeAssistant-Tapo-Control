@@ -2,10 +2,10 @@
     "domain": "tapo_control",
     "name": "Tapo: Cameras Control",
     "documentation": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control",
-    "dependencies": [],
     "issue_tracker": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues",
     "codeowners": ["@JurajNyiri"],
     "requirements": ["pytapo==0.11"],
+    "dependencies": ["ffmpeg"],
     "config_flow": true
   }
   
