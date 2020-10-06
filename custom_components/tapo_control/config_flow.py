@@ -7,6 +7,7 @@ from homeassistant.const import (
 )
 import voluptuous as vol
 import logging
+from .utils import registerController
 
 from .const import DOMAIN
 
@@ -31,7 +32,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 username = user_input[CONF_USERNAME]
                 password = user_input[CONF_PASSWORD]
 
-                Tapo(host, username, password)
+                await self.hass.async_add_executor_job(registerController, host, username, password)
 
                 return self.async_create_entry(
                     title=host,
