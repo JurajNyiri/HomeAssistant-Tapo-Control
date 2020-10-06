@@ -53,6 +53,9 @@ Exception: Error: -1337 Response:{"error": "Not enough pixels!!", "error_code": 
 **Using stream component**
 [yes/no]
 
+**Camera works through onvif component OR different cameras work in general**
+[yes/no]
+
 **Camera has all attributes filled out properly in developer tools**
 [yes/no - provide more info]
 
