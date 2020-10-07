@@ -12,8 +12,10 @@ from homeassistant.helpers.aiohttp_client import (
     async_aiohttp_proxy_stream
 )
 from haffmpeg.camera import CameraMjpeg
+from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from .utils import getCamData
 import logging 
+import asyncio
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -122,7 +124,15 @@ class TapoCamEntity(Camera):
         return True
 
     async def async_camera_image(self):
-        return None
+        ffmpeg = ImageFrame(self._ffmpeg.binary, loop=self.hass.loop)
+        streaming_url = self.getStreamSource()
+        image = await asyncio.shield(
+            ffmpeg.get_image(
+                streaming_url,
+                output_format=IMAGE_JPEG,
+            )
+        )
+        return image
 
     async def handle_async_mjpeg_stream(self, request):
         streaming_url = self.getStreamSource()
