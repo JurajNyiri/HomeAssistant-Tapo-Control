@@ -52,17 +52,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities
         SERVICE_FORMAT, SCHEMA_SERVICE_FORMAT, "format",
     )
 
-    camData = await getCamData(hass, hass.data[DOMAIN][entry.entry_id])
-
-    async_add_entities([TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id],True,camData)])
-    async_add_entities([TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id],False,camData)])
+    camData = hass.data[DOMAIN][entry.entry_id]['initialData']
+    hass.data[DOMAIN][entry.entry_id]['entities'] = [
+        TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id],True),
+        TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id],False)
+    ]
+    async_add_entities(hass.data[DOMAIN][entry.entry_id]['entities'])
+    hass.data[DOMAIN][entry.entry_id].pop('initialData')
 
 
 
 class TapoCamEntity(Camera):
-    def __init__(self, hass: HomeAssistant, entry: dict, controller: Tapo, HDStream: boolean, camData):
+    def __init__(self, hass: HomeAssistant, entry: dict, tapoData: Tapo, HDStream: boolean):
         super().__init__()
-        self._controller = controller
+        self._controller = tapoData['controller']
+        self._coordinator = tapoData['coordinator']
         self._ffmpeg = hass.data[DATA_FFMPEG]
         self._entry = entry
         self._hdstream = HDStream
@@ -70,7 +74,7 @@ class TapoCamEntity(Camera):
         self._username = entry.data.get(CONF_USERNAME)
         self._password = entry.data.get(CONF_PASSWORD)
 
-        self.updateCam(camData)
+        self.updateCam(tapoData['initialData'])
     
     @property
     def supported_features(self):
@@ -158,8 +162,7 @@ class TapoCamEntity(Camera):
         return streamURL
     
     async def async_update(self):
-        camData = await getCamData(self.hass, self._controller)
-        self.updateCam(camData)
+        await self._coordinator.async_request_refresh()
 
     async def stream_source(self):
         return self.getStreamSource()
@@ -193,17 +196,17 @@ class TapoCamEntity(Camera):
         return slugify(f"{self._attributes['mac']}_{streamType}_tapo_control")
 
 
-    def ptz(self, tilt = None, pan = None, preset = None, distance = None):
+    async def ptz(self, tilt = None, pan = None, preset = None, distance = None):
         if preset:
             if(preset.isnumeric()):
-                self._controller.setPreset(preset)
+                await self.hass.async_add_executor_job(self._controller.setPreset, preset)
             else:
                 foundKey = False
                 for key, value in self._attributes['presets'].items():
                     if value == preset:
                         foundKey = key
                 if(foundKey):
-                    self._controller.setPreset(foundKey)
+                    await self.hass.async_add_executor_job(self._controller.setPreset, foundKey)
                 else:
                     _LOGGER.error("Preset "+preset+" does not exist.")
         elif tilt:
@@ -216,9 +219,9 @@ class TapoCamEntity(Camera):
             else:
                 degrees = 5
             if tilt == "UP":
-                self._controller.moveMotor(0,degrees)
+                await self.hass.async_add_executor_job(self._controller.moveMotor,0, degrees)
             else:
-                self._controller.moveMotor(0,-degrees)
+                await self.hass.async_add_executor_job(self._controller.moveMotor,0, -degrees)
         elif pan:
             if distance:
                 distance = float(distance)
@@ -229,76 +232,77 @@ class TapoCamEntity(Camera):
             else:
                 degrees = 5
             if pan == "RIGHT":
-                self._controller.moveMotor(degrees,0)
+                await self.hass.async_add_executor_job(self._controller.moveMotor, degrees,0)
             else:
-                self._controller.moveMotor(-degrees,0)
+                await self.hass.async_add_executor_job(self._controller.moveMotor, -degrees,0)
         else:
             _LOGGER.error("Incorrect additional PTZ properties. You need to specify at least one of " + TILT + ", " + PAN + ", " + PRESET + ".")
+        await self._coordinator.async_request_refresh()
 
-    def set_privacy_mode(self, privacy_mode: str):
+    async def set_privacy_mode(self, privacy_mode: str):
         if(privacy_mode == "on"):
-            self._controller.setPrivacyMode(True)
+            await self.hass.async_add_executor_job(self._controller.setPrivacyMode, True)
         else:
-            self._controller.setPrivacyMode(False)
-        self.async_schedule_update_ha_state(True)
+            await self.hass.async_add_executor_job(self._controller.setPrivacyMode, False)
+        await self._coordinator.async_request_refresh()
 
-    def set_alarm_mode(self, alarm_mode, sound = None, light = None):
+    async def set_alarm_mode(self, alarm_mode, sound = None, light = None):
         if(not light):
             light = "on"
         if(not sound):
             sound = "on"
         if(alarm_mode == "on"):
-            self._controller.setAlarm(True, True if sound == "on" else False, True if light == "on" else False)
+            await self.hass.async_add_executor_job(self._controller.setAlarm, True, True if sound == "on" else False, True if light == "on" else False)
         else:
-            self._controller.setAlarm(False, True if sound == "on" else False, True if light == "on" else False)
-        self.async_schedule_update_ha_state(True)
+            await self.hass.async_add_executor_job(self._controller.setAlarm, False, True if sound == "on" else False, True if light == "on" else False)
+        await self._coordinator.async_request_refresh()
 
-    def set_led_mode(self, led_mode: str):
+    async def set_led_mode(self, led_mode: str):
         if(led_mode == "on"):
-            self._controller.setLEDEnabled(True)
+            await self.hass.async_add_executor_job(self._controller.setLEDEnabled, True)
         else:
-            self._controller.setLEDEnabled(False)
-        self.async_schedule_update_ha_state(True)
+            await self.hass.async_add_executor_job(self._controller.setLEDEnabled, False)
+        await self._coordinator.async_request_refresh()
 
-    def set_motion_detection_mode(self, motion_detection_mode):
+    async def set_motion_detection_mode(self, motion_detection_mode):
         if(motion_detection_mode == "off"):
-            self._controller.setMotionDetection(False)
+            await self.hass.async_add_executor_job(self._controller.setMotionDetection, False)
         else:
-            self._controller.setMotionDetection(True, motion_detection_mode)
-        self.async_schedule_update_ha_state(True)
+            await self.hass.async_add_executor_job(self._controller.setMotionDetection, True, motion_detection_mode)
+        await self._coordinator.async_request_refresh()
 
-    def set_auto_track_mode(self, auto_track_mode: str):
+    async def set_auto_track_mode(self, auto_track_mode: str):
         if(auto_track_mode == "on"):
-            self._controller.setAutoTrackTarget(True)
+            await self.hass.async_add_executor_job(self._controller.setAutoTrackTarget, True)
         else:
-            self._controller.setAutoTrackTarget(False)
-        self.async_schedule_update_ha_state(True)
+            await self.hass.async_add_executor_job(self._controller.setAutoTrackTarget, False)
+        await self._coordinator.async_request_refresh()
 
-    def reboot(self):
-        self._controller.reboot()
+    async def reboot(self):
+        await self.hass.async_add_executor_job(self._controller.reboot)
 
-    def save_preset(self, name):
+    async def save_preset(self, name):
         if(not name == "" and not name.isnumeric()):
-            self._controller.savePreset(name)
-            self.async_schedule_update_ha_state(True)
+            await self.hass.async_add_executor_job(self._controller.savePreset, name)
+            await self._coordinator.async_request_refresh()
         else:
             _LOGGER.error("Incorrect "+NAME+" value. It cannot be empty or a number.")
 
-    def delete_preset(self, preset):
+    async def delete_preset(self, preset):
         if(preset.isnumeric()):
-            self._controller.deletePreset(preset)
-            self.async_schedule_update_ha_state(True)
+            await self.hass.async_add_executor_job(self._controller.deletePreset, preset)
+            await self._coordinator.async_request_refresh()
         else:
             foundKey = False
             for key, value in self._attributes['presets'].items():
                 if value == preset:
                     foundKey = key
             if(foundKey):
-                self._controller.deletePreset(foundKey)
-                self.async_schedule_update_ha_state(True)
+                await self.hass.async_add_executor_job(self._controller.deletePreset, foundKey)
+                await self._coordinator.async_request_refresh()
             else:
                 _LOGGER.error("Preset "+preset+" does not exist.")
 
-    def format(self):
-        self._controller.format()
+    async def format(self):
+        await self.hass.async_add_executor_job(self._controller.format)
                 
