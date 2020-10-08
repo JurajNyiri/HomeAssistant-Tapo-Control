@@ -269,6 +269,14 @@ class TapoCamEntity(Camera):
         else:
             await self.hass.async_add_executor_job(self._controller.setMotionDetection, True, motion_detection_mode)
         await self._coordinator.async_request_refresh()
+    
+    async def async_enable_motion_detection(self):
+        await self.hass.async_add_executor_job(self._controller.setMotionDetection, False)
+        await self._coordinator.async_request_refresh()
+    
+    async def async_disable_motion_detection(self):
+        await self.hass.async_add_executor_job(self._controller.setMotionDetection, True)
+        await self._coordinator.async_request_refresh()
 
     async def set_auto_track_mode(self, auto_track_mode: str):
         if(auto_track_mode == "on"):
