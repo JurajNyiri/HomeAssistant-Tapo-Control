@@ -7,7 +7,7 @@ from typing import Callable
 from pytapo import Tapo
 from homeassistant.util import slugify
 from homeassistant.helpers import entity_platform
-from homeassistant.components.camera import SUPPORT_STREAM, Camera
+from homeassistant.components.camera import SUPPORT_STREAM, SUPPORT_ON_OFF, Camera
 from homeassistant.components.ffmpeg import DATA_FFMPEG
 from homeassistant.helpers.aiohttp_client import (
     async_aiohttp_proxy_stream
@@ -77,7 +77,7 @@ class TapoCamEntity(Camera):
     
     @property
     def supported_features(self):
-        return SUPPORT_STREAM
+        return SUPPORT_STREAM | SUPPORT_ON_OFF
 
     @property
     def icon(self) -> str:
@@ -277,6 +277,12 @@ class TapoCamEntity(Camera):
     async def async_disable_motion_detection(self):
         await self.hass.async_add_executor_job(self._controller.setMotionDetection, True)
         await self._coordinator.async_request_refresh()
+    
+    async def async_turn_on(self):
+        await self.set_privacy_mode("off")
+    
+    async def async_turn_off(self):
+        await self.set_privacy_mode("on")
 
     async def set_auto_track_mode(self, auto_track_mode: str):
         if(auto_track_mode == "on"):
