@@ -1,8 +1,29 @@
 from .const import *
+import onvif
+from onvif import ONVIFCamera
+import os
 from pytapo import Tapo
 
 def registerController(host, username, password):
     return Tapo(host, username, password)
+
+async def initOnvifEvents(hass, host, username, password):
+    device = ONVIFCamera(host, 2020, username, password, f"{os.path.dirname(onvif.__file__)}/wsdl/",no_cache=True)
+    await device.update_xaddrs()
+    device_mgmt = device.create_devicemgmt_service()
+    device_info = await device_mgmt.GetDeviceInformation()
+    if(not 'Manufacturer' in device_info):
+        raise Exception("Onvif connection has failed.")
+
+    eventsAvailable = False
+    try:
+        event_service = device.create_events_service()
+        event_capabilities = await event_service.GetServiceCapabilities()
+        eventsAvailable = event_capabilities and event_capabilities.WSPullPointSupport
+    except:
+        raise Exception("Onvif events not available.")
+
+    return device
 
 async def getCamData(hass, controller):
     camData = {}

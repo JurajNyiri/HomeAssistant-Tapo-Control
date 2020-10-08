@@ -1,16 +1,12 @@
+import logging
 from homeassistant.const import (CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD)
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.components.onvif.event import EventManager
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-import onvif
-from onvif import ONVIFCamera
-import datetime as dt
-import logging
-import os
+from homeassistant.components.onvif.event import EventManager
 from .const import *
-from .utils import registerController, getCamData
+from .utils import registerController, getCamData, initOnvifEvents
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,44 +23,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
 
-    ### ONVIF - START
-    """
-    device = ONVIFCamera(host, 2020, username, password, f"{os.path.dirname(onvif.__file__)}/wsdl/",no_cache=True)
-    await device.update_xaddrs()
-    device_mgmt = device.create_devicemgmt_service()
-    device_info = await device_mgmt.GetDeviceInformation()
-    if(not 'Manufacturer' in device_info):
-        raise Exception("Onvif connection has failed.")
-
-    eventsAvailable = False
-    try:
-        event_service = device.create_events_service()
-        event_capabilities = await event_service.GetServiceCapabilities()
-        eventsAvailable = event_capabilities and event_capabilities.WSPullPointSupport
-    except:
-        raise Exception("Onvif events not available.")
-
-    events = EventManager(
-        hass, device, entry.entry_id + "_tapo_events"
-    )
-    print(f"{host}: {str(await events.async_start())}")
-
-    def async_check_entities():
-        for event in events.get_platform("binary_sensor"):
-            print(f"tapo event: " + str(event))
-    events.async_add_listener(async_check_entities)
-    """
-
-    ### ONVIF - END
-
-    """ single update"""
-
-    
-    
     try:
         tapoController = await hass.async_add_executor_job(registerController, host, username, password)
 
         async def async_update_data():
+            if(not hass.data[DOMAIN][entry.entry_id]['events']):
+                eventsStarted = await events.async_start()
+                if(eventsStarted):
+                    print("OK")
+                    hass.data[DOMAIN][entry.entry_id]['events'] = events
+                    events.async_add_listener(async_events_listener)
+                else:
+                    hass.data[DOMAIN][entry.entry_id]['events'] = False
+                    print("fail")
+                    
             camData = await getCamData(hass, tapoController)
             for entity in hass.data[DOMAIN][entry.entry_id]['entities']:
                 entity.updateCam(camData)
@@ -85,6 +57,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "coordinator": tapoCoordinator,
             "initialData": camData
         }
+
+        ### ONVIF - START
+        def async_events_listener():
+            for event in events.get_platform("binary_sensor"):
+                print(f"tapo event: " + str(event))
+
+        device = await initOnvifEvents(hass, host, username, password)
+
+        events = EventManager(
+            hass, device, f"{entry.entry_id}_tapo_events"
+        )
+        
+        eventsStarted = await events.async_start()
+        if(eventsStarted):
+            print("OK")
+            hass.data[DOMAIN][entry.entry_id]['events'] = events
+            events.async_add_listener(async_events_listener)
+        else:
+            hass.data[DOMAIN][entry.entry_id]['events'] = False
+            print("fail")
+        ### ONVIF - END
+
+
 
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "camera")
