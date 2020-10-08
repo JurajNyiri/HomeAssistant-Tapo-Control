@@ -18,7 +18,12 @@ To add multiple cameras, add integration multiple times.
 
 ## Services
 
-This custom component creates tapo_control.* entities in your Home Assistant. Use these entity_id(s) in following service calls.
+This custom component creates:
+- tapo_control.* services to control a camera
+- 2 camera entities, one for HD and one for SD stream
+- 1 binary sensor for motion after the motion is detected for the first time
+
+Use these services in following service calls.
 
 <details>
   <summary>tapo_control.ptz</summary>
@@ -137,6 +142,18 @@ This custom component creates tapo_control.* entities in your Home Assistant. Us
 
   - **entity_id** Required: Entity to delete the preset for
   - **preset** Required: PTZ preset ID or a Name. See possible presets in entity attributes
+</details>
+
+## Troubleshooting
+
+<details>
+  <summary>Binary sensor for motion doesn't show up or work</summary>
+
+  Motion sensor is added only after a motion is detected for the first time. 
+
+  - Make sure the camera has motion detection turned on
+  - Try walking in front of the camera
+  - If above didn't work, restart the camera and try again
 </details>
 
 ## Have a comment or a suggestion?
