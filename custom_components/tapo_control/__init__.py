@@ -1,5 +1,6 @@
 import logging
-from homeassistant.const import (CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD)
+import asyncio
+from homeassistant.const import (CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD, EVENT_HOMEASSISTANT_STOP)
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -15,6 +16,23 @@ async def async_setup(hass: HomeAssistant, config: dict):
     return True
 
 
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+    print("tapo async_unload_entry")
+    """Unload a config entry."""
+    platforms = ["camera","binary_sensor"]
+
+    if(hass.data[DOMAIN][entry.entry_id]['events']):
+        await hass.data[DOMAIN][entry.entry_id]['events'].async_stop()
+
+    return all(
+        await asyncio.gather(
+            *[
+                hass.config_entries.async_forward_entry_unload(entry, component)
+                for component in platforms
+            ]
+        )
+    )
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Set up the Tapo: Cameras Control component from a config entry."""
     hass.data.setdefault(DOMAIN, {})
@@ -26,16 +44,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     try:
         tapoController = await hass.async_add_executor_job(registerController, host, username, password)
 
-        async def async_update_data():
-            if(not hass.data[DOMAIN][entry.entry_id]['events']):
-                eventsStarted = await events.async_start()
-                if(eventsStarted):
-                    print("OK")
-                    hass.data[DOMAIN][entry.entry_id]['events'] = events
+        async def setupEvents():
+            if(not hass.data[DOMAIN][entry.entry_id]['events'].started):
+                events = hass.data[DOMAIN][entry.entry_id]['events']
+                if(await events.async_start()):
                     events.async_add_listener(async_events_listener)
+                    print("OK")
+                    return True
                 else:
-                    hass.data[DOMAIN][entry.entry_id]['events'] = False
-                    print("fail")
+                    print("FAIL")
+                    return False
+
+        async def async_update_data():
+            if not hass.data[DOMAIN][entry.entry_id]['eventsDevice']: # todo simplify _ 1
+                print("trying to set up onvif connection again")
+                hass.data[DOMAIN][entry.entry_id]['eventsDevice'] = await initOnvifEvents(hass, host, username, password)
+
+                if(hass.data[DOMAIN][entry.entry_id]['eventsDevice']):
+                    hass.data[DOMAIN][entry.entry_id]['events'] = EventManager(
+                        hass, hass.data[DOMAIN][entry.entry_id]['eventsDevice'], f"{entry.entry_id}_tapo_events"
+                    )
+                
+                    hass.data[DOMAIN][entry.entry_id]['eventsSetup'] = await setupEvents()
+            elif not hass.data[DOMAIN][entry.entry_id]['eventsSetup']:
+                print("trying to set up events again")
+                hass.data[DOMAIN][entry.entry_id]['eventsSetup'] = await setupEvents()
                     
             camData = await getCamData(hass, tapoController)
             for entity in hass.data[DOMAIN][entry.entry_id]['entities']:
@@ -60,23 +93,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         ### ONVIF - START
         def async_events_listener():
-            for event in events.get_platform("binary_sensor"):
+            for event in hass.data[DOMAIN][entry.entry_id]['events'].get_platform("binary_sensor"):
                 print(f"tapo event: " + str(event))
 
-        device = await initOnvifEvents(hass, host, username, password)
+        # todo simplify _ 1
+        hass.data[DOMAIN][entry.entry_id]['eventsDevice'] = await initOnvifEvents(hass, host, username, password)
 
-        events = EventManager(
-            hass, device, f"{entry.entry_id}_tapo_events"
-        )
+        if(hass.data[DOMAIN][entry.entry_id]['eventsDevice']):
+            hass.data[DOMAIN][entry.entry_id]['events'] = EventManager(
+                hass, hass.data[DOMAIN][entry.entry_id]['eventsDevice'], f"{entry.entry_id}_tapo_events"
+            )
         
-        eventsStarted = await events.async_start()
-        if(eventsStarted):
-            print("OK")
-            hass.data[DOMAIN][entry.entry_id]['events'] = events
-            events.async_add_listener(async_events_listener)
-        else:
-            hass.data[DOMAIN][entry.entry_id]['events'] = False
-            print("fail")
+            hass.data[DOMAIN][entry.entry_id]['eventsSetup'] = await setupEvents()
         ### ONVIF - END
 
 
@@ -84,6 +112,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "camera")
         )
+
+        async def unsubscribe(event):
+            if(hass.data[DOMAIN][entry.entry_id]['events']):
+                await hass.data[DOMAIN][entry.entry_id]['events'].async_stop()
+
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, unsubscribe)
 
     except Exception as e:
         _LOGGER.error("Unable to connect to Tapo: Cameras Control controller: %s", str(e))

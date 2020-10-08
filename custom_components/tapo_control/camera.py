@@ -19,6 +19,10 @@ import asyncio
 
 _LOGGER = logging.getLogger(__name__)
 
+async def async_remove_entry(hass, entry) -> None: # todo enhance?
+    print("camera_async_remove_entry")
+    pass
+
 async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities: Callable):
     platform = entity_platform.current_platform.get()
     platform.async_register_entity_service(
