@@ -22,7 +22,9 @@ To add multiple cameras, add integration multiple times.
 
 ## Services
 
-This custom component creates tapo_control.* entities in your Home Assistant. Use these entity_id(s) in following service calls.
+This custom component creates tapo_control.* services and 2 camera entities per camera in your Home Assistant. 
+
+Use these services in following service calls.
 
 <details>
   <summary>tapo_control.ptz</summary>
