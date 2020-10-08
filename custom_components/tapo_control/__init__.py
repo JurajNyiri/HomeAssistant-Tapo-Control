@@ -48,8 +48,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             if(not hass.data[DOMAIN][entry.entry_id]['events'].started):
                 events = hass.data[DOMAIN][entry.entry_id]['events']
                 if(await events.async_start()):
-                    events.async_add_listener(async_events_listener)
+                    #events.async_add_listener(async_events_listener)
                     print("OK")
+                    hass.async_create_task(
+                        hass.config_entries.async_forward_entry_setup(entry, "binary_sensor")
+                    )
                     return True
                 else:
                     print("FAIL")
@@ -88,7 +91,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data[DOMAIN][entry.entry_id] = {
             "controller": tapoController,
             "coordinator": tapoCoordinator,
-            "initialData": camData
+            "initialData": camData,
+            "name": camData['basic_info']['device_alias']
         }
 
         ### ONVIF - START
