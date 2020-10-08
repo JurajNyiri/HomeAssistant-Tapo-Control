@@ -2,10 +2,6 @@
 
 Custom component - Tapo: Cameras Control - to add Tapo cameras into Home Assistant
 
-# WORK IN PROGRESS
-
-Do not use this branch, code is probably broken and does not work.
-
 ## Installation
 
 Copy contents of custom_components/tapo_control/ to custom_components/tapo_control/ in your Home Assistant config folder.
