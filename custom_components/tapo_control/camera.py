@@ -1,5 +1,6 @@
+import logging 
+import asyncio
 from homeassistant.helpers.config_validation import boolean
-from .const import *
 from homeassistant.core import HomeAssistant
 from homeassistant.const import (CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD)
 from typing import Callable
@@ -13,15 +14,9 @@ from homeassistant.helpers.aiohttp_client import (
 )
 from haffmpeg.camera import CameraMjpeg
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
-from .utils import getCamData
-import logging 
-import asyncio
+from .const import *
 
 _LOGGER = logging.getLogger(__name__)
-
-async def async_remove_entry(hass, entry) -> None: # todo enhance?
-    print("camera_async_remove_entry")
-    pass
 
 async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities: Callable):
     platform = entity_platform.current_platform.get()

@@ -1,8 +1,8 @@
-from .const import *
 import onvif
-from onvif import ONVIFCamera
 import os
+from onvif import ONVIFCamera
 from pytapo import Tapo
+from .const import *
 
 def registerController(host, username, password):
     return Tapo(host, username, password)

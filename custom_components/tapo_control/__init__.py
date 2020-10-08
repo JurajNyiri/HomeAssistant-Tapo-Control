@@ -17,21 +17,8 @@ async def async_setup(hass: HomeAssistant, config: dict):
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
-    print("tapo async_unload_entry")
-    """Unload a config entry."""
-    platforms = ["camera","binary_sensor"]
-
     if(hass.data[DOMAIN][entry.entry_id]['events']):
         await hass.data[DOMAIN][entry.entry_id]['events'].async_stop()
-
-    return all(
-        await asyncio.gather(
-            *[
-                hass.config_entries.async_forward_entry_unload(entry, component)
-                for component in platforms
-            ]
-        )
-    )
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Set up the Tapo: Cameras Control component from a config entry."""
@@ -58,13 +45,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             if(not hass.data[DOMAIN][entry.entry_id]['events'].started):
                 events = hass.data[DOMAIN][entry.entry_id]['events']
                 if(await events.async_start()):
-                    print("OK")
                     hass.async_create_task(
                         hass.config_entries.async_forward_entry_setup(entry, "binary_sensor")
                     )
                     return True
                 else:
-                    print("FAIL")
                     return False
 
         async def async_update_data():

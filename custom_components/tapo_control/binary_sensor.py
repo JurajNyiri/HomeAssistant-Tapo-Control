@@ -1,9 +1,7 @@
 from typing import Optional
-
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.core import callback
 from .const import DOMAIN
-
 
 async def async_setup_entry(hass, entry, async_add_entities):
     events = hass.data[DOMAIN][entry.entry_id]['events']
@@ -27,8 +25,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
     events.async_add_listener(async_check_entities)
 
     return True
-    
-
 
 class TapoBinarySensor(BinarySensorEntity):
 
