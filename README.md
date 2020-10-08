@@ -152,6 +152,8 @@ Use these services in following service calls.
   Motion sensor is added only after a motion is detected for the first time. 
 
   - Make sure the camera has motion detection turned on
+  - Make sure the camera has privacy mode turned off
+  - Make sure the camera can see you and your movement
   - Try walking in front of the camera
   - If above didn't work, restart the camera and try again
 </details>
