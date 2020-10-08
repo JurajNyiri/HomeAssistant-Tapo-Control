@@ -22,7 +22,10 @@ To add multiple cameras, add integration multiple times.
 
 ## Services
 
-This custom component creates tapo_control.* services and 2 camera entities per camera in your Home Assistant. 
+This custom component creates:
+- tapo_control.* services to control a camera
+- 2 camera entities, one for HD and one for SD stream
+- 1 binary sensor for motion after the motion is detected for the first time
 
 Use these services in following service calls.
 
