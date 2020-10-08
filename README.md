@@ -145,6 +145,18 @@ Use these services in following service calls.
   - **preset** Required: PTZ preset ID or a Name. See possible presets in entity attributes
 </details>
 
+## Troubleshooting
+
+<details>
+  <summary>Binary sensor for motion doesn't show up or work</summary>
+
+  Motion sensor is added only after a motion is detected for the first time. 
+
+  - Make sure the camera has motion detection turned on
+  - Try walking in front of the camera
+  - If above didn't work, restart the camera and try again
+</details>
+
 ## Have a comment or a suggestion?
 
 Please [open a new issue](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new/choose), or discuss on [Home Assistant: Community Forum](https://community.home-assistant.io/t/tapo-cameras-control/231795).

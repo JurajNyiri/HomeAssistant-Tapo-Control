@@ -22,7 +22,7 @@ async def initOnvifEvents(hass, host, username, password):
             event_capabilities = await event_service.GetServiceCapabilities()
             eventsAvailable = event_capabilities and event_capabilities.WSPullPointSupport
         except:
-            raise Exception("Onvif events not available.")
+            return False
         return device
     except:
         pass

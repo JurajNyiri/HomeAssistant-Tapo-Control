@@ -44,11 +44,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     try:
         tapoController = await hass.async_add_executor_job(registerController, host, username, password)
 
+        async def setupOnvif():
+            hass.data[DOMAIN][entry.entry_id]['eventsDevice'] = await initOnvifEvents(hass, host, username, password)
+
+            if(hass.data[DOMAIN][entry.entry_id]['eventsDevice']):
+                hass.data[DOMAIN][entry.entry_id]['events'] = EventManager(
+                    hass, hass.data[DOMAIN][entry.entry_id]['eventsDevice'], f"{entry.entry_id}_tapo_events"
+                )
+            
+                hass.data[DOMAIN][entry.entry_id]['eventsSetup'] = await setupEvents()
+
         async def setupEvents():
             if(not hass.data[DOMAIN][entry.entry_id]['events'].started):
                 events = hass.data[DOMAIN][entry.entry_id]['events']
                 if(await events.async_start()):
-                    #events.async_add_listener(async_events_listener)
                     print("OK")
                     hass.async_create_task(
                         hass.config_entries.async_forward_entry_setup(entry, "binary_sensor")
@@ -59,20 +68,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     return False
 
         async def async_update_data():
-            if not hass.data[DOMAIN][entry.entry_id]['eventsDevice']: # todo simplify _ 1
-                print("trying to set up onvif connection again")
-                hass.data[DOMAIN][entry.entry_id]['eventsDevice'] = await initOnvifEvents(hass, host, username, password)
-
-                if(hass.data[DOMAIN][entry.entry_id]['eventsDevice']):
-                    hass.data[DOMAIN][entry.entry_id]['events'] = EventManager(
-                        hass, hass.data[DOMAIN][entry.entry_id]['eventsDevice'], f"{entry.entry_id}_tapo_events"
-                    )
-                
-                    hass.data[DOMAIN][entry.entry_id]['eventsSetup'] = await setupEvents()
+            # motion detection retries
+            if not hass.data[DOMAIN][entry.entry_id]['eventsDevice']:
+                # retry if connection to onvif failed
+                await setupOnvif()
             elif not hass.data[DOMAIN][entry.entry_id]['eventsSetup']:
-                print("trying to set up events again")
+                # retry if subscription to events failed
                 hass.data[DOMAIN][entry.entry_id]['eventsSetup'] = await setupEvents()
                     
+            # cameras state
             camData = await getCamData(hass, tapoController)
             for entity in hass.data[DOMAIN][entry.entry_id]['entities']:
                 entity.updateCam(camData)
@@ -95,23 +99,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "name": camData['basic_info']['device_alias']
         }
 
-        ### ONVIF - START
-        def async_events_listener():
-            for event in hass.data[DOMAIN][entry.entry_id]['events'].get_platform("binary_sensor"):
-                print(f"tapo event: " + str(event))
-
-        # todo simplify _ 1
-        hass.data[DOMAIN][entry.entry_id]['eventsDevice'] = await initOnvifEvents(hass, host, username, password)
-
-        if(hass.data[DOMAIN][entry.entry_id]['eventsDevice']):
-            hass.data[DOMAIN][entry.entry_id]['events'] = EventManager(
-                hass, hass.data[DOMAIN][entry.entry_id]['eventsDevice'], f"{entry.entry_id}_tapo_events"
-            )
-        
-            hass.data[DOMAIN][entry.entry_id]['eventsSetup'] = await setupEvents()
-        ### ONVIF - END
-
-
+        await setupOnvif()
 
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "camera")
