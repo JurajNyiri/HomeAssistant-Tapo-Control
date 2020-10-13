@@ -16,6 +16,8 @@ Add cameras via Integrations (search for Tapo) in Home Assistant UI.
 
 To add multiple cameras, add integration multiple times.
 
+See [Examples](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/blob/main/examples/EXAMPLES.md) for lovelace cards.
+
 ## Services
 
 This custom component creates:
