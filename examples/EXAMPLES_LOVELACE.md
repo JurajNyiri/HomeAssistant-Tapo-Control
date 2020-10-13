@@ -1,6 +1,6 @@
 # HomeAssistant - Tapo: Cameras Control Examples
 
-Below you can find some examples of usage of this custom component.
+Below you can find some examples of usage of this custom component in lovelace cards.
 
 - In all the examples, you need to replace camera entity with your entity and adjust the service calls according to your environment.
 - See [documentation for picture-glance card](https://www.home-assistant.io/lovelace/picture-glance/)
