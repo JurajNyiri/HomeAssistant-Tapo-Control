@@ -98,6 +98,8 @@ entities:
     tap_action:
       action: call-service
       service: tapo_control.reboot
+      service_data:
+        entity_id: camera.bedroom_hd
 hold_action:
   action: more-info
 ```
