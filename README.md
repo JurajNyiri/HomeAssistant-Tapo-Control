@@ -10,6 +10,15 @@ Copy contents of custom_components/tapo_control/ to custom_components/tapo_contr
 
 HACS is a community store for Home Assistant. You can install [HACS](https://github.com/custom-components/hacs) and then install Tapo: Camera Control from the HACS store.
 
+## Requirements
+
+### Network
+
+Following target TCP ports **must be open** in firewall to access from Home Assistant to Tapo Camera:
+* 443  - HTTPS to authenticate on camera
+* 554  - RTSP to fetch stream from camera
+* 2020 - ONVIF to search for and establish connection to camera via existing HA integration
+
 ## Usage
 
 Add cameras via Integrations (search for Tapo) in Home Assistant UI.
