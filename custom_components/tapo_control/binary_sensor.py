@@ -2,6 +2,11 @@ from typing import Optional
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.core import callback
 from .const import DOMAIN
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    return True
 
 async def async_setup_entry(hass, entry, async_add_entities):
     events = hass.data[DOMAIN][entry.entry_id]['events']

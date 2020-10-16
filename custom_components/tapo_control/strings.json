@@ -1,20 +1,39 @@
 {
-  "title": "Tapo: Cameras Control",
-  "config": {
-    "step": {
-      "user": {
-        "title": "Connect Tapo camera",
-        "data": {
-          "ip_address": "IP Address",
-          "username": "Username",
-          "password": "Password"
-        }
-      }
-    },
-    "error": {
-      "invalid_auth": "Invalid authentication data",
-      "unknown": "Unknown error",
-      "connection_failed": "Connection failed"
-    }
-  }
+	"title": "Tapo: Cameras Control",
+	"config": {
+		"step": {
+			"auth": {
+				"data": {
+					"ip_address": "IP Address",
+					"username": "Username",
+					"password": "Password",
+                    "enable_motion_sensor": "Enable motion sensor"
+				},
+				"description": "Please enter the connection information of your Tapo camera."
+			}
+		},
+		"error": {
+			"invalid_auth": "Invalid authentication data",
+			"unknown": "Unknown error",
+			"connection_failed": "Connection failed"
+		}
+	},
+	"options": {
+		"step": {
+			"auth": {
+				"data": {
+					"ip_address": "IP Address",
+					"username": "Username",
+                    "password": "Password",
+                    "enable_motion_sensor": "Enable motion sensor"
+                },
+                "description": "Please enter the connection information of your Tapo camera."
+			}
+		},
+		"error": {
+			"invalid_auth": "Invalid authentication data",
+			"unknown": "Unknown error",
+			"connection_failed": "Connection failed"
+		}
+	}
 }

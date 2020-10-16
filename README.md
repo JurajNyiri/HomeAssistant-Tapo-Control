@@ -167,6 +167,12 @@ Use these services in following service calls.
   - Make sure the camera can see you and your movement
   - Try walking in front of the camera
   - If above didn't work, restart the camera and try again
+
+  Also make sure that:
+
+  - binary sensor is not disabled via entity, check .storage/core.entity_registry for disabled entities, look for "disabled_by": "user" on platform "tapo_control". If it is, remove the whole entity or change to "disabled_by": null, and restart HASS.
+  - binary sensor is enabled in tapo integration options
+  - onvif port 2020 on camera is opened
 </details>
 
 ## Have a comment or a suggestion?

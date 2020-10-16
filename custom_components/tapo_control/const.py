@@ -1,4 +1,5 @@
 import voluptuous as vol
+import logging
 from datetime import timedelta
 from homeassistant.helpers import config_validation as cv
 
@@ -22,6 +23,8 @@ DEVICE_MODEL_C100 = "C100"
 DEVICE_MODEL_C200 = "C200"
 DEVICES_WITH_NO_PRESETS = [DEVICE_MODEL_C100]
 SCAN_INTERVAL = timedelta(seconds=5)
+
+ENABLE_MOTION_SENSOR = "enable_motion_sensor"
 
 TOGGLE_STATES = ["on", "off"]
 
@@ -87,3 +90,5 @@ SERVICE_FORMAT = "format"
 SCHEMA_SERVICE_FORMAT = {
     vol.Required(ENTITY_ID): cv.string
 }
+
+LOGGER = logging.getLogger("custom_components."+DOMAIN)
