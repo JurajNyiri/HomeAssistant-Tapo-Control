@@ -98,7 +98,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
 
         async def unsubscribe(event):
-            if(hass.data[DOMAIN][entry.entry_id]['events']):
+            if('events' in hass.data[DOMAIN][entry.entry_id] and hass.data[DOMAIN][entry.entry_id]['events']):
                 await hass.data[DOMAIN][entry.entry_id]['events'].async_stop()
 
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, unsubscribe)
