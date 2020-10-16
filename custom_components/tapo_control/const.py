@@ -24,6 +24,8 @@ DEVICE_MODEL_C200 = "C200"
 DEVICES_WITH_NO_PRESETS = [DEVICE_MODEL_C100]
 SCAN_INTERVAL = timedelta(seconds=5)
 
+ENABLE_MOTION_SENSOR = "enable_motion_sensor"
+
 TOGGLE_STATES = ["on", "off"]
 
 SERVICE_PTZ = "ptz"

@@ -96,16 +96,24 @@ async def update_listener(hass, entry):
     host = entry.data.get(CONF_IP_ADDRESS)
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
+    motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
     try:
         tapoController = await hass.async_add_executor_job(registerController, host, username, password)
         hass.data[DOMAIN][entry.entry_id]['controller'] = tapoController
-        for entity in hass.data[DOMAIN][entry.entry_id]['entities']:
-            entity._host = host
-            entity._username = username
-            entity._password = password
-        await setupOnvif(hass, entry, host, username, password)
     except Exception as e:
-        LOGGER.error("Invalid authentication data")
+        LOGGER.error("Authentication to Tapo camera failed. Please restart the camera and try again.")
+
+    for entity in hass.data[DOMAIN][entry.entry_id]['entities']:
+        entity._host = host
+        entity._username = username
+        entity._password = password
+    if(hass.data[DOMAIN][entry.entry_id]['events']):
+        await hass.data[DOMAIN][entry.entry_id]['events'].async_stop()
+    if(hass.data[DOMAIN][entry.entry_id]['motionSensorCreated']):
+        await hass.config_entries.async_forward_entry_unload(entry, "binary_sensor")
+        hass.data[DOMAIN][entry.entry_id]['motionSensorCreated'] = False
+    if motionSensor:
+        await setupOnvif(hass, entry, host, username, password)
 
 async def setupOnvif(hass, entry, host, username, password):
     hass.data[DOMAIN][entry.entry_id]['eventsDevice'] = await initOnvifEvents(hass, host, username, password)
@@ -121,9 +129,11 @@ async def setupEvents(hass, entry):
     if(not hass.data[DOMAIN][entry.entry_id]['events'].started):
         events = hass.data[DOMAIN][entry.entry_id]['events']
         if(await events.async_start()):
-            hass.async_create_task(
-                hass.config_entries.async_forward_entry_setup(entry, "binary_sensor")
-            )
+            if(not hass.data[DOMAIN][entry.entry_id]['motionSensorCreated']):
+                hass.data[DOMAIN][entry.entry_id]['motionSensorCreated'] = True
+                hass.async_create_task(
+                    hass.config_entries.async_forward_entry_setup(entry, "binary_sensor")
+                )
             return True
         else:
             return False

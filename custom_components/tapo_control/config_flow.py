@@ -12,7 +12,7 @@ from .const import *
 class FlowHandler(config_entries.ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 1
+    VERSION = 2
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -29,17 +29,19 @@ class FlowHandler(config_entries.ConfigFlow):
         host = ""
         username = ""
         password = ""
+        enable_motion_sensor = True
         if user_input is not None:
             try:
                 host = user_input[CONF_IP_ADDRESS]
                 username = user_input[CONF_USERNAME]
                 password = user_input[CONF_PASSWORD]
+                enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
 
                 await self.hass.async_add_executor_job(registerController, host, username, password)
 
                 return self.async_create_entry(
                     title=host,
-                    data={CONF_IP_ADDRESS: host, CONF_USERNAME: username, CONF_PASSWORD: password,},
+                    data={ENABLE_MOTION_SENSOR: enable_motion_sensor, CONF_IP_ADDRESS: host, CONF_USERNAME: username, CONF_PASSWORD: password,},
                 )
             except Exception as e:
                 if("Failed to establish a new connection" in str(e)):
@@ -56,7 +58,8 @@ class FlowHandler(config_entries.ConfigFlow):
                 {
                     vol.Required(CONF_IP_ADDRESS, description={"suggested_value": host}): str,
                     vol.Required(CONF_USERNAME, description={"suggested_value": username}): str,
-                    vol.Required(CONF_PASSWORD, description={"suggested_value": password}): str
+                    vol.Required(CONF_PASSWORD, description={"suggested_value": password}): str,
+                    vol.Required(ENABLE_MOTION_SENSOR, description={"suggested_value": enable_motion_sensor}): bool
                 }
             ), 
             errors=errors
@@ -77,16 +80,18 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
         errors = {}
         username = self.config_entry.data[CONF_USERNAME]
         password = self.config_entry.data[CONF_PASSWORD]
+        enable_motion_sensor = self.config_entry.data[ENABLE_MOTION_SENSOR]
         if user_input is not None:
             try:
                 host = self.config_entry.data['ip_address']
                 username = user_input[CONF_USERNAME]
                 password = user_input[CONF_PASSWORD]
+                enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
 
                 await self.hass.async_add_executor_job(registerController, host, username, password)
 
                 self.hass.config_entries.async_update_entry(
-                    self.config_entry, data={CONF_IP_ADDRESS: host, CONF_USERNAME: username, CONF_PASSWORD: password,},
+                    self.config_entry, data={ENABLE_MOTION_SENSOR: enable_motion_sensor, CONF_IP_ADDRESS: host, CONF_USERNAME: username, CONF_PASSWORD: password,},
                 )
                 return self.async_create_entry(title="", data=None)
             except Exception as e:
@@ -103,7 +108,8 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_USERNAME, description={"suggested_value": username}): str,
-                    vol.Required(CONF_PASSWORD, description={"suggested_value": password}): str
+                    vol.Required(CONF_PASSWORD, description={"suggested_value": password}): str,
+                    vol.Required(ENABLE_MOTION_SENSOR, description={"suggested_value": enable_motion_sensor}): bool
                 }
             ),
             errors=errors,

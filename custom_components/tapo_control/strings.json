@@ -6,7 +6,8 @@
 				"data": {
 					"ip_address": "IP Address",
 					"username": "Username",
-					"password": "Password"
+					"password": "Password",
+                    "enable_motion_sensor": "Enable motion sensor"
 				},
 				"description": "Please enter the connection information of your Tapo camera."
 			}
@@ -23,7 +24,8 @@
 				"data": {
 					"ip_address": "IP Address",
 					"username": "Username",
-					"password": "Password"
+                    "password": "Password",
+                    "enable_motion_sensor": "Enable motion sensor"
                 },
                 "description": "Please enter the connection information of your Tapo camera."
 			}
