@@ -5,12 +5,8 @@ from homeassistant.const import (
     CONF_PASSWORD
 )
 import voluptuous as vol
-import logging
 from .utils import registerController
-
-from .const import DOMAIN
-
-_LOGGER = logging.getLogger(__name__)
+from .const import *
 
 @config_entries.HANDLERS.register(DOMAIN)
 class FlowHandler(config_entries.ConfigFlow):
@@ -52,7 +48,7 @@ class FlowHandler(config_entries.ConfigFlow):
                     errors["base"] = "invalid_auth"
                 else:
                     errors["base"] = "unknown"
-                    _LOGGER.error(e)
+                    LOGGER.error(e)
 
         return self.async_show_form(
             step_id="auth", 
@@ -100,7 +96,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                     errors["base"] = "invalid_auth"
                 else:
                     errors["base"] = "unknown"
-                    _LOGGER.error(e)
+                    LOGGER.error(e)
 
         return self.async_show_form(
             step_id="auth",

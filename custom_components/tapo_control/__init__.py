@@ -1,15 +1,10 @@
-import logging
-import asyncio
 from homeassistant.const import (CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD, EVENT_HOMEASSISTANT_STOP)
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from homeassistant.components.onvif.event import EventManager
 from .const import *
-from .utils import registerController, getCamData, initOnvifEvents
-
-_LOGGER = logging.getLogger(__name__)
+from .utils import registerController, getCamData, setupOnvif, setupEvents, update_listener
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the Tapo: Cameras Control component from YAML."""
@@ -33,35 +28,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     try:
         tapoController = await hass.async_add_executor_job(registerController, host, username, password)
 
-        async def setupOnvif():
-            hass.data[DOMAIN][entry.entry_id]['eventsDevice'] = await initOnvifEvents(hass, host, username, password)
-
-            if(hass.data[DOMAIN][entry.entry_id]['eventsDevice']):
-                hass.data[DOMAIN][entry.entry_id]['events'] = EventManager(
-                    hass, hass.data[DOMAIN][entry.entry_id]['eventsDevice'], f"{entry.entry_id}_tapo_events"
-                )
-            
-                hass.data[DOMAIN][entry.entry_id]['eventsSetup'] = await setupEvents()
-
-        async def setupEvents():
-            if(not hass.data[DOMAIN][entry.entry_id]['events'].started):
-                events = hass.data[DOMAIN][entry.entry_id]['events']
-                if(await events.async_start()):
-                    hass.async_create_task(
-                        hass.config_entries.async_forward_entry_setup(entry, "binary_sensor")
-                    )
-                    return True
-                else:
-                    return False
-
         async def async_update_data():
+            host = entry.data.get(CONF_IP_ADDRESS)
+            username = entry.data.get(CONF_USERNAME)
+            password = entry.data.get(CONF_PASSWORD)
+
             # motion detection retries
             if not hass.data[DOMAIN][entry.entry_id]['eventsDevice']:
                 # retry if connection to onvif failed
-                await setupOnvif()
+                await setupOnvif(hass, entry, host, username, password)
             elif not hass.data[DOMAIN][entry.entry_id]['eventsSetup']:
                 # retry if subscription to events failed
-                hass.data[DOMAIN][entry.entry_id]['eventsSetup'] = await setupEvents()
+                hass.data[DOMAIN][entry.entry_id]['eventsSetup'] = await setupEvents(hass, entry)
             
             # cameras state
             someCameraEnabled = False
@@ -78,7 +56,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         tapoCoordinator = DataUpdateCoordinator(
                 hass,
-                _LOGGER,
+                LOGGER,
                 name="Tapo resource status",
                 update_method=async_update_data
             )
@@ -87,11 +65,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         hass.data[DOMAIN][entry.entry_id] = {
             "controller": tapoController,
+            "update_listener": entry.add_update_listener(update_listener),
             "coordinator": tapoCoordinator,
             "initialData": camData,
             "name": camData['basic_info']['device_alias']
         }
-        await setupOnvif()
+        await setupOnvif(hass, entry, host, username, password)
 
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "camera")
@@ -104,7 +83,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, unsubscribe)
 
     except Exception as e:
-        _LOGGER.error("Unable to connect to Tapo: Cameras Control controller: %s", str(e))
+        LOGGER.error("Unable to connect to Tapo: Cameras Control controller: %s", str(e))
         raise ConfigEntryNotReady
 
     return True

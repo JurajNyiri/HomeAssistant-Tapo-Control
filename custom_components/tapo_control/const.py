@@ -1,4 +1,5 @@
 import voluptuous as vol
+import logging
 from datetime import timedelta
 from homeassistant.helpers import config_validation as cv
 
@@ -87,3 +88,5 @@ SERVICE_FORMAT = "format"
 SCHEMA_SERVICE_FORMAT = {
     vol.Required(ENTITY_ID): cv.string
 }
+
+LOGGER = logging.getLogger("custom_components."+DOMAIN)

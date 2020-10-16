@@ -1,4 +1,3 @@
-import logging 
 import asyncio
 from homeassistant.helpers.config_validation import boolean
 from homeassistant.core import HomeAssistant
@@ -16,8 +15,6 @@ from homeassistant.helpers.aiohttp_client import (
 from haffmpeg.camera import CameraMjpeg
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from .const import *
-
-_LOGGER = logging.getLogger(__name__)
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
@@ -216,7 +213,7 @@ class TapoCamEntity(Camera):
                 if(foundKey):
                     await self.hass.async_add_executor_job(self._controller.setPreset, foundKey)
                 else:
-                    _LOGGER.error("Preset "+preset+" does not exist.")
+                    LOGGER.error("Preset "+preset+" does not exist.")
         elif tilt:
             if distance:
                 distance = float(distance)
@@ -244,7 +241,7 @@ class TapoCamEntity(Camera):
             else:
                 await self.hass.async_add_executor_job(self._controller.moveMotor, -degrees,0)
         else:
-            _LOGGER.error("Incorrect additional PTZ properties. You need to specify at least one of " + TILT + ", " + PAN + ", " + PRESET + ".")
+            LOGGER.error("Incorrect additional PTZ properties. You need to specify at least one of " + TILT + ", " + PAN + ", " + PRESET + ".")
         await self._coordinator.async_request_refresh()
 
     async def set_privacy_mode(self, privacy_mode: str):
@@ -308,7 +305,7 @@ class TapoCamEntity(Camera):
             await self.hass.async_add_executor_job(self._controller.savePreset, name)
             await self._coordinator.async_request_refresh()
         else:
-            _LOGGER.error("Incorrect "+NAME+" value. It cannot be empty or a number.")
+            LOGGER.error("Incorrect "+NAME+" value. It cannot be empty or a number.")
 
     async def delete_preset(self, preset):
         if(preset.isnumeric()):
@@ -323,7 +320,7 @@ class TapoCamEntity(Camera):
                 await self.hass.async_add_executor_job(self._controller.deletePreset, foundKey)
                 await self._coordinator.async_request_refresh()
             else:
-                _LOGGER.error("Preset "+preset+" does not exist.")
+                LOGGER.error("Preset "+preset+" does not exist.")
 
     async def format(self):
         await self.hass.async_add_executor_job(self._controller.format)

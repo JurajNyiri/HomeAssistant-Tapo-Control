@@ -3,6 +3,8 @@ import os
 from onvif import ONVIFCamera
 from pytapo import Tapo
 from .const import *
+from homeassistant.const import (CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD)
+from homeassistant.components.onvif.event import EventManager
 
 def registerController(host, username, password):
     return Tapo(host, username, password)
@@ -87,3 +89,41 @@ async def getCamData(hass, controller):
         camData['presets'] = await hass.async_add_executor_job(controller.getPresets)
 
     return camData
+
+
+async def update_listener(hass, entry):
+    """Handle options update."""
+    host = entry.data.get(CONF_IP_ADDRESS)
+    username = entry.data.get(CONF_USERNAME)
+    password = entry.data.get(CONF_PASSWORD)
+    try:
+        tapoController = await hass.async_add_executor_job(registerController, host, username, password)
+        hass.data[DOMAIN][entry.entry_id]['controller'] = tapoController
+        for entity in hass.data[DOMAIN][entry.entry_id]['entities']:
+            entity._host = host
+            entity._username = username
+            entity._password = password
+        await setupOnvif(hass, entry, host, username, password)
+    except Exception as e:
+        LOGGER.error("Invalid authentication data")
+
+async def setupOnvif(hass, entry, host, username, password):
+    hass.data[DOMAIN][entry.entry_id]['eventsDevice'] = await initOnvifEvents(hass, host, username, password)
+
+    if(hass.data[DOMAIN][entry.entry_id]['eventsDevice']):
+        hass.data[DOMAIN][entry.entry_id]['events'] = EventManager(
+            hass, hass.data[DOMAIN][entry.entry_id]['eventsDevice'], f"{entry.entry_id}_tapo_events"
+        )
+    
+        hass.data[DOMAIN][entry.entry_id]['eventsSetup'] = await setupEvents(hass, entry)
+
+async def setupEvents(hass, entry):
+    if(not hass.data[DOMAIN][entry.entry_id]['events'].started):
+        events = hass.data[DOMAIN][entry.entry_id]['events']
+        if(await events.async_start()):
+            hass.async_create_task(
+                hass.config_entries.async_forward_entry_setup(entry, "binary_sensor")
+            )
+            return True
+        else:
+            return False
