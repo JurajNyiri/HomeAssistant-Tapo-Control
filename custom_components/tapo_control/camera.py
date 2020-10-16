@@ -9,6 +9,7 @@ from homeassistant.util import slugify
 from homeassistant.helpers import entity_platform
 from homeassistant.components.camera import SUPPORT_STREAM, SUPPORT_ON_OFF, Camera
 from homeassistant.components.ffmpeg import DATA_FFMPEG
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.aiohttp_client import (
     async_aiohttp_proxy_stream
 )
@@ -18,7 +19,10 @@ from .const import *
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities: Callable):
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    return True
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: Callable):
     platform = entity_platform.current_platform.get()
     platform.async_register_entity_service(
         SERVICE_SET_LED_MODE, SCHEMA_SERVICE_SET_LED_MODE, "set_led_mode",
@@ -51,15 +55,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: dict, async_add_entities
         SERVICE_FORMAT, SCHEMA_SERVICE_FORMAT, "format",
     )
 
-    camData = hass.data[DOMAIN][entry.entry_id]['initialData']
     hass.data[DOMAIN][entry.entry_id]['entities'] = [
         TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id],True),
         TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id],False)
     ]
     async_add_entities(hass.data[DOMAIN][entry.entry_id]['entities'])
     hass.data[DOMAIN][entry.entry_id].pop('initialData')
-
-
 
 class TapoCamEntity(Camera):
     def __init__(self, hass: HomeAssistant, entry: dict, tapoData: Tapo, HDStream: boolean):
@@ -68,6 +69,7 @@ class TapoCamEntity(Camera):
         self._coordinator = tapoData['coordinator']
         self._ffmpeg = hass.data[DATA_FFMPEG]
         self._entry = entry
+        self._enabled = False
         self._hdstream = HDStream
         self._host = entry.data.get(CONF_IP_ADDRESS)
         self._username = entry.data.get(CONF_USERNAME)
@@ -75,6 +77,13 @@ class TapoCamEntity(Camera):
 
         self.updateCam(tapoData['initialData'])
     
+
+    async def async_added_to_hass(self) -> None:
+        self._enabled = True
+
+    async def async_will_remove_from_hass(self) -> None:
+        self._enabled = False
+
     @property
     def supported_features(self):
         return SUPPORT_STREAM | SUPPORT_ON_OFF

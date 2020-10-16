@@ -16,9 +16,11 @@ async def async_setup(hass: HomeAssistant, config: dict):
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    await hass.config_entries.async_forward_entry_unload(entry, "camera")
     if(hass.data[DOMAIN][entry.entry_id]['events']):
         await hass.data[DOMAIN][entry.entry_id]['events'].async_stop()
+    return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Set up the Tapo: Cameras Control component from a config entry."""
@@ -60,13 +62,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             elif not hass.data[DOMAIN][entry.entry_id]['eventsSetup']:
                 # retry if subscription to events failed
                 hass.data[DOMAIN][entry.entry_id]['eventsSetup'] = await setupEvents()
-                    
+            
             # cameras state
-            camData = await getCamData(hass, tapoController)
+            someCameraEnabled = False
             for entity in hass.data[DOMAIN][entry.entry_id]['entities']:
-                entity.updateCam(camData)
-                entity.async_schedule_update_ha_state(True)
-
+                if(entity._enabled):
+                    someCameraEnabled = True
+                    
+            if someCameraEnabled:
+                camData = await getCamData(hass, tapoController)
+                for entity in hass.data[DOMAIN][entry.entry_id]['entities']:
+                    if(entity._enabled):
+                        entity.updateCam(camData)
+                        entity.async_schedule_update_ha_state(True)
 
         tapoCoordinator = DataUpdateCoordinator(
                 hass,
@@ -83,7 +91,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "initialData": camData,
             "name": camData['basic_info']['device_alias']
         }
-
         await setupOnvif()
 
         hass.async_create_task(
