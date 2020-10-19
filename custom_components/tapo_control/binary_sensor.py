@@ -5,12 +5,14 @@ from .const import DOMAIN
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
+
 async def async_setup_entry(hass, entry, async_add_entities):
-    events = hass.data[DOMAIN][entry.entry_id]['events']
-    name = hass.data[DOMAIN][entry.entry_id]['name']
+    events = hass.data[DOMAIN][entry.entry_id]["events"]
+    name = hass.data[DOMAIN][entry.entry_id]["name"]
     entities = {
         event.uid: TapoBinarySensor(event.uid, events, name)
         for event in events.get_platform("binary_sensor")
@@ -31,8 +33,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     return True
 
-class TapoBinarySensor(BinarySensorEntity):
 
+class TapoBinarySensor(BinarySensorEntity):
     def __init__(self, uid, events, name):
         self._name = name
         BinarySensorEntity.__init__(self)
