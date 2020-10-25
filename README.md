@@ -189,3 +189,15 @@ Join discussion on [Discord](https://discord.gg/pa54QyK).
 - [Gábor Szabados](https://github.com/GSzabados) for doing research and gathering all the information above in [Home Assistant Community forum](https://community.home-assistant.io/t/use-pan-tilt-function-for-tp-link-tapo-c200-from-home-assistant/170143/18)
 
 <a href="https://www.buymeacoffee.com/jurajnyiri" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png" alt="Buy Me A Coffee"  width="150px" ></a>
+
+# Disclaimer
+
+This integration is using python module Pytapo which is an unofficial module for achieving interoperability with Tapo cameras. 
+
+Author is in no way affiliated with Tp-Link or Tapo.
+
+All the api requests used within the pytapo library are available and published on the internet (examples linked above) and the pytapo module is purely just a wrapper around those https requests.
+
+Author does not guarantee functionality of this integration and is not responsible for any damage.
+
+All product names, trademarks and registered trademarks in this repository, are property of their respective owners.
