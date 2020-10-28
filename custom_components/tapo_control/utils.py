@@ -27,11 +27,6 @@ async def initOnvifEvents(hass, host, username, password):
         if "Manufacturer" not in device_info:
             raise Exception("Onvif connection has failed.")
 
-        try:
-            event_service = device.create_events_service()
-            await event_service.GetServiceCapabilities()
-        except Exception:
-            return False
         return device
     except Exception:
         pass
