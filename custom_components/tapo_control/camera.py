@@ -385,13 +385,13 @@ class TapoCamEntity(Camera):
 
     async def async_enable_motion_detection(self):
         await self.hass.async_add_executor_job(
-            self._controller.setMotionDetection, False
+            self._controller.setMotionDetection, True
         )
         await self._coordinator.async_request_refresh()
 
     async def async_disable_motion_detection(self):
         await self.hass.async_add_executor_job(
-            self._controller.setMotionDetection, True
+            self._controller.setMotionDetection, False
         )
         await self._coordinator.async_request_refresh()
 
