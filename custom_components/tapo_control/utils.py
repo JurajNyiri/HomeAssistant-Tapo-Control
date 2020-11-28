@@ -75,6 +75,13 @@ async def getCamData(hass, controller):
     camData["alarm_mode"] = alarm_mode
 
     try:
+        commonImageData = await hass.async_add_executor_job(controller.getCommonImage)
+        day_night_mode = commonImageData["image"]["common"]["inf_type"]
+    except Exception:
+        day_night_mode = None
+    camData["day_night_mode"] = day_night_mode
+
+    try:
         led = await hass.async_add_executor_job(controller.getLED)
         led = led["enabled"]
     except Exception:

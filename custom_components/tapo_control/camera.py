@@ -254,6 +254,7 @@ class TapoCamEntity(Camera):
         self._attributes["alarm"] = camData["alarm"]
         self._attributes["alarm_mode"] = camData["alarm_mode"]
         self._attributes["led"] = camData["led"]
+        self._attributes["day_night_mode"] = camData["day_night_mode"]
         self._attributes["auto_track"] = camData["auto_track"]
         self._attributes["presets"] = camData["presets"]
 
