@@ -9,6 +9,7 @@ PRESET = "preset"
 LIGHT = "light"
 SOUND = "sound"
 PRIVACY_MODE = "privacy_mode"
+DAY_NIGHT_MODE = "day_night_mode"
 LED_MODE = "led_mode"
 NAME = "name"
 DISTANCE = "distance"
@@ -40,6 +41,12 @@ SERVICE_SET_PRIVACY_MODE = "set_privacy_mode"
 SCHEMA_SERVICE_SET_PRIVACY_MODE = {
     vol.Required(ENTITY_ID): cv.string,
     vol.Required(PRIVACY_MODE): vol.In(TOGGLE_STATES),
+}
+
+SERVICE_SET_DAY_NIGHT_MODE = "set_day_night_mode"
+SCHEMA_SERVICE_SET_DAY_NIGHT_MODE = {
+    vol.Required(ENTITY_ID): cv.string,
+    vol.Required(DAY_NIGHT_MODE): vol.In(["on", "off", "auto"]),
 }
 
 SERVICE_SET_ALARM_MODE = "set_alarm_mode"

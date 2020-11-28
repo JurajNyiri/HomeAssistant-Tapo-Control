@@ -19,6 +19,8 @@ from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from .const import (
     SERVICE_SET_LED_MODE,
     SCHEMA_SERVICE_SET_LED_MODE,
+    SERVICE_SET_DAY_NIGHT_MODE,
+    SCHEMA_SERVICE_SET_DAY_NIGHT_MODE,
     SERVICE_SET_PRIVACY_MODE,
     SCHEMA_SERVICE_SET_PRIVACY_MODE,
     SERVICE_PTZ,
@@ -58,6 +60,11 @@ async def async_setup_entry(
         SERVICE_SET_LED_MODE,
         SCHEMA_SERVICE_SET_LED_MODE,
         "set_led_mode",
+    )
+    platform.async_register_entity_service(
+        SERVICE_SET_DAY_NIGHT_MODE,
+        SCHEMA_SERVICE_SET_DAY_NIGHT_MODE,
+        "set_day_night_mode",
     )
     platform.async_register_entity_service(
         SERVICE_SET_PRIVACY_MODE,
@@ -423,6 +430,12 @@ class TapoCamEntity(Camera):
             LOGGER.error(
                 "Incorrect " + NAME + " value. It cannot be empty or a number."
             )
+
+    async def set_day_night_mode(self, day_night_mode: str):
+        await self.hass.async_add_executor_job(
+            self._controller.setDayNightMode, day_night_mode
+        )
+        await self._coordinator.async_request_refresh()
 
     async def delete_preset(self, preset):
         if preset.isnumeric():

@@ -16,6 +16,15 @@ ptz:
     distance:
       description: "Distance coefficient. Sets how much PTZ should be executed in one request. Allowed values: floating point numbers, 0 to 1"
       example: "0.1"
+set_day_night_mode:
+  description: Sets day or night mode
+  fields:
+    entity_id:
+      description: "Entity to set day/night mode for"
+      example: "camera.living_room"
+    day_night_mode: 
+      description: "Sets day/night mode for camera. Possible values: on, off, auto"
+      example: "on"
 set_privacy_mode:
   description: Sets privacy mode
   fields:

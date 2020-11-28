@@ -15,9 +15,10 @@ HACS is a community store for Home Assistant. You can install [HACS](https://git
 ### Network
 
 Following target TCP ports **must be open** in firewall for the camera to access your Tapo Camera from Home Assistant:
-* 443  - HTTPS for control of the camera ([services](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control#services))
-* 554  - RTSP to fetch video stream from the camera
-* 2020 - ONVIF to track detected movement via a binary sensor
+
+- 443 - HTTPS for control of the camera ([services](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control#services))
+- 554 - RTSP to fetch video stream from the camera
+- 2020 - ONVIF to track detected movement via a binary sensor
 
 ## Usage
 
@@ -30,7 +31,8 @@ See [examples for lovelace cards](https://github.com/JurajNyiri/HomeAssistant-Ta
 ## Services
 
 This custom component creates:
-- tapo_control.* services to control a camera
+
+- tapo_control.\* services to control a camera
 - 2 camera entities, one for HD and one for SD stream
 - 1 binary sensor for motion after the motion is detected for the first time
 
@@ -39,120 +41,129 @@ Use these services in following service calls.
 <details>
   <summary>tapo_control.ptz</summary>
 
-  Pan and tilt camera. 
-  
-  You are also able to use presets and set distance the ptz should travel.
+Pan and tilt camera.
 
-  - **entity_id** Required: Entity to adjust
-  - **tilt** Optional: Tilt direction. Allowed values: UP, DOWN 
-  - **pan** Optional: Pan direction. Allowed values: RIGHT, LEFT
-  - **preset** Optional: PTZ preset ID or a Name. See possible presets in entity attributes.
-  - **distance** Optional: Distance coefficient. Sets how much PTZ should be executed in one request. Allowed values: floating point numbers, 0 to 1 
+You are also able to use presets and set distance the ptz should travel.
+
+- **entity_id** Required: Entity to adjust
+- **tilt** Optional: Tilt direction. Allowed values: UP, DOWN
+- **pan** Optional: Pan direction. Allowed values: RIGHT, LEFT
+- **preset** Optional: PTZ preset ID or a Name. See possible presets in entity attributes.
+- **distance** Optional: Distance coefficient. Sets how much PTZ should be executed in one request. Allowed values: floating point numbers, 0 to 1
 </details>
 
 <details>
   <summary>tapo_control.set_privacy_mode</summary>
 
-  Sets privacy mode. 
-  
-  If privacy mode is turned on, camera does not record anything and does not respond to anything other than turning off privacy mode.
+Sets privacy mode.
 
-  - **entity_id** Required: Entity to set privacy mode for
-  - **privacy_mode** Required: Sets privacy mode for camera. Possible values: on, off
+If privacy mode is turned on, camera does not record anything and does not respond to anything other than turning off privacy mode.
+
+- **entity_id** Required: Entity to set privacy mode for
+- **privacy_mode** Required: Sets privacy mode for camera. Possible values: on, off
 </details>
 
 <details>
   <summary>tapo_control.set_alarm_mode</summary>
 
-  Sets alarm mode. 
-  
-  If camera detects motion, it will sound an alarm, blink the LED or both.
+Sets alarm mode.
 
-  - **entity_id** Required: Entity to set alarm mode for
-  - **alarm_mode** Required: Sets alarm mode for camera. Possible values: on, off
-  - **sound** Optional: Sets whether the alarm should use sound on motion detected. Possible values: on, off
-  - **light** Optional: Sets whether the alarm should use light on motion detected. Possible values: on, off
+If camera detects motion, it will sound an alarm, blink the LED or both.
+
+- **entity_id** Required: Entity to set alarm mode for
+- **alarm_mode** Required: Sets alarm mode for camera. Possible values: on, off
+- **sound** Optional: Sets whether the alarm should use sound on motion detected. Possible values: on, off
+- **light** Optional: Sets whether the alarm should use light on motion detected. Possible values: on, off
 </details>
 
 <details>
   <summary>tapo_control.set_led_mode</summary>
 
-  Sets LED mode. 
-  
-  When on, LED is turned on when camera is on. 
-  
-  When off, LED is always off.
+Sets LED mode.
 
-  - **entity_id** Required: Entity to set LED mode for
-  - **led_mode** Required: Sets LED mode for camera. Possible values: on, off
+When on, LED is turned on when camera is on.
+
+When off, LED is always off.
+
+- **entity_id** Required: Entity to set LED mode for
+- **led_mode** Required: Sets LED mode for camera. Possible values: on, off
 </details>
 
 <details>
   <summary>tapo_control.format</summary>
 
-  Formats SD card of a camera
+Formats SD card of a camera
 
-  - **entity_id** Required: Entity to format
+- **entity_id** Required: Entity to format
 </details>
 
 <details>
   <summary>tapo_control.set_motion_detection_mode</summary>
 
-  Sets motion detection mode. 
-  
-  Ability to set "high", "normal" or "low". 
-  
-  These turn on motion detection and set sensitivity to corresponding values in the app.
+Sets motion detection mode.
 
-  Also ability to set to "off", this turns off motion detection completely. 
-  
-  Turning motion detection off does not affect settings for recordings so you do not need to re-set those unless you open the settings through the Tapo app.
-  
-  Notice: If you use motion detection triggered recording and you turn off motion recording, it will no longer record! 
+Ability to set "high", "normal" or "low".
 
-  - **entity_id** Required: Entity to set motion detection mode for
-  - **motion_detection_mode** Required: Sets motion detection mode for camera. Possible values: high, normal, low, off
+These turn on motion detection and set sensitivity to corresponding values in the app.
+
+Also ability to set to "off", this turns off motion detection completely.
+
+Turning motion detection off does not affect settings for recordings so you do not need to re-set those unless you open the settings through the Tapo app.
+
+Notice: If you use motion detection triggered recording and you turn off motion recording, it will no longer record!
+
+- **entity_id** Required: Entity to set motion detection mode for
+- **motion_detection_mode** Required: Sets motion detection mode for camera. Possible values: high, normal, low, off
 </details>
 
 <details>
   <summary>tapo_control.set_auto_track_mode</summary>
 
-  **Warning: This mode is not available in Tapo app and we do not know why. Use at your own risk and please report any success or failures in [Home Assistant: Community Forum](https://community.home-assistant.io/t/tapo-cameras-control/231795).**
+**Warning: This mode is not available in Tapo app and we do not know why. Use at your own risk and please report any success or failures in [Home Assistant: Community Forum](https://community.home-assistant.io/t/tapo-cameras-control/231795).**
 
-  Sets auto track mode. 
-  
-  With this mode, camera will be adjusting ptz to track whatever moving object it sees.
-  
-  Motion detection setting does not affect this mode.
+Sets auto track mode.
 
-  - **entity_id** Required: Entity to set auto track mode for
-  - **auto_track_mode** Required: Sets auto track mode for camera. Possible values: on, off
+With this mode, camera will be adjusting ptz to track whatever moving object it sees.
+
+Motion detection setting does not affect this mode.
+
+- **entity_id** Required: Entity to set auto track mode for
+- **auto_track_mode** Required: Sets auto track mode for camera. Possible values: on, off
 </details>
 
 <details>
   <summary>tapo_control.reboot</summary>
 
-  Reboots the camera
+Reboots the camera
 
-  - **entity_id** Required: Entity to reboot
+- **entity_id** Required: Entity to reboot
 </details>
 
 <details>
   <summary>tapo_control.save_preset</summary>
 
-  Saves the current PTZ position to a preset
+Saves the current PTZ position to a preset
 
-  - **entity_id** Required: Entity to save the preset for
-  - **name** Required: Name of the preset. Cannot be empty or a number
+- **entity_id** Required: Entity to save the preset for
+- **name** Required: Name of the preset. Cannot be empty or a number
 </details>
 
 <details>
   <summary>tapo_control.delete_preset</summary>
 
-  Deletes a preset
+Deletes a preset
 
-  - **entity_id** Required: Entity to delete the preset for
-  - **preset** Required: PTZ preset ID or a Name. See possible presets in entity attributes
+- **entity_id** Required: Entity to delete the preset for
+- **preset** Required: PTZ preset ID or a Name. See possible presets in entity attributes
+</details>
+
+<details>
+  <summary>tapo_control.set_day_night_mode</summary>
+
+Sets day or night mode
+
+- **entity_id** Required: Entity to set day/night mode for
+- **day_night_mode** Required: Sets day/night mode for camera. Possible values: on, off, auto
 </details>
 
 ## Troubleshooting
@@ -160,19 +171,19 @@ Use these services in following service calls.
 <details>
   <summary>Binary sensor for motion doesn't show up or work</summary>
 
-  Motion sensor is added only after a motion is detected for the first time. 
+Motion sensor is added only after a motion is detected for the first time.
 
-  - Make sure the camera has motion detection turned on
-  - Make sure the camera has privacy mode turned off
-  - Make sure the camera can see you and your movement
-  - Try walking in front of the camera
-  - If above didn't work, restart the camera and try again
+- Make sure the camera has motion detection turned on
+- Make sure the camera has privacy mode turned off
+- Make sure the camera can see you and your movement
+- Try walking in front of the camera
+- If above didn't work, restart the camera and try again
 
-  Also make sure that:
+Also make sure that:
 
-  - binary sensor is not disabled via entity, check .storage/core.entity_registry for disabled entities, look for "disabled_by": "user" on platform "tapo_control". If it is, remove the whole entity or change to "disabled_by": null, and restart HASS.
-  - binary sensor is enabled in tapo integration options
-  - onvif port 2020 on camera is opened
+- binary sensor is not disabled via entity, check .storage/core.entity_registry for disabled entities, look for "disabled_by": "user" on platform "tapo_control". If it is, remove the whole entity or change to "disabled_by": null, and restart HASS.
+- binary sensor is enabled in tapo integration options
+- onvif port 2020 on camera is opened
 </details>
 
 ## Have a comment or a suggestion?
@@ -192,7 +203,7 @@ Join discussion on [Discord](https://discord.gg/pa54QyK).
 
 # Disclaimer
 
-This integration is using python module Pytapo which is an unofficial module for achieving interoperability with Tapo cameras. 
+This integration is using python module Pytapo which is an unofficial module for achieving interoperability with Tapo cameras.
 
 Author is in no way affiliated with Tp-Link or Tapo.
 
