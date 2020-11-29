@@ -14,7 +14,7 @@
 				"data": {
                     "cloud_password": "Cloud Password"
 				},
-				"description": "Your camera requires your cloud password for control.\nEmail is not needed and all communication is still fully local."
+				"description": "Camera requires your cloud password for control.\nEmail is not needed and all communication is still fully local."
 			},
 			"other_options": {
 				"data": {
