@@ -2,7 +2,7 @@ import onvif
 import os
 from onvif import ONVIFCamera
 from pytapo import Tapo
-from .const import DEVICES_WITH_NO_PRESETS, ENABLE_MOTION_SENSOR, DOMAIN, LOGGER
+from .const import ENABLE_MOTION_SENSOR, DOMAIN, LOGGER
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.components.onvif.event import EventManager
 
@@ -36,6 +36,7 @@ async def initOnvifEvents(hass, host, username, password):
 
 async def getCamData(hass, controller):
     camData = {}
+    presets = await hass.async_add_executor_job(controller.isSupportingPresets)
     camData["basic_info"] = await hass.async_add_executor_job(controller.getBasicInfo)
     camData["basic_info"] = camData["basic_info"]["device_info"]["basic_info"]
     try:
@@ -95,10 +96,10 @@ async def getCamData(hass, controller):
         auto_track = None
     camData["auto_track"] = auto_track
 
-    if camData["basic_info"]["device_model"] in DEVICES_WITH_NO_PRESETS:
-        camData["presets"] = {}
+    if presets:
+        camData["presets"] = presets
     else:
-        camData["presets"] = await hass.async_add_executor_job(controller.getPresets)
+        camData["presets"] = {}
 
     return camData
 
