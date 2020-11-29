@@ -1,14 +1,30 @@
 import onvif
 import os
+import asyncio
 from onvif import ONVIFCamera
 from pytapo import Tapo
 from .const import ENABLE_MOTION_SENSOR, DOMAIN, LOGGER
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.components.onvif.event import EventManager
+from homeassistant.components.ffmpeg import DATA_FFMPEG
+from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 
 
 def registerController(host, username, password):
     return Tapo(host, username, password)
+
+
+async def isRtspStreamWorking(hass, host, username, password):
+    _ffmpeg = hass.data[DATA_FFMPEG]
+    ffmpeg = ImageFrame(_ffmpeg.binary, loop=hass.loop)
+    streaming_url = f"rtsp://{username}:{password}@{host}:554/stream1"
+    image = await asyncio.shield(
+        ffmpeg.get_image(
+            streaming_url,
+            output_format=IMAGE_JPEG,
+        )
+    )
+    return not image == b""
 
 
 async def initOnvifEvents(hass, host, username, password):

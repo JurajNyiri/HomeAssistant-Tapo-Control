@@ -8,7 +8,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from .const import LOGGER, DOMAIN, ENABLE_MOTION_SENSOR
+from .const import (
+    LOGGER,
+    DOMAIN,
+    ENABLE_MOTION_SENSOR,
+    CLOUD_PASSWORD,
+)
 from .utils import (
     registerController,
     getCamData,
@@ -30,11 +35,21 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
     if config_entry.version == 1:
 
         new = {**config_entry.data}
-        new["enable_motion_sensor"] = True
+        new[ENABLE_MOTION_SENSOR] = True
+        new[CLOUD_PASSWORD] = ""
 
         config_entry.data = {**new}
 
         config_entry.version = 2
+
+    if config_entry.version == 2:
+
+        new = {**config_entry.data}
+        new[CLOUD_PASSWORD] = ""
+
+        config_entry.data = {**new}
+
+        config_entry.version = 3
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 

@@ -18,6 +18,7 @@ PAN = "pan"
 ENTITY_ID = "entity_id"
 MOTION_DETECTION_MODE = "motion_detection_mode"
 AUTO_TRACK_MODE = "auto_track_mode"
+CLOUD_PASSWORD = "cloud_password"
 DEFAULT_SCAN_INTERVAL = 10
 SCAN_INTERVAL = timedelta(seconds=5)
 
