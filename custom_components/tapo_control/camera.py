@@ -247,6 +247,7 @@ class TapoCamEntity(Camera):
         self._motion_detection_enabled = camData["motion_detection_enabled"]
 
         self._attributes = camData["basic_info"]
+        self._attributes["user"] = camData["user"]
         self._attributes["motion_detection_sensitivity"] = camData[
             "motion_detection_sensitivity"
         ]

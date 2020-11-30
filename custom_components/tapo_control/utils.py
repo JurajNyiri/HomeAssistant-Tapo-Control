@@ -3,7 +3,7 @@ import os
 import asyncio
 from onvif import ONVIFCamera
 from pytapo import Tapo
-from .const import ENABLE_MOTION_SENSOR, DOMAIN, LOGGER
+from .const import ENABLE_MOTION_SENSOR, DOMAIN, LOGGER, CLOUD_PASSWORD
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.components.onvif.event import EventManager
 from homeassistant.components.ffmpeg import DATA_FFMPEG
@@ -53,6 +53,7 @@ async def initOnvifEvents(hass, host, username, password):
 async def getCamData(hass, controller):
     camData = {}
     presets = await hass.async_add_executor_job(controller.isSupportingPresets)
+    camData["user"] = controller.user
     camData["basic_info"] = await hass.async_add_executor_job(controller.getBasicInfo)
     camData["basic_info"] = camData["basic_info"]["device_info"]["basic_info"]
     try:
@@ -126,10 +127,16 @@ async def update_listener(hass, entry):
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
     motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
+    cloud_password = entry.data.get(CLOUD_PASSWORD)
     try:
-        tapoController = await hass.async_add_executor_job(
-            registerController, host, username, password
-        )
+        if cloud_password != "":
+            tapoController = await hass.async_add_executor_job(
+                registerController, host, "admin", cloud_password
+            )
+        else:
+            tapoController = await hass.async_add_executor_job(
+                registerController, host, username, password
+            )
         hass.data[DOMAIN][entry.entry_id]["controller"] = tapoController
     except Exception:
         LOGGER.error(

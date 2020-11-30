@@ -71,11 +71,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
     motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
+    cloud_password = entry.data.get(CLOUD_PASSWORD)
 
     try:
-        tapoController = await hass.async_add_executor_job(
-            registerController, host, username, password
-        )
+        if cloud_password != "":
+            tapoController = await hass.async_add_executor_job(
+                registerController, host, "admin", cloud_password
+            )
+        else:
+            tapoController = await hass.async_add_executor_job(
+                registerController, host, username, password
+            )
 
         async def async_update_data():
             host = entry.data.get(CONF_IP_ADDRESS)
