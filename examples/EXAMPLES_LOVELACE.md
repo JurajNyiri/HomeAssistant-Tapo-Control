@@ -12,7 +12,7 @@ Below you can find some examples of usage of this custom component in lovelace c
 
 Very simple example which just shows a camera image and toggles light.
 
-```
+```yaml
 type: picture-entity
 entity: light.bedroom
 camera_image: camera.bedroom_hd
@@ -24,7 +24,7 @@ camera_image: camera.bedroom_hd
 
 Very simple example which just shows a camera image and toggles light. It now uses the live stream of the camera.
 
-```
+```yaml
 type: picture-entity
 entity: light.bedroom
 camera_image: camera.bedroom_hd
@@ -39,7 +39,7 @@ Example by [Roman Kaporin](https://github.com/JurajNyiri/HomeAssistant-Tapo-Cont
 
 Allows easy control of the camera.
 
-```
+```yaml
 type: picture-glance
 title: Bedroom
 camera_image: camera.bedroom_hd
@@ -104,11 +104,150 @@ hold_action:
   action: more-info
 ```
 
+### Camera Control Example with motion sensor
+This example uses [stack-in-card](https://github.com/custom-cards/stack-in-card), [lovelace-card-mod](https://github.com/thomasloven/lovelace-card-mod) to make a seamless combo-card.
+
+![Example 4](example4.png)
+
+```yaml
+type: 'custom:stack-in-card'
+cards:
+  - type: picture-glance
+    title: Bedroom
+    camera_image: camera.tapo_camera_5489_sd
+    camera_view: live
+    entity: camera.tapo_camera_5489_hd
+    entities:
+      - entity: camera.tapo_camera_5489_hd
+        icon: 'mdi:arrow-left-drop-circle-outline'
+        tap_action:
+          action: call-service
+          service: tapo_control.ptz
+          service_data:
+            entity_id: camera.tapo_camera_5489_hd
+            pan: LEFT
+    hold_action:
+      action: more-info
+    style: |
+      :host .box {
+        display: none 
+      }
+  - type: glance
+    show_icon: true
+    show_name: false
+    show_state: false
+    style: |
+      ha-card.type-glance .entities, 
+      ha-card.type-glance .entity {
+        padding: 0px;
+        margin: 0px;
+      }
+      ha-card.type-glance {
+        margin-top: 14px;
+      }
+    entities:
+      - entity: camera.tapo_camera_5489_hd
+        icon: 'mdi:arrow-left-drop-circle-outline'
+        tap_action:
+          action: call-service
+          service: tapo_control.ptz
+          service_data:
+            entity_id: camera.tapo_camera_5489_hd
+            pan: LEFT
+      - entity: camera.tapo_camera_5489_hd
+        icon: 'mdi:arrow-up-drop-circle-outline'
+        tap_action:
+          action: call-service
+          service: tapo_control.ptz
+          service_data:
+            entity_id: camera.tapo_camera_5489_hd
+            tilt: UP
+      - entity: camera.tapo_camera_5489_hd
+        icon: 'mdi:arrow-down-drop-circle-outline'
+        tap_action:
+          action: call-service
+          service: tapo_control.ptz
+          service_data:
+            entity_id: camera.tapo_camera_5489_hd
+            tilt: DOWN
+      - entity: camera.tapo_camera_5489_hd
+        icon: 'mdi:arrow-right-drop-circle-outline'
+        tap_action:
+          action: call-service
+          service: tapo_control.ptz
+          service_data:
+            entity_id: camera.tapo_camera_5489_hd
+            pan: RIGHT
+  - type: glance
+    show_icon: true
+    show_name: false
+    show_state: false
+    style: |
+      ha-card.type-glance .entities, 
+      ha-card.type-glance .entity {
+        padding: 0px;
+        margin: 0px;
+      }
+      ha-card.type-glance {
+        margin-bottom: 0px;
+      }
+    entities:
+      - entity: camera.tapo_camera_5489_hd
+        icon: 'mdi:eye-off-outline'
+        tap_action:
+          action: call-service
+          service: tapo_control.set_privacy_mode
+          service_data:
+            entity_id: camera.tapo_camera_5489_hd
+            privacy_mode: 'on'
+        hold_action:
+          action: call-service
+          service: tapo_control.set_privacy_mode
+          service_data:
+            entity_id: camera.tapo_camera_5489_hd
+            privacy_mode: 'off'
+      - entity: camera.tapo_camera_5489_hd
+        icon: 'mdi:theme-light-dark'
+        tap_action:
+          action: call-service
+          service: tapo_control.set_day_night_mode
+          service_data:
+            entity_id: camera.tapo_camera_5489_hd
+            day_night_mode: auto
+      - entity: camera.tapo_camera_5489_hd
+        icon: 'mdi:weather-sunny'
+        tap_action:
+          action: call-service
+          service: tapo_control.set_day_night_mode
+          service_data:
+            entity_id: camera.tapo_camera_5489_hd
+            day_night_mode: 'off'
+      - entity: camera.tapo_camera_5489_hd
+        icon: 'mdi:weather-night'
+        tap_action:
+          action: call-service
+          service: tapo_control.set_day_night_mode
+          service_data:
+            entity_id: camera.tapo_camera_5489_hd
+            day_night_mode: 'on'
+  - type: entities
+    entities:
+      - entity: binary_sensor.tapo_camera_5489_motion
+        name: Motion Sensor
+    style: |
+      ha-card.type-entities {
+        margin-right: 14px;
+      }
+      ha-card.type-entities #states {
+        padding-top: 10px;
+      }
+```
+
 ### Picture Glance with live view and scripts, tap and hold actions
 
 ![Example 1](example1.png)
 
-```
+```yaml
 camera_image: camera.bedroom_hd
 camera_view: live
 entities:
@@ -147,7 +286,7 @@ type: picture-glance
 
 I have chosen to use scripts to execute camera actions as they affect both privacy mode and ptz and I could use them also in my automations.
 
-```
+```yaml
 set_bedroom_camera_away:
   alias: Set Bedroom Camera Away
   sequence:
