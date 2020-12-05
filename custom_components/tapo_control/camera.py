@@ -1,4 +1,5 @@
 import asyncio
+import urllib.parse
 from homeassistant.helpers.config_validation import boolean
 from homeassistant.core import HomeAssistant
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
@@ -231,9 +232,7 @@ class TapoCamEntity(Camera):
             streamType = "stream1"
         else:
             streamType = "stream2"
-        streamURL = (
-            f"rtsp://{self._username}:{self._password}@{self._host}:554/{streamType}"
-        )
+        streamURL = f"rtsp://{urllib.parse.quote_plus(self._username)}:{urllib.parse.quote_plus(self._password)}@{self._host}:554/{streamType}"
         return streamURL
 
     async def async_update(self):

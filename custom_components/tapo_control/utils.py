@@ -1,6 +1,7 @@
 import onvif
 import os
 import asyncio
+import urllib.parse
 from onvif import ONVIFCamera
 from pytapo import Tapo
 from .const import ENABLE_MOTION_SENSOR, DOMAIN, LOGGER, CLOUD_PASSWORD
@@ -17,6 +18,8 @@ def registerController(host, username, password):
 async def isRtspStreamWorking(hass, host, username, password):
     _ffmpeg = hass.data[DATA_FFMPEG]
     ffmpeg = ImageFrame(_ffmpeg.binary, loop=hass.loop)
+    username = urllib.parse.quote_plus(username)
+    password = urllib.parse.quote_plus(password)
     streaming_url = f"rtsp://{username}:{password}@{host}:554/stream1"
     image = await asyncio.shield(
         ffmpeg.get_image(
