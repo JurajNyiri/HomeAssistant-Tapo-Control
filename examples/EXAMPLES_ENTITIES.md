@@ -11,7 +11,7 @@ Below you can find some examples of usage of this custom component in template e
 
 Add to your configuration.yaml:
 
-```
+```yaml
 switch:
   - platform: template
     switches:
@@ -35,7 +35,7 @@ After refresh, switch will be available as switch.bedroom_privacy_mode.
 
 Add to your configuration.yaml:
 
-```
+```yaml
 sensor:
   - platform: template
     sensors:
@@ -46,7 +46,7 @@ sensor:
 
 Alternative using binary sensor:
 
-```
+```yaml
 binary_sensor:
   - platform: template
     sensors:
