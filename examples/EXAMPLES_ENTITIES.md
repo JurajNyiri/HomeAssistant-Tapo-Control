@@ -74,7 +74,7 @@ switch:
           {% endif %}
 ```
 
-After refresh, switch will be available as switch.bedroom_privacy_mode.
+After refresh, switch will be available as `switch.bedroom_privacy_mode`, `bedroom_auto_track` and `bedroom_alarm`.
 
 ### Sensor for motion detection
 
