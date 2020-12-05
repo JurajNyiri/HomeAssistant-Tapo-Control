@@ -201,7 +201,7 @@ class TapoCamEntity(Camera):
         return True
 
     async def async_camera_image(self):
-        ffmpeg = ImageFrame(self._ffmpeg.binary, loop=self.hass.loop)
+        ffmpeg = ImageFrame(self._ffmpeg.binary)
         streaming_url = self.getStreamSource()
         image = await asyncio.shield(
             ffmpeg.get_image(
@@ -213,7 +213,7 @@ class TapoCamEntity(Camera):
 
     async def handle_async_mjpeg_stream(self, request):
         streaming_url = self.getStreamSource()
-        stream = CameraMjpeg(self._ffmpeg.binary, loop=self.hass.loop)
+        stream = CameraMjpeg(self._ffmpeg.binary)
         await stream.open_camera(streaming_url)
         try:
             stream_reader = await stream.get_reader()

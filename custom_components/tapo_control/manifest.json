@@ -10,6 +10,7 @@
       "zeep[async]==4.0.0"
     ],
     "dependencies": ["ffmpeg"],
-    "config_flow": true
+    "config_flow": true,
+    "homeassistant": "1.0.0b1"
   }
   

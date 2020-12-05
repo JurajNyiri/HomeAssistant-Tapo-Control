@@ -17,7 +17,7 @@ def registerController(host, username, password):
 
 async def isRtspStreamWorking(hass, host, username, password):
     _ffmpeg = hass.data[DATA_FFMPEG]
-    ffmpeg = ImageFrame(_ffmpeg.binary, loop=hass.loop)
+    ffmpeg = ImageFrame(_ffmpeg.binary)
     username = urllib.parse.quote_plus(username)
     password = urllib.parse.quote_plus(password)
     streaming_url = f"rtsp://{username}:{password}@{host}:554/stream1"
