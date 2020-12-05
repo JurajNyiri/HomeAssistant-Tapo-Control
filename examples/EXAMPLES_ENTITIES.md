@@ -18,7 +18,7 @@ switch:
   - platform: template
     switches:
       # This is a switch to turn the privacy mode on/off
-      bedroom_privacy_mode_switch:
+      bedroom_privacy_mode:
         friendly_name: Privacy Mode
         value_template: "{{ state_attr('camera.bedroom_hd', 'privacy_mode') == 'on' }}"
         turn_on:
@@ -38,7 +38,7 @@ switch:
             mdi:eye-outline
           {% endif %}
       # This is a switch to turn the auto track mode on/off
-      bedroom_auto_track_switch:
+      bedroom_auto_track:
         friendly_name: Auto Track
         value_template: "{{ state_attr('camera.bedroom_hd', 'auto_track') == 'on' }}"
         turn_on:
@@ -53,7 +53,7 @@ switch:
               auto_track_mode: 'off'
         icon_template: "mdi:radar"
       # This is a switch to turn the alarm on/off
-      bedroom_alarm_switch:
+      bedroom_alarm:
         friendly_name: Alarm
         value_template: "{{ state_attr('camera.bedroom_hd', 'alarm') == 'on' }}"
         turn_on:
