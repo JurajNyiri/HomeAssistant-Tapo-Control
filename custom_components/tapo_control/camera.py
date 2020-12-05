@@ -118,7 +118,6 @@ async def async_setup_entry(
         TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id], False),
     ]
     async_add_entities(hass.data[DOMAIN][entry.entry_id]["entities"])
-    hass.data[DOMAIN][entry.entry_id].pop("initialData")
 
 
 class TapoCamEntity(Camera):
@@ -140,7 +139,7 @@ class TapoCamEntity(Camera):
         self._username = entry.data.get(CONF_USERNAME)
         self._password = entry.data.get(CONF_PASSWORD)
 
-        self.updateCam(tapoData["initialData"])
+        self.updateCam(tapoData["camData"])
 
     async def async_added_to_hass(self) -> None:
         self._enabled = True
