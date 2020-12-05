@@ -108,6 +108,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
             if someCameraEnabled:
                 camData = await getCamData(hass, tapoController)
+                hass.data[DOMAIN][entry.entry_id]["camData"] = camData
                 for entity in hass.data[DOMAIN][entry.entry_id]["entities"]:
                     if entity._enabled:
                         entity.updateCam(camData)
@@ -126,7 +127,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "controller": tapoController,
             "update_listener": entry.add_update_listener(update_listener),
             "coordinator": tapoCoordinator,
-            "initialData": camData,
+            "camData": camData,
             "motionSensorCreated": False,
             "eventsDevice": False,
             "eventsSetup": False,
