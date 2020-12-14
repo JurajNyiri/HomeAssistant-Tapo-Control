@@ -1,7 +1,5 @@
 # HomeAssistant - Tapo: Cameras Control
 
-## Warning: This version only works on Home Assistant 1.0.0 and its beta versions!
-
 Custom component - Tapo: Cameras Control - to add Tapo cameras into Home Assistant
 
 ## Installation
