@@ -191,15 +191,16 @@ Also make sure that:
 
 This is a [known issue](https://community.home-assistant.io/t/i-tried-all-the-camera-platforms-so-you-dont-have-to/222999) of Home Assistant.
 
-There is an ability to disable usage of Home Assistant Stream component for the camera, which might lower the delay very significantly.
+There is an ability to disable usage of Home Assistant Stream component for the camera, which might lower the delay very significantly at cost of higher CPU usage.
 
 You can choose to disable stream component when adding the camera, or via Options when camera has already been added. This change requires a restart of Home Assistant.
 
-There might be some disadvantages to doing this, like losing option to control playback, and which depend on your environment and future Home Assistant updates.
+There might be some disadvantages to doing this, like losing option to control playback and a higher CPU usage.
+Results depend on your hardware and future Home Assistant updates.
 
-Try it out and see what works best for you.
+If your disable stream and your hardware is not up to the task, you will get artifacts, bigger delay and freezes.
 
-If you encounter any issues worth mentioning here while not using a stream component, please report them via a new issue or a PR.
+If you wish, try it out and see what works best for you.
 
 </details>
 

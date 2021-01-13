@@ -43,7 +43,7 @@
           "enable_stream": "Use Stream from Home Assistant [requires restart]",
           "cloud_password": "Cloud Password (Optional)"
         },
-        "description": "Modify settings of your Tapo Camera.\n\nUse stream from Home Assistant:\nYes - Longer playback delay, allows playback control\nNo - Very short playback delay, no playback control"
+        "description": "Modify settings of your Tapo Camera.\n\nUse stream from Home Assistant:\nYes - Longer playback delay, lower CPU usage, allows playback control\nNo - Very short playback delay, higher CPU usage, no playback control"
       }
     },
     "error": {
