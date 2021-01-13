@@ -8,12 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from .const import (
-    LOGGER,
-    DOMAIN,
-    ENABLE_MOTION_SENSOR,
-    CLOUD_PASSWORD,
-)
+from .const import LOGGER, DOMAIN, ENABLE_MOTION_SENSOR, CLOUD_PASSWORD, ENABLE_STREAM
 from .utils import (
     registerController,
     getCamData,
@@ -50,6 +45,15 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         config_entry.data = {**new}
 
         config_entry.version = 3
+
+    if config_entry.version == 3:
+
+        new = {**config_entry.data}
+        new[ENABLE_STREAM] = True
+
+        config_entry.data = {**new}
+
+        config_entry.version = 4
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
@@ -115,10 +119,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         entity.async_schedule_update_ha_state(True)
 
         tapoCoordinator = DataUpdateCoordinator(
-            hass,
-            LOGGER,
-            name="Tapo resource status",
-            update_method=async_update_data,
+            hass, LOGGER, name="Tapo resource status", update_method=async_update_data,
         )
 
         camData = await getCamData(hass, tapoController)

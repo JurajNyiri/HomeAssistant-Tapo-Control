@@ -8,8 +8,8 @@ from pytapo import Tapo
 from homeassistant.util import slugify
 from homeassistant.helpers import entity_platform
 from homeassistant.components.camera import (
-    SUPPORT_STREAM,
     SUPPORT_ON_OFF,
+    SUPPORT_STREAM,
     Camera,
 )
 from homeassistant.components.ffmpeg import DATA_FFMPEG
@@ -18,6 +18,7 @@ from homeassistant.helpers.aiohttp_client import async_aiohttp_proxy_stream
 from haffmpeg.camera import CameraMjpeg
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from .const import (
+    ENABLE_STREAM,
     SERVICE_SET_LED_MODE,
     SCHEMA_SERVICE_SET_LED_MODE,
     SERVICE_SET_DAY_NIGHT_MODE,
@@ -58,9 +59,7 @@ async def async_setup_entry(
 ):
     platform = entity_platform.current_platform.get()
     platform.async_register_entity_service(
-        SERVICE_SET_LED_MODE,
-        SCHEMA_SERVICE_SET_LED_MODE,
-        "set_led_mode",
+        SERVICE_SET_LED_MODE, SCHEMA_SERVICE_SET_LED_MODE, "set_led_mode",
     )
     platform.async_register_entity_service(
         SERVICE_SET_DAY_NIGHT_MODE,
@@ -68,19 +67,13 @@ async def async_setup_entry(
         "set_day_night_mode",
     )
     platform.async_register_entity_service(
-        SERVICE_SET_PRIVACY_MODE,
-        SCHEMA_SERVICE_SET_PRIVACY_MODE,
-        "set_privacy_mode",
+        SERVICE_SET_PRIVACY_MODE, SCHEMA_SERVICE_SET_PRIVACY_MODE, "set_privacy_mode",
     )
     platform.async_register_entity_service(
-        SERVICE_PTZ,
-        SCHEMA_SERVICE_PTZ,
-        "ptz",
+        SERVICE_PTZ, SCHEMA_SERVICE_PTZ, "ptz",
     )
     platform.async_register_entity_service(
-        SERVICE_SET_ALARM_MODE,
-        SCHEMA_SERVICE_SET_ALARM_MODE,
-        "set_alarm_mode",
+        SERVICE_SET_ALARM_MODE, SCHEMA_SERVICE_SET_ALARM_MODE, "set_alarm_mode",
     )
     platform.async_register_entity_service(
         SERVICE_SET_MOTION_DETECTION_MODE,
@@ -93,24 +86,16 @@ async def async_setup_entry(
         "set_auto_track_mode",
     )
     platform.async_register_entity_service(
-        SERVICE_REBOOT,
-        SCHEMA_SERVICE_REBOOT,
-        "reboot",
+        SERVICE_REBOOT, SCHEMA_SERVICE_REBOOT, "reboot",
     )
     platform.async_register_entity_service(
-        SERVICE_SAVE_PRESET,
-        SCHEMA_SERVICE_SAVE_PRESET,
-        "save_preset",
+        SERVICE_SAVE_PRESET, SCHEMA_SERVICE_SAVE_PRESET, "save_preset",
     )
     platform.async_register_entity_service(
-        SERVICE_DELETE_PRESET,
-        SCHEMA_SERVICE_DELETE_PRESET,
-        "delete_preset",
+        SERVICE_DELETE_PRESET, SCHEMA_SERVICE_DELETE_PRESET, "delete_preset",
     )
     platform.async_register_entity_service(
-        SERVICE_FORMAT,
-        SCHEMA_SERVICE_FORMAT,
-        "format",
+        SERVICE_FORMAT, SCHEMA_SERVICE_FORMAT, "format",
     )
 
     hass.data[DOMAIN][entry.entry_id]["entities"] = [
@@ -122,11 +107,7 @@ async def async_setup_entry(
 
 class TapoCamEntity(Camera):
     def __init__(
-        self,
-        hass: HomeAssistant,
-        entry: dict,
-        tapoData: Tapo,
-        HDStream: boolean,
+        self, hass: HomeAssistant, entry: dict, tapoData: Tapo, HDStream: boolean,
     ):
         super().__init__()
         self._controller = tapoData["controller"]
@@ -138,6 +119,7 @@ class TapoCamEntity(Camera):
         self._host = entry.data.get(CONF_IP_ADDRESS)
         self._username = entry.data.get(CONF_USERNAME)
         self._password = entry.data.get(CONF_PASSWORD)
+        self._enable_stream = entry.data.get(ENABLE_STREAM)
 
         self.updateCam(tapoData["camData"])
 
@@ -149,7 +131,10 @@ class TapoCamEntity(Camera):
 
     @property
     def supported_features(self):
-        return SUPPORT_STREAM | SUPPORT_ON_OFF
+        if self._enable_stream:
+            return SUPPORT_STREAM | SUPPORT_ON_OFF
+        else:
+            return SUPPORT_ON_OFF
 
     @property
     def icon(self) -> str:
@@ -204,10 +189,7 @@ class TapoCamEntity(Camera):
         ffmpeg = ImageFrame(self._ffmpeg.binary)
         streaming_url = self.getStreamSource()
         image = await asyncio.shield(
-            ffmpeg.get_image(
-                streaming_url,
-                output_format=IMAGE_JPEG,
-            )
+            ffmpeg.get_image(streaming_url, output_format=IMAGE_JPEG,)
         )
         return image
 
@@ -384,9 +366,7 @@ class TapoCamEntity(Camera):
             )
         else:
             await self.hass.async_add_executor_job(
-                self._controller.setMotionDetection,
-                True,
-                motion_detection_mode,
+                self._controller.setMotionDetection, True, motion_detection_mode,
             )
         await self._coordinator.async_request_refresh()
 

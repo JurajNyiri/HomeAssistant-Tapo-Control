@@ -2,14 +2,14 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 import voluptuous as vol
 from .utils import registerController, isRtspStreamWorking
-from .const import DOMAIN, ENABLE_MOTION_SENSOR, LOGGER, CLOUD_PASSWORD
+from .const import DOMAIN, ENABLE_MOTION_SENSOR, ENABLE_STREAM, LOGGER, CLOUD_PASSWORD
 
 
 @config_entries.HANDLERS.register(DOMAIN)
 class FlowHandler(config_entries.ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 3
+    VERSION = 4
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -23,8 +23,10 @@ class FlowHandler(config_entries.ConfigFlow):
     async def async_step_other_options(self, user_input=None):
         errors = {}
         enable_motion_sensor = True
+        enable_stream = True
         if user_input is not None:
             enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
+            enable_stream = user_input[ENABLE_STREAM]
             host = self.tapoHost
             cloud_password = self.tapoCloudPassword
             username = self.tapoUsername
@@ -33,6 +35,7 @@ class FlowHandler(config_entries.ConfigFlow):
                 title=host,
                 data={
                     ENABLE_MOTION_SENSOR: enable_motion_sensor,
+                    ENABLE_STREAM: enable_stream,
                     CONF_IP_ADDRESS: host,
                     CONF_USERNAME: username,
                     CONF_PASSWORD: password,
@@ -47,7 +50,10 @@ class FlowHandler(config_entries.ConfigFlow):
                     vol.Required(
                         ENABLE_MOTION_SENSOR,
                         description={"suggested_value": enable_motion_sensor},
-                    ): bool
+                    ): bool,
+                    vol.Required(
+                        ENABLE_STREAM, description={"suggested_value": enable_stream},
+                    ): bool,
                 }
             ),
             errors=errors,
@@ -163,6 +169,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
         password = self.config_entry.data[CONF_PASSWORD]
         cloud_password = self.config_entry.data[CLOUD_PASSWORD]
         enable_motion_sensor = self.config_entry.data[ENABLE_MOTION_SENSOR]
+        enable_stream = self.config_entry.data[ENABLE_STREAM]
         if user_input is not None:
             try:
                 host = self.config_entry.data["ip_address"]
@@ -184,7 +191,12 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                 if ENABLE_MOTION_SENSOR in user_input:
                     enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
                 else:
-                    enable_motion_sensor = False
+                    enable_motion_sensor = True
+
+                if ENABLE_STREAM in user_input:
+                    enable_stream = user_input[ENABLE_STREAM]
+                else:
+                    enable_stream = True
 
                 rtspStreamWorks = await isRtspStreamWorking(
                     self.hass, host, username, password
@@ -205,6 +217,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
                     data={
+                        ENABLE_STREAM: enable_stream,
                         ENABLE_MOTION_SENSOR: enable_motion_sensor,
                         CONF_IP_ADDRESS: host,
                         CONF_USERNAME: username,
@@ -242,6 +255,9 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Optional(
                         ENABLE_MOTION_SENSOR,
                         description={"suggested_value": enable_motion_sensor},
+                    ): bool,
+                    vol.Optional(
+                        ENABLE_STREAM, description={"suggested_value": enable_stream},
                     ): bool,
                 }
             ),

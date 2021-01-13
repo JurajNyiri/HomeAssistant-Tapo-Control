@@ -1,55 +1,57 @@
 {
-	"title": "Tapo: Cameras Control",
-	"config": {
-		"step": {
-			"auth": {
-				"data": {
-					"ip_address": "IP Address",
-					"username": "Username",
-					"password": "Password"
-				},
-				"description": "Enter camera account credentials.\n\nThis account is created via Tapo app at:\nCamera Settings > Advanced Settings > Camera Account"
-			},
-			"auth_cloud_password": {
-				"data": {
-                    "cloud_password": "Cloud Password"
-				},
-				"description": "Camera requires your cloud password for control.\nEmail is not needed and all communication is still fully local."
-			},
-			"other_options": {
-				"data": {
-                    "enable_motion_sensor": "Enable motion sensor"
-				},
-				"description": "Almost there!\nJust some final options..."
-			}
-		},
-		"error": {
-			"invalid_auth": "Invalid authentication data",
-			"unknown": "Unknown error",
-			"connection_failed": "Connection failed",
-			"invalid_auth_cloud": "Invalid cloud password",
-			"camera_requires_admin": "Your camera requires cloud password for control"
-		}
-	},
-	"options": {
-		"step": {
-			"auth": {
-				"data": {
-					"ip_address": "IP Address",
-					"username": "Username",
-                    "password": "Password",
-                    "enable_motion_sensor": "Enable motion sensor",
-                    "cloud_password": "Cloud Password (Optional)"
-                },
-                "description": "Please enter the connection information of your Tapo camera."
-			}
-		},
-		"error": {
-			"invalid_auth": "Invalid authentication data",
-			"unknown": "Unknown error",
-			"connection_failed": "Connection failed",
-			"invalid_auth_cloud": "Invalid cloud password",
-			"camera_requires_admin": "Camera requires cloud password for control"
-		}
-	}
+  "title": "Tapo: Cameras Control",
+  "config": {
+    "step": {
+      "auth": {
+        "data": {
+          "ip_address": "IP Address",
+          "username": "Username",
+          "password": "Password"
+        },
+        "description": "Enter camera account credentials.\n\nThis account is created via Tapo app at:\nCamera Settings > Advanced Settings > Camera Account"
+      },
+      "auth_cloud_password": {
+        "data": {
+          "cloud_password": "Cloud Password"
+        },
+        "description": "Camera requires your cloud password for control.\nEmail is not needed and all communication is still fully local."
+      },
+      "other_options": {
+        "data": {
+          "enable_motion_sensor": "Enable motion sensor",
+          "enable_stream": "Use Stream from Home Assistant"
+        },
+        "description": "Almost there!\nJust some final options..."
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid authentication data",
+      "unknown": "Unknown error",
+      "connection_failed": "Connection failed",
+      "invalid_auth_cloud": "Invalid cloud password",
+      "camera_requires_admin": "Your camera requires cloud password for control"
+    }
+  },
+  "options": {
+    "step": {
+      "auth": {
+        "data": {
+          "ip_address": "IP Address",
+          "username": "Username",
+          "password": "Password",
+          "enable_motion_sensor": "Enable motion sensor",
+          "enable_stream": "Use Stream from Home Assistant [requires restart]",
+          "cloud_password": "Cloud Password (Optional)"
+        },
+        "description": "Modify settings of your Tapo Camera.\n\nUse stream from Home Assistant:\nYes (recommended) - Longer playback delay, Lovelace card smooth playback\nNo - Very short delay once opened, Lovelace card 10 sec image refresh"
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid authentication data",
+      "unknown": "Unknown error",
+      "connection_failed": "Connection failed",
+      "invalid_auth_cloud": "Invalid cloud password",
+      "camera_requires_admin": "Camera requires cloud password for control"
+    }
+  }
 }

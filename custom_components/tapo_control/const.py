@@ -91,4 +91,6 @@ SCHEMA_SERVICE_DELETE_PRESET = {
 SERVICE_FORMAT = "format"
 SCHEMA_SERVICE_FORMAT = {vol.Required(ENTITY_ID): cv.string}
 
+ENABLE_STREAM = "enable_stream"
+
 LOGGER = logging.getLogger("custom_components." + DOMAIN)
