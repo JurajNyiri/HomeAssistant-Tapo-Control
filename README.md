@@ -186,6 +186,23 @@ Also make sure that:
 - onvif port 2020 on camera is opened
 </details>
 
+<details>
+  <summary>There is a big delay in video stream</summary>
+
+This is a [known issue](https://community.home-assistant.io/t/i-tried-all-the-camera-platforms-so-you-dont-have-to/222999) of Home Assistant.
+
+There is an ability to disable usage of Home Assistant Stream component for the camera, which might lower the delay very significantly.
+
+You can choose to disable stream component when adding the camera, or via Options when camera has already been added. This change requires a restart of Home Assistant.
+
+There might be some disadvantages to doing this, like losing option to control playback, and which depend on your environment and future Home Assistant updates.
+
+Try it out and see what works best for you.
+
+If you encounter any issues worth mentioning here while not using a stream component, please report them via a new issue or a PR.
+
+</details>
+
 ## Have a comment or a suggestion?
 
 Please [open a new issue](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new/choose), or discuss on [Home Assistant: Community Forum](https://community.home-assistant.io/t/tapo-cameras-control/231795).
