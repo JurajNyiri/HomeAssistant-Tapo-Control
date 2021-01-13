@@ -195,7 +195,7 @@ There is an ability to disable usage of Home Assistant Stream component for the 
 
 You can choose to disable stream component when adding the camera, or via Options when camera has already been added. This change requires a restart of Home Assistant.
 
-There might be some disadvantages to doing this, like losing option to control playback, higher CPU usage.
+There might be some disadvantages to doing this, like losing option to control playback and a higher CPU usage.
 Results depend on your hardware and future Home Assistant updates.
 
 If your disable stream and your hardware is not up to the task, you will get artifacts, bigger delay and freezes.
