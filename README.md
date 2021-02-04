@@ -24,6 +24,8 @@ Following target TCP ports **must be open** in firewall for the camera to access
 
 Add cameras via Integrations (search for Tapo) in Home Assistant UI.
 
+Cameras are also automatically discovered when they are (re)connected to WIFI.
+
 To add multiple cameras, add integration multiple times.
 
 See [examples for lovelace cards](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/blob/main/examples/EXAMPLES_LOVELACE.md) or [examples for template entities](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/blob/main/examples/EXAMPLES_ENTITIES.md).
@@ -166,7 +168,7 @@ Sets day or night mode
 - **day_night_mode** Required: Sets day/night mode for camera. Possible values: on, off, auto
 </details>
 
-## Troubleshooting
+## Troubleshooting | FAQ
 
 <details>
   <summary>Binary sensor for motion doesn't show up or work</summary>
@@ -187,7 +189,7 @@ Also make sure that:
 </details>
 
 <details>
-  <summary>There is a big delay in video stream</summary>
+  <summary>Big delay in camera stream</summary>
 
 This is a [known issue](https://community.home-assistant.io/t/i-tried-all-the-camera-platforms-so-you-dont-have-to/222999) of Home Assistant.
 
@@ -201,6 +203,32 @@ Results depend on your hardware and future Home Assistant updates.
 If you disable stream and your hardware is not up to the task, you will get artifacts, bigger delay and freezes.
 
 If you wish, try it out and see what works best for you.
+
+</details>
+
+<details>
+  <summary>No audio in camera stream</summary>
+
+Supported audio codecs in Home Assistant are "aac", "ac3" and "mp3".
+
+Tapo Cameras use PCM ALAW (alaw) which is not supported.
+
+[More details here.](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/58#issuecomment-762787442)
+
+</details>
+
+<details>
+  <summary>Supported models</summary>
+
+Users reported full functionality with following Tapo Cameras:
+
+- C100
+- C200
+- C310
+
+The integration _should_ work with any other Tapo Cameras.
+
+If you had success with some other model, please report it via a new issue.
 
 </details>
 
