@@ -1,8 +1,16 @@
 from homeassistant import config_entries
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
+from homeassistant.core import callback
+from homeassistant.components.dhcp import HOSTNAME, IP_ADDRESS, MAC_ADDRESS
 import voluptuous as vol
 from .utils import registerController, isRtspStreamWorking
-from .const import DOMAIN, ENABLE_MOTION_SENSOR, ENABLE_STREAM, LOGGER, CLOUD_PASSWORD
+from .const import (
+    DOMAIN,
+    ENABLE_MOTION_SENSOR,
+    ENABLE_STREAM,
+    LOGGER,
+    CLOUD_PASSWORD,
+)
 
 
 @config_entries.HANDLERS.register(DOMAIN)
@@ -19,6 +27,35 @@ class FlowHandler(config_entries.ConfigFlow):
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
         return await self.async_step_auth()
+
+    async def async_step_dhcp(self, dhcp_discovery):
+        """Handle dhcp discovery."""
+        if self._async_host_already_configured(dhcp_discovery[IP_ADDRESS]):
+            return self.async_abort(reason="already_configured")
+
+        if (
+            not dhcp_discovery[HOSTNAME].startswith("C100_")
+            and not dhcp_discovery[HOSTNAME].startswith("C200_")
+            and not dhcp_discovery[HOSTNAME].startswith("C310_")
+            and not dhcp_discovery[HOSTNAME].startswith("TC60_")
+            and not dhcp_discovery[HOSTNAME].startswith("TC70_")
+        ):
+            return self.async_abort(reason="not_tapo_device")
+
+        mac_address = dhcp_discovery[MAC_ADDRESS]
+        await self.async_set_unique_id(mac_address)
+        self.context.update(
+            {"title_placeholders": {"name": dhcp_discovery[IP_ADDRESS]}}
+        )
+        return await self.async_step_user()
+
+    @callback
+    def _async_host_already_configured(self, host):
+        """See if we already have an entry matching the host."""
+        for entry in self._async_current_entries():
+            if entry.data.get(CONF_IP_ADDRESS) == host:
+                return True
+        return False
 
     async def async_step_other_options(self, user_input=None):
         errors = {}
@@ -172,7 +209,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
         enable_stream = self.config_entry.data[ENABLE_STREAM]
         if user_input is not None:
             try:
-                host = self.config_entry.data["ip_address"]
+                host = self.config_entry.data[CONF_IP_ADDRESS]
                 username = user_input[CONF_USERNAME]
                 password = user_input[CONF_PASSWORD]
 

@@ -1,6 +1,7 @@
 {
   "title": "Tapo: Cameras Control",
   "config": {
+    "flow_title": "Tapo: Cameras Control {name}",
     "step": {
       "auth": {
         "data": {
@@ -30,6 +31,10 @@
       "connection_failed": "Connection failed",
       "invalid_auth_cloud": "Invalid cloud password",
       "camera_requires_admin": "Your camera requires cloud password for control"
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
+      "not_tapo_device": "Discovered device is not a Tapo camera"
     }
   },
   "options": {

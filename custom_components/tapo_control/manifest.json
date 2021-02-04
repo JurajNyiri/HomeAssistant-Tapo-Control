@@ -1,16 +1,2937 @@
 {
-    "domain": "tapo_control",
-    "name": "Tapo: Cameras Control",
-    "documentation": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control",
-    "issue_tracker": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues",
-    "codeowners": ["@JurajNyiri"],
-    "requirements": [
-      "pytapo==1.2.1",
-      "onvif-zeep-async==1.0.0",
-      "zeep[async]==4.0.0"
-    ],
-    "dependencies": ["ffmpeg"],
-    "config_flow": true,
-    "homeassistant": "1.0.0b1"
-  }
-  
+  "domain": "tapo_control",
+  "name": "Tapo: Cameras Control",
+  "documentation": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control",
+  "issue_tracker": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues",
+  "codeowners": ["@JurajNyiri"],
+  "requirements": [
+    "pytapo==1.2.1",
+    "onvif-zeep-async==1.0.0",
+    "zeep[async]==4.0.0"
+  ],
+  "dependencies": ["ffmpeg"],
+  "config_flow": true,
+  "homeassistant": "2021.2.0",
+  "dhcp": [
+    {
+      "hostname": "c200_*",
+      "macaddress": "000AEB*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "001478*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "0019E0*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "001D0F*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "002127*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "0023CD*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "002586*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "002719*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "081F71*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "085700*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "0C4B54*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "0C722C*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "0C8063*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "0C8268*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "10FEED*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "147590*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "148692*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "14CC20*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "14CF92*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "14E6E4*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "18A6F7*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "18D6C7*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "1C3BF3*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "1C4419*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "1CFA68*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "206BE7*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "20DCE6*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "246968*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "282CB2*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "28EE52*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "30B49E*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "30B5C2*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "30FC68*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "349672*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "34E894*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "34F716*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "388345*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "3C06A7*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "3C46D8*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "3C846A*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "40169F*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "403F8C*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "44B32D*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "480EEC*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "487D2E*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "503EAA*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "50BD5F*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "50C7BF*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "50D4F7*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "50FA84*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "547595*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "54A703*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "54C80F*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "54E6FC*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "584120*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "5C63BF*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "5C899A*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "6032B1*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "603A7C*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "60E327*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "645601*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "6466B3*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "646E97*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "647002*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "68FF7B*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "6CE873*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "704F57*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "7405A5*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "74DA88*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "74EA3A*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "7844FD*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "78A106*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "7C8BCA*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "7CB59B*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "808917*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "808F1D*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "80EA07*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "8416F9*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "84D81B*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "882593*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "8C210A*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "8CA6DF*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "909A4A*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "90AE1B*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "90F652*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "940C6D*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "94D9B3*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "984827*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "98DAC4*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "98DED0*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "9C216A*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "9CA615*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "A0F3C1*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "A42BB0*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "A8154D*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "A8574E*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "AC84C6*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "B0487A*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "B04E26*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "B09575*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "B0958E*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "B0BE76*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "B8F883*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "BC4699*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "BCD177*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "C025E9*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "C04A00*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "C06118*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "C0C9E3*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "C0E42D*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "C46E1F*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "C47154*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "C4E984*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "CC08FB*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "CC32E5*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "CC3429*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "D03745*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "D076E7*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "D0C7C0*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "D4016D*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "D46E0E*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "D807B6*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "D80D17*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "D8150D*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "D84732*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "D85D4C*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "DC0077*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "DCFE18*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "E005C5*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "E4C32A*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "E4D332*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "E894F6*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "E8DE27*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "EC086B*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "EC172F*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "EC26CA*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "EC888F*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "F0F336*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "F42A7D*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "F483CD*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "F4EC38*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "F4F26D*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "F81A67*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "F88C21*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "F8D111*"
+    },
+    {
+      "hostname": "c200_*",
+      "macaddress": "FCD733*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "000AEB*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "001478*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "0019E0*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "001D0F*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "002127*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "0023CD*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "002586*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "002719*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "081F71*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "085700*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "0C4B54*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "0C722C*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "0C8063*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "0C8268*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "10FEED*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "147590*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "148692*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "14CC20*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "14CF92*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "14E6E4*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "18A6F7*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "18D6C7*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "1C3BF3*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "1C4419*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "1CFA68*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "206BE7*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "20DCE6*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "246968*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "282CB2*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "28EE52*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "30B49E*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "30B5C2*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "30FC68*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "349672*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "34E894*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "34F716*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "388345*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "3C06A7*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "3C46D8*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "3C846A*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "40169F*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "403F8C*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "44B32D*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "480EEC*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "487D2E*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "503EAA*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "50BD5F*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "50C7BF*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "50D4F7*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "50FA84*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "547595*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "54A703*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "54C80F*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "54E6FC*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "584120*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "5C63BF*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "5C899A*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "6032B1*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "603A7C*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "60E327*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "645601*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "6466B3*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "646E97*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "647002*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "68FF7B*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "6CE873*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "704F57*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "7405A5*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "74DA88*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "74EA3A*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "7844FD*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "78A106*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "7C8BCA*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "7CB59B*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "808917*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "808F1D*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "80EA07*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "8416F9*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "84D81B*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "882593*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "8C210A*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "8CA6DF*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "909A4A*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "90AE1B*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "90F652*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "940C6D*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "94D9B3*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "984827*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "98DAC4*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "98DED0*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "9C216A*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "9CA615*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "A0F3C1*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "A42BB0*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "A8154D*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "A8574E*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "AC84C6*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "B0487A*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "B04E26*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "B09575*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "B0958E*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "B0BE76*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "B8F883*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "BC4699*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "BCD177*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "C025E9*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "C04A00*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "C06118*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "C0C9E3*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "C0E42D*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "C46E1F*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "C47154*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "C4E984*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "CC08FB*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "CC32E5*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "CC3429*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "D03745*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "D076E7*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "D0C7C0*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "D4016D*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "D46E0E*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "D807B6*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "D80D17*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "D8150D*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "D84732*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "D85D4C*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "DC0077*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "DCFE18*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "E005C5*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "E4C32A*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "E4D332*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "E894F6*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "E8DE27*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "EC086B*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "EC172F*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "EC26CA*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "EC888F*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "F0F336*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "F42A7D*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "F483CD*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "F4EC38*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "F4F26D*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "F81A67*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "F88C21*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "F8D111*"
+    },
+    {
+      "hostname": "c100_*",
+      "macaddress": "FCD733*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "000AEB*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "001478*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "0019E0*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "001D0F*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "002127*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "0023CD*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "002586*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "002719*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "081F71*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "085700*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "0C4B54*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "0C722C*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "0C8063*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "0C8268*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "10FEED*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "147590*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "148692*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "14CC20*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "14CF92*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "14E6E4*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "18A6F7*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "18D6C7*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "1C3BF3*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "1C4419*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "1CFA68*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "206BE7*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "20DCE6*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "246968*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "282CB2*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "28EE52*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "30B49E*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "30B5C2*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "30FC68*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "349672*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "34E894*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "34F716*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "388345*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "3C06A7*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "3C46D8*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "3C846A*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "40169F*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "403F8C*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "44B32D*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "480EEC*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "487D2E*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "503EAA*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "50BD5F*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "50C7BF*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "50D4F7*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "50FA84*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "547595*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "54A703*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "54C80F*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "54E6FC*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "584120*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "5C63BF*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "5C899A*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "6032B1*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "603A7C*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "60E327*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "645601*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "6466B3*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "646E97*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "647002*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "68FF7B*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "6CE873*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "704F57*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "7405A5*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "74DA88*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "74EA3A*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "7844FD*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "78A106*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "7C8BCA*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "7CB59B*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "808917*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "808F1D*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "80EA07*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "8416F9*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "84D81B*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "882593*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "8C210A*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "8CA6DF*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "909A4A*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "90AE1B*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "90F652*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "940C6D*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "94D9B3*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "984827*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "98DAC4*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "98DED0*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "9C216A*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "9CA615*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "A0F3C1*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "A42BB0*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "A8154D*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "A8574E*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "AC84C6*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "B0487A*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "B04E26*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "B09575*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "B0958E*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "B0BE76*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "B8F883*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "BC4699*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "BCD177*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "C025E9*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "C04A00*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "C06118*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "C0C9E3*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "C0E42D*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "C46E1F*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "C47154*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "C4E984*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "CC08FB*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "CC32E5*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "CC3429*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "D03745*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "D076E7*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "D0C7C0*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "D4016D*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "D46E0E*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "D807B6*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "D80D17*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "D8150D*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "D84732*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "D85D4C*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "DC0077*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "DCFE18*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "E005C5*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "E4C32A*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "E4D332*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "E894F6*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "E8DE27*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "EC086B*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "EC172F*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "EC26CA*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "EC888F*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "F0F336*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "F42A7D*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "F483CD*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "F4EC38*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "F4F26D*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "F81A67*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "F88C21*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "F8D111*"
+    },
+    {
+      "hostname": "c310_*",
+      "macaddress": "FCD733*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "000AEB*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "001478*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "0019E0*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "001D0F*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "002127*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "0023CD*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "002586*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "002719*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "081F71*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "085700*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "0C4B54*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "0C722C*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "0C8063*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "0C8268*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "10FEED*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "147590*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "148692*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "14CC20*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "14CF92*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "14E6E4*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "18A6F7*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "18D6C7*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "1C3BF3*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "1C4419*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "1CFA68*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "206BE7*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "20DCE6*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "246968*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "282CB2*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "28EE52*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "30B49E*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "30B5C2*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "30FC68*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "349672*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "34E894*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "34F716*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "388345*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "3C06A7*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "3C46D8*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "3C846A*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "40169F*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "403F8C*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "44B32D*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "480EEC*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "487D2E*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "503EAA*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "50BD5F*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "50C7BF*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "50D4F7*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "50FA84*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "547595*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "54A703*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "54C80F*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "54E6FC*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "584120*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "5C63BF*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "5C899A*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "6032B1*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "603A7C*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "60E327*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "645601*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "6466B3*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "646E97*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "647002*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "68FF7B*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "6CE873*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "704F57*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "7405A5*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "74DA88*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "74EA3A*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "7844FD*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "78A106*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "7C8BCA*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "7CB59B*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "808917*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "808F1D*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "80EA07*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "8416F9*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "84D81B*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "882593*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "8C210A*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "8CA6DF*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "909A4A*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "90AE1B*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "90F652*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "940C6D*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "94D9B3*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "984827*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "98DAC4*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "98DED0*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "9C216A*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "9CA615*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "A0F3C1*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "A42BB0*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "A8154D*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "A8574E*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "AC84C6*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "B0487A*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "B04E26*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "B09575*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "B0958E*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "B0BE76*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "B8F883*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "BC4699*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "BCD177*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "C025E9*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "C04A00*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "C06118*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "C0C9E3*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "C0E42D*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "C46E1F*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "C47154*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "C4E984*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "CC08FB*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "CC32E5*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "CC3429*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "D03745*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "D076E7*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "D0C7C0*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "D4016D*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "D46E0E*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "D807B6*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "D80D17*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "D8150D*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "D84732*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "D85D4C*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "DC0077*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "DCFE18*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "E005C5*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "E4C32A*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "E4D332*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "E894F6*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "E8DE27*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "EC086B*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "EC172F*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "EC26CA*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "EC888F*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "F0F336*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "F42A7D*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "F483CD*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "F4EC38*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "F4F26D*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "F81A67*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "F88C21*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "F8D111*"
+    },
+    {
+      "hostname": "tc70_*",
+      "macaddress": "FCD733*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "000AEB*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "001478*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "0019E0*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "001D0F*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "002127*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "0023CD*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "002586*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "002719*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "081F71*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "085700*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "0C4B54*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "0C722C*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "0C8063*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "0C8268*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "10FEED*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "147590*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "148692*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "14CC20*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "14CF92*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "14E6E4*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "18A6F7*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "18D6C7*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "1C3BF3*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "1C4419*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "1CFA68*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "206BE7*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "20DCE6*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "246968*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "282CB2*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "28EE52*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "30B49E*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "30B5C2*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "30FC68*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "349672*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "34E894*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "34F716*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "388345*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "3C06A7*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "3C46D8*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "3C846A*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "40169F*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "403F8C*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "44B32D*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "480EEC*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "487D2E*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "503EAA*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "50BD5F*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "50C7BF*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "50D4F7*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "50FA84*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "547595*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "54A703*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "54C80F*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "54E6FC*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "584120*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "5C63BF*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "5C899A*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "6032B1*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "603A7C*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "60E327*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "645601*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "6466B3*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "646E97*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "647002*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "68FF7B*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "6CE873*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "704F57*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "7405A5*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "74DA88*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "74EA3A*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "7844FD*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "78A106*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "7C8BCA*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "7CB59B*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "808917*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "808F1D*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "80EA07*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "8416F9*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "84D81B*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "882593*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "8C210A*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "8CA6DF*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "909A4A*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "90AE1B*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "90F652*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "940C6D*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "94D9B3*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "984827*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "98DAC4*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "98DED0*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "9C216A*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "9CA615*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "A0F3C1*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "A42BB0*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "A8154D*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "A8574E*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "AC84C6*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "B0487A*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "B04E26*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "B09575*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "B0958E*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "B0BE76*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "B8F883*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "BC4699*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "BCD177*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "C025E9*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "C04A00*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "C06118*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "C0C9E3*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "C0E42D*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "C46E1F*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "C47154*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "C4E984*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "CC08FB*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "CC32E5*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "CC3429*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "D03745*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "D076E7*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "D0C7C0*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "D4016D*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "D46E0E*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "D807B6*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "D80D17*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "D8150D*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "D84732*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "D85D4C*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "DC0077*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "DCFE18*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "E005C5*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "E4C32A*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "E4D332*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "E894F6*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "E8DE27*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "EC086B*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "EC172F*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "EC26CA*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "EC888F*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "F0F336*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "F42A7D*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "F483CD*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "F4EC38*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "F4F26D*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "F81A67*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "F88C21*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "F8D111*"
+    },
+    {
+      "hostname": "tc60_*",
+      "macaddress": "FCD733*"
+    }
+  ]
+}
