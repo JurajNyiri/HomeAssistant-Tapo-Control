@@ -168,7 +168,7 @@ Sets day or night mode
 - **day_night_mode** Required: Sets day/night mode for camera. Possible values: on, off, auto
 </details>
 
-## Troubleshooting
+## Troubleshooting | FAQ
 
 <details>
   <summary>Binary sensor for motion doesn't show up or work</summary>
