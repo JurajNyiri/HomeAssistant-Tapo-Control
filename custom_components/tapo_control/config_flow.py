@@ -155,6 +155,8 @@ class FlowHandler(config_entries.ConfigFlow):
                                 return await self.async_step_auth()
                         else:
                             raise Exception("not_tapo_device")
+                else:
+                    raise Exception("Failed to establish a new connection")
             except Exception as e:
                 if "Failed to establish a new connection" in str(e):
                     errors["base"] = "connection_failed"
