@@ -18,6 +18,7 @@ def registerController(host, username, password):
 
 def isOpen(ip, port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(3)
     try:
         s.connect((ip, int(port)))
         s.shutdown(2)
