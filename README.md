@@ -189,7 +189,7 @@ Also make sure that:
 </details>
 
 <details>
-  <summary>There is a big delay in video stream</summary>
+  <summary>Big delay in camera stream</summary>
 
 This is a [known issue](https://community.home-assistant.io/t/i-tried-all-the-camera-platforms-so-you-dont-have-to/222999) of Home Assistant.
 
@@ -203,6 +203,17 @@ Results depend on your hardware and future Home Assistant updates.
 If you disable stream and your hardware is not up to the task, you will get artifacts, bigger delay and freezes.
 
 If you wish, try it out and see what works best for you.
+
+</details>
+
+<details>
+  <summary>No audio in camera stream</summary>
+
+Supported audio codecs for audio in Home Assistant are "aac", "ac3" and "mp3".
+
+Tapo Cameras use PCM ALAW (alaw) which is not supported.
+
+[More details here.](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/58#issuecomment-762787442)
 
 </details>
 
