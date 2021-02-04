@@ -24,6 +24,8 @@ Following target TCP ports **must be open** in firewall for the camera to access
 
 Add cameras via Integrations (search for Tapo) in Home Assistant UI.
 
+Cameras are also automatically discovered when they are (re)connected to WIFI.
+
 To add multiple cameras, add integration multiple times.
 
 See [examples for lovelace cards](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/blob/main/examples/EXAMPLES_LOVELACE.md) or [examples for template entities](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/blob/main/examples/EXAMPLES_ENTITIES.md).
