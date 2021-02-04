@@ -209,7 +209,7 @@ If you wish, try it out and see what works best for you.
 <details>
   <summary>No audio in camera stream</summary>
 
-Supported audio codecs for audio in Home Assistant are "aac", "ac3" and "mp3".
+Supported audio codecs in Home Assistant are "aac", "ac3" and "mp3".
 
 Tapo Cameras use PCM ALAW (alaw) which is not supported.
 
