@@ -217,6 +217,21 @@ Tapo Cameras use PCM ALAW (alaw) which is not supported.
 
 </details>
 
+<details>
+  <summary>Supported models</summary>
+
+Users reported full functionality with following Tapo Cameras:
+
+- C100
+- C200
+- C310
+
+The integration _should_ work with any other Tapo Cameras.
+
+If you had success with some other model, please report it via a new issue.
+
+</details>
+
 ## Have a comment or a suggestion?
 
 Please [open a new issue](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new/choose), or discuss on [Home Assistant: Community Forum](https://community.home-assistant.io/t/tapo-cameras-control/231795).
