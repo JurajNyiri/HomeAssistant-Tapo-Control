@@ -3,7 +3,7 @@ from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.core import callback
 from homeassistant.components.dhcp import HOSTNAME, IP_ADDRESS, MAC_ADDRESS
 import voluptuous as vol
-from .utils import registerController, isRtspStreamWorking
+from .utils import registerController, isRtspStreamWorking, areCameraPortsOpened, isOpen
 from .const import (
     DOMAIN,
     ENABLE_MOTION_SENSOR,
@@ -26,7 +26,7 @@ class FlowHandler(config_entries.ConfigFlow):
 
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
-        return await self.async_step_auth()
+        return await self.async_step_ip()
 
     async def async_step_dhcp(self, dhcp_discovery):
         """Handle dhcp discovery."""
@@ -47,7 +47,8 @@ class FlowHandler(config_entries.ConfigFlow):
         self.context.update(
             {"title_placeholders": {"name": dhcp_discovery[IP_ADDRESS]}}
         )
-        return await self.async_step_user()
+        self.tapoHost = dhcp_discovery[IP_ADDRESS]
+        return await self.async_step_auth()
 
     @callback
     def _async_host_already_configured(self, host):
@@ -58,6 +59,7 @@ class FlowHandler(config_entries.ConfigFlow):
         return False
 
     async def async_step_other_options(self, user_input=None):
+        """Enter and process final options"""
         errors = {}
         enable_motion_sensor = True
         enable_stream = True
@@ -97,6 +99,7 @@ class FlowHandler(config_entries.ConfigFlow):
         )
 
     async def async_step_auth_cloud_password(self, user_input=None):
+        """Enter and process cloud password if needed"""
         errors = {}
         cloud_password = ""
         if user_input is not None:
@@ -127,17 +130,69 @@ class FlowHandler(config_entries.ConfigFlow):
             errors=errors,
         )
 
-    async def async_step_auth(self, user_input=None):
-        """Confirm the setup."""
+    async def async_step_ip(self, user_input=None):
+        """Enter IP Address and verify Tapo device"""
         errors = {}
         host = ""
+        if user_input is not None:
+            try:
+                host = user_input[CONF_IP_ADDRESS]
+
+                if self._async_host_already_configured(host):
+                    raise Exception("already_configured")
+
+                if isOpen(host, 443):
+                    try:
+                        await self.hass.async_add_executor_job(
+                            registerController, host, "invalid", ""
+                        )
+                    except Exception as e:
+                        if str(e) == "Invalid authentication data":
+                            if not areCameraPortsOpened(host):
+                                raise Exception("ports_closed")
+                            else:
+                                self.tapoHost = host
+                                return await self.async_step_auth()
+                        else:
+                            raise Exception("not_tapo_device")
+            except Exception as e:
+                if "Failed to establish a new connection" in str(e):
+                    errors["base"] = "connection_failed"
+                elif "already_configured" in str(e):
+                    errors["base"] = "already_configured"
+                elif "not_tapo_device" in str(e):
+                    errors["base"] = "not_tapo_device"
+                elif "ports_closed" in str(e):
+                    errors["base"] = "ports_closed"
+                else:
+                    errors["base"] = "unknown"
+                    LOGGER.error(e)
+
+        return self.async_show_form(
+            step_id="ip",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_IP_ADDRESS, description={"suggested_value": host}
+                    ): str,
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_auth(self, user_input=None):
+        """Provide authentication data."""
+        errors = {}
         username = ""
         password = ""
         if user_input is not None:
             try:
-                host = user_input[CONF_IP_ADDRESS]
+                host = self.tapoHost
                 username = user_input[CONF_USERNAME]
                 password = user_input[CONF_PASSWORD]
+
+                if not areCameraPortsOpened(host):
+                    raise Exception("ports_closed")
 
                 rtspStreamWorks = await isRtspStreamWorking(
                     self.hass, host, username, password
@@ -145,7 +200,6 @@ class FlowHandler(config_entries.ConfigFlow):
                 if not rtspStreamWorks:
                     raise Exception("Invalid authentication data")
 
-                self.tapoHost = host
                 self.tapoUsername = username
                 self.tapoPassword = password
                 self.tapoCloudPassword = ""
@@ -165,6 +219,8 @@ class FlowHandler(config_entries.ConfigFlow):
             except Exception as e:
                 if "Failed to establish a new connection" in str(e):
                     errors["base"] = "connection_failed"
+                elif "ports_closed" in str(e):
+                    errors["base"] = "ports_closed"
                 elif str(e) == "Invalid authentication data":
                     errors["base"] = "invalid_auth"
                 else:
@@ -175,9 +231,6 @@ class FlowHandler(config_entries.ConfigFlow):
             step_id="auth",
             data_schema=vol.Schema(
                 {
-                    vol.Required(
-                        CONF_IP_ADDRESS, description={"suggested_value": host}
-                    ): str,
                     vol.Required(
                         CONF_USERNAME, description={"suggested_value": username}
                     ): str,
