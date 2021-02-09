@@ -96,3 +96,5 @@ ENABLE_STREAM = "enable_stream"
 ENABLE_TIME_SYNC = "enable_time_sync"
 
 LOGGER = logging.getLogger("custom_components." + DOMAIN)
+
+TIME_SYNC_PERIOD = 3600
