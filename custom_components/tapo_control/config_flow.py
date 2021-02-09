@@ -10,6 +10,7 @@ from .const import (
     ENABLE_STREAM,
     LOGGER,
     CLOUD_PASSWORD,
+    ENABLE_TIME_SYNC,
 )
 
 
@@ -17,7 +18,7 @@ from .const import (
 class FlowHandler(config_entries.ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 4
+    VERSION = 5
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -63,9 +64,11 @@ class FlowHandler(config_entries.ConfigFlow):
         errors = {}
         enable_motion_sensor = True
         enable_stream = True
+        enable_time_sync = False
         if user_input is not None:
             enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
             enable_stream = user_input[ENABLE_STREAM]
+            enable_time_sync = user_input[ENABLE_TIME_SYNC]
             host = self.tapoHost
             cloud_password = self.tapoCloudPassword
             username = self.tapoUsername
@@ -75,6 +78,7 @@ class FlowHandler(config_entries.ConfigFlow):
                 data={
                     ENABLE_MOTION_SENSOR: enable_motion_sensor,
                     ENABLE_STREAM: enable_stream,
+                    ENABLE_TIME_SYNC: enable_time_sync,
                     CONF_IP_ADDRESS: host,
                     CONF_USERNAME: username,
                     CONF_PASSWORD: password,
@@ -86,11 +90,15 @@ class FlowHandler(config_entries.ConfigFlow):
             step_id="other_options",
             data_schema=vol.Schema(
                 {
-                    vol.Required(
+                    vol.Optional(
                         ENABLE_MOTION_SENSOR,
                         description={"suggested_value": enable_motion_sensor},
                     ): bool,
-                    vol.Required(
+                    vol.Optional(
+                        ENABLE_TIME_SYNC,
+                        description={"suggested_value": enable_time_sync},
+                    ): bool,
+                    vol.Optional(
                         ENABLE_STREAM, description={"suggested_value": enable_stream},
                     ): bool,
                 }
@@ -262,6 +270,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
         cloud_password = self.config_entry.data[CLOUD_PASSWORD]
         enable_motion_sensor = self.config_entry.data[ENABLE_MOTION_SENSOR]
         enable_stream = self.config_entry.data[ENABLE_STREAM]
+        enable_time_sync = self.config_entry.data[ENABLE_TIME_SYNC]
         if user_input is not None:
             try:
                 host = self.config_entry.data[CONF_IP_ADDRESS]
@@ -283,12 +292,17 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                 if ENABLE_MOTION_SENSOR in user_input:
                     enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
                 else:
-                    enable_motion_sensor = True
+                    enable_motion_sensor = False
 
                 if ENABLE_STREAM in user_input:
                     enable_stream = user_input[ENABLE_STREAM]
                 else:
-                    enable_stream = True
+                    enable_stream = False
+
+                if ENABLE_TIME_SYNC in user_input:
+                    enable_time_sync = user_input[ENABLE_TIME_SYNC]
+                else:
+                    enable_time_sync = False
 
                 rtspStreamWorks = await isRtspStreamWorking(
                     self.hass, host, username, password
@@ -315,6 +329,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_USERNAME: username,
                         CONF_PASSWORD: password,
                         CLOUD_PASSWORD: cloud_password,
+                        ENABLE_TIME_SYNC: enable_time_sync,
                     },
                 )
                 return self.async_create_entry(title="", data=None)
@@ -349,9 +364,14 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                         description={"suggested_value": enable_motion_sensor},
                     ): bool,
                     vol.Optional(
+                        ENABLE_TIME_SYNC,
+                        description={"suggested_value": enable_time_sync},
+                    ): bool,
+                    vol.Optional(
                         ENABLE_STREAM, description={"suggested_value": enable_stream},
                     ): bool,
                 }
             ),
             errors=errors,
         )
+

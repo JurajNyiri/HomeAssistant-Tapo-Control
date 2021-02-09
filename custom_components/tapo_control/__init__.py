@@ -1,3 +1,4 @@
+import datetime
 from homeassistant.const import (
     CONF_IP_ADDRESS,
     CONF_USERNAME,
@@ -8,13 +9,23 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from .const import LOGGER, DOMAIN, ENABLE_MOTION_SENSOR, CLOUD_PASSWORD, ENABLE_STREAM
+from .const import (
+    LOGGER,
+    DOMAIN,
+    ENABLE_MOTION_SENSOR,
+    CLOUD_PASSWORD,
+    ENABLE_STREAM,
+    ENABLE_TIME_SYNC,
+    TIME_SYNC_PERIOD,
+)
 from .utils import (
     registerController,
     getCamData,
     setupOnvif,
     setupEvents,
     update_listener,
+    initOnvifEvents,
+    syncTime,
 )
 
 
@@ -55,6 +66,15 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
         config_entry.version = 4
 
+    if config_entry.version == 4:
+
+        new = {**config_entry.data}
+        new[ENABLE_TIME_SYNC] = False
+
+        config_entry.data = {**new}
+
+        config_entry.version = 5
+
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
     return True
@@ -76,6 +96,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     password = entry.data.get(CONF_PASSWORD)
     motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
     cloud_password = entry.data.get(CLOUD_PASSWORD)
+    enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
 
     try:
         if cloud_password != "":
@@ -92,17 +113,43 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             username = entry.data.get(CONF_USERNAME)
             password = entry.data.get(CONF_PASSWORD)
             motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
+            enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
 
             # motion detection retries
-            if motionSensor:
-                if not hass.data[DOMAIN][entry.entry_id]["eventsDevice"]:
+            if motionSensor or enableTimeSync:
+                if (
+                    not hass.data[DOMAIN][entry.entry_id]["eventsDevice"]
+                    or not hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
+                ):
                     # retry if connection to onvif failed
-                    await setupOnvif(hass, entry, host, username, password)
-                elif not hass.data[DOMAIN][entry.entry_id]["eventsSetup"]:
+                    onvifDevice = await initOnvifEvents(hass, host, username, password)
+                    hass.data[DOMAIN][entry.entry_id]["eventsDevice"] = onvifDevice[
+                        "device"
+                    ]
+                    hass.data[DOMAIN][entry.entry_id]["onvifManagement"] = onvifDevice[
+                        "device_mgmt"
+                    ]
+                    if motionSensor:
+                        await setupOnvif(hass, entry)
+                elif (
+                    not hass.data[DOMAIN][entry.entry_id]["eventsSetup"]
+                    and motionSensor
+                ):
                     # retry if subscription to events failed
                     hass.data[DOMAIN][entry.entry_id][
                         "eventsSetup"
                     ] = await setupEvents(hass, entry)
+
+                if (
+                    hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
+                    and enableTimeSync
+                ):
+                    ts = datetime.datetime.utcnow().timestamp()
+                    if (
+                        ts - hass.data[DOMAIN][entry.entry_id]["lastTimeSync"]
+                        > TIME_SYNC_PERIOD
+                    ):
+                        await syncTime(hass, entry)
 
             # cameras state
             someCameraEnabled = False
@@ -129,14 +176,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "update_listener": entry.add_update_listener(update_listener),
             "coordinator": tapoCoordinator,
             "camData": camData,
+            "lastTimeSync": 0,
             "motionSensorCreated": False,
             "eventsDevice": False,
+            "onvifManagement": False,
             "eventsSetup": False,
             "events": False,
             "name": camData["basic_info"]["device_alias"],
         }
-        if motionSensor:
-            await setupOnvif(hass, entry, host, username, password)
+        if motionSensor or enableTimeSync:
+            onvifDevice = await initOnvifEvents(hass, host, username, password)
+            hass.data[DOMAIN][entry.entry_id]["eventsDevice"] = onvifDevice["device"]
+            hass.data[DOMAIN][entry.entry_id]["onvifManagement"] = onvifDevice[
+                "device_mgmt"
+            ]
+            if motionSensor:
+                await setupOnvif(hass, entry)
+            if enableTimeSync:
+                await syncTime(hass, entry)
 
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "camera")

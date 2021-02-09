@@ -3,9 +3,16 @@ import os
 import asyncio
 import urllib.parse
 import socket
+import datetime
 from onvif import ONVIFCamera
 from pytapo import Tapo
-from .const import ENABLE_MOTION_SENSOR, DOMAIN, LOGGER, CLOUD_PASSWORD
+from .const import (
+    ENABLE_MOTION_SENSOR,
+    DOMAIN,
+    LOGGER,
+    CLOUD_PASSWORD,
+    ENABLE_TIME_SYNC,
+)
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.components.onvif.event import EventManager
 from homeassistant.components.ffmpeg import DATA_FFMPEG
@@ -59,7 +66,7 @@ async def initOnvifEvents(hass, host, username, password):
         if "Manufacturer" not in device_info:
             raise Exception("Onvif connection has failed.")
 
-        return device
+        return {"device": device, "device_mgmt": device_mgmt}
     except Exception:
         pass
 
@@ -143,6 +150,7 @@ async def update_listener(hass, entry):
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
     motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
+    enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
     cloud_password = entry.data.get(CLOUD_PASSWORD)
     try:
         if cloud_password != "":
@@ -169,15 +177,35 @@ async def update_listener(hass, entry):
     if hass.data[DOMAIN][entry.entry_id]["motionSensorCreated"]:
         await hass.config_entries.async_forward_entry_unload(entry, "binary_sensor")
         hass.data[DOMAIN][entry.entry_id]["motionSensorCreated"] = False
-    if motionSensor:
-        await setupOnvif(hass, entry, host, username, password)
+    if motionSensor or enableTimeSync:
+        onvifDevice = await initOnvifEvents(hass, host, username, password)
+        hass.data[DOMAIN][entry.entry_id]["eventsDevice"] = onvifDevice["device"]
+        hass.data[DOMAIN][entry.entry_id]["onvifManagement"] = onvifDevice[
+            "device_mgmt"
+        ]
+        if motionSensor:
+            await setupOnvif(hass, entry)
 
 
-async def setupOnvif(hass, entry, host, username, password):
-    hass.data[DOMAIN][entry.entry_id]["eventsDevice"] = await initOnvifEvents(
-        hass, host, username, password
-    )
+async def syncTime(hass, entry):
+    device_mgmt = hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
+    if device_mgmt:
+        now = datetime.datetime.utcnow()
 
+        time_params = device_mgmt.create_type("SetSystemDateAndTime")
+        time_params.DateTimeType = "Manual"
+        time_params.DaylightSavings = True
+        time_params.UTCDateTime = {
+            "Date": {"Year": now.year, "Month": now.month, "Day": now.day},
+            "Time": {"Hour": now.hour, "Minute": now.minute, "Second": now.second},
+        }
+        await device_mgmt.SetSystemDateAndTime(time_params)
+        hass.data[DOMAIN][entry.entry_id][
+            "lastTimeSync"
+        ] = datetime.datetime.utcnow().timestamp()
+
+
+async def setupOnvif(hass, entry):
     if hass.data[DOMAIN][entry.entry_id]["eventsDevice"]:
         hass.data[DOMAIN][entry.entry_id]["events"] = EventManager(
             hass,
