@@ -8,7 +8,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from .const import LOGGER, DOMAIN, ENABLE_MOTION_SENSOR, CLOUD_PASSWORD, ENABLE_STREAM
+from .const import (
+    LOGGER,
+    DOMAIN,
+    ENABLE_MOTION_SENSOR,
+    CLOUD_PASSWORD,
+    ENABLE_STREAM,
+    ENABLE_TIME_SYNC,
+)
 from .utils import (
     registerController,
     getCamData,
@@ -54,6 +61,15 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         config_entry.data = {**new}
 
         config_entry.version = 4
+
+    if config_entry.version == 4:
+
+        new = {**config_entry.data}
+        new[ENABLE_TIME_SYNC] = False
+
+        config_entry.data = {**new}
+
+        config_entry.version = 5
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 

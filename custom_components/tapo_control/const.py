@@ -93,4 +93,6 @@ SCHEMA_SERVICE_FORMAT = {vol.Required(ENTITY_ID): cv.string}
 
 ENABLE_STREAM = "enable_stream"
 
+ENABLE_TIME_SYNC = "enable_time_sync"
+
 LOGGER = logging.getLogger("custom_components." + DOMAIN)

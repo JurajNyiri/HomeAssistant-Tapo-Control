@@ -25,6 +25,7 @@
       "other_options": {
         "data": {
           "enable_motion_sensor": "Enable motion sensor",
+          "enable_time_sync": "Automatically synchronize time",
           "enable_stream": "Use Stream from Home Assistant"
         },
         "description": "Almost there!\nJust some final options..."
@@ -54,6 +55,7 @@
           "password": "Password",
           "enable_motion_sensor": "Enable motion sensor",
           "enable_stream": "Use Stream from Home Assistant [requires restart]",
+          "enable_time_sync": "Automatically synchronize time",
           "cloud_password": "Cloud Password (Optional)"
         },
         "description": "Modify settings of your Tapo Camera.\n\nUse stream from Home Assistant:\nYes - Longer playback delay, lower CPU usage, allows playback control\nNo - Very short playback delay, higher CPU usage, no playback control"
