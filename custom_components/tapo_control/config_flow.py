@@ -66,9 +66,18 @@ class FlowHandler(config_entries.ConfigFlow):
         enable_stream = True
         enable_time_sync = False
         if user_input is not None:
-            enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
-            enable_stream = user_input[ENABLE_STREAM]
-            enable_time_sync = user_input[ENABLE_TIME_SYNC]
+            if ENABLE_MOTION_SENSOR in user_input:
+                enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
+            else:
+                enable_motion_sensor = False
+            if ENABLE_STREAM in user_input:
+                enable_stream = user_input[ENABLE_STREAM]
+            else:
+                enable_stream = False
+            if ENABLE_TIME_SYNC in user_input:
+                enable_time_sync = user_input[ENABLE_TIME_SYNC]
+            else:
+                enable_time_sync = False
             host = self.tapoHost
             cloud_password = self.tapoCloudPassword
             username = self.tapoUsername
