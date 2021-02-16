@@ -1,0 +1,72 @@
+{
+  "title": "Tapo: Cameras Control",
+  "config": {
+    "flow_title": "Tapo: Cameras Control {name}",
+    "step": {
+      "ip": {
+        "data": {
+          "ip_address": "Endereço IP"
+        },
+        "description": "Digite o endereço IP da câmera.\n\nCertifique-se de criar uma conta na câmera.\n\nEsta conta da câmera é criada no app Tappo, em:\nCamera Settings > Advanced Settings > Camera Account.\n\n\n\nSe você estiver utilizando vlan ou outro tipo de rede avançada, certifique-se que as portas 443, 554 e 2020 estão abertas para a câmera."
+      },
+      "auth": {
+        "data": {
+          "username": "Usuário",
+          "password": "Senha"
+        },
+        "description": "Digite as credenciais da conta da câmera.\n\nEsta conta da câmera é criada no app Tappo, em:\nCamera Settings > Advanced Settings > Camera Account"
+      },
+      "auth_cloud_password": {
+        "data": {
+          "cloud_password": "Senha Cloud"
+        },
+        "description": "A câmera precisa da sua senha cloud para controle.\nE-mail não é necessário e toda a comunicação continuará sendo totalmente local."
+      },
+      "other_options": {
+        "data": {
+          "enable_motion_sensor": "Habilitar sensor de movimento",
+          "enable_time_sync": "Sincronizar Hora Automaticamente",
+          "enable_stream": "Usar stream do Home Assistant"
+        },
+        "description": "Quase lá!\nSó mais algumas opções..."
+      }
+    },
+    "error": {
+      "not_tapo_device": "O endereço IP não é de um dispositivo Tapo",
+      "ports_closed": "Porta 443, 554, ou 2020 está fechada",
+      "invalid_auth": "Dados inválidos de autenticação",
+      "unknown": "Erro desconhecido",
+      "connection_failed": "Conexão falhou",
+      "invalid_auth_cloud": "Senha cloud inválida",
+      "camera_requires_admin": "Sua câmera precisa de senha cloud para controle",
+      "already_configured": "Endereço IP já configurado"
+    },
+    "abort": {
+      "already_configured": "Endereço IP já configurado",
+      "not_tapo_device": "Dispositivo encontrado não é uma câmera Tapo"
+    }
+  },
+  "options": {
+    "step": {
+      "auth": {
+        "data": {
+          "ip_address": "Endereço IP",
+          "username": "Nome de Usuário",
+          "password": "Senha",
+          "enable_motion_sensor": "Habilitar sensor de movimento",
+          "enable_stream": "Usar stream do Home Assistant [requer reinicialização]",
+          "enable_time_sync": "Sincronizar Hora Automaticamente",
+          "cloud_password": "Senha cloud (Opcional)"
+        },
+        "description": "Modificar configurações da sua Tapo câmera.\n\nUsar stream do Home Assistant:\nSim - Maior delay de reprodução, menor uso de CPU, permite controle de reprodução\nNão - delay de reprodução muito curto, maior uso de CPU, sem controle de reprodução"
+      }
+    },
+    "error": {
+      "invalid_auth": "Dados inválidos de autenticação",
+      "unknown": "Erro desconhecido",
+      "connection_failed": "Conexão falhou",
+      "invalid_auth_cloud": "Senha cloud inválida",
+      "camera_requires_admin": "Sua câmera precisa de senha cloud para controle"
+    }
+  }
+}
