@@ -1,110 +1,218 @@
 ptz:
+  name: PTZ
   description: Pan and tilt camera
+  target:
+    entity:
+      domain: camera
+      integration: tapo_control
   fields:
-    entity_id:
-      description: "Entity to adjust"
-      example: "camera.living_room"
-    tilt: 
-      description: "Tilt direction. Allowed values: UP, DOWN"
+    tilt:
+      description: "Tilt direction."
       example: "UP"
-    pan: 
-      description: "Pan direction. Allowed values: RIGHT, LEFT"
+      name: Tilt
+      selector:
+        select:
+          options:
+            - "UP"
+            - "DOWN"
+    pan:
+      name: Pan
+      description: "Pan direction."
       example: "RIGHT"
+      selector:
+        select:
+          options:
+            - "RIGHT"
+            - "LEFT"
     preset:
+      name: Preset
       description: "PTZ preset ID or a Name. See possible presets in entity attributes"
       example: "1"
+      selector:
+        text:
     distance:
-      description: "Distance coefficient. Sets how much PTZ should be executed in one request. Allowed values: floating point numbers, 0 to 1"
+      name: Distance
+      description: "Sets how much PTZ should be executed in one request."
       example: "0.1"
+      selector:
+        number:
+          min: 0
+          max: 1
+          step: 0.01
+          unit_of_measurement: "%"
+          mode: slider
 set_day_night_mode:
+  name: Set day / night mode
   description: Sets day or night mode
+  target:
+    entity:
+      domain: camera
+      integration: tapo_control
   fields:
-    entity_id:
-      description: "Entity to set day/night mode for"
-      example: "camera.living_room"
-    day_night_mode: 
-      description: "Sets day/night mode for camera. Possible values: on, off, auto"
+    day_night_mode:
+      required: true
+      name: Mode
+      description: "Sets day / night mode for camera."
       example: "on"
+      selector:
+        select:
+          options:
+            - "on"
+            - "off"
+            - "auto"
 set_privacy_mode:
+  name: Set privacy mode
   description: Sets privacy mode
+  target:
+    entity:
+      domain: camera
+      integration: tapo_control
   fields:
-    entity_id:
-      description: "Entity to set privacy mode for"
-      example: "camera.living_room"
-    privacy_mode: 
-      description: "Sets privacy mode for camera. Possible values: on, off"
-      example: "on"
+    privacy_mode:
+      name: Mode
+      required: true
+      description: "Sets privacy mode for camera."
+      selector:
+        select:
+          options:
+            - "on"
+            - "off"
 set_alarm_mode:
+  name: Set alarm mode
   description: Sets alarm mode
+  target:
+    entity:
+      domain: camera
+      integration: tapo_control
   fields:
-    entity_id:
-      description: "Entity to set alarm mode for"
-      example: "camera.living_room"
-    alarm_mode: 
-      description: "Sets alarm mode for camera. Possible values: on, off"
+    alarm_mode:
+      name: Mode
+      description: "Sets alarm mode for camera."
       example: "on"
-    sound: 
-      description: "Sets whether the alarm should use sound on motion detected. Possible values: on, off"
+      required: true
+      selector:
+        select:
+          options:
+            - "on"
+            - "off"
+    sound:
+      name: Sound
+      description: "Sets whether the alarm should use sound on motion detected."
       example: "on"
-    light: 
-      description: "Sets whether the alarm should use light on motion detected. Possible values: on, off"
+      selector:
+        select:
+          options:
+            - "on"
+            - "off"
+    light:
+      name: Light
+      description: "Sets whether the alarm should use light on motion detected."
       example: "on"
+      selector:
+        select:
+          options:
+            - "on"
+            - "off"
 set_led_mode:
+  name: Set LED mode
   description: Sets LED mode
+  target:
+    entity:
+      domain: camera
+      integration: tapo_control
   fields:
-    entity_id:
-      description: "Entity to set LED mode for"
-      example: "camera.living_room"
-    led_mode: 
-      description: "Sets LED mode for camera. Possible values: on, off"
+    led_mode:
+      name: Mode
+      required: true
+      description: "Sets LED mode for camera."
       example: "on"
+      selector:
+        select:
+          options:
+            - "on"
+            - "off"
 set_motion_detection_mode:
+  name: Set motion detection mode
   description: Sets motion detection mode
+  target:
+    entity:
+      domain: camera
+      integration: tapo_control
   fields:
-    entity_id:
-      description: "Entity to set motion detection mode for"
-      example: "camera.living_room"
-    motion_detection_mode: 
-      description: "Sets motion detection mode for camera. Possible values: high, normal, low, off"
+    motion_detection_mode:
+      required: true
+      name: Mode
+      description: "Sets motion detection mode for camera."
       example: "normal"
+      selector:
+        select:
+          options:
+            - "high"
+            - "normal"
+            - "low"
+            - "off"
 set_auto_track_mode:
-  description: "Sets auto track mode. 
-  
-  WARNING: This mode is not available in Tapo app and we do not know why. Use at your own risk and please report any success or failures in GitHub."
+  name: Set auto track mode
+  target:
+    entity:
+      domain: camera
+      integration: tapo_control
+  description: >
+    Sets auto track mode. 
+
+    WARNING: This mode is not available in Tapo app and we do not know why. Use at your own risk and please report any success or failures in GitHub.
   fields:
-    entity_id:
-      description: "Entity to set auto track mode for"
-      example: "camera.living_room"
-    auto_track_mode: 
-      description: "Sets auto track mode for camera. Possible values: on, off"
+    auto_track_mode:
+      description: "Sets auto track mode for camera."
       example: "on"
+      name: Mode
+      required: true
+      selector:
+        select:
+          options:
+            - "on"
+            - "off"
 reboot:
+  name: Reboot
   description: Reboots the camera
-  fields:
-    entity_id:
-      description: "Entity to reboot"
-      example: "camera.living_room"
+  target:
+    entity:
+      domain: camera
+      integration: tapo_control
 save_preset:
+  name: Save preset
   description: Saves the current PTZ position to a preset
+  target:
+    entity:
+      domain: camera
+      integration: tapo_control
   fields:
-    entity_id:
-      description: "Entity to save the preset for"
-      example: "camera.living_room"
     name:
-      description: "Name of the preset. Cannot be empty or a number"
+      description: "Name of the preset."
       example: "Entry Door"
+      required: true
+      name: Name
+      selector:
+        text:
 delete_preset:
+  name: Delete preset
   description: Deletes a preset
+  target:
+    entity:
+      domain: camera
+      integration: tapo_control
   fields:
-    entity_id:
-      description: "Entity to delete the preset for"
-      example: "camera.living_room"
     preset:
       description: "PTZ preset ID or a Name. See possible presets in entity attributes"
       example: "1"
+      required: true
+      name: Name
+      selector:
+        text:
 format:
+  name: Format
   description: Formats the SD card of a camera
-  fields:
-    entity_id:
-      description: "Entity to format"
-      example: "camera.living_room"
+  target:
+    entity:
+      domain: camera
+      integration: tapo_control
