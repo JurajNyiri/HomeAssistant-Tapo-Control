@@ -47,7 +47,6 @@ Pan and tilt camera.
 
 You are also able to use presets and set distance the ptz should travel.
 
-- **entity_id** Required: Entity to adjust
 - **tilt** Optional: Tilt direction. Allowed values: UP, DOWN
 - **pan** Optional: Pan direction. Allowed values: RIGHT, LEFT
 - **preset** Optional: PTZ preset ID or a Name. See possible presets in entity attributes.
@@ -61,7 +60,6 @@ Sets privacy mode.
 
 If privacy mode is turned on, camera does not record anything and does not respond to anything other than turning off privacy mode.
 
-- **entity_id** Required: Entity to set privacy mode for
 - **privacy_mode** Required: Sets privacy mode for camera. Possible values: on, off
 </details>
 
@@ -72,7 +70,6 @@ Sets alarm mode.
 
 If camera detects motion, it will sound an alarm, blink the LED or both.
 
-- **entity_id** Required: Entity to set alarm mode for
 - **alarm_mode** Required: Sets alarm mode for camera. Possible values: on, off
 - **sound** Optional: Sets whether the alarm should use sound on motion detected. Possible values: on, off
 - **light** Optional: Sets whether the alarm should use light on motion detected. Possible values: on, off
@@ -87,7 +84,6 @@ When on, LED is turned on when camera is on.
 
 When off, LED is always off.
 
-- **entity_id** Required: Entity to set LED mode for
 - **led_mode** Required: Sets LED mode for camera. Possible values: on, off
 </details>
 
@@ -96,7 +92,6 @@ When off, LED is always off.
 
 Formats SD card of a camera
 
-- **entity_id** Required: Entity to format
 </details>
 
 <details>
@@ -114,7 +109,6 @@ Turning motion detection off does not affect settings for recordings so you do n
 
 Notice: If you use motion detection triggered recording and you turn off motion recording, it will no longer record!
 
-- **entity_id** Required: Entity to set motion detection mode for
 - **motion_detection_mode** Required: Sets motion detection mode for camera. Possible values: high, normal, low, off
 </details>
 
@@ -129,7 +123,6 @@ With this mode, camera will be adjusting ptz to track whatever moving object it 
 
 Motion detection setting does not affect this mode.
 
-- **entity_id** Required: Entity to set auto track mode for
 - **auto_track_mode** Required: Sets auto track mode for camera. Possible values: on, off
 </details>
 
@@ -138,7 +131,6 @@ Motion detection setting does not affect this mode.
 
 Reboots the camera
 
-- **entity_id** Required: Entity to reboot
 </details>
 
 <details>
@@ -146,7 +138,6 @@ Reboots the camera
 
 Saves the current PTZ position to a preset
 
-- **entity_id** Required: Entity to save the preset for
 - **name** Required: Name of the preset. Cannot be empty or a number
 </details>
 
@@ -155,7 +146,6 @@ Saves the current PTZ position to a preset
 
 Deletes a preset
 
-- **entity_id** Required: Entity to delete the preset for
 - **preset** Required: PTZ preset ID or a Name. See possible presets in entity attributes
 </details>
 
@@ -164,7 +154,6 @@ Deletes a preset
 
 Sets day or night mode
 
-- **entity_id** Required: Entity to set day/night mode for
 - **day_night_mode** Required: Sets day/night mode for camera. Possible values: on, off, auto
 </details>
 
