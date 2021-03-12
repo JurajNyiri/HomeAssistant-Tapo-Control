@@ -109,6 +109,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             )
 
         async def async_update_data():
+            print("async_update_data")
             host = entry.data.get(CONF_IP_ADDRESS)
             username = entry.data.get(CONF_USERNAME)
             password = entry.data.get(CONF_PASSWORD)
@@ -168,6 +169,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     if entity._enabled:
                         entity.updateCam(camData)
                         entity.async_schedule_update_ha_state(True)
+                        if not hass.data[DOMAIN][entry.entry_id]["noiseSensorStarted"]:
+                            print("STARTING")
+                            await entity._async_start_ffmpeg()
 
         tapoCoordinator = DataUpdateCoordinator(
             hass, LOGGER, name="Tapo resource status", update_method=async_update_data,

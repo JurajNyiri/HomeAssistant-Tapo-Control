@@ -1,8 +1,10 @@
 import asyncio
 import urllib.parse
+import haffmpeg.sensor as ffmpeg_sensor
 from homeassistant.helpers.config_validation import boolean
 from homeassistant.core import HomeAssistant
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
+from homeassistant.core import callback
 from typing import Callable
 from pytapo import Tapo
 from homeassistant.util import slugify
@@ -114,14 +116,39 @@ class TapoCamEntity(Camera):
         self._coordinator = tapoData["coordinator"]
         self._ffmpeg = hass.data[DATA_FFMPEG]
         self._entry = entry
+        self._hass = hass
         self._enabled = False
         self._hdstream = HDStream
         self._host = entry.data.get(CONF_IP_ADDRESS)
         self._username = entry.data.get(CONF_USERNAME)
         self._password = entry.data.get(CONF_PASSWORD)
         self._enable_stream = entry.data.get(ENABLE_STREAM)
+        self._attributes = tapoData["camData"]["basic_info"]
 
         self.updateCam(tapoData["camData"])
+
+        # todo: noise detection condition
+        hass.data[DOMAIN][entry.entry_id]["noiseSensorStarted"] = False
+        self._noiseSensor = ffmpeg_sensor.SensorNoise(
+            self._ffmpeg.binary, self._noiseCallback
+        )
+        self._noiseSensor.set_options(
+            time_duration=1, time_reset=1, peak=-50,
+        )
+
+    @callback
+    def _noiseCallback(self, noiseDetected):
+        self._attributes["noise_detected"] = "on" if noiseDetected else "off"
+        print(self._attributes["noise_detected"])
+        self.async_write_ha_state()
+
+    async def _async_start_ffmpeg(self):
+        self._hass.data[DOMAIN][self._entry.entry_id]["noiseSensorStarted"] = True
+
+        # run
+        await self._noiseSensor.open_sensor(
+            input_source=self.getStreamSource(), extra_cmd="",
+        )
 
     async def async_added_to_hass(self) -> None:
         self._enabled = True
@@ -229,7 +256,8 @@ class TapoCamEntity(Camera):
             self._state = "idle"
             self._motion_detection_enabled = camData["motion_detection_enabled"]
 
-            self._attributes = camData["basic_info"]
+            for attr, value in camData["basic_info"].items():
+                self._attributes[attr] = value
             self._attributes["user"] = camData["user"]
             self._attributes["motion_detection_sensitivity"] = camData[
                 "motion_detection_sensitivity"
