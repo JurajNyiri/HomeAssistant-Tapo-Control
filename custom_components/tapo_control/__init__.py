@@ -10,12 +10,16 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from .const import (
+    ENABLE_SOUND_DETECTION,
     LOGGER,
     DOMAIN,
     ENABLE_MOTION_SENSOR,
     CLOUD_PASSWORD,
     ENABLE_STREAM,
     ENABLE_TIME_SYNC,
+    SOUND_DETECTION_DURATION,
+    SOUND_DETECTION_PEAK,
+    SOUND_DETECTION_RESET,
     TIME_SYNC_PERIOD,
 )
 from .utils import (
@@ -74,6 +78,18 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         config_entry.data = {**new}
 
         config_entry.version = 5
+
+    if config_entry.version == 5:
+
+        new = {**config_entry.data}
+        new[ENABLE_SOUND_DETECTION] = False
+        new[SOUND_DETECTION_PEAK] = -50
+        new[SOUND_DETECTION_DURATION] = 1
+        new[SOUND_DETECTION_RESET] = 10
+
+        config_entry.data = {**new}
+
+        config_entry.version = 6
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
@@ -168,6 +184,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     if entity._enabled:
                         entity.updateCam(camData)
                         entity.async_schedule_update_ha_state(True)
+                        if (
+                            not hass.data[DOMAIN][entry.entry_id]["noiseSensorStarted"]
+                            and entity._enable_sound_detection
+                        ):
+                            await entity.startNoiseDetection()
 
         tapoCoordinator = DataUpdateCoordinator(
             hass, LOGGER, name="Tapo resource status", update_method=async_update_data,

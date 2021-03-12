@@ -1,8 +1,10 @@
 import asyncio
 import urllib.parse
+import haffmpeg.sensor as ffmpeg_sensor
 from homeassistant.helpers.config_validation import boolean
 from homeassistant.core import HomeAssistant
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
+from homeassistant.core import callback
 from typing import Callable
 from pytapo import Tapo
 from homeassistant.util import slugify
@@ -18,6 +20,7 @@ from homeassistant.helpers.aiohttp_client import async_aiohttp_proxy_stream
 from haffmpeg.camera import CameraMjpeg
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from .const import (
+    ENABLE_SOUND_DETECTION,
     ENABLE_STREAM,
     SERVICE_SET_LED_MODE,
     SCHEMA_SERVICE_SET_LED_MODE,
@@ -43,6 +46,9 @@ from .const import (
     SCHEMA_SERVICE_FORMAT,
     DOMAIN,
     LOGGER,
+    SOUND_DETECTION_DURATION,
+    SOUND_DETECTION_PEAK,
+    SOUND_DETECTION_RESET,
     TILT,
     PAN,
     PRESET,
@@ -114,14 +120,45 @@ class TapoCamEntity(Camera):
         self._coordinator = tapoData["coordinator"]
         self._ffmpeg = hass.data[DATA_FFMPEG]
         self._entry = entry
+        self._hass = hass
         self._enabled = False
         self._hdstream = HDStream
         self._host = entry.data.get(CONF_IP_ADDRESS)
         self._username = entry.data.get(CONF_USERNAME)
         self._password = entry.data.get(CONF_PASSWORD)
         self._enable_stream = entry.data.get(ENABLE_STREAM)
+        self._enable_sound_detection = entry.data.get(ENABLE_SOUND_DETECTION)
+        self._sound_detection_peak = entry.data.get(SOUND_DETECTION_PEAK)
+        self._sound_detection_duration = entry.data.get(SOUND_DETECTION_DURATION)
+        self._sound_detection_reset = entry.data.get(SOUND_DETECTION_RESET)
+        self._attributes = tapoData["camData"]["basic_info"]
 
         self.updateCam(tapoData["camData"])
+
+        hass.data[DOMAIN][entry.entry_id]["noiseSensorStarted"] = False
+
+        if self._enable_sound_detection:
+            self._noiseSensor = ffmpeg_sensor.SensorNoise(
+                self._ffmpeg.binary, self._noiseCallback
+            )
+            self._noiseSensor.set_options(
+                time_duration=int(self._sound_detection_duration),
+                time_reset=int(self._sound_detection_reset),
+                peak=int(self._sound_detection_peak),
+            )
+
+    @callback
+    def _noiseCallback(self, noiseDetected):
+        self._attributes["noise_detected"] = "on" if noiseDetected else "off"
+        for entity in self._hass.data[DOMAIN][self._entry.entry_id]["entities"]:
+            if entity._enabled:
+                entity.async_write_ha_state()
+
+    async def startNoiseDetection(self):
+        self._hass.data[DOMAIN][self._entry.entry_id]["noiseSensorStarted"] = True
+        await self._noiseSensor.open_sensor(
+            input_source=self.getStreamSource(), extra_cmd="",
+        )
 
     async def async_added_to_hass(self) -> None:
         self._enabled = True
@@ -229,7 +266,8 @@ class TapoCamEntity(Camera):
             self._state = "idle"
             self._motion_detection_enabled = camData["motion_detection_enabled"]
 
-            self._attributes = camData["basic_info"]
+            for attr, value in camData["basic_info"].items():
+                self._attributes[attr] = value
             self._attributes["user"] = camData["user"]
             self._attributes["motion_detection_sensitivity"] = camData[
                 "motion_detection_sensitivity"

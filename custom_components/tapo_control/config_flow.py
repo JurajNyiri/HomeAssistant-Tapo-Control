@@ -8,9 +8,13 @@ from .const import (
     DOMAIN,
     ENABLE_MOTION_SENSOR,
     ENABLE_STREAM,
+    ENABLE_SOUND_DETECTION,
     LOGGER,
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
+    SOUND_DETECTION_DURATION,
+    SOUND_DETECTION_PEAK,
+    SOUND_DETECTION_RESET,
 )
 
 
@@ -18,7 +22,7 @@ from .const import (
 class FlowHandler(config_entries.ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 5
+    VERSION = 6
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -65,6 +69,10 @@ class FlowHandler(config_entries.ConfigFlow):
         enable_motion_sensor = True
         enable_stream = True
         enable_time_sync = False
+        enable_sound_detection = False
+        sound_detection_peak = -50
+        sound_detection_duration = 1
+        sound_detection_reset = 10
         if user_input is not None:
             if ENABLE_MOTION_SENSOR in user_input:
                 enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
@@ -78,6 +86,22 @@ class FlowHandler(config_entries.ConfigFlow):
                 enable_time_sync = user_input[ENABLE_TIME_SYNC]
             else:
                 enable_time_sync = False
+            if ENABLE_SOUND_DETECTION in user_input:
+                enable_sound_detection = user_input[ENABLE_SOUND_DETECTION]
+            else:
+                enable_sound_detection = False
+            if SOUND_DETECTION_PEAK in user_input:
+                sound_detection_peak = user_input[SOUND_DETECTION_PEAK]
+            else:
+                sound_detection_peak = -50
+            if SOUND_DETECTION_DURATION in user_input:
+                sound_detection_duration = user_input[SOUND_DETECTION_DURATION]
+            else:
+                sound_detection_duration = -50
+            if SOUND_DETECTION_RESET in user_input:
+                sound_detection_reset = user_input[SOUND_DETECTION_RESET]
+            else:
+                sound_detection_reset = -50
             host = self.tapoHost
             cloud_password = self.tapoCloudPassword
             username = self.tapoUsername
@@ -92,6 +116,10 @@ class FlowHandler(config_entries.ConfigFlow):
                     CONF_USERNAME: username,
                     CONF_PASSWORD: password,
                     CLOUD_PASSWORD: cloud_password,
+                    ENABLE_SOUND_DETECTION: enable_sound_detection,
+                    SOUND_DETECTION_PEAK: sound_detection_peak,
+                    SOUND_DETECTION_DURATION: sound_detection_duration,
+                    SOUND_DETECTION_RESET: sound_detection_reset,
                 },
             )
 
@@ -110,6 +138,22 @@ class FlowHandler(config_entries.ConfigFlow):
                     vol.Optional(
                         ENABLE_STREAM, description={"suggested_value": enable_stream},
                     ): bool,
+                    vol.Optional(
+                        ENABLE_SOUND_DETECTION,
+                        description={"suggested_value": enable_sound_detection},
+                    ): bool,
+                    vol.Optional(
+                        SOUND_DETECTION_PEAK,
+                        description={"suggested_value": sound_detection_peak},
+                    ): int,
+                    vol.Optional(
+                        SOUND_DETECTION_DURATION,
+                        description={"suggested_value": sound_detection_duration},
+                    ): int,
+                    vol.Optional(
+                        SOUND_DETECTION_RESET,
+                        description={"suggested_value": sound_detection_reset},
+                    ): int,
                 }
             ),
             errors=errors,
@@ -279,7 +323,11 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
         cloud_password = self.config_entry.data[CLOUD_PASSWORD]
         enable_motion_sensor = self.config_entry.data[ENABLE_MOTION_SENSOR]
         enable_stream = self.config_entry.data[ENABLE_STREAM]
+        enable_sound_detection = self.config_entry.data[ENABLE_SOUND_DETECTION]
         enable_time_sync = self.config_entry.data[ENABLE_TIME_SYNC]
+        sound_detection_peak = self.config_entry.data[SOUND_DETECTION_PEAK]
+        sound_detection_duration = self.config_entry.data[SOUND_DETECTION_DURATION]
+        sound_detection_reset = self.config_entry.data[SOUND_DETECTION_RESET]
         if user_input is not None:
             try:
                 host = self.config_entry.data[CONF_IP_ADDRESS]
@@ -308,10 +356,35 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                 else:
                     enable_stream = False
 
+                if ENABLE_SOUND_DETECTION in user_input:
+                    enable_sound_detection = user_input[ENABLE_SOUND_DETECTION]
+                else:
+                    enable_sound_detection = False
+
                 if ENABLE_TIME_SYNC in user_input:
                     enable_time_sync = user_input[ENABLE_TIME_SYNC]
                 else:
                     enable_time_sync = False
+
+                if SOUND_DETECTION_PEAK in user_input:
+                    sound_detection_peak = user_input[SOUND_DETECTION_PEAK]
+                else:
+                    sound_detection_peak = -50
+
+                if SOUND_DETECTION_DURATION in user_input:
+                    sound_detection_duration = user_input[SOUND_DETECTION_DURATION]
+                else:
+                    sound_detection_duration = 1
+
+                if SOUND_DETECTION_RESET in user_input:
+                    sound_detection_reset = user_input[SOUND_DETECTION_RESET]
+                else:
+                    sound_detection_reset = 10
+
+                if not (
+                    int(sound_detection_peak) >= -100 and int(sound_detection_peak) <= 0
+                ):
+                    raise Exception("Incorrect sound detection peak value.")
 
                 rtspStreamWorks = await isRtspStreamWorking(
                     self.hass, host, username, password
@@ -334,11 +407,15 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                     data={
                         ENABLE_STREAM: enable_stream,
                         ENABLE_MOTION_SENSOR: enable_motion_sensor,
+                        ENABLE_SOUND_DETECTION: enable_sound_detection,
                         CONF_IP_ADDRESS: host,
                         CONF_USERNAME: username,
                         CONF_PASSWORD: password,
                         CLOUD_PASSWORD: cloud_password,
                         ENABLE_TIME_SYNC: enable_time_sync,
+                        SOUND_DETECTION_PEAK: sound_detection_peak,
+                        SOUND_DETECTION_DURATION: sound_detection_duration,
+                        SOUND_DETECTION_RESET: sound_detection_reset,
                     },
                 )
                 return self.async_create_entry(title="", data=None)
@@ -351,6 +428,8 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                     errors["base"] = "invalid_auth_cloud"
                 elif str(e) == "Camera requires cloud password":
                     errors["base"] = "camera_requires_admin"
+                elif str(e) == "Incorrect sound detection peak value.":
+                    errors["base"] = "incorrect_peak_value"
                 else:
                     errors["base"] = "unknown"
                     LOGGER.error(e)
@@ -379,6 +458,22 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Optional(
                         ENABLE_STREAM, description={"suggested_value": enable_stream},
                     ): bool,
+                    vol.Optional(
+                        ENABLE_SOUND_DETECTION,
+                        description={"suggested_value": enable_sound_detection},
+                    ): bool,
+                    vol.Optional(
+                        SOUND_DETECTION_PEAK,
+                        description={"suggested_value": sound_detection_peak},
+                    ): int,
+                    vol.Optional(
+                        SOUND_DETECTION_DURATION,
+                        description={"suggested_value": sound_detection_duration},
+                    ): int,
+                    vol.Optional(
+                        SOUND_DETECTION_RESET,
+                        description={"suggested_value": sound_detection_reset},
+                    ): int,
                 }
             ),
             errors=errors,

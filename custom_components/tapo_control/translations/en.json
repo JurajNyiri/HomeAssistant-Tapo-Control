@@ -26,7 +26,11 @@
         "data": {
           "enable_motion_sensor": "Enable motion sensor",
           "enable_time_sync": "Automatically synchronise time",
-          "enable_stream": "Use Stream from Home Assistant"
+          "enable_stream": "Use Stream from Home Assistant",
+          "enable_sound_detection": "Enable sound threshold detection",
+          "sound_detection_peak": "[Sound Detection] Peak in dB. 0 is very loud and -100 is low.",
+          "sound_detection_duration": "[Sound Detection] How long the noise needs to be over the peak to trigger the state.",
+          "sound_detection_reset": "[Sound Detection] The time to reset the state after no new noise is over the peak."
         },
         "description": "Almost there!\nJust some final options..."
       }
@@ -39,7 +43,8 @@
       "connection_failed": "Connection failed",
       "invalid_auth_cloud": "Invalid cloud password",
       "camera_requires_admin": "Your camera requires cloud password for control",
-      "already_configured": "IP address already configured"
+      "already_configured": "IP address already configured",
+      "incorrect_peak_value": "Incorrect sound detection peak value."
     },
     "abort": {
       "already_configured": "IP address already configured",
@@ -56,7 +61,11 @@
           "enable_motion_sensor": "Enable motion sensor",
           "enable_stream": "Use Stream from Home Assistant [requires restart]",
           "enable_time_sync": "Automatically synchronise time",
-          "cloud_password": "Cloud Password (Optional)"
+          "enable_sound_detection": "Enable sound threshold detection",
+          "cloud_password": "Cloud Password (Optional)",
+          "sound_detection_peak": "[Sound Detection] Peak in dB. 0 is very loud and -100 is low.",
+          "sound_detection_duration": "[Sound Detection] How long the noise needs to be over the peak to trigger the state.",
+          "sound_detection_reset": "[Sound Detection] The time to reset the state after no new noise is over the peak."
         },
         "description": "Modify settings of your Tapo Camera.\n\nUse stream from Home Assistant:\nYes - Longer playback delay, lower CPU usage, allows playback control\nNo - Very short playback delay, higher CPU usage, no playback control"
       }
@@ -66,7 +75,8 @@
       "unknown": "Unknown error",
       "connection_failed": "Connection failed",
       "invalid_auth_cloud": "Invalid cloud password",
-      "camera_requires_admin": "Camera requires cloud password for control"
+      "camera_requires_admin": "Camera requires cloud password for control",
+      "incorrect_peak_value": "Incorrect sound detection peak value."
     }
   }
 }
