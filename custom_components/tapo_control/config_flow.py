@@ -70,6 +70,9 @@ class FlowHandler(config_entries.ConfigFlow):
         enable_stream = True
         enable_time_sync = False
         enable_sound_detection = False
+        sound_detection_peak = -50
+        sound_detection_duration = 1
+        sound_detection_reset = 10
         if user_input is not None:
             if ENABLE_MOTION_SENSOR in user_input:
                 enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
@@ -79,14 +82,26 @@ class FlowHandler(config_entries.ConfigFlow):
                 enable_stream = user_input[ENABLE_STREAM]
             else:
                 enable_stream = False
-            if ENABLE_SOUND_DETECTION in user_input:
-                enable_sound_detection = user_input[ENABLE_SOUND_DETECTION]
-            else:
-                enable_sound_detection = False
             if ENABLE_TIME_SYNC in user_input:
                 enable_time_sync = user_input[ENABLE_TIME_SYNC]
             else:
                 enable_time_sync = False
+            if ENABLE_SOUND_DETECTION in user_input:
+                enable_sound_detection = user_input[ENABLE_SOUND_DETECTION]
+            else:
+                enable_sound_detection = False
+            if SOUND_DETECTION_PEAK in user_input:
+                sound_detection_peak = user_input[SOUND_DETECTION_PEAK]
+            else:
+                sound_detection_peak = -50
+            if SOUND_DETECTION_DURATION in user_input:
+                sound_detection_duration = user_input[SOUND_DETECTION_DURATION]
+            else:
+                sound_detection_duration = -50
+            if SOUND_DETECTION_RESET in user_input:
+                sound_detection_reset = user_input[SOUND_DETECTION_RESET]
+            else:
+                sound_detection_reset = -50
             host = self.tapoHost
             cloud_password = self.tapoCloudPassword
             username = self.tapoUsername
@@ -96,12 +111,15 @@ class FlowHandler(config_entries.ConfigFlow):
                 data={
                     ENABLE_MOTION_SENSOR: enable_motion_sensor,
                     ENABLE_STREAM: enable_stream,
-                    ENABLE_SOUND_DETECTION: enable_sound_detection,
                     ENABLE_TIME_SYNC: enable_time_sync,
                     CONF_IP_ADDRESS: host,
                     CONF_USERNAME: username,
                     CONF_PASSWORD: password,
                     CLOUD_PASSWORD: cloud_password,
+                    ENABLE_SOUND_DETECTION: enable_sound_detection,
+                    SOUND_DETECTION_PEAK: sound_detection_peak,
+                    SOUND_DETECTION_DURATION: sound_detection_duration,
+                    SOUND_DETECTION_RESET: sound_detection_reset,
                 },
             )
 
@@ -124,6 +142,18 @@ class FlowHandler(config_entries.ConfigFlow):
                         ENABLE_SOUND_DETECTION,
                         description={"suggested_value": enable_sound_detection},
                     ): bool,
+                    vol.Optional(
+                        SOUND_DETECTION_PEAK,
+                        description={"suggested_value": sound_detection_peak},
+                    ): int,
+                    vol.Optional(
+                        SOUND_DETECTION_DURATION,
+                        description={"suggested_value": sound_detection_duration},
+                    ): int,
+                    vol.Optional(
+                        SOUND_DETECTION_RESET,
+                        description={"suggested_value": sound_detection_reset},
+                    ): int,
                 }
             ),
             errors=errors,
