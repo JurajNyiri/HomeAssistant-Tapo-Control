@@ -83,6 +83,9 @@ SCHEMA_SERVICE_FORMAT = {}
 
 ENABLE_STREAM = "enable_stream"
 ENABLE_SOUND_DETECTION = "enable_sound_detection"
+SOUND_DETECTION_PEAK = "sound_detection_peak"
+SOUND_DETECTION_DURATION = "sound_detection_duration"
+SOUND_DETECTION_RESET = "sound_detection_reset"
 
 ENABLE_TIME_SYNC = "enable_time_sync"
 

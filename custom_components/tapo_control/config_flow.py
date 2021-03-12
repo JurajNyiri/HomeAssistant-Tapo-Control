@@ -12,6 +12,9 @@ from .const import (
     LOGGER,
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
+    SOUND_DETECTION_DURATION,
+    SOUND_DETECTION_PEAK,
+    SOUND_DETECTION_RESET,
 )
 
 
@@ -19,7 +22,7 @@ from .const import (
 class FlowHandler(config_entries.ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 5
+    VERSION = 6
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -292,6 +295,9 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
         enable_stream = self.config_entry.data[ENABLE_STREAM]
         enable_sound_detection = self.config_entry.data[ENABLE_SOUND_DETECTION]
         enable_time_sync = self.config_entry.data[ENABLE_TIME_SYNC]
+        sound_detection_peak = self.config_entry.data[SOUND_DETECTION_PEAK]
+        sound_detection_duration = self.config_entry.data[SOUND_DETECTION_DURATION]
+        sound_detection_reset = self.config_entry.data[SOUND_DETECTION_RESET]
         if user_input is not None:
             try:
                 host = self.config_entry.data[CONF_IP_ADDRESS]
@@ -330,6 +336,26 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                 else:
                     enable_time_sync = False
 
+                if SOUND_DETECTION_PEAK in user_input:
+                    sound_detection_peak = user_input[SOUND_DETECTION_PEAK]
+                else:
+                    sound_detection_peak = -50
+
+                if SOUND_DETECTION_DURATION in user_input:
+                    sound_detection_duration = user_input[SOUND_DETECTION_DURATION]
+                else:
+                    sound_detection_duration = 1
+
+                if SOUND_DETECTION_RESET in user_input:
+                    sound_detection_reset = user_input[SOUND_DETECTION_RESET]
+                else:
+                    sound_detection_reset = 10
+
+                if not (
+                    int(sound_detection_peak) >= -100 and int(sound_detection_peak) <= 0
+                ):
+                    raise Exception("Incorrect sound detection peak value.")
+
                 rtspStreamWorks = await isRtspStreamWorking(
                     self.hass, host, username, password
                 )
@@ -357,6 +383,9 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_PASSWORD: password,
                         CLOUD_PASSWORD: cloud_password,
                         ENABLE_TIME_SYNC: enable_time_sync,
+                        SOUND_DETECTION_PEAK: sound_detection_peak,
+                        SOUND_DETECTION_DURATION: sound_detection_duration,
+                        SOUND_DETECTION_RESET: sound_detection_reset,
                     },
                 )
                 return self.async_create_entry(title="", data=None)
@@ -369,6 +398,8 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                     errors["base"] = "invalid_auth_cloud"
                 elif str(e) == "Camera requires cloud password":
                     errors["base"] = "camera_requires_admin"
+                elif str(e) == "Incorrect sound detection peak value.":
+                    errors["base"] = "incorrect_peak_value"
                 else:
                     errors["base"] = "unknown"
                     LOGGER.error(e)
@@ -401,6 +432,18 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                         ENABLE_SOUND_DETECTION,
                         description={"suggested_value": enable_sound_detection},
                     ): bool,
+                    vol.Optional(
+                        SOUND_DETECTION_PEAK,
+                        description={"suggested_value": sound_detection_peak},
+                    ): int,
+                    vol.Optional(
+                        SOUND_DETECTION_DURATION,
+                        description={"suggested_value": sound_detection_duration},
+                    ): int,
+                    vol.Optional(
+                        SOUND_DETECTION_RESET,
+                        description={"suggested_value": sound_detection_reset},
+                    ): int,
                 }
             ),
             errors=errors,

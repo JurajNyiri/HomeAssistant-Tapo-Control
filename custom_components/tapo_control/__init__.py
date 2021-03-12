@@ -17,6 +17,9 @@ from .const import (
     CLOUD_PASSWORD,
     ENABLE_STREAM,
     ENABLE_TIME_SYNC,
+    SOUND_DETECTION_DURATION,
+    SOUND_DETECTION_PEAK,
+    SOUND_DETECTION_RESET,
     TIME_SYNC_PERIOD,
 )
 from .utils import (
@@ -80,6 +83,9 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
         new = {**config_entry.data}
         new[ENABLE_SOUND_DETECTION] = False
+        new[SOUND_DETECTION_PEAK] = -50
+        new[SOUND_DETECTION_DURATION] = 1
+        new[SOUND_DETECTION_RESET] = 10
 
         config_entry.data = {**new}
 

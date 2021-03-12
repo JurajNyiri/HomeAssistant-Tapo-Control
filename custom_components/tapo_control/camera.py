@@ -46,6 +46,9 @@ from .const import (
     SCHEMA_SERVICE_FORMAT,
     DOMAIN,
     LOGGER,
+    SOUND_DETECTION_DURATION,
+    SOUND_DETECTION_PEAK,
+    SOUND_DETECTION_RESET,
     TILT,
     PAN,
     PRESET,
@@ -125,6 +128,9 @@ class TapoCamEntity(Camera):
         self._password = entry.data.get(CONF_PASSWORD)
         self._enable_stream = entry.data.get(ENABLE_STREAM)
         self._enable_sound_detection = entry.data.get(ENABLE_SOUND_DETECTION)
+        self._sound_detection_peak = entry.data.get(SOUND_DETECTION_PEAK)
+        self._sound_detection_duration = entry.data.get(SOUND_DETECTION_DURATION)
+        self._sound_detection_reset = entry.data.get(SOUND_DETECTION_RESET)
         self._attributes = tapoData["camData"]["basic_info"]
 
         self.updateCam(tapoData["camData"])
@@ -136,7 +142,9 @@ class TapoCamEntity(Camera):
                 self._ffmpeg.binary, self._noiseCallback
             )
             self._noiseSensor.set_options(
-                time_duration=1, time_reset=1, peak=-50,
+                time_duration=int(self._sound_detection_duration),
+                time_reset=int(self._sound_detection_reset),
+                peak=int(self._sound_detection_peak),
             )
 
     @callback
