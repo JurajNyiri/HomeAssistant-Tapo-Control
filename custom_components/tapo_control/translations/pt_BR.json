@@ -26,7 +26,8 @@
         "data": {
           "enable_motion_sensor": "Habilitar sensor de movimento",
           "enable_time_sync": "Sincronizar Hora Automaticamente",
-          "enable_stream": "Usar stream do Home Assistant"
+          "enable_stream": "Usar stream do Home Assistant",
+          "enable_sound_detection": "Ativar detecção de limite de som"
         },
         "description": "Quase lá!\nSó mais algumas opções..."
       }
@@ -55,6 +56,7 @@
           "password": "Senha",
           "enable_motion_sensor": "Habilitar sensor de movimento",
           "enable_stream": "Usar stream do Home Assistant [requer reinicialização]",
+          "enable_sound_detection": "Ativar detecção de limite de som",
           "enable_time_sync": "Sincronizar Hora Automaticamente",
           "cloud_password": "Senha cloud (Opcional)"
         },

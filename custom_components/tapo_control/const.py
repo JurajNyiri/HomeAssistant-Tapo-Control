@@ -82,6 +82,7 @@ SERVICE_FORMAT = "format"
 SCHEMA_SERVICE_FORMAT = {}
 
 ENABLE_STREAM = "enable_stream"
+ENABLE_SOUND_DETECTION = "enable_sound_detection"
 
 ENABLE_TIME_SYNC = "enable_time_sync"
 

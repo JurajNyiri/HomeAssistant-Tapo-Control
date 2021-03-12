@@ -8,6 +8,7 @@ from .const import (
     DOMAIN,
     ENABLE_MOTION_SENSOR,
     ENABLE_STREAM,
+    ENABLE_SOUND_DETECTION,
     LOGGER,
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
@@ -65,6 +66,7 @@ class FlowHandler(config_entries.ConfigFlow):
         enable_motion_sensor = True
         enable_stream = True
         enable_time_sync = False
+        enable_sound_detection = False
         if user_input is not None:
             if ENABLE_MOTION_SENSOR in user_input:
                 enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
@@ -74,6 +76,10 @@ class FlowHandler(config_entries.ConfigFlow):
                 enable_stream = user_input[ENABLE_STREAM]
             else:
                 enable_stream = False
+            if ENABLE_SOUND_DETECTION in user_input:
+                enable_sound_detection = user_input[ENABLE_SOUND_DETECTION]
+            else:
+                enable_sound_detection = False
             if ENABLE_TIME_SYNC in user_input:
                 enable_time_sync = user_input[ENABLE_TIME_SYNC]
             else:
@@ -87,6 +93,7 @@ class FlowHandler(config_entries.ConfigFlow):
                 data={
                     ENABLE_MOTION_SENSOR: enable_motion_sensor,
                     ENABLE_STREAM: enable_stream,
+                    ENABLE_SOUND_DETECTION: enable_sound_detection,
                     ENABLE_TIME_SYNC: enable_time_sync,
                     CONF_IP_ADDRESS: host,
                     CONF_USERNAME: username,
@@ -109,6 +116,10 @@ class FlowHandler(config_entries.ConfigFlow):
                     ): bool,
                     vol.Optional(
                         ENABLE_STREAM, description={"suggested_value": enable_stream},
+                    ): bool,
+                    vol.Optional(
+                        ENABLE_SOUND_DETECTION,
+                        description={"suggested_value": enable_sound_detection},
                     ): bool,
                 }
             ),
@@ -279,6 +290,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
         cloud_password = self.config_entry.data[CLOUD_PASSWORD]
         enable_motion_sensor = self.config_entry.data[ENABLE_MOTION_SENSOR]
         enable_stream = self.config_entry.data[ENABLE_STREAM]
+        enable_sound_detection = self.config_entry.data[ENABLE_SOUND_DETECTION]
         enable_time_sync = self.config_entry.data[ENABLE_TIME_SYNC]
         if user_input is not None:
             try:
@@ -308,6 +320,11 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                 else:
                     enable_stream = False
 
+                if ENABLE_SOUND_DETECTION in user_input:
+                    enable_sound_detection = user_input[ENABLE_SOUND_DETECTION]
+                else:
+                    enable_sound_detection = False
+
                 if ENABLE_TIME_SYNC in user_input:
                     enable_time_sync = user_input[ENABLE_TIME_SYNC]
                 else:
@@ -334,6 +351,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                     data={
                         ENABLE_STREAM: enable_stream,
                         ENABLE_MOTION_SENSOR: enable_motion_sensor,
+                        ENABLE_SOUND_DETECTION: enable_sound_detection,
                         CONF_IP_ADDRESS: host,
                         CONF_USERNAME: username,
                         CONF_PASSWORD: password,
@@ -378,6 +396,10 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                     ): bool,
                     vol.Optional(
                         ENABLE_STREAM, description={"suggested_value": enable_stream},
+                    ): bool,
+                    vol.Optional(
+                        ENABLE_SOUND_DETECTION,
+                        description={"suggested_value": enable_sound_detection},
                     ): bool,
                 }
             ),

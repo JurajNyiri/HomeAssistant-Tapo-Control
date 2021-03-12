@@ -20,6 +20,7 @@ from homeassistant.helpers.aiohttp_client import async_aiohttp_proxy_stream
 from haffmpeg.camera import CameraMjpeg
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from .const import (
+    ENABLE_SOUND_DETECTION,
     ENABLE_STREAM,
     SERVICE_SET_LED_MODE,
     SCHEMA_SERVICE_SET_LED_MODE,
@@ -123,29 +124,30 @@ class TapoCamEntity(Camera):
         self._username = entry.data.get(CONF_USERNAME)
         self._password = entry.data.get(CONF_PASSWORD)
         self._enable_stream = entry.data.get(ENABLE_STREAM)
+        self._enable_sound_detection = entry.data.get(ENABLE_SOUND_DETECTION)
         self._attributes = tapoData["camData"]["basic_info"]
 
         self.updateCam(tapoData["camData"])
 
-        # todo: noise detection condition
         hass.data[DOMAIN][entry.entry_id]["noiseSensorStarted"] = False
-        self._noiseSensor = ffmpeg_sensor.SensorNoise(
-            self._ffmpeg.binary, self._noiseCallback
-        )
-        self._noiseSensor.set_options(
-            time_duration=1, time_reset=1, peak=-50,
-        )
+
+        if self._enable_sound_detection:
+            self._noiseSensor = ffmpeg_sensor.SensorNoise(
+                self._ffmpeg.binary, self._noiseCallback
+            )
+            self._noiseSensor.set_options(
+                time_duration=1, time_reset=1, peak=-50,
+            )
 
     @callback
     def _noiseCallback(self, noiseDetected):
         self._attributes["noise_detected"] = "on" if noiseDetected else "off"
-        print(self._attributes["noise_detected"])
-        self.async_write_ha_state()
+        for entity in self._hass.data[DOMAIN][self._entry.entry_id]["entities"]:
+            if entity._enabled:
+                entity.async_write_ha_state()
 
-    async def _async_start_ffmpeg(self):
+    async def startNoiseDetection(self):
         self._hass.data[DOMAIN][self._entry.entry_id]["noiseSensorStarted"] = True
-
-        # run
         await self._noiseSensor.open_sensor(
             input_source=self.getStreamSource(), extra_cmd="",
         )
