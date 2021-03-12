@@ -158,7 +158,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     someCameraEnabled = True
 
             if someCameraEnabled:
-                camData = await getCamData(hass, tapoController)
+                try:
+                    camData = await getCamData(hass, tapoController)
+                except Exception as e:
+                    camData = False
+                    LOGGER.error(e)
                 hass.data[DOMAIN][entry.entry_id]["camData"] = camData
                 for entity in hass.data[DOMAIN][entry.entry_id]["entities"]:
                     if entity._enabled:
