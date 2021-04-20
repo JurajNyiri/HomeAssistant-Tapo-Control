@@ -157,6 +157,14 @@ Sets day or night mode
 - **day_night_mode** Required: Sets day/night mode for camera. Possible values: on, off, auto
 </details>
 
+## Sound Detection
+
+Integration is capable of analysing sound from camera microphone and expose a new attribute noise_detected on cameras when a voice threshold is reached.
+
+You need to enable this feature in integration options by checking "Enable sound threshold detection". After enabling it, you can also set any other options starting with [Sound Detection]. You will need to restart Home Asssistant after doing any changes.
+
+For more information and troubleshooting see [Home Assistant ffmpeg documentation](https://www.home-assistant.io/integrations/ffmpeg_noise/) on which this feature is based on.
+
 ## Troubleshooting | FAQ
 
 <details>
@@ -211,6 +219,7 @@ Tapo Cameras use PCM ALAW (alaw) which is not supported.
 
 Users reported full functionality with following Tapo Cameras:
 
+- TC60
 - C100
 - C200
 - C310
