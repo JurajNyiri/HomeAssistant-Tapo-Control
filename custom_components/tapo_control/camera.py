@@ -157,7 +157,7 @@ class TapoCamEntity(Camera):
     async def startNoiseDetection(self):
         self._hass.data[DOMAIN][self._entry.entry_id]["noiseSensorStarted"] = True
         await self._noiseSensor.open_sensor(
-            input_source=self.getStreamSource(), extra_cmd="",
+            input_source=self.getStreamSource(), extra_cmd="-nostats",
         )
 
     async def async_added_to_hass(self) -> None:
