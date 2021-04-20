@@ -30,7 +30,8 @@
           "enable_sound_detection": "啟用聲音閾值檢測",
           "sound_detection_peak": "[Sound Detection] 檢測噪音的閾值，以dB為單位。 0 最大，-100 最小.",
           "sound_detection_duration": "[Sound Detection] 噪音需要超過峰值持續多久的時間才能觸發該狀態。",
-          "sound_detection_reset": "[Sound Detection] 如果在沒有新的噪音超過峰值的話，需要多久時間才會重置狀態。"
+          "sound_detection_reset": "[Sound Detection] 如果在沒有新的噪音超過峰值的話，需要多久時間才會重置狀態。",
+          "framerate": "非流視頻的幀率"
         },
         "description": "快設定完成了!\n只剩下一些選項..."
       }
@@ -65,7 +66,8 @@
           "cloud_password": "Cloud Password (選填)",
           "sound_detection_peak": "[Sound Detection] 檢測噪音的閾值，以dB為單位。 0 最大，-100 最小。",
           "sound_detection_duration": "[Sound Detection] 噪音需要超過峰值持續多久的時間才能觸發該狀態。",
-          "sound_detection_reset": "[Sound Detection] 如果在沒有新的噪音超過峰值的話，需要多久時間才會重置狀態。"
+          "sound_detection_reset": "[Sound Detection] 如果在沒有新的噪音超過峰值的話，需要多久時間才會重置狀態。",
+          "framerate": "非流視頻的幀率"
         },
         "description": "編輯您的 Tapo 攝影機設定.\n\nUse stream from Home Assistant:\nYes - 較高的延遲，cpu使用率相對較低，允許使用播放控制\nNo - 極低的延遲, cpu使用率相對較高, 不能使用播放控制"
       }

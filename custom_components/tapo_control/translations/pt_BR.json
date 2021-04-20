@@ -30,7 +30,8 @@
           "enable_sound_detection": "Ativar detecção de limite de som",
           "sound_detection_peak": "[Detecção de som] Pico em dB. 0 é muito alto e -100 é baixo.",
           "sound_detection_duration": "[Detecção de som] Quanto tempo o ruído precisa estar acima do pico para acionar o estado.",
-          "sound_detection_reset": "[Detecção de som] O tempo para redefinir o estado depois que nenhum novo ruído ultrapassar o pico."
+          "sound_detection_reset": "[Detecção de som] O tempo para redefinir o estado depois que nenhum novo ruído ultrapassar o pico.",
+          "framerate": "Taxa de quadros para vídeo sem stream"
         },
         "description": "Quase lá!\nSó mais algumas opções..."
       }
@@ -65,7 +66,8 @@
           "cloud_password": "Senha cloud (Opcional)",
           "sound_detection_peak": "[Detecção de som] Pico em dB. 0 é muito alto e -100 é baixo.",
           "sound_detection_duration": "[Detecção de som] Quanto tempo o ruído precisa estar acima do pico para acionar o estado.",
-          "sound_detection_reset": "[Detecção de som] O tempo para redefinir o estado depois que nenhum novo ruído ultrapassar o pico."
+          "sound_detection_reset": "[Detecção de som] O tempo para redefinir o estado depois que nenhum novo ruído ultrapassar o pico.",
+          "framerate": "Taxa de quadros para vídeo sem stream"
         },
         "description": "Modificar configurações da sua Tapo câmera.\n\nUsar stream do Home Assistant:\nSim - Maior delay de reprodução, menor uso de CPU, permite controle de reprodução\nNão - delay de reprodução muito curto, maior uso de CPU, sem controle de reprodução"
       }

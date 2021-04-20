@@ -53,6 +53,7 @@ from .const import (
     PAN,
     PRESET,
     NAME,
+    FRAMERATE,
 )
 
 
@@ -131,6 +132,7 @@ class TapoCamEntity(Camera):
         self._sound_detection_peak = entry.data.get(SOUND_DETECTION_PEAK)
         self._sound_detection_duration = entry.data.get(SOUND_DETECTION_DURATION)
         self._sound_detection_reset = entry.data.get(SOUND_DETECTION_RESET)
+        self._frame_interval = 1 / entry.data.get(FRAMERATE)
         self._attributes = tapoData["camData"]["basic_info"]
 
         self.updateCam(tapoData["camData"])
@@ -172,6 +174,11 @@ class TapoCamEntity(Camera):
             return SUPPORT_STREAM | SUPPORT_ON_OFF
         else:
             return SUPPORT_ON_OFF
+
+    @property
+    def frame_interval(self):
+        """Return the interval between frames of the mjpeg stream."""
+        return self._frame_interval
 
     @property
     def icon(self) -> str:

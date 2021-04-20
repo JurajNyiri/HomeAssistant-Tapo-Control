@@ -2,6 +2,7 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.core import callback
 from homeassistant.components.dhcp import HOSTNAME, IP_ADDRESS, MAC_ADDRESS
+from homeassistant.helpers import config_validation as cv
 import voluptuous as vol
 from .utils import registerController, isRtspStreamWorking, areCameraPortsOpened, isOpen
 from .const import (
@@ -15,6 +16,7 @@ from .const import (
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
     SOUND_DETECTION_RESET,
+    FRAMERATE,
 )
 
 
@@ -22,7 +24,7 @@ from .const import (
 class FlowHandler(config_entries.ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 6
+    VERSION = 7
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -73,6 +75,7 @@ class FlowHandler(config_entries.ConfigFlow):
         sound_detection_peak = -50
         sound_detection_duration = 1
         sound_detection_reset = 10
+        framerate = False
         if user_input is not None:
             if ENABLE_MOTION_SENSOR in user_input:
                 enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
@@ -102,6 +105,10 @@ class FlowHandler(config_entries.ConfigFlow):
                 sound_detection_reset = user_input[SOUND_DETECTION_RESET]
             else:
                 sound_detection_reset = -50
+            if FRAMERATE in user_input:
+                framerate = user_input[FRAMERATE]
+            else:
+                framerate = 2
             host = self.tapoHost
             cloud_password = self.tapoCloudPassword
             username = self.tapoUsername
@@ -120,6 +127,7 @@ class FlowHandler(config_entries.ConfigFlow):
                     SOUND_DETECTION_PEAK: sound_detection_peak,
                     SOUND_DETECTION_DURATION: sound_detection_duration,
                     SOUND_DETECTION_RESET: sound_detection_reset,
+                    FRAMERATE: framerate,
                 },
             )
 
@@ -154,6 +162,9 @@ class FlowHandler(config_entries.ConfigFlow):
                         SOUND_DETECTION_RESET,
                         description={"suggested_value": sound_detection_reset},
                     ): int,
+                    vol.Optional(
+                        FRAMERATE, description={"suggested_value": framerate},
+                    ): cv.positive_int,
                 }
             ),
             errors=errors,
@@ -328,6 +339,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
         sound_detection_peak = self.config_entry.data[SOUND_DETECTION_PEAK]
         sound_detection_duration = self.config_entry.data[SOUND_DETECTION_DURATION]
         sound_detection_reset = self.config_entry.data[SOUND_DETECTION_RESET]
+        framerate = self.config_entry.data[FRAMERATE]
         if user_input is not None:
             try:
                 host = self.config_entry.data[CONF_IP_ADDRESS]
@@ -381,6 +393,11 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                 else:
                     sound_detection_reset = 10
 
+                if FRAMERATE in user_input:
+                    framerate = user_input[FRAMERATE]
+                else:
+                    framerate = 2
+
                 if not (
                     int(sound_detection_peak) >= -100 and int(sound_detection_peak) <= 0
                 ):
@@ -416,6 +433,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                         SOUND_DETECTION_PEAK: sound_detection_peak,
                         SOUND_DETECTION_DURATION: sound_detection_duration,
                         SOUND_DETECTION_RESET: sound_detection_reset,
+                        FRAMERATE: framerate,
                     },
                 )
                 return self.async_create_entry(title="", data=None)
@@ -474,6 +492,9 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                         SOUND_DETECTION_RESET,
                         description={"suggested_value": sound_detection_reset},
                     ): int,
+                    vol.Optional(
+                        FRAMERATE, description={"suggested_value": framerate},
+                    ): cv.positive_int,
                 }
             ),
             errors=errors,

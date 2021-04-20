@@ -21,6 +21,7 @@ from .const import (
     SOUND_DETECTION_PEAK,
     SOUND_DETECTION_RESET,
     TIME_SYNC_PERIOD,
+    FRAMERATE,
 )
 from .utils import (
     registerController,
@@ -90,6 +91,15 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         config_entry.data = {**new}
 
         config_entry.version = 6
+
+    if config_entry.version == 6:
+
+        new = {**config_entry.data}
+        new[FRAMERATE] = 2
+
+        config_entry.data = {**new}
+
+        config_entry.version = 7
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
