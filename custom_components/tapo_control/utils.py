@@ -206,7 +206,9 @@ async def syncTime(hass, entry):
 
 
 async def setupOnvif(hass, entry):
+    LOGGER.debug("setupOnvif - entry")
     if hass.data[DOMAIN][entry.entry_id]["eventsDevice"]:
+        LOGGER.debug("Setting up onvif...")
         hass.data[DOMAIN][entry.entry_id]["events"] = EventManager(
             hass,
             hass.data[DOMAIN][entry.entry_id]["eventsDevice"],
@@ -219,15 +221,22 @@ async def setupOnvif(hass, entry):
 
 
 async def setupEvents(hass, entry):
+    LOGGER.debug("setupEvents - entry")
     if not hass.data[DOMAIN][entry.entry_id]["events"].started:
+        LOGGER.debug("Setting up events...")
         events = hass.data[DOMAIN][entry.entry_id]["events"]
         if await events.async_start():
+            LOGGER.debug("Events started.")
             if not hass.data[DOMAIN][entry.entry_id]["motionSensorCreated"]:
+                LOGGER.debug("Creating motion binary sensor...")
                 hass.data[DOMAIN][entry.entry_id]["motionSensorCreated"] = True
                 hass.async_create_task(
                     hass.config_entries.async_forward_entry_setup(
                         entry, "binary_sensor"
                     )
+                )
+                LOGGER.debug(
+                    "Binary sensor creation for motion has been forwarded to component."
                 )
             return True
         else:
