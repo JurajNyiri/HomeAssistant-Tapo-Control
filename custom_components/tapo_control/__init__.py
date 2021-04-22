@@ -125,6 +125,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             )
 
         async def async_update_data():
+            LOGGER.debug("async_update_data - entry")
             host = entry.data.get(CONF_IP_ADDRESS)
             username = entry.data.get(CONF_USERNAME)
             password = entry.data.get(CONF_PASSWORD)
@@ -133,6 +134,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
             # motion detection retries
             if motionSensor or enableTimeSync:
+                LOGGER.debug("Motion sensor or time sync is enabled.")
                 if (
                     not hass.data[DOMAIN][entry.entry_id]["eventsDevice"]
                     or not hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
