@@ -21,7 +21,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         for event in events.get_platform("binary_sensor")
     }
 
-    LOGGER.debug("Adding binary sensor entity.")
+    LOGGER.debug("Creating binary sensor entity.")
     async_add_entities(entities.values())
 
     @callback
@@ -32,7 +32,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
         for event in events.get_platform("binary_sensor"):
             LOGGER.debug(event)
             if event.uid not in entities:
-                LOGGER.debug("Found event which doesn't have entity yet, creating it.")
+                LOGGER.debug(
+                    "Found event which doesn't have entity yet, adding binary sensor!"
+                )
                 entities[event.uid] = TapoBinarySensor(event.uid, events, name, camData)
                 new_entities.append(entities[event.uid])
         async_add_entities(new_entities)
