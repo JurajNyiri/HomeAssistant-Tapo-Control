@@ -135,6 +135,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             # motion detection retries
             if motionSensor or enableTimeSync:
                 LOGGER.debug("Motion sensor or time sync is enabled.")
+                LOGGER.debug(hass.data[DOMAIN][entry.entry_id]["events"]._unsub_refresh)
+                LOGGER.debug(hass.data[DOMAIN][entry.entry_id]["events"].started)
                 if (
                     not hass.data[DOMAIN][entry.entry_id]["eventsDevice"]
                     or not hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
@@ -173,30 +175,41 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         ts - hass.data[DOMAIN][entry.entry_id]["lastTimeSync"]
                         > TIME_SYNC_PERIOD
                     ):
+                        LOGGER.debug("Sync time - 1")
                         await syncTime(hass, entry)
+                        LOGGER.debug("Sync time - 2")
 
+            LOGGER.debug("async_update_data - A1")
             # cameras state
             someCameraEnabled = False
             for entity in hass.data[DOMAIN][entry.entry_id]["entities"]:
                 if entity._enabled:
                     someCameraEnabled = True
+            LOGGER.debug("async_update_data - A2")
 
             if someCameraEnabled:
+                LOGGER.debug("async_update_data - A4")
                 try:
                     camData = await getCamData(hass, tapoController)
                 except Exception as e:
                     camData = False
                     LOGGER.error(e)
+                LOGGER.debug("async_update_data - A5")
                 hass.data[DOMAIN][entry.entry_id]["camData"] = camData
                 for entity in hass.data[DOMAIN][entry.entry_id]["entities"]:
                     if entity._enabled:
+                        LOGGER.debug("async_update_data - A6")
                         entity.updateCam(camData)
                         entity.async_schedule_update_ha_state(True)
+                        LOGGER.debug("async_update_data - A7")
                         if (
                             not hass.data[DOMAIN][entry.entry_id]["noiseSensorStarted"]
                             and entity._enable_sound_detection
                         ):
+                            LOGGER.debug("async_update_data - A8")
                             await entity.startNoiseDetection()
+                            LOGGER.debug("async_update_data - A9")
+            LOGGER.debug("async_update_data - A3")
 
         tapoCoordinator = DataUpdateCoordinator(
             hass, LOGGER, name="Tapo resource status", update_method=async_update_data,

@@ -14,7 +14,7 @@ from .const import (
     ENABLE_TIME_SYNC,
 )
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
-from homeassistant.components.onvif.event import EventManager
+from .event import EventManager
 from homeassistant.components.ffmpeg import DATA_FFMPEG
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 
