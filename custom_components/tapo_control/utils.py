@@ -4,6 +4,7 @@ import asyncio
 import urllib.parse
 import socket
 import datetime
+import time
 from onvif import ONVIFCamera
 from pytapo import Tapo
 from .const import (
@@ -197,7 +198,11 @@ async def syncTime(hass, entry):
         time_params.DaylightSavings = True
         time_params.UTCDateTime = {
             "Date": {"Year": now.year, "Month": now.month, "Day": now.day},
-            "Time": {"Hour": now.hour, "Minute": now.minute, "Second": now.second},
+            "Time": {
+                "Hour": now.hour if time.localtime().tm_isdst == "0" else now.hour + 1,
+                "Minute": now.minute,
+                "Second": now.second,
+            },
         }
         await device_mgmt.SetSystemDateAndTime(time_params)
         hass.data[DOMAIN][entry.entry_id][
