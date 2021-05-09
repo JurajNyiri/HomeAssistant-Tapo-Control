@@ -22,7 +22,9 @@ Following target TCP ports **must be open** in firewall for the camera to access
 
 ## Usage
 
-Add cameras via Integrations (search for Tapo) in Home Assistant UI.
+Add cameras via Integrations (search for Tapo) in Home Assistant UI. You can also simply click the button below if you have MyHomeAssistant redirects set up.
+
+[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=tapo_control)
 
 Cameras are also automatically discovered when they are (re)connected to WIFI.
 
