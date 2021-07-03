@@ -175,7 +175,7 @@ class FlowHandler(config_entries.ConfigFlow):
                 if "Failed to establish a new connection" in str(e):
                     errors["base"] = "connection_failed"
                 elif str(e) == "Invalid authentication data":
-                    errors["base"] = "invalid_auth"
+                    errors["base"] = "invalid_auth_cloud"
                 else:
                     errors["base"] = "unknown"
                     LOGGER.error(e)
