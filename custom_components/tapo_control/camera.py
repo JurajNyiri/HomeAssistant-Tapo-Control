@@ -14,7 +14,7 @@ from homeassistant.components.camera import (
     SUPPORT_STREAM,
     Camera,
 )
-from homeassistant.components.ffmpeg import DATA_FFMPEG
+from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS, DATA_FFMPEG
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.aiohttp_client import async_aiohttp_proxy_stream
 from haffmpeg.camera import CameraMjpeg
@@ -123,6 +123,7 @@ class TapoCamEntity(Camera):
         self._hass = hass
         self._enabled = False
         self._hdstream = HDStream
+        self._extra_arguments = entry.data.get(CONF_EXTRA_ARGUMENTS)
         self._host = entry.data.get(CONF_IP_ADDRESS)
         self._username = entry.data.get(CONF_USERNAME)
         self._password = entry.data.get(CONF_PASSWORD)
@@ -226,14 +227,20 @@ class TapoCamEntity(Camera):
         ffmpeg = ImageFrame(self._ffmpeg.binary)
         streaming_url = self.getStreamSource()
         image = await asyncio.shield(
-            ffmpeg.get_image(streaming_url, output_format=IMAGE_JPEG,)
+            ffmpeg.get_image(
+                streaming_url,
+                output_format=IMAGE_JPEG,
+                extra_cmd=self._extra_arguments,
+            )
         )
         return image
 
     async def handle_async_mjpeg_stream(self, request):
         streaming_url = self.getStreamSource()
         stream = CameraMjpeg(self._ffmpeg.binary)
-        await stream.open_camera(streaming_url)
+        await stream.open_camera(
+            streaming_url, extra_cmd=self._extra_arguments,
+        )
         try:
             stream_reader = await stream.get_reader()
             return await async_aiohttp_proxy_stream(

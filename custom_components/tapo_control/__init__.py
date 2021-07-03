@@ -1,4 +1,5 @@
 import datetime
+from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
 from homeassistant.const import (
     CONF_IP_ADDRESS,
     CONF_USERNAME,
@@ -90,6 +91,15 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         config_entry.data = {**new}
 
         config_entry.version = 6
+
+    if config_entry.version == 6:
+
+        new = {**config_entry.data}
+        new[CONF_EXTRA_ARGUMENTS] = ""
+
+        config_entry.data = {**new}
+
+        config_entry.version = 7
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
