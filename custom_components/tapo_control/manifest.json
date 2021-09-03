@@ -4,7 +4,7 @@
   "documentation": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control",
   "issue_tracker": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues",
   "codeowners": ["@JurajNyiri"],
-  "version": "3.3.3",
+  "version": "3.4.1",
   "requirements": [
     "pytapo==1.2.1",
     "onvif-zeep-async==1.0.0",

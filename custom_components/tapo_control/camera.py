@@ -223,7 +223,7 @@ class TapoCamEntity(Camera):
     def should_poll(self):
         return True
 
-    async def async_camera_image(self):
+    async def async_camera_image(self, width=None, height=None):
         ffmpeg = ImageFrame(self._ffmpeg.binary)
         streaming_url = self.getStreamSource()
         image = await asyncio.shield(
