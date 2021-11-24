@@ -225,6 +225,15 @@ Tapo Cameras use PCM ALAW (alaw) which is not supported.
 
 [More details here.](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/58#issuecomment-762787442)
 
+**You can get sound working using [WebRTC Camera by AlexxIT](https://github.com/AlexxIT/WebRTC).**
+
+Example working configuration:
+
+```
+type: custom:webrtc-camera
+entity: camera.bedroom_hd
+```
+
 </details>
 
 <details>
