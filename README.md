@@ -205,6 +205,15 @@ If you disable stream and your hardware is not up to the task, you will get arti
 
 If you wish, try it out and see what works best for you.
 
+\*\*Another possibility is using [WebRTC Camera by AlexxIT](https://github.com/AlexxIT/WebRTC).
+
+Example working configuration:
+
+```
+type: custom:webrtc-camera
+entity: camera.bedroom_hd
+```
+
 </details>
 
 <details>
