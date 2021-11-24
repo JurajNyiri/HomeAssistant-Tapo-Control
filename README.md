@@ -205,7 +205,7 @@ If you disable stream and your hardware is not up to the task, you will get arti
 
 If you wish, try it out and see what works best for you.
 
-\*\*Another possibility is using [WebRTC Camera by AlexxIT](https://github.com/AlexxIT/WebRTC).
+**Another possibility is using [WebRTC Camera by AlexxIT](https://github.com/AlexxIT/WebRTC).**
 
 Example working configuration:
 
