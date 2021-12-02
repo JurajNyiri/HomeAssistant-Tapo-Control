@@ -12,6 +12,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from .const import (
     ENABLE_SOUND_DETECTION,
+    CONF_CUSTOM_STREAM,
     LOGGER,
     DOMAIN,
     ENABLE_MOTION_SENSOR,
@@ -100,6 +101,15 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         config_entry.data = {**new}
 
         config_entry.version = 7
+
+    if config_entry.version == 7:
+
+        new = {**config_entry.data}
+        new[CONF_CUSTOM_STREAM] = ""
+
+        config_entry.data = {**new}
+
+        config_entry.version = 8
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 

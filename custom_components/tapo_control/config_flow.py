@@ -16,6 +16,7 @@ from .const import (
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
     SOUND_DETECTION_RESET,
+    CONF_CUSTOM_STREAM,
 )
 
 
@@ -23,7 +24,7 @@ from .const import (
 class FlowHandler(config_entries.ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 7
+    VERSION = 8
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -75,6 +76,7 @@ class FlowHandler(config_entries.ConfigFlow):
         sound_detection_duration = 1
         sound_detection_reset = 10
         extra_arguments = ""
+        custom_stream = ""
         if user_input is not None:
             if ENABLE_MOTION_SENSOR in user_input:
                 enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
@@ -96,6 +98,10 @@ class FlowHandler(config_entries.ConfigFlow):
                 sound_detection_peak = user_input[SOUND_DETECTION_PEAK]
             else:
                 sound_detection_peak = -50
+            if CONF_CUSTOM_STREAM in user_input:
+                custom_stream = user_input[CONF_CUSTOM_STREAM]
+            else:
+                custom_stream = ""
             if SOUND_DETECTION_DURATION in user_input:
                 sound_detection_duration = user_input[SOUND_DETECTION_DURATION]
             else:
@@ -127,6 +133,7 @@ class FlowHandler(config_entries.ConfigFlow):
                     SOUND_DETECTION_DURATION: sound_detection_duration,
                     SOUND_DETECTION_RESET: sound_detection_reset,
                     CONF_EXTRA_ARGUMENTS: extra_arguments,
+                    CONF_CUSTOM_STREAM: custom_stream,
                 },
             )
 
@@ -164,6 +171,10 @@ class FlowHandler(config_entries.ConfigFlow):
                     vol.Optional(
                         CONF_EXTRA_ARGUMENTS,
                         description={"suggested_value": extra_arguments},
+                    ): str,
+                    vol.Optional(
+                        CONF_CUSTOM_STREAM,
+                        description={"suggested_value": custom_stream},
                     ): str,
                 }
             ),
@@ -340,6 +351,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
         sound_detection_duration = self.config_entry.data[SOUND_DETECTION_DURATION]
         sound_detection_reset = self.config_entry.data[SOUND_DETECTION_RESET]
         extra_arguments = self.config_entry.data[CONF_EXTRA_ARGUMENTS]
+        custom_stream = self.config_entry.data[CONF_CUSTOM_STREAM]
         if user_input is not None:
             try:
                 host = self.config_entry.data[CONF_IP_ADDRESS]
@@ -383,6 +395,11 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                 else:
                     sound_detection_peak = -50
 
+                if CONF_CUSTOM_STREAM in user_input:
+                    custom_stream = user_input[CONF_CUSTOM_STREAM]
+                else:
+                    custom_stream = ""
+
                 if SOUND_DETECTION_DURATION in user_input:
                     sound_detection_duration = user_input[SOUND_DETECTION_DURATION]
                 else:
@@ -404,7 +421,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                     raise Exception("Incorrect sound detection peak value.")
 
                 rtspStreamWorks = await isRtspStreamWorking(
-                    self.hass, host, username, password
+                    self.hass, host, username, password, custom_stream
                 )
                 if not rtspStreamWorks:
                     raise Exception("Invalid authentication data")
@@ -434,6 +451,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                         SOUND_DETECTION_DURATION: sound_detection_duration,
                         SOUND_DETECTION_RESET: sound_detection_reset,
                         CONF_EXTRA_ARGUMENTS: extra_arguments,
+                        CONF_CUSTOM_STREAM: custom_stream,
                     },
                 )
                 return self.async_create_entry(title="", data=None)
@@ -495,6 +513,10 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Optional(
                         CONF_EXTRA_ARGUMENTS,
                         description={"suggested_value": extra_arguments},
+                    ): str,
+                    vol.Optional(
+                        CONF_CUSTOM_STREAM,
+                        description={"suggested_value": custom_stream},
                     ): str,
                 }
             ),

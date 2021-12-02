@@ -39,12 +39,18 @@ def areCameraPortsOpened(host):
     return isOpen(host, 443) and isOpen(host, 554) and isOpen(host, 2020)
 
 
-async def isRtspStreamWorking(hass, host, username, password):
+async def isRtspStreamWorking(hass, host, username, password, full_url=""):
     _ffmpeg = hass.data[DATA_FFMPEG]
     ffmpeg = ImageFrame(_ffmpeg.binary)
     username = urllib.parse.quote_plus(username)
     password = urllib.parse.quote_plus(password)
-    streaming_url = f"rtsp://{username}:{password}@{host}:554/stream1"
+
+    streaming_url = full_url
+    if full_url == "":
+        streaming_url = f"rtsp://{host}:554/stream1"
+        if username != "" and password != "":
+            streaming_url = f"rtsp://{username}:{password}@{host}:554/stream1"
+
     image = await asyncio.shield(
         ffmpeg.get_image(streaming_url, output_format=IMAGE_JPEG,)
     )

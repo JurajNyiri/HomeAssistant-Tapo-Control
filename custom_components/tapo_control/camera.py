@@ -20,6 +20,7 @@ from homeassistant.helpers.aiohttp_client import async_aiohttp_proxy_stream
 from haffmpeg.camera import CameraMjpeg
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from .const import (
+    CONF_CUSTOM_STREAM,
     ENABLE_SOUND_DETECTION,
     ENABLE_STREAM,
     SERVICE_SET_LED_MODE,
@@ -132,6 +133,7 @@ class TapoCamEntity(Camera):
         self._sound_detection_peak = entry.data.get(SOUND_DETECTION_PEAK)
         self._sound_detection_duration = entry.data.get(SOUND_DETECTION_DURATION)
         self._sound_detection_reset = entry.data.get(SOUND_DETECTION_RESET)
+        self._custom_stream = entry.data.get(CONF_CUSTOM_STREAM)
         self._attributes = tapoData["camData"]["basic_info"]
 
         self.updateCam(tapoData["camData"])
@@ -253,6 +255,9 @@ class TapoCamEntity(Camera):
             await stream.close()
 
     def getStreamSource(self):
+        if self._custom_stream != "":
+            return self._custom_stream
+
         if self._hdstream:
             streamType = "stream1"
         else:

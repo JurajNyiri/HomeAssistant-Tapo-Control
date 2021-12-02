@@ -31,7 +31,8 @@
           "sound_detection_peak": "[Sound Detection] Peak in dB. 0 is very loud and -100 is low.",
           "sound_detection_duration": "[Sound Detection] How long the noise needs to be over the peak to trigger the state.",
           "sound_detection_reset": "[Sound Detection] The time to reset the state after no new noise is over the peak.",
-          "extra_arguments": "[Requires restart] Extra arguments for ffmpeg"
+          "extra_arguments": "[Requires restart] Extra arguments for ffmpeg",
+          "custom_stream": "Custom stream link"
         },
         "description": "Almost there!\nJust some final options..."
       }
@@ -67,7 +68,8 @@
           "sound_detection_peak": "[Sound Detection] Peak in dB. 0 is very loud and -100 is low.",
           "sound_detection_duration": "[Sound Detection] How long the noise needs to be over the peak to trigger the state.",
           "sound_detection_reset": "[Sound Detection] The time to reset the state after no new noise is over the peak.",
-          "extra_arguments": "[Requires restart] Extra arguments for ffmpeg"
+          "extra_arguments": "[Requires restart] Extra arguments for ffmpeg",
+          "custom_stream": "Custom stream link"
         },
         "description": "Modify settings of your Tapo Camera.\n\nUse stream from Home Assistant:\nYes - Longer playback delay, lower CPU usage, allows playback control\nNo - Very short playback delay, higher CPU usage, no playback control"
       }
