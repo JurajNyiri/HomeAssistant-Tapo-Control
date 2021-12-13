@@ -189,7 +189,7 @@ class TapoCamEntity(Camera):
         return self.getUniqueID()
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         return self._attributes
 
     @property
