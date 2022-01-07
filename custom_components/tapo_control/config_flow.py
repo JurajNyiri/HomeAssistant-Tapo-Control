@@ -37,24 +37,24 @@ class FlowHandler(config_entries.ConfigFlow):
 
     async def async_step_dhcp(self, dhcp_discovery):
         """Handle dhcp discovery."""
-        if self._async_host_already_configured(dhcp_discovery[IP_ADDRESS]):
+        if self._async_host_already_configured(dhcp_discovery.ip):
             return self.async_abort(reason="already_configured")
 
         if (
-            not dhcp_discovery[HOSTNAME].startswith("C100_")
-            and not dhcp_discovery[HOSTNAME].startswith("C200_")
-            and not dhcp_discovery[HOSTNAME].startswith("C310_")
-            and not dhcp_discovery[HOSTNAME].startswith("TC60_")
-            and not dhcp_discovery[HOSTNAME].startswith("TC70_")
+            not dhcp_discovery.hostname.startswith("C100_")
+            and not dhcp_discovery.hostname.startswith("C200_")
+            and not dhcp_discovery.hostname.startswith("C310_")
+            and not dhcp_discovery.hostname.startswith("TC60_")
+            and not dhcp_discovery.hostname.startswith("TC70_")
         ):
             return self.async_abort(reason="not_tapo_device")
 
-        mac_address = dhcp_discovery[MAC_ADDRESS]
+        mac_address = dhcp_discovery.macaddress
         await self.async_set_unique_id(mac_address)
         self.context.update(
-            {"title_placeholders": {"name": dhcp_discovery[IP_ADDRESS]}}
+            {"title_placeholders": {"name": dhcp_discovery.ip}}
         )
-        self.tapoHost = dhcp_discovery[IP_ADDRESS]
+        self.tapoHost = dhcp_discovery.ip
         return await self.async_step_auth()
 
     @callback
