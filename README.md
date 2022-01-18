@@ -242,6 +242,7 @@ entity: camera.bedroom_hd
 Users reported full functionality with following Tapo Cameras:
 
 - TC60
+- TC70
 - C100
 - C110
 - C200
