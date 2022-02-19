@@ -117,8 +117,6 @@ Notice: If you use motion detection triggered recording and you turn off motion 
 <details>
   <summary>tapo_control.set_auto_track_mode</summary>
 
-**Works for free on firmwares before version 1.1.7.**
-
 **Starting with firmware 1.1.7 the feature requires Tapo Care subscription.**
 
 Sets auto track mode.
