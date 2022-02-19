@@ -119,7 +119,9 @@ Notice: If you use motion detection triggered recording and you turn off motion 
 
 **Warning: This mode is not available in Tapo app and we do not know why. Use at your own risk and please report any success or failures in [Home Assistant: Community Forum](https://community.home-assistant.io/t/tapo-cameras-control/231795).**
 
-**Does not work on firmware 1.1.7 or higher. Camera responds correctly, and even reports state, but no longer moves to follow object.**
+**Works for free on firmwares before version 1.1.7.**
+
+**Starting with firmware 1.1.7 the feature requires Tapo Care subscription.**
 
 Sets auto track mode.
 
