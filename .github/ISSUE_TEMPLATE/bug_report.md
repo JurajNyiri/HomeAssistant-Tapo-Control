@@ -64,7 +64,7 @@ Exception: Error: -1337 Response:{"error": "Not enough pixels!!", "error_code": 
 
 **Research**
 <!-- Read and tick below -->
-[ ] I have checked the [issues](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues?q=is%3Aissue+) and I have not found any issue resembling mine.
+- [ ] I have checked the [issues](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues?q=is%3Aissue+) and I have not found any issue resembling mine.
 
 **Additional context**
 Add any other context about the problem here.
