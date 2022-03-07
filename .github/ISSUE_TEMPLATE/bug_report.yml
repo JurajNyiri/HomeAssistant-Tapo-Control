@@ -51,36 +51,36 @@ body:
     validations:
       required: true
 
-  - type: checkboxes
+  - type: dropdown
     attributes:
       label: Using stream component
       description: Are you using Home Assistant stream component?
       options:
-        - label: "Yes"
-        - label: "No"
+        - "Yes"
+        - "No"
     validations:
       required: true
 
-  - type: checkboxes
+  - type: dropdown
     attributes:
       label: Does camera work via official integrations?
       description: If you are having issues with displaying camera stream, try it via onvif or ffmpeg integrations from Home Assistant.
       options:
-        - label: "N/A"
-        - label: "It works"
-        - label: "It does not work"
+        - "Yes"
+        - "No"
+        - "N/A"
     validations:
       required: true
 
-  - type: checkboxes
+  - type: dropdown
     attributes:
       label: Camera has all attributes filled out in developer tools
       description: |
         Does camera have all attributes filled out in entity attributes?
         You can find the camera entity at [Home Assistant - Developer Tools - States](https://my.home-assistant.io/redirect/developer_states/)
       options:
-        - label: "Yes"
-        - label: "No"
+        - "Yes"
+        - "No"
     validations:
       required: true
 
@@ -93,14 +93,14 @@ body:
     validations:
       required: true
 
-  - type: checkboxes
+  - type: dropdown
     attributes:
       label: Search for similar issues
       description: |
         Have you searched for your issue in [existing issues](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues)?
       options:
-        - label: "Yes"
-        - label: "No"
+        - "Yes"
+        - "No"
     validations:
       required: true
 
