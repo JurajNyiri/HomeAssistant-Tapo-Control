@@ -95,18 +95,6 @@ body:
 
   - type: checkboxes
     attributes:
-      label: Camera has all attributes filled out in developer tools
-      description: |
-        Does camera have all attributes filled out in entity attributes?
-        You can find the camera entity at [Home Assistant - Developer Tools - States](https://my.home-assistant.io/redirect/developer_states/)
-      options:
-        - label: "Yes"
-        - label: "No"
-    validations:
-      required: true
-
-  - type: checkboxes
-    attributes:
       label: Search for similar issues
       description: |
         Have you searched for your issue in [existing issues](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues)?
