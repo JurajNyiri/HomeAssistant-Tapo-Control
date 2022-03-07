@@ -8,5 +8,5 @@ jobs:
         uses: roots/issue-closer@v1.1
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          issue-close-message: "@${issue.user.login} this issue was automatically closed because it did not follow the issue template"
+          issue-close-message: "@${issue.user.login} this issue was automatically closed because it did not follow the [Bug Report](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new?assignees=&labels=bug&template=bug_report.yml) or [Feature Request](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new?assignees=JurajNyiri&labels=enhancement&template=feature_request.md&title=Feature+Request%3A) template."
           issue-pattern: ".*A clear and concise description of what the bug is.*|.*Is your feature request related to a problem.*"
