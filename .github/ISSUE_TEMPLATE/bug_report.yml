@@ -1,0 +1,125 @@
+name: "Bug Report"
+description: Create a report to help us improve
+labels: bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please [search for existing issues](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues) before creating a new one.
+
+  - type: textarea
+    attributes:
+      label: Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Reproduction Steps
+      description: Please list out the steps to reproduce your bug.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. Run service '...' with parameters '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Expected behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: If applicable, add error logs.
+      description: |
+        Do you have an error log of what happened?
+        You can find logs at [Home Assistant - Configuration - Settings - Logs](https://my.home-assistant.io/redirect/logs)
+    validations:
+      required: false
+
+  - type: input
+    attributes:
+      label: Device Firmware
+      description: |
+        Specify your camera device firmware.
+      placeholder: "1.0.14 Build 200720 Rel.38552n(4555)"
+    validations:
+      required: true
+
+  - type: checkboxes
+    attributes:
+      label: Using stream component
+      description: Are you using Home Assistant stream component?
+      options:
+        - label: "Yes"
+        - label: "No"
+    validations:
+      required: true
+
+  - type: checkboxes
+    attributes:
+      label: Does camera work via official integrations?
+      description: If you are having issues with displaying camera stream, try it via onvif or ffmpeg integrations from Home Assistant.
+      options:
+        - label: "N/A"
+        - label: "It works"
+        - label: "It does not work"
+    validations:
+      required: true
+
+  - type: checkboxes
+    attributes:
+      label: Camera has all attributes filled out in developer tools
+      description: |
+        Does camera have all attributes filled out in entity attributes?
+        You can find the camera entity at [Home Assistant - Developer Tools - States](https://my.home-assistant.io/redirect/developer_states/)
+      options:
+        - label: "Yes"
+        - label: "No"
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: HASS Environment
+      description: |
+        Describe the environment where you are running camera in
+      placeholder: "Docker on Synology NAS"
+    validations:
+      required: true
+
+  - type: checkboxes
+    attributes:
+      label: Camera has all attributes filled out in developer tools
+      description: |
+        Does camera have all attributes filled out in entity attributes?
+        You can find the camera entity at [Home Assistant - Developer Tools - States](https://my.home-assistant.io/redirect/developer_states/)
+      options:
+        - label: "Yes"
+        - label: "No"
+    validations:
+      required: true
+
+  - type: checkboxes
+    attributes:
+      label: Search for similar issues
+      description: |
+        Have you searched for your issue in [existing issues](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues)?
+      options:
+        - label: "Yes"
+        - label: "No"
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Additional information
+      description: |
+        Add any other information about the problem here.
+    validations:
+      required: false
