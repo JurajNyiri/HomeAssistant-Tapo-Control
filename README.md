@@ -244,6 +244,7 @@ Users reported full functionality with following Tapo Cameras:
 - C100
 - C110
 - C200
+- C210
 - C310
 
 The integration _should_ work with any other Tapo Cameras.
