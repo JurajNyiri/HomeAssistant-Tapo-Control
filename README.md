@@ -14,11 +14,13 @@ HACS is a community store for Home Assistant. You can install [HACS](https://git
 
 ### Network
 
-Following target TCP ports **must be open** in firewall for the camera to access your Tapo Camera from Home Assistant:
+Following target TCP (v)LAN ports **must be open** in firewall for the camera to access your Tapo Camera from Home Assistant:
 
 - 443 - HTTPS for control of the camera ([services](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control#services))
 - 554 - RTSP to fetch video stream from the camera
 - 2020 - ONVIF to track detected movement via a binary sensor
+
+**These are not WAN ports, _DO NOT_ OPEN WAN PORTS VIA PORT FORWARDING. You might need to open (v)lan ports _only_ if you know what all of this means.**
 
 ## Usage
 
