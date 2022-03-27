@@ -33,11 +33,13 @@ class FlowHandler(config_entries.ConfigFlow):
 
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
+        LOGGER.debug("[ADD DEVICE] Setup process for tapo initiated by user.")
         return await self.async_step_ip()
 
     async def async_step_dhcp(self, dhcp_discovery):
         """Handle dhcp discovery."""
         if self._async_host_already_configured(dhcp_discovery.ip):
+            LOGGER.debug("[ADD DEVICE][%s] Already discovered.", dhcp_discovery.ip)
             return self.async_abort(reason="already_configured")
 
         if (
@@ -47,14 +49,16 @@ class FlowHandler(config_entries.ConfigFlow):
             and not dhcp_discovery.hostname.startswith("TC60_")
             and not dhcp_discovery.hostname.startswith("TC70_")
         ):
+            LOGGER.debug("[ADD DEVICE][%s] Not a tapo device.", dhcp_discovery.ip)
             return self.async_abort(reason="not_tapo_device")
 
         mac_address = dhcp_discovery.macaddress
         await self.async_set_unique_id(mac_address)
-        self.context.update(
-            {"title_placeholders": {"name": dhcp_discovery.ip}}
-        )
+        self.context.update({"title_placeholders": {"name": dhcp_discovery.ip}})
         self.tapoHost = dhcp_discovery.ip
+        LOGGER.debug(
+            "[ADD DEVICE][%s] Initiating config flow by discovery.", dhcp_discovery.ip
+        )
         return await self.async_step_auth()
 
     @callback
@@ -78,6 +82,9 @@ class FlowHandler(config_entries.ConfigFlow):
         extra_arguments = ""
         custom_stream = ""
         if user_input is not None:
+            LOGGER.debug(
+                "[ADD DEVICE][%s] Verifying other options.", self.tapoHost,
+            )
             if ENABLE_MOTION_SENSOR in user_input:
                 enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
             else:
@@ -118,6 +125,9 @@ class FlowHandler(config_entries.ConfigFlow):
             cloud_password = self.tapoCloudPassword
             username = self.tapoUsername
             password = self.tapoPassword
+            LOGGER.debug(
+                "[ADD DEVICE][%s] Saving entry.", self.tapoHost,
+            )
             return self.async_create_entry(
                 title=host,
                 data={
@@ -137,6 +147,9 @@ class FlowHandler(config_entries.ConfigFlow):
                 },
             )
 
+        LOGGER.debug(
+            "[ADD DEVICE][%s] Showing config flow for other options.", self.tapoHost,
+        )
         return self.async_show_form(
             step_id="other_options",
             data_schema=vol.Schema(
@@ -187,20 +200,36 @@ class FlowHandler(config_entries.ConfigFlow):
         cloud_password = ""
         if user_input is not None:
             try:
+                LOGGER.debug(
+                    "[ADD DEVICE][%s] Verifying cloud password.", self.tapoHost,
+                )
                 cloud_password = user_input[CLOUD_PASSWORD]
                 await self.hass.async_add_executor_job(
                     registerController, self.tapoHost, "admin", cloud_password
+                )
+                LOGGER.debug(
+                    "[ADD DEVICE][%s] Cloud password works for control.", self.tapoHost,
                 )
                 self.tapoCloudPassword = cloud_password
                 return await self.async_step_other_options()
             except Exception as e:
                 if "Failed to establish a new connection" in str(e):
+                    LOGGER.debug(
+                        "[ADD DEVICE][%s] Connection failed.", self.tapoHost,
+                    )
                     errors["base"] = "connection_failed"
                 elif str(e) == "Invalid authentication data":
+                    LOGGER.debug(
+                        "[ADD DEVICE][%s] Invalid cloud password provided.",
+                        self.tapoHost,
+                    )
                     errors["base"] = "invalid_auth_cloud"
                 else:
                     errors["base"] = "unknown"
                     LOGGER.error(e)
+        LOGGER.debug(
+            "[ADD DEVICE][%s] Showing config flow for cloud password.", self.tapoHost,
+        )
         return self.async_show_form(
             step_id="auth_cloud_password",
             data_schema=vol.Schema(
@@ -218,27 +247,53 @@ class FlowHandler(config_entries.ConfigFlow):
         errors = {}
         host = ""
         if user_input is not None:
+            LOGGER.debug("[ADD DEVICE] Verifying IP address")
             try:
                 host = user_input[CONF_IP_ADDRESS]
 
                 if self._async_host_already_configured(host):
+                    LOGGER.debug("[ADD DEVICE][%s] IP already configured.", host)
                     raise Exception("already_configured")
 
+                LOGGER.debug("[ADD DEVICE][%s] Verifying port 443.", host)
                 if isOpen(host, 443):
+                    LOGGER.debug(
+                        "[ADD DEVICE][%s] Port 443 is opened, verifying access to control of camera.",
+                        host,
+                    )
                     try:
                         await self.hass.async_add_executor_job(
                             registerController, host, "invalid", ""
                         )
                     except Exception as e:
                         if str(e) == "Invalid authentication data":
+                            LOGGER.debug(
+                                "[ADD DEVICE][%s] Verifying ports all required camera ports.",
+                                host,
+                            )
                             if not areCameraPortsOpened(host):
+                                LOGGER.debug(
+                                    "[ADD DEVICE][%s] Some of the required ports are closed.",
+                                    host,
+                                )
                                 raise Exception("ports_closed")
                             else:
+                                LOGGER.debug(
+                                    "[ADD DEVICE][%s] All camera ports are opened, proceeding to requesting Camera Account.",
+                                    host,
+                                )
                                 self.tapoHost = host
                                 return await self.async_step_auth()
                         else:
+                            LOGGER.debug(
+                                "[ADD DEVICE][%s] Camera control is not available, IP is not a Tapo device.",
+                                host,
+                            )
                             raise Exception("not_tapo_device")
                 else:
+                    LOGGER.debug(
+                        "[ADD DEVICE][%s] Port 443 is closed.", host,
+                    )
                     raise Exception("Failed to establish a new connection")
             except Exception as e:
                 if "Failed to establish a new connection" in str(e):
@@ -253,6 +308,7 @@ class FlowHandler(config_entries.ConfigFlow):
                     errors["base"] = "unknown"
                     LOGGER.error(e)
 
+        LOGGER.debug("[ADD DEVICE] Showing config flow for IP.")
         return self.async_show_form(
             step_id="ip",
             data_schema=vol.Schema(
@@ -270,33 +326,67 @@ class FlowHandler(config_entries.ConfigFlow):
         errors = {}
         username = ""
         password = ""
+        host = self.tapoHost
         if user_input is not None:
             try:
-                host = self.tapoHost
+                LOGGER.debug("[ADD DEVICE][%s] Verifying Camera Account.", host)
                 username = user_input[CONF_USERNAME]
                 password = user_input[CONF_PASSWORD]
 
+                LOGGER.debug(
+                    "[ADD DEVICE][%s] Verifying ports all required camera ports.", host,
+                )
                 if not areCameraPortsOpened(host):
+                    LOGGER.debug(
+                        "[ADD DEVICE][%s] Some of the required ports are closed.", host,
+                    )
                     raise Exception("ports_closed")
+                else:
+                    LOGGER.debug(
+                        "[ADD DEVICE][%s] All camera ports are opened.", host,
+                    )
 
+                LOGGER.debug(
+                    "[ADD DEVICE][%s] Testing RTSP stream.", host,
+                )
                 rtspStreamWorks = await isRtspStreamWorking(
                     self.hass, host, username, password
                 )
                 if not rtspStreamWorks:
+                    LOGGER.debug(
+                        "[ADD DEVICE][%s] RTSP stream returned invalid authentication data error.",
+                        host,
+                    )
                     raise Exception("Invalid authentication data")
+                else:
+                    LOGGER.debug(
+                        "[ADD DEVICE][%s] RTSP stream works.", host,
+                    )
 
                 self.tapoUsername = username
                 self.tapoPassword = password
                 self.tapoCloudPassword = ""
 
                 try:
+                    LOGGER.debug(
+                        "[ADD DEVICE][%s] Testing control of camera using Camera Account.",
+                        host,
+                    )
                     await self.hass.async_add_executor_job(
                         registerController, host, username, password
                     )
+                    LOGGER.debug(
+                        "[ADD DEVICE][%s] Camera Account works for control.", host,
+                    )
                 except Exception as e:
                     if str(e) == "Invalid authentication data":
+                        LOGGER.debug(
+                            "[ADD DEVICE][%s] Camera Account does not work for control, requesting cloud password.",
+                            host,
+                        )
                         return await self.async_step_auth_cloud_password()
                     else:
+                        LOGGER.error(e)
                         raise Exception(e)
 
                 return await self.async_step_other_options()
@@ -312,6 +402,9 @@ class FlowHandler(config_entries.ConfigFlow):
                     errors["base"] = "unknown"
                     LOGGER.error(e)
 
+        LOGGER.debug(
+            "[ADD DEVICE][%s] Showing config flow for Camera Account.", host,
+        )
         return self.async_show_form(
             step_id="auth",
             data_schema=vol.Schema(
