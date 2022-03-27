@@ -339,6 +339,9 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
 
     async def async_step_auth(self, user_input=None):
         """Manage the Tapo options."""
+        LOGGER.debug(
+            "[%s] Opened Tapo options.", self.config_entry.data[CONF_IP_ADDRESS]
+        )
         errors = {}
         username = self.config_entry.data[CONF_USERNAME]
         password = self.config_entry.data[CONF_PASSWORD]
@@ -354,20 +357,47 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
         custom_stream = self.config_entry.data[CONF_CUSTOM_STREAM]
         if user_input is not None:
             try:
+                LOGGER.debug(
+                    "[%s] Verifying updated data.",
+                    self.config_entry.data[CONF_IP_ADDRESS],
+                )
                 host = self.config_entry.data[CONF_IP_ADDRESS]
                 username = user_input[CONF_USERNAME]
                 password = user_input[CONF_PASSWORD]
 
                 if CLOUD_PASSWORD in user_input:
+
                     cloud_password = user_input[CLOUD_PASSWORD]
-                    try:
-                        await self.hass.async_add_executor_job(
-                            registerController, host, "admin", cloud_password
+                    if self.config_entry.data[CLOUD_PASSWORD] != cloud_password:
+                        LOGGER.debug(
+                            "[%s] Testing updated cloud password for control.",
+                            self.config_entry.data[CONF_IP_ADDRESS],
                         )
-                    except Exception as e:
-                        LOGGER.error(e)
-                        raise Exception("Incorrect cloud password")
+                        try:
+                            await self.hass.async_add_executor_job(
+                                registerController, host, "admin", cloud_password
+                            )
+                            LOGGER.debug(
+                                "[%s] Cloud password works for control.",
+                                self.config_entry.data[CONF_IP_ADDRESS],
+                            )
+                        except Exception as e:
+                            LOGGER.debug(
+                                "[%s] Provided cloud password for control is invalid.",
+                                self.config_entry.data[CONF_IP_ADDRESS],
+                            )
+                            LOGGER.error(e)
+                            raise Exception("Incorrect cloud password")
+                    else:
+                        LOGGER.debug(
+                            "[%s] Skipping test of cloud password for control as it was not updated.",
+                            self.config_entry.data[CONF_IP_ADDRESS],
+                        )
                 else:
+                    LOGGER.debug(
+                        "[%s] Skipping test of cloud password for control as it was not provided.",
+                        self.config_entry.data[CONF_IP_ADDRESS],
+                    )
                     cloud_password = ""
 
                 if ENABLE_MOTION_SENSOR in user_input:
@@ -418,23 +448,73 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                 if not (
                     int(sound_detection_peak) >= -100 and int(sound_detection_peak) <= 0
                 ):
+                    LOGGER.debug(
+                        "[%s] Incorrect range for sound detection peak.",
+                        self.config_entry.data[CONF_IP_ADDRESS],
+                    )
                     raise Exception("Incorrect sound detection peak value.")
 
-                rtspStreamWorks = await isRtspStreamWorking(
-                    self.hass, host, username, password, custom_stream
-                )
-                if not rtspStreamWorks:
-                    raise Exception("Invalid authentication data")
-
-                # check if control works with the created account
-                if CLOUD_PASSWORD not in user_input and rtspStreamWorks:
-                    try:
-                        await self.hass.async_add_executor_job(
-                            registerController, host, username, password
+                if (
+                    self.config_entry.data[CONF_PASSWORD] != password
+                    or self.config_entry.data[CONF_USERNAME] != username
+                ):
+                    LOGGER.debug(
+                        "[%s] Testing RTSP stream.",
+                        self.config_entry.data[CONF_IP_ADDRESS],
+                    )
+                    rtspStreamWorks = await isRtspStreamWorking(
+                        self.hass, host, username, password, custom_stream
+                    )
+                    if not rtspStreamWorks:
+                        LOGGER.debug(
+                            "[%s] RTSP stream returned invalid authentication data error.",
+                            self.config_entry.data[CONF_IP_ADDRESS],
                         )
-                    except Exception as e:
-                        LOGGER.error(e)
-                        raise Exception("Camera requires cloud password")
+                        raise Exception("Invalid authentication data")
+                    else:
+                        LOGGER.debug(
+                            "[%s] RTSP stream works.",
+                            self.config_entry.data[CONF_IP_ADDRESS],
+                        )
+                else:
+                    LOGGER.debug(
+                        "[%s] Skipping test of RTSP stream as Camera Account is the same.",
+                        self.config_entry.data[CONF_IP_ADDRESS],
+                    )
+                    rtspStreamWorks = True
+
+                # check if control works with the Camera Account
+                if CLOUD_PASSWORD not in user_input and rtspStreamWorks:
+                    if (
+                        self.config_entry.data[CONF_PASSWORD] != password
+                        or self.config_entry.data[CONF_USERNAME] != username
+                        or self.config_entry.data[CLOUD_PASSWORD] != cloud_password
+                    ):
+                        LOGGER.debug(
+                            "[%s] Testing control of camera using Camera Account.",
+                            self.config_entry.data[CONF_IP_ADDRESS],
+                        )
+                        try:
+                            await self.hass.async_add_executor_job(
+                                registerController, host, username, password
+                            )
+                            LOGGER.debug(
+                                "[%s] Camera Account works for control.",
+                                self.config_entry.data[CONF_IP_ADDRESS],
+                            )
+                        except Exception as e:
+                            LOGGER.error(e)
+                            raise Exception("Camera requires cloud password")
+                    else:
+                        LOGGER.debug(
+                            "[%s] Skipping test of control using Camera Account since cloud password nor Camera Account changed.",
+                            self.config_entry.data[CONF_IP_ADDRESS],
+                        )
+                else:
+                    LOGGER.debug(
+                        "[%s] Skipping test of control using Camera Account since cloud password is provided.",
+                        self.config_entry.data[CONF_IP_ADDRESS],
+                    )
 
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
