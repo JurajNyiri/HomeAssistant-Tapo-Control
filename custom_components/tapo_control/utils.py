@@ -207,6 +207,22 @@ async def update_listener(hass, entry):
             await setupOnvif(hass, entry)
 
 
+async def getLatestFirmwareVersion(hass, entry, controller):
+    hass.data[DOMAIN][entry.entry_id][
+        "lastFirmwareCheck"
+    ] = datetime.datetime.utcnow().timestamp()
+    try:
+        updateInfo = await hass.async_add_executor_job(controller.isUpdateAvailable)
+        if updateInfo["result"]["responses"][0]["result"]:
+            LOGGER.warn("TODO process this output")
+            LOGGER.warn(updateInfo)
+        else:
+            updateInfo = False
+    except Exception:
+        updateInfo = False
+    return updateInfo
+
+
 async def syncTime(hass, entry):
     device_mgmt = hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
     if device_mgmt:
