@@ -231,6 +231,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             await entity.startNoiseDetection()
                 if hass.data[DOMAIN][entry.entry_id]["updateEntity"]._enabled:
                     hass.data[DOMAIN][entry.entry_id]["updateEntity"].updateCam(camData)
+                    hass.data[DOMAIN][entry.entry_id][
+                        "updateEntity"
+                    ].async_schedule_update_ha_state(True)
 
         tapoCoordinator = DataUpdateCoordinator(
             hass, LOGGER, name="Tapo resource status", update_method=async_update_data,

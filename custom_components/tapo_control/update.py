@@ -48,7 +48,16 @@ class TapoCamUpdate(UpdateEntity):
 
     async def async_release_notes(self) -> str:
         """Return the release notes."""
-        return "todo"
+        if (
+            self._hass.data[DOMAIN][self._entry.entry_id]["latestFirmwareVersion"]
+            and "release_log"
+            in self._hass.data[DOMAIN][self._entry.entry_id]["latestFirmwareVersion"]
+        ):
+            return self._hass.data[DOMAIN][self._entry.entry_id][
+                "latestFirmwareVersion"
+            ]["release_log"].replace("\\n", "\n")
+        else:
+            return None
 
     @property
     def name(self) -> str:
@@ -76,18 +85,35 @@ class TapoCamUpdate(UpdateEntity):
 
     @property
     def latest_version(self) -> str:
-        if self._hass.data[DOMAIN][self._entry.entry_id]["latestFirmwareVersion"]:
+        if (
+            self._hass.data[DOMAIN][self._entry.entry_id]["latestFirmwareVersion"]
+            and "version"
+            in self._hass.data[DOMAIN][self._entry.entry_id]["latestFirmwareVersion"]
+        ):
             return self._hass.data[DOMAIN][self._entry.entry_id][
                 "latestFirmwareVersion"
-            ]
+            ]["version"]
         else:
             return self._attributes["sw_version"]
 
     @property
     def release_summary(self) -> str:
-        if self.latest_version == self._attributes["sw_version"]:
+        if (
+            self._hass.data[DOMAIN][self._entry.entry_id]["latestFirmwareVersion"]
+            and "release_log"
+            in self._hass.data[DOMAIN][self._entry.entry_id]["latestFirmwareVersion"]
+        ):
+            maxLength = 255
+            releaseLog = self._hass.data[DOMAIN][self._entry.entry_id][
+                "latestFirmwareVersion"
+            ]["release_log"].replace("\\n", "\n")
+            return (
+                (releaseLog[: maxLength - 3] + "...")
+                if len(releaseLog) > maxLength
+                else releaseLog
+            )
+        else:
             return None
-        return "todo"
 
     @property
     def title(self) -> str:

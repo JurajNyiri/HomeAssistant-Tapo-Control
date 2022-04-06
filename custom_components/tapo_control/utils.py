@@ -213,9 +213,15 @@ async def getLatestFirmwareVersion(hass, entry, controller):
     ] = datetime.datetime.utcnow().timestamp()
     try:
         updateInfo = await hass.async_add_executor_job(controller.isUpdateAvailable)
-        if updateInfo["result"]["responses"][0]["result"]:
-            LOGGER.warn("TODO process this output")
-            LOGGER.warn(updateInfo)
+        if (
+            "version"
+            in updateInfo["result"]["responses"][1]["result"]["cloud_config"][
+                "upgrade_info"
+            ]
+        ):
+            updateInfo = updateInfo["result"]["responses"][1]["result"]["cloud_config"][
+                "upgrade_info"
+            ]
         else:
             updateInfo = False
     except Exception:
