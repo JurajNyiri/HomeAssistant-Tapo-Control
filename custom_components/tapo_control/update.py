@@ -34,7 +34,15 @@ class TapoCamUpdate(UpdateEntity):
             self._state = "unavailable"
         else:
             self._attributes = camData["basic_info"]
-            self._in_progress = False
+            if (
+                self._in_progress
+                and "firmwareUpdateStatus" in camData
+                and "upgrade_status" in camData["firmwareUpdateStatus"]
+                and "state" in camData["firmwareUpdateStatus"]["upgrade_status"]
+                and camData["firmwareUpdateStatus"]["upgrade_status"]["state"]
+                == "normal"
+            ):
+                self._in_progress = False
 
     async def async_added_to_hass(self) -> None:
         self._enabled = True
@@ -122,17 +130,12 @@ class TapoCamUpdate(UpdateEntity):
     async def async_install(
         self, version, backup,
     ):
-        LOGGER.warn("Install async")
-        self._in_progress = True
-        await self.hass.async_add_executor_job(self._controller.reboot)  # temp
-
-        """Install an update.
-
-        Version can be specified to install a specific version. When `None`, the
-        latest version needs to be installed.
-
-        The backup parameter indicates a backup should be taken before
-        installing the update.
-        """
-        print("async install")
+        try:
+            await self.hass.async_add_executor_job(
+                self._controller.startFirmwareUpgrade
+            )
+            self._in_progress = True
+            await self._coordinator.async_request_refresh()
+        except Exception as e:
+            LOGGER.error(e)
 

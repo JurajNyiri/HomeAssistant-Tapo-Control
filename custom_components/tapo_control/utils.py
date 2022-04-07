@@ -161,6 +161,15 @@ async def getCamData(hass, controller):
     else:
         camData["presets"] = {}
 
+    try:
+        firmwareUpdateStatus = await hass.async_add_executor_job(
+            controller.getFirmwareUpdateStatus
+        )
+        firmwareUpdateStatus = firmwareUpdateStatus["cloud_config"]
+    except Exception:
+        firmwareUpdateStatus = None
+    camData["firmwareUpdateStatus"] = firmwareUpdateStatus
+
     return camData
 
 
