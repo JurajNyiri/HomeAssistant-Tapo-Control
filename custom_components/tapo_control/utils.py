@@ -161,6 +161,15 @@ async def getCamData(hass, controller):
     else:
         camData["presets"] = {}
 
+    try:
+        firmwareUpdateStatus = await hass.async_add_executor_job(
+            controller.getFirmwareUpdateStatus
+        )
+        firmwareUpdateStatus = firmwareUpdateStatus["cloud_config"]
+    except Exception:
+        firmwareUpdateStatus = None
+    camData["firmwareUpdateStatus"] = firmwareUpdateStatus
+
     return camData
 
 
@@ -205,6 +214,28 @@ async def update_listener(hass, entry):
         ]
         if motionSensor:
             await setupOnvif(hass, entry)
+
+
+async def getLatestFirmwareVersion(hass, entry, controller):
+    hass.data[DOMAIN][entry.entry_id][
+        "lastFirmwareCheck"
+    ] = datetime.datetime.utcnow().timestamp()
+    try:
+        updateInfo = await hass.async_add_executor_job(controller.isUpdateAvailable)
+        if (
+            "version"
+            in updateInfo["result"]["responses"][1]["result"]["cloud_config"][
+                "upgrade_info"
+            ]
+        ):
+            updateInfo = updateInfo["result"]["responses"][1]["result"]["cloud_config"][
+                "upgrade_info"
+            ]
+        else:
+            updateInfo = False
+    except Exception:
+        updateInfo = False
+    return updateInfo
 
 
 async def syncTime(hass, entry):

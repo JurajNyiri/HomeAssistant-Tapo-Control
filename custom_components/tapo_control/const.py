@@ -93,3 +93,4 @@ ENABLE_TIME_SYNC = "enable_time_sync"
 LOGGER = logging.getLogger("custom_components." + DOMAIN)
 
 TIME_SYNC_PERIOD = 3600
+UPDATE_CHECK_PERIOD = 86400

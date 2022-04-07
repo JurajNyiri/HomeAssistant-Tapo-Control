@@ -23,6 +23,7 @@ from .const import (
     SOUND_DETECTION_PEAK,
     SOUND_DETECTION_RESET,
     TIME_SYNC_PERIOD,
+    UPDATE_CHECK_PERIOD,
 )
 from .utils import (
     registerController,
@@ -32,6 +33,7 @@ from .utils import (
     update_listener,
     initOnvifEvents,
     syncTime,
+    getLatestFirmwareVersion,
 )
 
 
@@ -194,6 +196,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         > TIME_SYNC_PERIOD
                     ):
                         await syncTime(hass, entry)
+                ts = datetime.datetime.utcnow().timestamp()
+                if (
+                    ts - hass.data[DOMAIN][entry.entry_id]["lastFirmwareCheck"]
+                    > UPDATE_CHECK_PERIOD
+                ):
+                    hass.data[DOMAIN][entry.entry_id][
+                        "latestFirmwareVersion"
+                    ] = await getLatestFirmwareVersion(
+                        hass, entry, hass.data[DOMAIN][entry.entry_id]["controller"]
+                    )
 
             # cameras state
             someCameraEnabled = False
@@ -217,6 +229,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             and entity._enable_sound_detection
                         ):
                             await entity.startNoiseDetection()
+                if hass.data[DOMAIN][entry.entry_id]["updateEntity"]._enabled:
+                    hass.data[DOMAIN][entry.entry_id]["updateEntity"].updateCam(camData)
+                    hass.data[DOMAIN][entry.entry_id][
+                        "updateEntity"
+                    ].async_schedule_update_ha_state(True)
 
         tapoCoordinator = DataUpdateCoordinator(
             hass, LOGGER, name="Tapo resource status", update_method=async_update_data,
@@ -230,6 +247,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "coordinator": tapoCoordinator,
             "camData": camData,
             "lastTimeSync": 0,
+            "lastFirmwareCheck": 0,
+            "latestFirmwareVersion": False,
             "motionSensorCreated": False,
             "eventsDevice": False,
             "onvifManagement": False,
@@ -251,6 +270,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "camera")
+        )
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, "update")
         )
 
         async def unsubscribe(event):
