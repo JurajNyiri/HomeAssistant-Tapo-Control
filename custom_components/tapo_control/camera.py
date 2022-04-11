@@ -203,6 +203,9 @@ class TapoCamEntity(Camera):
             "identifiers": {
                 (DOMAIN, slugify(f"{self._attributes['mac']}_tapo_control"))
             },
+            "connections": {
+                ("mac", self._attributes['mac'])
+            },
             "name": self._attributes["device_alias"],
             "manufacturer": "TP-Link",
             "model": self._attributes["device_model"],
