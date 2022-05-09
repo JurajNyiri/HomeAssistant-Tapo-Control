@@ -1,5 +1,7 @@
 import datetime
+
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.const import (
     CONF_IP_ADDRESS,
     CONF_USERNAME,
@@ -10,7 +12,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.util import slugify
 from .const import (
+    BRAND,
     ENABLE_SOUND_DETECTION,
     CONF_CUSTOM_STREAM,
     LOGGER,
@@ -296,3 +300,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         raise ConfigEntryNotReady
 
     return True
+
+
+def build_device_info(attributes: dict) -> DeviceInfo:
+    return DeviceInfo(
+        identifiers={(DOMAIN, slugify(f"{attributes['mac']}_tapo_control"))},
+        connections={("mac", attributes["mac"])},
+        name=attributes["device_alias"],
+        manufacturer=BRAND,
+        model=attributes["device_model"],
+        sw_version=attributes["sw_version"],
+    )

@@ -1,10 +1,10 @@
+from config.custom_components.tapo_control import build_device_info
 from homeassistant.components.light import LightEntity
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from .const import DOMAIN, LOGGER
+from .const import BRAND, DOMAIN, LOGGER
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.util import slugify
 from pytapo import Tapo
 
 
@@ -19,8 +19,8 @@ async def async_setup_entry(
 ) -> None:
     LOGGER.debug("Setting up light for floodlight")
     name = hass.data[DOMAIN][config_entry.entry_id]["name"]
-    controller: Tapo = hass.data[DOMAIN][config_entry.entry_id]["controller"]
-    cam_data = hass.data[DOMAIN][config_entry.entry_id]["camData"]
+    controller: dict = hass.data[DOMAIN][config_entry.entry_id]["controller"]
+    attributes = hass.data[DOMAIN][config_entry.entry_id]["camData"]["basic_info"]
 
     try:
         await hass.async_add_executor_job(controller.getForceWhitelampState)
@@ -29,16 +29,16 @@ async def async_setup_entry(
         return
 
     LOGGER.debug("Creating light entity")
-    light = TapoFloodlight(name, controller, hass, cam_data)
+    light = TapoFloodlight(name, controller, hass, attributes)
     async_add_entities([light])
 
 
 class TapoFloodlight(LightEntity):
-    def __init__(self, name, controller: Tapo, hass: HomeAssistant, cam_data):
+    def __init__(self, name, controller: Tapo, hass: HomeAssistant, attribtutes: dict):
         LOGGER.debug("TapoFloodlight - init - start")
         self._name = name
         self._controller = controller
-        self._attributes = cam_data["basic_info"]
+        self._attributes = attribtutes
         self._is_on = False
         self._hass = hass
         LightEntity.__init__(self)
@@ -71,14 +71,7 @@ class TapoFloodlight(LightEntity):
 
     @property
     def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={(DOMAIN, slugify(f"{self._attributes['mac']}_tapo_control"))},
-            connections={("mac", self._attributes["mac"])},
-            name=self._attributes["device_alias"],
-            manufacturer="TP-Link",
-            model=self._attributes["device_model"],
-            sw_version=self._attributes["sw_version"],
-        )
+        return build_device_info(self._attributes)
 
     @property
     def unique_id(self) -> str:
@@ -90,4 +83,8 @@ class TapoFloodlight(LightEntity):
 
     @property
     def brand(self):
-        return "TP-Link"
+        return BRAND
+
+    @property
+    def icon(self) -> str:
+        return "mdi:light-flood-down"

@@ -1,7 +1,9 @@
 from typing import Optional
+from config.custom_components.tapo_control import build_device_info
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.core import callback
-from .const import DOMAIN, LOGGER
+from homeassistant.helpers.entity import DeviceInfo
+from .const import BRAND, DOMAIN, LOGGER
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.util import slugify
@@ -81,19 +83,8 @@ class TapoBinarySensor(BinarySensorEntity):
         return False
 
     @property
-    def device_info(self):
-        return {
-            "identifiers": {
-                (DOMAIN, slugify(f"{self._attributes['mac']}_tapo_control"))
-            },
-            "connections": {
-                ("mac", self._attributes['mac'])
-            },
-            "name": self._attributes["device_alias"],
-            "manufacturer": "TP-Link",
-            "model": self._attributes["device_model"],
-            "sw_version": self._attributes["sw_version"],
-        }
+    def device_info(self) -> DeviceInfo:
+        return build_device_info(self._attributes)
 
     @property
     def model(self):
@@ -101,7 +92,7 @@ class TapoBinarySensor(BinarySensorEntity):
 
     @property
     def brand(self):
-        return "TP-Link"
+        return BRAND
 
     async def async_added_to_hass(self):
         self.async_on_remove(self.events.async_add_listener(self.async_write_ha_state))
