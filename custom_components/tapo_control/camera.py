@@ -1,7 +1,7 @@
 import asyncio
 import urllib.parse
 import haffmpeg.sensor as ffmpeg_sensor
-from config.custom_components.tapo_control import build_device_info
+from .utils import build_device_info
 from homeassistant.helpers.config_validation import boolean
 from homeassistant.core import HomeAssistant
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD

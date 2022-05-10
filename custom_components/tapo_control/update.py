@@ -1,4 +1,4 @@
-from config.custom_components.tapo_control import build_device_info
+from .utils import build_device_info
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from typing import Callable

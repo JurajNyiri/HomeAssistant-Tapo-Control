@@ -1,5 +1,5 @@
 from typing import Optional
-from config.custom_components.tapo_control import build_device_info
+from .utils import build_device_info
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.core import callback
 from homeassistant.helpers.entity import DeviceInfo

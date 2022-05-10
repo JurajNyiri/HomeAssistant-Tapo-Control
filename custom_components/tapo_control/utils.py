@@ -8,6 +8,7 @@ import time
 from onvif import ONVIFCamera
 from pytapo import Tapo
 from .const import (
+    BRAND,
     ENABLE_MOTION_SENSOR,
     DOMAIN,
     LOGGER,
@@ -17,8 +18,9 @@ from .const import (
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.components.onvif.event import EventManager
 from homeassistant.components.ffmpeg import DATA_FFMPEG
+from homeassistant.helpers.entity import DeviceInfo
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
-
+from homeassistant.util import slugify
 
 def registerController(host, username, password):
     return Tapo(host, username, password)
@@ -300,3 +302,14 @@ async def setupEvents(hass, entry):
             return True
         else:
             return False
+
+
+def build_device_info(attributes: dict) -> DeviceInfo:
+    return DeviceInfo(
+        identifiers={(DOMAIN, slugify(f"{attributes['mac']}_tapo_control"))},
+        connections={("mac", attributes["mac"])},
+        name=attributes["device_alias"],
+        manufacturer=BRAND,
+        model=attributes["device_model"],
+        sw_version=attributes["sw_version"],
+    )

@@ -1,4 +1,4 @@
-from config.custom_components.tapo_control import build_device_info
+from .utils import build_device_info
 from homeassistant.components.light import LightEntity
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
