@@ -34,11 +34,11 @@ async def async_setup_entry(
 
 
 class TapoFloodlight(LightEntity):
-    def __init__(self, name, controller: Tapo, hass: HomeAssistant, attribtutes: dict):
+    def __init__(self, name, controller: Tapo, hass: HomeAssistant, attributes: dict):
         LOGGER.debug("TapoFloodlight - init - start")
         self._name = name
         self._controller = controller
-        self._attributes = attribtutes
+        self._attributes = attributes
         self._is_on = False
         self._hass = hass
         LightEntity.__init__(self)

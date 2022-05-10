@@ -8,7 +8,6 @@ from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.core import callback
 from typing import Callable
 from homeassistant.helpers.entity import DeviceInfo
-from pytapo import Tapo
 from homeassistant.util import slugify
 from homeassistant.helpers import entity_platform
 from homeassistant.components.camera import (
@@ -136,7 +135,7 @@ class TapoCamEntity(Camera):
         self,
         hass: HomeAssistant,
         entry: dict,
-        tapoData: Tapo,
+        tapoData: dict,
         HDStream: boolean,
     ):
         super().__init__()
