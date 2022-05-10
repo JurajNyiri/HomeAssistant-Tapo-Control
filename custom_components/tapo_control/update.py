@@ -5,7 +5,6 @@ from typing import Callable
 from homeassistant.components.update import UpdateEntity, UpdateEntityFeature
 from homeassistant.helpers.entity import DeviceInfo
 from .const import DOMAIN, LOGGER
-from homeassistant.util import slugify
 
 
 async def async_setup_entry(
