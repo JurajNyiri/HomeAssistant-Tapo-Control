@@ -277,7 +277,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             if enableTimeSync:
                 await syncTime(hass, entry)
 
-        hass.config_entries.async_setup_platforms(entry, ["light"])
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, "light")
+        )
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "camera")
         )
