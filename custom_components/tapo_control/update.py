@@ -1,10 +1,10 @@
+from .utils import build_device_info
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from typing import Callable
 from homeassistant.components.update import UpdateEntity, UpdateEntityFeature
+from homeassistant.helpers.entity import DeviceInfo
 from .const import DOMAIN, LOGGER
-from homeassistant.util import slugify
-from pytapo import Tapo
 
 
 async def async_setup_entry(
@@ -18,7 +18,10 @@ async def async_setup_entry(
 
 class TapoCamUpdate(UpdateEntity):
     def __init__(
-        self, hass: HomeAssistant, entry: dict, tapoData: Tapo,
+        self,
+        hass: HomeAssistant,
+        entry: dict,
+        tapoData,
     ):
         super().__init__()
         self._controller = tapoData["controller"]
@@ -72,19 +75,8 @@ class TapoCamUpdate(UpdateEntity):
         return "Camera - " + self._attributes["device_alias"]
 
     @property
-    def device_info(self):
-        return {
-            "identifiers": {
-                (DOMAIN, slugify(f"{self._attributes['mac']}_tapo_control"))
-            },
-            "connections": {
-                ("mac", self._attributes['mac'])
-            },
-            "name": self._attributes["device_alias"],
-            "manufacturer": "TP-Link",
-            "model": self._attributes["device_model"],
-            "sw_version": self._attributes["sw_version"],
-        }
+    def device_info(self) -> DeviceInfo:
+        return build_device_info(self._attributes)
 
     @property
     def in_progress(self) -> bool:
@@ -131,7 +123,9 @@ class TapoCamUpdate(UpdateEntity):
         return "Tapo Camera: {0}".format(self._attributes["device_alias"])
 
     async def async_install(
-        self, version, backup,
+        self,
+        version,
+        backup,
     ):
         try:
             await self.hass.async_add_executor_job(

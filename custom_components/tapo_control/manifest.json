@@ -5,7 +5,7 @@
   "issue_tracker": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues",
   "codeowners": ["@JurajNyiri"],
   "version": "3.5.0",
-  "requirements": ["pytapo==2.1", "onvif-zeep-async==1.2.0"],
+  "requirements": ["pytapo==2.2", "onvif-zeep-async==1.2.0"],
   "dependencies": ["ffmpeg"],
   "config_flow": true,
   "homeassistant": "2022.4.0",
@@ -1761,6 +1761,10 @@
     {
       "hostname": "c310_*",
       "macaddress": "FCD733*"
+    },
+    {
+      "hostname": "c320ws_*",
+      "macaddress": "B4B024*"
     },
     {
       "hostname": "tc70_*",

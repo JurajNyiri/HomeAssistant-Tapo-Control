@@ -1,12 +1,13 @@
 import asyncio
 import urllib.parse
 import haffmpeg.sensor as ffmpeg_sensor
+from .utils import build_device_info
 from homeassistant.helpers.config_validation import boolean
 from homeassistant.core import HomeAssistant
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.core import callback
 from typing import Callable
-from pytapo import Tapo
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.util import slugify
 from homeassistant.helpers import entity_platform
 from homeassistant.components.camera import (
@@ -54,6 +55,7 @@ from .const import (
     PAN,
     PRESET,
     NAME,
+    BRAND,
 )
 
 
@@ -66,7 +68,9 @@ async def async_setup_entry(
 ):
     platform = entity_platform.current_platform.get()
     platform.async_register_entity_service(
-        SERVICE_SET_LED_MODE, SCHEMA_SERVICE_SET_LED_MODE, "set_led_mode",
+        SERVICE_SET_LED_MODE,
+        SCHEMA_SERVICE_SET_LED_MODE,
+        "set_led_mode",
     )
     platform.async_register_entity_service(
         SERVICE_SET_DAY_NIGHT_MODE,
@@ -74,13 +78,19 @@ async def async_setup_entry(
         "set_day_night_mode",
     )
     platform.async_register_entity_service(
-        SERVICE_SET_PRIVACY_MODE, SCHEMA_SERVICE_SET_PRIVACY_MODE, "set_privacy_mode",
+        SERVICE_SET_PRIVACY_MODE,
+        SCHEMA_SERVICE_SET_PRIVACY_MODE,
+        "set_privacy_mode",
     )
     platform.async_register_entity_service(
-        SERVICE_PTZ, SCHEMA_SERVICE_PTZ, "ptz",
+        SERVICE_PTZ,
+        SCHEMA_SERVICE_PTZ,
+        "ptz",
     )
     platform.async_register_entity_service(
-        SERVICE_SET_ALARM_MODE, SCHEMA_SERVICE_SET_ALARM_MODE, "set_alarm_mode",
+        SERVICE_SET_ALARM_MODE,
+        SCHEMA_SERVICE_SET_ALARM_MODE,
+        "set_alarm_mode",
     )
     platform.async_register_entity_service(
         SERVICE_SET_MOTION_DETECTION_MODE,
@@ -93,16 +103,24 @@ async def async_setup_entry(
         "set_auto_track_mode",
     )
     platform.async_register_entity_service(
-        SERVICE_REBOOT, SCHEMA_SERVICE_REBOOT, "reboot",
+        SERVICE_REBOOT,
+        SCHEMA_SERVICE_REBOOT,
+        "reboot",
     )
     platform.async_register_entity_service(
-        SERVICE_SAVE_PRESET, SCHEMA_SERVICE_SAVE_PRESET, "save_preset",
+        SERVICE_SAVE_PRESET,
+        SCHEMA_SERVICE_SAVE_PRESET,
+        "save_preset",
     )
     platform.async_register_entity_service(
-        SERVICE_DELETE_PRESET, SCHEMA_SERVICE_DELETE_PRESET, "delete_preset",
+        SERVICE_DELETE_PRESET,
+        SCHEMA_SERVICE_DELETE_PRESET,
+        "delete_preset",
     )
     platform.async_register_entity_service(
-        SERVICE_FORMAT, SCHEMA_SERVICE_FORMAT, "format",
+        SERVICE_FORMAT,
+        SCHEMA_SERVICE_FORMAT,
+        "format",
     )
 
     hass.data[DOMAIN][entry.entry_id]["entities"] = [
@@ -114,7 +132,11 @@ async def async_setup_entry(
 
 class TapoCamEntity(Camera):
     def __init__(
-        self, hass: HomeAssistant, entry: dict, tapoData: Tapo, HDStream: boolean,
+        self,
+        hass: HomeAssistant,
+        entry: dict,
+        tapoData: dict,
+        HDStream: boolean,
     ):
         super().__init__()
         self._controller = tapoData["controller"]
@@ -160,7 +182,8 @@ class TapoCamEntity(Camera):
     async def startNoiseDetection(self):
         self._hass.data[DOMAIN][self._entry.entry_id]["noiseSensorStarted"] = True
         await self._noiseSensor.open_sensor(
-            input_source=self.getStreamSource(), extra_cmd="-nostats",
+            input_source=self.getStreamSource(),
+            extra_cmd="-nostats",
         )
 
     async def async_added_to_hass(self) -> None:
@@ -198,19 +221,8 @@ class TapoCamEntity(Camera):
         return self._state
 
     @property
-    def device_info(self):
-        return {
-            "identifiers": {
-                (DOMAIN, slugify(f"{self._attributes['mac']}_tapo_control"))
-            },
-            "connections": {
-                ("mac", self._attributes['mac'])
-            },
-            "name": self._attributes["device_alias"],
-            "manufacturer": "TP-Link",
-            "model": self._attributes["device_model"],
-            "sw_version": self._attributes["sw_version"],
-        }
+    def device_info(self) -> DeviceInfo:
+        return build_device_info(self._attributes)
 
     @property
     def motion_detection_enabled(self):
@@ -218,7 +230,7 @@ class TapoCamEntity(Camera):
 
     @property
     def brand(self):
-        return "TP-Link"
+        return BRAND
 
     @property
     def model(self):
@@ -244,7 +256,8 @@ class TapoCamEntity(Camera):
         streaming_url = self.getStreamSource()
         stream = CameraMjpeg(self._ffmpeg.binary)
         await stream.open_camera(
-            streaming_url, extra_cmd=self._extra_arguments,
+            streaming_url,
+            extra_cmd=self._extra_arguments,
         )
         try:
             stream_reader = await stream.get_reader()
@@ -422,7 +435,9 @@ class TapoCamEntity(Camera):
             )
         else:
             await self.hass.async_add_executor_job(
-                self._controller.setMotionDetection, True, motion_detection_mode,
+                self._controller.setMotionDetection,
+                True,
+                motion_detection_mode,
             )
         await self._coordinator.async_request_refresh()
 

@@ -1,4 +1,5 @@
 import datetime
+
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
 from homeassistant.const import (
     CONF_IP_ADDRESS,
@@ -10,6 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+
 from .const import (
     ENABLE_SOUND_DETECTION,
     CONF_CUSTOM_STREAM,
@@ -121,6 +123,7 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_unload(entry, "camera")
     await hass.config_entries.async_forward_entry_unload(entry, "binary_sensor")
+    await hass.config_entries.async_forward_entry_unload(entry, "light")
     await hass.config_entries.async_forward_entry_unload(entry, "update")
 
     if hass.data[DOMAIN][entry.entry_id]["events"]:
@@ -239,7 +242,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     ].async_schedule_update_ha_state(True)
 
         tapoCoordinator = DataUpdateCoordinator(
-            hass, LOGGER, name="Tapo resource status", update_method=async_update_data,
+            hass,
+            LOGGER,
+            name="Tapo resource status",
+            update_method=async_update_data,
         )
 
         camData = await getCamData(hass, tapoController)
@@ -271,6 +277,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             if enableTimeSync:
                 await syncTime(hass, entry)
 
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, "light")
+        )
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "camera")
         )

@@ -41,6 +41,7 @@ This custom component creates:
 - tapo_control.\* services to control a camera
 - 2 camera entities, one for HD and one for SD stream
 - 1 binary sensor for motion after the motion is detected for the first time
+- 1 light entity, if the camera supports a floodlight switch
 
 Use these services in following service calls.
 
@@ -248,6 +249,7 @@ Users reported full functionality with following Tapo Cameras:
 - C200
 - C210
 - C310
+- C320WS
 
 The integration _should_ work with any other Tapo Cameras.
 
