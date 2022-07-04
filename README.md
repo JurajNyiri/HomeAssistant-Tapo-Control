@@ -69,6 +69,14 @@ If privacy mode is turned on, camera does not record anything and does not respo
 </details>
 
 <details>
+  <summary>tapo_control.set_alarm</summary>
+
+Activates or deactivates active alarm.
+
+- **alarm** Required: Possible values: on, off
+</details>
+
+<details>
   <summary>tapo_control.set_alarm_mode</summary>
 
 Sets alarm mode.
