@@ -21,6 +21,7 @@ from homeassistant.helpers.aiohttp_client import async_aiohttp_proxy_stream
 from haffmpeg.camera import CameraMjpeg
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from .const import (
+    CONF_RTSP_TRANSPORT,
     CONF_CUSTOM_STREAM,
     ENABLE_SOUND_DETECTION,
     ENABLE_STREAM,
@@ -124,6 +125,7 @@ class TapoCamEntity(Camera):
         self, hass: HomeAssistant, entry: dict, tapoData: dict, HDStream: boolean,
     ):
         super().__init__()
+        self.stream_options[CONF_RTSP_TRANSPORT] = entry.data.get(CONF_RTSP_TRANSPORT)
         self._controller = tapoData["controller"]
         self._coordinator = tapoData["coordinator"]
         self._ffmpeg = hass.data[DATA_FFMPEG]

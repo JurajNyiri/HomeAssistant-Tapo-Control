@@ -89,6 +89,9 @@ SCHEMA_SERVICE_SET_ALARM = {
     vol.Required(ALARM): vol.In(["on", "off"]),
 }
 
+CONF_RTSP_TRANSPORT = "rtsp_transport"
+RTSP_TRANS_PROTOCOLS = ["tcp", "udp", "udp_multicast", "http"]
+
 ENABLE_STREAM = "enable_stream"
 ENABLE_SOUND_DETECTION = "enable_sound_detection"
 SOUND_DETECTION_PEAK = "sound_detection_peak"
