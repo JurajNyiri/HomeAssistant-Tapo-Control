@@ -1,7 +1,7 @@
 import asyncio
 import urllib.parse
 import haffmpeg.sensor as ffmpeg_sensor
-from .utils import build_device_info
+from .utils import build_device_info, syncTime
 from homeassistant.helpers.config_validation import boolean
 from homeassistant.core import HomeAssistant
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
@@ -59,6 +59,8 @@ from .const import (
     BRAND,
     SERVICE_SET_ALARM,
     SCHEMA_SERVICE_SET_ALARM,
+    SERVICE_SYNCHRONIZE_TIME,
+    SCHEMA_SERVICE_SYNCHRONIZE_TIME,
 )
 
 
@@ -111,6 +113,9 @@ async def async_setup_entry(
     )
     platform.async_register_entity_service(
         SERVICE_SET_ALARM, SCHEMA_SERVICE_SET_ALARM, "set_alarm",
+    )
+    platform.async_register_entity_service(
+        SERVICE_SYNCHRONIZE_TIME, SCHEMA_SERVICE_SYNCHRONIZE_TIME, "synchronize_time",
     )
 
     hass.data[DOMAIN][entry.entry_id]["entities"] = [
@@ -455,6 +460,9 @@ class TapoCamEntity(Camera):
 
     async def reboot(self):
         await self.hass.async_add_executor_job(self._controller.reboot)
+
+    async def synchronize_time(self):
+        await syncTime(self._hass, self._entry)
 
     async def set_alarm(self, alarm):
         if alarm == "on":

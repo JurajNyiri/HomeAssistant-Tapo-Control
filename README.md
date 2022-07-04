@@ -170,6 +170,15 @@ Sets day or night mode
 - **day_night_mode** Required: Sets day/night mode for camera. Possible values: on, off, auto
 </details>
 
+<details>
+  <summary>tapo_control.synchronize_time</summary>
+
+Sets date and time on camera to the date of Home Assistant.
+
+This is also done automatically by integration every hour if enabled in configuration.
+
+</details>
+
 ## Sound Detection
 
 Integration is capable of analysing sound from camera microphone and expose a new attribute noise_detected on cameras when a voice threshold is reached.

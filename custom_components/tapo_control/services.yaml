@@ -189,6 +189,13 @@ set_auto_track_mode:
           options:
             - "on"
             - "off"
+synchronize_time:
+  name: Synchronize Time
+  description: Synchronizes Time
+  target:
+    entity:
+      domain: camera
+      integration: tapo_control
 reboot:
   name: Reboot
   description: Reboots the camera

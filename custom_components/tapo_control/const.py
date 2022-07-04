@@ -89,6 +89,9 @@ SCHEMA_SERVICE_SET_ALARM = {
     vol.Required(ALARM): vol.In(["on", "off"]),
 }
 
+SERVICE_SYNCHRONIZE_TIME = "synchronize_time"
+SCHEMA_SERVICE_SYNCHRONIZE_TIME = {}
+
 CONF_RTSP_TRANSPORT = "rtsp_transport"
 RTSP_TRANS_PROTOCOLS = ["tcp", "udp", "udp_multicast", "http"]
 
