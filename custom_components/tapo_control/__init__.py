@@ -246,7 +246,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             and entity._enable_sound_detection
                         ):
                             await entity.startNoiseDetection()
-                if hass.data[DOMAIN][entry.entry_id]["updateEntity"]._enabled:
+                if ("updateEntity" in hass.data[DOMAIN][entry.entry_id]) and hass.data[
+                    DOMAIN
+                ][entry.entry_id]["updateEntity"]._enabled:
                     hass.data[DOMAIN][entry.entry_id]["updateEntity"].updateCam(camData)
                     hass.data[DOMAIN][entry.entry_id][
                         "updateEntity"
