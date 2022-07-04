@@ -77,6 +77,23 @@ set_privacy_mode:
           options:
             - "on"
             - "off"
+set_alarm:
+  name: Set alarm
+  description: Turns the alarm on or off
+  target:
+    entity:
+      domain: camera
+      integration: tapo_control
+  fields:
+    alarm:
+      name: Alarm
+      required: true
+      description: "Turns the alarm on or off."
+      selector:
+        select:
+          options:
+            - "on"
+            - "off"
 set_alarm_mode:
   name: Set alarm mode
   description: Sets alarm mode
@@ -172,6 +189,13 @@ set_auto_track_mode:
           options:
             - "on"
             - "off"
+synchronize_time:
+  name: Synchronize Time
+  description: Synchronizes Time
+  target:
+    entity:
+      domain: camera
+      integration: tapo_control
 reboot:
   name: Reboot
   description: Reboots the camera

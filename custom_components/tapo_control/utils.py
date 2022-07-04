@@ -22,6 +22,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from homeassistant.util import slugify
 
+
 def registerController(host, username, password):
     return Tapo(host, username, password)
 
@@ -64,14 +65,10 @@ async def isRtspStreamWorking(hass, host, username, password, full_url=""):
         ),
     )
     image = await asyncio.shield(
-        ffmpeg.get_image(
-            streaming_url,
-            output_format=IMAGE_JPEG,
-        )
+        ffmpeg.get_image(streaming_url, output_format=IMAGE_JPEG,)
     )
     LOGGER.debug(
-        "[isRtspStreamWorking][%s] Image data received.",
-        host,
+        "[isRtspStreamWorking][%s] Image data received.", host,
     )
     return not image == b""
 

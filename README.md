@@ -69,6 +69,14 @@ If privacy mode is turned on, camera does not record anything and does not respo
 </details>
 
 <details>
+  <summary>tapo_control.set_alarm</summary>
+
+Activates or deactivates active alarm.
+
+- **alarm** Required: Possible values: on, off
+</details>
+
+<details>
   <summary>tapo_control.set_alarm_mode</summary>
 
 Sets alarm mode.
@@ -160,6 +168,15 @@ Deletes a preset
 Sets day or night mode
 
 - **day_night_mode** Required: Sets day/night mode for camera. Possible values: on, off, auto
+</details>
+
+<details>
+  <summary>tapo_control.synchronize_time</summary>
+
+Sets date and time on camera to the date of Home Assistant.
+
+This is also done automatically by integration every hour if enabled in configuration.
+
 </details>
 
 ## Sound Detection

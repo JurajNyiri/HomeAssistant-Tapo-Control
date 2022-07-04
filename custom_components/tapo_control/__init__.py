@@ -13,6 +13,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import (
+    CONF_RTSP_TRANSPORT,
     ENABLE_SOUND_DETECTION,
     CONF_CUSTOM_STREAM,
     LOGGER,
@@ -21,6 +22,7 @@ from .const import (
     CLOUD_PASSWORD,
     ENABLE_STREAM,
     ENABLE_TIME_SYNC,
+    RTSP_TRANS_PROTOCOLS,
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
     SOUND_DETECTION_RESET,
@@ -114,6 +116,15 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         config_entry.data = {**new}
 
         config_entry.version = 8
+
+    if config_entry.version == 8:
+
+        new = {**config_entry.data}
+        new[CONF_RTSP_TRANSPORT] = RTSP_TRANS_PROTOCOLS[0]
+
+        config_entry.data = {**new}
+
+        config_entry.version = 9
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
@@ -235,17 +246,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             and entity._enable_sound_detection
                         ):
                             await entity.startNoiseDetection()
-                if hass.data[DOMAIN][entry.entry_id]["updateEntity"]._enabled:
+                if ("updateEntity" in hass.data[DOMAIN][entry.entry_id]) and hass.data[
+                    DOMAIN
+                ][entry.entry_id]["updateEntity"]._enabled:
                     hass.data[DOMAIN][entry.entry_id]["updateEntity"].updateCam(camData)
                     hass.data[DOMAIN][entry.entry_id][
                         "updateEntity"
                     ].async_schedule_update_ha_state(True)
 
         tapoCoordinator = DataUpdateCoordinator(
-            hass,
-            LOGGER,
-            name="Tapo resource status",
-            update_method=async_update_data,
+            hass, LOGGER, name="Tapo resource status", update_method=async_update_data,
         )
 
         camData = await getCamData(hass, tapoController)

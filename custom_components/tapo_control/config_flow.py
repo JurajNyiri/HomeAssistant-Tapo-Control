@@ -17,6 +17,8 @@ from .const import (
     SOUND_DETECTION_PEAK,
     SOUND_DETECTION_RESET,
     CONF_CUSTOM_STREAM,
+    CONF_RTSP_TRANSPORT,
+    RTSP_TRANS_PROTOCOLS,
 )
 
 
@@ -24,7 +26,7 @@ from .const import (
 class FlowHandler(config_entries.ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 8
+    VERSION = 9
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -448,6 +450,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
         sound_detection_reset = self.config_entry.data[SOUND_DETECTION_RESET]
         extra_arguments = self.config_entry.data[CONF_EXTRA_ARGUMENTS]
         custom_stream = self.config_entry.data[CONF_CUSTOM_STREAM]
+        rtsp_transport = self.config_entry.data[CONF_RTSP_TRANSPORT]
         if user_input is not None:
             try:
                 LOGGER.debug(
@@ -538,6 +541,11 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                 else:
                     extra_arguments = ""
 
+                if CONF_RTSP_TRANSPORT in user_input:
+                    rtsp_transport = user_input[CONF_RTSP_TRANSPORT]
+                else:
+                    rtsp_transport = RTSP_TRANS_PROTOCOLS[0]
+
                 if not (
                     int(sound_detection_peak) >= -100 and int(sound_detection_peak) <= 0
                 ):
@@ -625,6 +633,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                         SOUND_DETECTION_RESET: sound_detection_reset,
                         CONF_EXTRA_ARGUMENTS: extra_arguments,
                         CONF_CUSTOM_STREAM: custom_stream,
+                        CONF_RTSP_TRANSPORT: rtsp_transport,
                     },
                 )
                 return self.async_create_entry(title="", data=None)
@@ -643,6 +652,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                     errors["base"] = "unknown"
                     LOGGER.error(e)
 
+        LOGGER.warn(rtsp_transport)
         return self.async_show_form(
             step_id="auth",
             data_schema=vol.Schema(
@@ -691,6 +701,10 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_CUSTOM_STREAM,
                         description={"suggested_value": custom_stream},
                     ): str,
+                    vol.Optional(
+                        CONF_RTSP_TRANSPORT,
+                        description={"suggested_value": rtsp_transport},
+                    ): vol.In(RTSP_TRANS_PROTOCOLS),
                 }
             ),
             errors=errors,

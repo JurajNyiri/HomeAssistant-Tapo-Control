@@ -11,6 +11,7 @@ LIGHT = "light"
 SOUND = "sound"
 PRIVACY_MODE = "privacy_mode"
 DAY_NIGHT_MODE = "day_night_mode"
+ALARM = "alarm"
 LED_MODE = "led_mode"
 NAME = "name"
 DISTANCE = "distance"
@@ -82,6 +83,17 @@ SCHEMA_SERVICE_DELETE_PRESET = {
 
 SERVICE_FORMAT = "format"
 SCHEMA_SERVICE_FORMAT = {}
+
+SERVICE_SET_ALARM = "set_alarm"
+SCHEMA_SERVICE_SET_ALARM = {
+    vol.Required(ALARM): vol.In(["on", "off"]),
+}
+
+SERVICE_SYNCHRONIZE_TIME = "synchronize_time"
+SCHEMA_SERVICE_SYNCHRONIZE_TIME = {}
+
+CONF_RTSP_TRANSPORT = "rtsp_transport"
+RTSP_TRANS_PROTOCOLS = ["tcp", "udp", "udp_multicast", "http"]
 
 ENABLE_STREAM = "enable_stream"
 ENABLE_SOUND_DETECTION = "enable_sound_detection"
