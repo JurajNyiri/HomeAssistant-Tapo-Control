@@ -83,6 +83,7 @@ class FlowHandler(config_entries.ConfigFlow):
         sound_detection_reset = 10
         extra_arguments = ""
         custom_stream = ""
+        rtsp_transport = RTSP_TRANS_PROTOCOLS[0]
         if user_input is not None:
             LOGGER.debug(
                 "[ADD DEVICE][%s] Verifying other options.", self.tapoHost,
@@ -123,6 +124,10 @@ class FlowHandler(config_entries.ConfigFlow):
                 extra_arguments = user_input[CONF_EXTRA_ARGUMENTS]
             else:
                 extra_arguments = ""
+            if CONF_RTSP_TRANSPORT in user_input:
+                rtsp_transport = user_input[CONF_RTSP_TRANSPORT]
+            else:
+                rtsp_transport = RTSP_TRANS_PROTOCOLS[0]
             host = self.tapoHost
             cloud_password = self.tapoCloudPassword
             username = self.tapoUsername
@@ -146,6 +151,7 @@ class FlowHandler(config_entries.ConfigFlow):
                     SOUND_DETECTION_RESET: sound_detection_reset,
                     CONF_EXTRA_ARGUMENTS: extra_arguments,
                     CONF_CUSTOM_STREAM: custom_stream,
+                    CONF_RTSP_TRANSPORT: rtsp_transport,
                 },
             )
 
@@ -190,6 +196,10 @@ class FlowHandler(config_entries.ConfigFlow):
                     vol.Optional(
                         CONF_CUSTOM_STREAM,
                         description={"suggested_value": custom_stream},
+                    ): str,
+                    vol.Optional(
+                        CONF_RTSP_TRANSPORT,
+                        description={"suggested_value": rtsp_transport},
                     ): str,
                 }
             ),
