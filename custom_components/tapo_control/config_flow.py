@@ -662,6 +662,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_RTSP_TRANSPORT: rtsp_transport,
                     },
                 )
+                await self.hass.config_entries.async_reload(self.config_entry.entry_id)
                 return self.async_create_entry(title="", data=None)
             except Exception as e:
                 if "Failed to establish a new connection" in str(e):
