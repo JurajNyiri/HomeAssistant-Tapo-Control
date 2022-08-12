@@ -2,9 +2,14 @@ from homeassistant import config_entries
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.core import callback
-from homeassistant.components.dhcp import HOSTNAME, IP_ADDRESS, MAC_ADDRESS
+from homeassistant.helpers import device_registry as dr
 import voluptuous as vol
-from .utils import registerController, isRtspStreamWorking, areCameraPortsOpened, isOpen
+from .utils import (
+    registerController,
+    isRtspStreamWorking,
+    areCameraPortsOpened,
+    isOpen,
+)
 from .const import (
     DOMAIN,
     ENABLE_MOTION_SENSOR,
@@ -472,6 +477,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                 )
                 username = user_input[CONF_USERNAME]
                 password = user_input[CONF_PASSWORD]
+                tapoController = None
 
                 if CLOUD_PASSWORD in user_input:
 
@@ -482,7 +488,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                             ip_address,
                         )
                         try:
-                            await self.hass.async_add_executor_job(
+                            tapoController = await self.hass.async_add_executor_job(
                                 registerController, ip_address, "admin", cloud_password
                             )
                             LOGGER.debug(
@@ -606,7 +612,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                             ip_address,
                         )
                         try:
-                            await self.hass.async_add_executor_job(
+                            tapoController = await self.hass.async_add_executor_job(
                                 registerController, ip_address, username, password
                             )
                             LOGGER.debug(
@@ -626,6 +632,16 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                         ip_address,
                     )
 
+                device_registry = dr.async_get(self.hass)
+                for deviceID in device_registry.devices:
+                    device = device_registry.devices[deviceID]
+                    if (
+                        len(device.config_entries)
+                        and list(device.config_entries)[0] == self.config_entry.entry_id
+                    ):
+                        device_registry.async_remove_device(device.id)
+
+                # todo: reload
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
                     title=ip_address,
