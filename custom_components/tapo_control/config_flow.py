@@ -632,16 +632,29 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                         ip_address,
                     )
 
-                device_registry = dr.async_get(self.hass)
-                for deviceID in device_registry.devices:
-                    device = device_registry.devices[deviceID]
-                    if (
-                        len(device.config_entries)
-                        and list(device.config_entries)[0] == self.config_entry.entry_id
-                    ):
-                        device_registry.async_remove_device(device.id)
+                ipChanged = self.config_entry.data[CONF_IP_ADDRESS] != ip_address
 
-                # todo: reload
+                if ipChanged:
+                    LOGGER.debug("[%s] IP Changed, cleaning up devices...", ip_address)
+                    device_registry = dr.async_get(self.hass)
+                    for deviceID in device_registry.devices:
+                        device = device_registry.devices[deviceID]
+                        LOGGER.debug("[%s] Removing device %s.", ip_address, deviceID)
+                        if (
+                            len(device.config_entries)
+                            and list(device.config_entries)[0]
+                            == self.config_entry.entry_id
+                        ):
+                            device_registry.async_remove_device(device.id)
+                else:
+                    LOGGER.debug(
+                        "[%s] Skipping removal of devices since IP address did not change.",
+                        ip_address,
+                    )
+
+                LOGGER.debug(
+                    "[%s] Updating entry.", ip_address,
+                )
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
                     title=ip_address,
@@ -662,7 +675,17 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_RTSP_TRANSPORT: rtsp_transport,
                     },
                 )
-                await self.hass.config_entries.async_reload(self.config_entry.entry_id)
+                if ipChanged:
+                    LOGGER.debug(
+                        "[%s] IP Changed, reloading entry...", ip_address,
+                    )
+                    await self.hass.config_entries.async_reload(
+                        self.config_entry.entry_id
+                    )
+                else:
+                    LOGGER.debug(
+                        "[%s] Skipping reload of entry.", ip_address,
+                    )
                 return self.async_create_entry(title="", data=None)
             except Exception as e:
                 if "Failed to establish a new connection" in str(e):
