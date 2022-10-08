@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+if [ ! -d "${PWD}/config" ]; then
+  echo "Creating default configuration."
+  mkdir -p "${PWD}/config";
+fi
+
+# Symlink the custom_components dir
+rm -rf "${PWD}/config/custom_components"
+ln -sf "${PWD}/custom_components" "${PWD}/config/custom_components"
+
+# Start Home Assistant
+hass -c "${PWD}/config" --debug
