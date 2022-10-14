@@ -25,6 +25,8 @@ async def async_setup_entry(
     buttons = []
     buttons.append(TapoRebootButton(name, controller, hass, attributes))
     buttons.append(TapoFormatButton(name, controller, hass, attributes))
+    buttons.append(TapoStartManualAlarmButton(name, controller, hass, attributes))
+    buttons.append(TapoStopManualAlarmButton(name, controller, hass, attributes))
     buttons.append(TapoSyncTimeButton(config_entry, name, controller, hass, attributes))
 
     async_add_entities(buttons)
@@ -44,7 +46,9 @@ class TapoRebootButton(TapoButtonEntity):
 
 class TapoFormatButton(TapoButtonEntity):
     def __init__(self, name, controller: Tapo, hass: HomeAssistant, attributes: dict):
-        TapoButtonEntity.__init__(self, name, "Format", controller, hass, attributes)
+        TapoButtonEntity.__init__(
+            self, name, "Format", controller, hass, attributes, "mdi:eraser"
+        )
 
     async def async_press(self) -> None:
         await self._hass.async_add_executor_job(self._controller.format)
@@ -55,7 +59,41 @@ class TapoSyncTimeButton(TapoButtonEntity):
         self, entry, name, controller: Tapo, hass: HomeAssistant, attributes: dict
     ):
         self._entry = entry
-        TapoButtonEntity.__init__(self, name, "Sync Time", controller, hass, attributes)
+        TapoButtonEntity.__init__(
+            self,
+            name,
+            "Sync Time",
+            controller,
+            hass,
+            attributes,
+            "mdi:timer-sync-outline",
+        )
 
     async def async_press(self) -> None:
         await syncTime(self._hass, self._entry)
+
+
+class TapoStartManualAlarmButton(TapoButtonEntity):
+    def __init__(self, name, controller: Tapo, hass: HomeAssistant, attributes: dict):
+        TapoButtonEntity.__init__(
+            self, name, "Manual Alarm Start", controller, hass, attributes, "mdi:alarm"
+        )
+
+    async def async_press(self) -> None:
+        await self._hass.async_add_executor_job(self._controller.startManualAlarm)
+
+
+class TapoStopManualAlarmButton(TapoButtonEntity):
+    def __init__(self, name, controller: Tapo, hass: HomeAssistant, attributes: dict):
+        TapoButtonEntity.__init__(
+            self,
+            name,
+            "Manual Alarm Stop",
+            controller,
+            hass,
+            attributes,
+            "mdi:alarm-off",
+        )
+
+    async def async_press(self) -> None:
+        await self._hass.async_add_executor_job(self._controller.stopManualAlarm)

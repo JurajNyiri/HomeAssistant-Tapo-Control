@@ -45,8 +45,6 @@ from .const import (
     PRESET,
     NAME,
     BRAND,
-    SERVICE_SET_ALARM,
-    SCHEMA_SERVICE_SET_ALARM,
 )
 
 
@@ -82,11 +80,6 @@ async def async_setup_entry(
         SERVICE_DELETE_PRESET,
         SCHEMA_SERVICE_DELETE_PRESET,
         "delete_preset",
-    )
-    platform.async_register_entity_service(
-        SERVICE_SET_ALARM,
-        SCHEMA_SERVICE_SET_ALARM,
-        "set_alarm",
     )
 
     hass.data[DOMAIN][entry.entry_id]["entities"] = [
@@ -372,6 +365,12 @@ class TapoCamEntity(Camera):
             )
         await self._coordinator.async_request_refresh()
 
+    async def set_day_night_mode(self, day_night_mode: str):
+        await self.hass.async_add_executor_job(
+            self._controller.setDayNightMode, day_night_mode
+        )
+        await self._coordinator.async_request_refresh()
+
     async def async_enable_motion_detection(self):
         # TODO
         await self.set_motion_detection_mode(True)
@@ -388,13 +387,6 @@ class TapoCamEntity(Camera):
         # TODO
         await self.set_privacy_mode("on")
 
-    async def set_alarm(self, alarm):
-        if alarm == "on":
-            await self.hass.async_add_executor_job(self._controller.startManualAlarm)
-        else:
-            await self.hass.async_add_executor_job(self._controller.stopManualAlarm)
-        await self._coordinator.async_request_refresh()
-
     async def save_preset(self, name):
         if not name == "" and not name.isnumeric():
             await self.hass.async_add_executor_job(self._controller.savePreset, name)
@@ -403,12 +395,6 @@ class TapoCamEntity(Camera):
             LOGGER.error(
                 "Incorrect " + NAME + " value. It cannot be empty or a number."
             )
-
-    async def set_day_night_mode(self, day_night_mode: str):
-        await self.hass.async_add_executor_job(
-            self._controller.setDayNightMode, day_night_mode
-        )
-        await self._coordinator.async_request_refresh()
 
     async def delete_preset(self, preset):
         if preset.isnumeric():
