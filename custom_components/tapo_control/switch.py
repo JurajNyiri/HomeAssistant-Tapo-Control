@@ -24,7 +24,6 @@ async def async_setup_entry(
     switches.append(await privacy_switch(name, controller, hass, attributes))
     switches.append(await status_led_switch(name, controller, hass, attributes))
     switches.append(await auto_track_switch(name, controller, hass, attributes))
-    switches.append(await motion_detection_switch(name, controller, hass, attributes))
 
     async_add_entities(switches)
 
@@ -57,16 +56,6 @@ async def auto_track_switch(name, controller, hass, attributes):
         return None
     LOGGER.debug("Creating auto track mode switch")
     return TapoAutoTrackSwitch(name, controller, hass, attributes)
-
-
-async def motion_detection_switch(name, controller, hass, attributes):
-    try:
-        await hass.async_add_executor_job(controller.getAutoTrackTarget)
-    except Exception:
-        LOGGER.info("Camera does not support motion detection mode")
-        return None
-    LOGGER.debug("Creating motion detection mode switch")
-    return TapoMotionDetectionSwitch(name, controller, hass, attributes)
 
 
 class TapoPrivacySwitch(TapoSwitchEntity):
@@ -149,38 +138,6 @@ class TapoAutoTrackSwitch(TapoSwitchEntity):
     async def async_update(self) -> None:
         data = await self._hass.async_add_executor_job(
             self._controller.getAutoTrackTarget
-        )
-
-        self._is_on = "enabled" in data and data["enabled"] == "on"
-
-
-class TapoMotionDetectionSwitch(TapoSwitchEntity):
-    def __init__(self, name, controller: Tapo, hass: HomeAssistant, attributes: dict):
-        TapoSwitchEntity.__init__(
-            self,
-            name,
-            "Motion Detection",
-            controller,
-            hass,
-            attributes,
-            "mdi:motion-sensor",
-        )
-
-    async def async_turn_on(self) -> None:
-        await self._hass.async_add_executor_job(
-            self._controller.setMotionDetection,
-            True,
-        )
-
-    async def async_turn_off(self) -> None:
-        await self._hass.async_add_executor_job(
-            self._controller.setMotionDetection,
-            False,
-        )
-
-    async def async_update(self) -> None:
-        data = await self._hass.async_add_executor_job(
-            self._controller.getMotionDetection
         )
 
         self._is_on = "enabled" in data and data["enabled"] == "on"

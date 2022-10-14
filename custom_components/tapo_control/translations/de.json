@@ -54,6 +54,19 @@
       "not_tapo_device": "Entdecktes Gerät ist keine Tapo Kamera"
     }
   },
+  "state": {
+    "night_vision": {
+      "auto": "Automatisch",
+      "on": "An",
+      "off": "Aus"
+    },
+    "alarm": {
+      "both": "Licht & Sirene",
+      "light": "Licht",
+      "sound": "Sirene",
+      "off": "Aus"
+    }
+  },
   "options": {
     "step": {
       "auth": {

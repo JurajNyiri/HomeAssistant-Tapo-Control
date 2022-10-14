@@ -17,6 +17,7 @@ class TapoSwitchEntity(SwitchEntity):
         hass: HomeAssistant,
         attributes: dict,
         icon=None,
+        device_class=SwitchDeviceClass.SWITCH,
     ):
         LOGGER.debug(f"Tapo {name_suffix} - init - start")
         self._name = name
@@ -25,8 +26,8 @@ class TapoSwitchEntity(SwitchEntity):
         self._attributes = attributes
         self._is_on = False
         self._hass = hass
-        self._icon = icon
-        self._attr_device_class = SwitchDeviceClass.SWITCH
+        self._attr_icon = icon
+        self._attr_device_class = device_class
         SwitchEntity.__init__(self)
         LOGGER.debug(f"Tapo {name_suffix} - init - end")
 
@@ -56,10 +57,6 @@ class TapoSwitchEntity(SwitchEntity):
     def brand(self):
         return BRAND
 
-    @property
-    def icon(self) -> str:
-        return self._icon
-
 
 class TapoButtonEntity(ButtonEntity):
     def __init__(
@@ -70,6 +67,7 @@ class TapoButtonEntity(ButtonEntity):
         hass: HomeAssistant,
         attributes: dict,
         icon=None,
+        device_class=None,
     ):
         LOGGER.debug(f"Tapo {name_suffix} - init - start")
         self._name = name
@@ -78,7 +76,8 @@ class TapoButtonEntity(ButtonEntity):
         self._attributes = attributes
         self._is_on = False
         self._hass = hass
-        self._icon = icon
+        self._attr_icon = icon
+        self._attr_device_class = device_class
         ButtonEntity.__init__(self)
         LOGGER.debug(f"Tapo {name_suffix} - init - end")
 
@@ -103,10 +102,6 @@ class TapoButtonEntity(ButtonEntity):
     @property
     def brand(self):
         return BRAND
-
-    @property
-    def icon(self) -> str:
-        return self._icon
 
 
 class TapoSelectEntity(SelectEntity):
@@ -118,6 +113,7 @@ class TapoSelectEntity(SelectEntity):
         hass: HomeAssistant,
         attributes: dict,
         icon=None,
+        device_class=None,
     ):
         LOGGER.debug(f"Tapo {name_suffix} - init - start")
         self._name = name
@@ -126,7 +122,8 @@ class TapoSelectEntity(SelectEntity):
         self._attributes = attributes
         self._is_on = False
         self._hass = hass
-        self._icon = icon
+        self._attr_icon = icon
+        self._attr_device_class = device_class
         ButtonEntity.__init__(self)
         LOGGER.debug(f"Tapo {name_suffix} - init - end")
 
@@ -151,7 +148,3 @@ class TapoSelectEntity(SelectEntity):
     @property
     def brand(self):
         return BRAND
-
-    @property
-    def icon(self) -> str:
-        return self._icon
