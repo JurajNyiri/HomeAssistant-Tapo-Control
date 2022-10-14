@@ -50,9 +50,6 @@
       ]
     }
   },
-  "runArgs": [
-    "--userns=keep-id"
-  ],
   "containerUser": "vscode", // the value needs to match the value of "remoteUser"
   "remoteUser": "vscode",
   "features": {

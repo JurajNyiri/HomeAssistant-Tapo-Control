@@ -11,8 +11,7 @@
             "module": "homeassistant",
             "args": [
                 "-c",
-                "./config",
-                "--debug"
+                "./config"
             ],
             "justMyCode": true
         }
