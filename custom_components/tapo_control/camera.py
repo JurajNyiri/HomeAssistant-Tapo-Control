@@ -25,8 +25,6 @@ from .const import (
     CONF_CUSTOM_STREAM,
     ENABLE_SOUND_DETECTION,
     ENABLE_STREAM,
-    SERVICE_SET_DAY_NIGHT_MODE,
-    SCHEMA_SERVICE_SET_DAY_NIGHT_MODE,
     SERVICE_PTZ,
     SCHEMA_SERVICE_PTZ,
     SERVICE_SET_ALARM_MODE,
@@ -57,19 +55,9 @@ async def async_setup_entry(
 ):
     platform = entity_platform.current_platform.get()
     platform.async_register_entity_service(
-        SERVICE_SET_DAY_NIGHT_MODE,
-        SCHEMA_SERVICE_SET_DAY_NIGHT_MODE,
-        "set_day_night_mode",
-    )
-    platform.async_register_entity_service(
         SERVICE_PTZ,
         SCHEMA_SERVICE_PTZ,
         "ptz",
-    )
-    platform.async_register_entity_service(
-        SERVICE_SET_ALARM_MODE,
-        SCHEMA_SERVICE_SET_ALARM_MODE,
-        "set_alarm_mode",
     )
     platform.async_register_entity_service(
         SERVICE_SAVE_PRESET,
@@ -262,7 +250,6 @@ class TapoCamEntity(Camera):
             ]
             self._attributes["alarm"] = camData["alarm"]
             self._attributes["alarm_mode"] = camData["alarm_mode"]
-            self._attributes["day_night_mode"] = camData["day_night_mode"]
             self._attributes["presets"] = camData["presets"]
 
     def getName(self):
@@ -342,33 +329,6 @@ class TapoCamEntity(Camera):
                 + PRESET
                 + "."
             )
-        await self._coordinator.async_request_refresh()
-
-    async def set_alarm_mode(self, alarm_mode, sound=None, light=None):
-        if not light:
-            light = "on"
-        if not sound:
-            sound = "on"
-        if alarm_mode == "on":
-            await self.hass.async_add_executor_job(
-                self._controller.setAlarm,
-                True,
-                True if sound == "on" else False,
-                True if light == "on" else False,
-            )
-        else:
-            await self.hass.async_add_executor_job(
-                self._controller.setAlarm,
-                False,
-                True if sound == "on" else False,
-                True if light == "on" else False,
-            )
-        await self._coordinator.async_request_refresh()
-
-    async def set_day_night_mode(self, day_night_mode: str):
-        await self.hass.async_add_executor_job(
-            self._controller.setDayNightMode, day_night_mode
-        )
         await self._coordinator.async_request_refresh()
 
     async def async_enable_motion_detection(self):

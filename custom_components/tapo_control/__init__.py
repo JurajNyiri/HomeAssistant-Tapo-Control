@@ -294,13 +294,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             hass.config_entries.async_forward_entry_setup(entry, "button")
         )
         hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "switch")
+            hass.config_entries.async_forward_entry_setup(entry, "camera")
         )
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "light")
         )
         hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "camera")
+            hass.config_entries.async_forward_entry_setup(entry, "select")
+        )
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, "switch")
         )
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "update")
