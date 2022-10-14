@@ -255,7 +255,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     ].async_schedule_update_ha_state(True)
 
         tapoCoordinator = DataUpdateCoordinator(
-            hass, LOGGER, name="Tapo resource status", update_method=async_update_data,
+            hass,
+            LOGGER,
+            name="Tapo resource status",
+            update_method=async_update_data,
         )
 
         camData = await getCamData(hass, tapoController)
@@ -287,6 +290,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             if enableTimeSync:
                 await syncTime(hass, entry)
 
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, "button")
+        )
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, "switch")
+        )
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "light")
         )

@@ -65,10 +65,14 @@ async def isRtspStreamWorking(hass, host, username, password, full_url=""):
         ),
     )
     image = await asyncio.shield(
-        ffmpeg.get_image(streaming_url, output_format=IMAGE_JPEG,)
+        ffmpeg.get_image(
+            streaming_url,
+            output_format=IMAGE_JPEG,
+        )
     )
     LOGGER.debug(
-        "[isRtspStreamWorking][%s] Image data received.", host,
+        "[isRtspStreamWorking][%s] Image data received.",
+        host,
     )
     return not image == b""
 

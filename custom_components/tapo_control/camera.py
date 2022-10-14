@@ -1,7 +1,7 @@
 import asyncio
 import urllib.parse
 import haffmpeg.sensor as ffmpeg_sensor
-from .utils import build_device_info, syncTime
+from .utils import build_device_info
 from homeassistant.helpers.config_validation import boolean
 from homeassistant.core import HomeAssistant
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
@@ -25,28 +25,16 @@ from .const import (
     CONF_CUSTOM_STREAM,
     ENABLE_SOUND_DETECTION,
     ENABLE_STREAM,
-    SERVICE_SET_LED_MODE,
-    SCHEMA_SERVICE_SET_LED_MODE,
     SERVICE_SET_DAY_NIGHT_MODE,
     SCHEMA_SERVICE_SET_DAY_NIGHT_MODE,
-    SERVICE_SET_PRIVACY_MODE,
-    SCHEMA_SERVICE_SET_PRIVACY_MODE,
     SERVICE_PTZ,
     SCHEMA_SERVICE_PTZ,
     SERVICE_SET_ALARM_MODE,
     SCHEMA_SERVICE_SET_ALARM_MODE,
-    SERVICE_SET_MOTION_DETECTION_MODE,
-    SCHEMA_SERVICE_SET_MOTION_DETECTION_MODE,
-    SERVICE_SET_AUTO_TRACK_MODE,
-    SCHEMA_SERVICE_SET_AUTO_TRACK_MODE,
-    SERVICE_REBOOT,
-    SCHEMA_SERVICE_REBOOT,
     SERVICE_SAVE_PRESET,
     SCHEMA_SERVICE_SAVE_PRESET,
     SERVICE_DELETE_PRESET,
     SCHEMA_SERVICE_DELETE_PRESET,
-    SERVICE_FORMAT,
-    SCHEMA_SERVICE_FORMAT,
     DOMAIN,
     LOGGER,
     SOUND_DETECTION_DURATION,
@@ -59,8 +47,6 @@ from .const import (
     BRAND,
     SERVICE_SET_ALARM,
     SCHEMA_SERVICE_SET_ALARM,
-    SERVICE_SYNCHRONIZE_TIME,
-    SCHEMA_SERVICE_SYNCHRONIZE_TIME,
 )
 
 
@@ -73,49 +59,34 @@ async def async_setup_entry(
 ):
     platform = entity_platform.current_platform.get()
     platform.async_register_entity_service(
-        SERVICE_SET_LED_MODE, SCHEMA_SERVICE_SET_LED_MODE, "set_led_mode",
-    )
-    platform.async_register_entity_service(
         SERVICE_SET_DAY_NIGHT_MODE,
         SCHEMA_SERVICE_SET_DAY_NIGHT_MODE,
         "set_day_night_mode",
     )
     platform.async_register_entity_service(
-        SERVICE_SET_PRIVACY_MODE, SCHEMA_SERVICE_SET_PRIVACY_MODE, "set_privacy_mode",
+        SERVICE_PTZ,
+        SCHEMA_SERVICE_PTZ,
+        "ptz",
     )
     platform.async_register_entity_service(
-        SERVICE_PTZ, SCHEMA_SERVICE_PTZ, "ptz",
+        SERVICE_SET_ALARM_MODE,
+        SCHEMA_SERVICE_SET_ALARM_MODE,
+        "set_alarm_mode",
     )
     platform.async_register_entity_service(
-        SERVICE_SET_ALARM_MODE, SCHEMA_SERVICE_SET_ALARM_MODE, "set_alarm_mode",
+        SERVICE_SAVE_PRESET,
+        SCHEMA_SERVICE_SAVE_PRESET,
+        "save_preset",
     )
     platform.async_register_entity_service(
-        SERVICE_SET_MOTION_DETECTION_MODE,
-        SCHEMA_SERVICE_SET_MOTION_DETECTION_MODE,
-        "set_motion_detection_mode",
+        SERVICE_DELETE_PRESET,
+        SCHEMA_SERVICE_DELETE_PRESET,
+        "delete_preset",
     )
     platform.async_register_entity_service(
-        SERVICE_SET_AUTO_TRACK_MODE,
-        SCHEMA_SERVICE_SET_AUTO_TRACK_MODE,
-        "set_auto_track_mode",
-    )
-    platform.async_register_entity_service(
-        SERVICE_REBOOT, SCHEMA_SERVICE_REBOOT, "reboot",
-    )
-    platform.async_register_entity_service(
-        SERVICE_SAVE_PRESET, SCHEMA_SERVICE_SAVE_PRESET, "save_preset",
-    )
-    platform.async_register_entity_service(
-        SERVICE_DELETE_PRESET, SCHEMA_SERVICE_DELETE_PRESET, "delete_preset",
-    )
-    platform.async_register_entity_service(
-        SERVICE_FORMAT, SCHEMA_SERVICE_FORMAT, "format",
-    )
-    platform.async_register_entity_service(
-        SERVICE_SET_ALARM, SCHEMA_SERVICE_SET_ALARM, "set_alarm",
-    )
-    platform.async_register_entity_service(
-        SERVICE_SYNCHRONIZE_TIME, SCHEMA_SERVICE_SYNCHRONIZE_TIME, "synchronize_time",
+        SERVICE_SET_ALARM,
+        SCHEMA_SERVICE_SET_ALARM,
+        "set_alarm",
     )
 
     hass.data[DOMAIN][entry.entry_id]["entities"] = [
@@ -127,7 +98,11 @@ async def async_setup_entry(
 
 class TapoCamEntity(Camera):
     def __init__(
-        self, hass: HomeAssistant, entry: dict, tapoData: dict, HDStream: boolean,
+        self,
+        hass: HomeAssistant,
+        entry: dict,
+        tapoData: dict,
+        HDStream: boolean,
     ):
         super().__init__()
         self.stream_options[CONF_RTSP_TRANSPORT] = entry.data.get(CONF_RTSP_TRANSPORT)
@@ -174,7 +149,8 @@ class TapoCamEntity(Camera):
     async def startNoiseDetection(self):
         self._hass.data[DOMAIN][self._entry.entry_id]["noiseSensorStarted"] = True
         await self._noiseSensor.open_sensor(
-            input_source=self.getStreamSource(), extra_cmd="-nostats",
+            input_source=self.getStreamSource(),
+            extra_cmd="-nostats",
         )
 
     async def async_added_to_hass(self) -> None:
@@ -247,7 +223,8 @@ class TapoCamEntity(Camera):
         streaming_url = self.getStreamSource()
         stream = CameraMjpeg(self._ffmpeg.binary)
         await stream.open_camera(
-            streaming_url, extra_cmd=self._extra_arguments,
+            streaming_url,
+            extra_cmd=self._extra_arguments,
         )
         try:
             stream_reader = await stream.get_reader()
@@ -290,12 +267,9 @@ class TapoCamEntity(Camera):
             self._attributes["motion_detection_sensitivity"] = camData[
                 "motion_detection_sensitivity"
             ]
-            self._attributes["privacy_mode"] = camData["privacy_mode"]
             self._attributes["alarm"] = camData["alarm"]
             self._attributes["alarm_mode"] = camData["alarm_mode"]
-            self._attributes["led"] = camData["led"]
             self._attributes["day_night_mode"] = camData["day_night_mode"]
-            self._attributes["auto_track"] = camData["auto_track"]
             self._attributes["presets"] = camData["presets"]
 
     def getName(self):
@@ -377,17 +351,6 @@ class TapoCamEntity(Camera):
             )
         await self._coordinator.async_request_refresh()
 
-    async def set_privacy_mode(self, privacy_mode: str):
-        if privacy_mode == "on":
-            await self.hass.async_add_executor_job(
-                self._controller.setPrivacyMode, True
-            )
-        else:
-            await self.hass.async_add_executor_job(
-                self._controller.setPrivacyMode, False
-            )
-        await self._coordinator.async_request_refresh()
-
     async def set_alarm_mode(self, alarm_mode, sound=None, light=None):
         if not light:
             light = "on"
@@ -409,60 +372,21 @@ class TapoCamEntity(Camera):
             )
         await self._coordinator.async_request_refresh()
 
-    async def set_led_mode(self, led_mode: str):
-        if led_mode == "on":
-            await self.hass.async_add_executor_job(self._controller.setLEDEnabled, True)
-        else:
-            await self.hass.async_add_executor_job(
-                self._controller.setLEDEnabled, False
-            )
-        await self._coordinator.async_request_refresh()
-
-    async def set_motion_detection_mode(self, motion_detection_mode):
-        if motion_detection_mode == "off":
-            await self.hass.async_add_executor_job(
-                self._controller.setMotionDetection, False
-            )
-        else:
-            await self.hass.async_add_executor_job(
-                self._controller.setMotionDetection, True, motion_detection_mode,
-            )
-        await self._coordinator.async_request_refresh()
-
     async def async_enable_motion_detection(self):
-        await self.hass.async_add_executor_job(
-            self._controller.setMotionDetection, True
-        )
-        await self._coordinator.async_request_refresh()
+        # TODO
+        await self.set_motion_detection_mode(True)
 
     async def async_disable_motion_detection(self):
-        await self.hass.async_add_executor_job(
-            self._controller.setMotionDetection, False
-        )
-        await self._coordinator.async_request_refresh()
+        # TODO
+        await self.set_motion_detection_mode(False)
 
     async def async_turn_on(self):
+        # TODO
         await self.set_privacy_mode("off")
 
     async def async_turn_off(self):
+        # TODO
         await self.set_privacy_mode("on")
-
-    async def set_auto_track_mode(self, auto_track_mode: str):
-        if auto_track_mode == "on":
-            await self.hass.async_add_executor_job(
-                self._controller.setAutoTrackTarget, True
-            )
-        else:
-            await self.hass.async_add_executor_job(
-                self._controller.setAutoTrackTarget, False
-            )
-        await self._coordinator.async_request_refresh()
-
-    async def reboot(self):
-        await self.hass.async_add_executor_job(self._controller.reboot)
-
-    async def synchronize_time(self):
-        await syncTime(self._hass, self._entry)
 
     async def set_alarm(self, alarm):
         if alarm == "on":
@@ -504,6 +428,3 @@ class TapoCamEntity(Camera):
                 await self._coordinator.async_request_refresh()
             else:
                 LOGGER.error("Preset " + preset + " does not exist.")
-
-    async def format(self):
-        await self.hass.async_add_executor_job(self._controller.format)
