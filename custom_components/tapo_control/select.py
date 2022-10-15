@@ -28,6 +28,9 @@ async def async_setup_entry(
             entry, hass, TapoMotionDetectionSelect, "getAutoTrackTarget"
         )
     )
+    selects.append(
+        await check_and_create(entry, hass, TapoMoveToPresetSelect, "getPresets")
+    )
 
     async_add_entities(selects)
 
@@ -144,3 +147,31 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
             option if option != "off" else False,
         )
         await self._coordinator.async_request_refresh()
+
+
+class TapoMoveToPresetSelect(TapoSelectEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant):
+        self._presets = {}
+        self._attr_options = []
+        self._attr_current_option = None
+        TapoSelectEntity.__init__(
+            self, "Move to Preset", entry, hass, "mdi:arrow-decision"
+        )
+
+    async def async_update(self) -> None:
+        data = await self._hass.async_add_executor_job(self._controller.getPresets)
+        self._presets = data
+        self._attr_options = list(data.values())
+        self._attr_current_option = None
+
+    async def async_select_option(self, option: str) -> None:
+        foundKey = False
+        for key, value in self._presets.items():
+            if value == option:
+                foundKey = key
+                break
+        if foundKey:
+            await self.hass.async_add_executor_job(self._controller.setPreset, foundKey)
+            self._attr_current_option = None
+        else:
+            LOGGER.error(f"Preset {option} does not exist.")
