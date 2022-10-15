@@ -270,24 +270,8 @@ class TapoCamEntity(Camera):
             streamType = "sd"
         return slugify(f"{self._attributes['mac']}_{streamType}_tapo_control")
 
-    async def ptz(self, tilt=None, pan=None, preset=None, distance=None):
-        if preset:
-            if preset.isnumeric():
-                await self.hass.async_add_executor_job(
-                    self._controller.setPreset, preset
-                )
-            else:
-                foundKey = False
-                for key, value in self._attributes["presets"].items():
-                    if value == preset:
-                        foundKey = key
-                if foundKey:
-                    await self.hass.async_add_executor_job(
-                        self._controller.setPreset, foundKey
-                    )
-                else:
-                    LOGGER.error("Preset " + preset + " does not exist.")
-        elif tilt:
+    async def ptz(self, tilt=None, pan=None, distance=None):
+        if tilt:
             if distance:
                 distance = float(distance)
                 if distance >= 0 and distance <= 1:
@@ -328,8 +312,6 @@ class TapoCamEntity(Camera):
                 + TILT
                 + ", "
                 + PAN
-                + ", "
-                + PRESET
                 + "."
             )
         await self._coordinator.async_request_refresh()
