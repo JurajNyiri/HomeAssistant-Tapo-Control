@@ -25,8 +25,6 @@ from .const import (
     CONF_CUSTOM_STREAM,
     ENABLE_SOUND_DETECTION,
     ENABLE_STREAM,
-    SERVICE_PTZ,
-    SCHEMA_SERVICE_PTZ,
     SERVICE_SAVE_PRESET,
     SCHEMA_SERVICE_SAVE_PRESET,
     SERVICE_DELETE_PRESET,
@@ -36,8 +34,6 @@ from .const import (
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
     SOUND_DETECTION_RESET,
-    TILT,
-    PAN,
     NAME,
     BRAND,
 )
@@ -51,11 +47,6 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: Callable
 ):
     platform = entity_platform.current_platform.get()
-    platform.async_register_entity_service(
-        SERVICE_PTZ,
-        SCHEMA_SERVICE_PTZ,
-        "ptz",
-    )
     platform.async_register_entity_service(
         SERVICE_SAVE_PRESET,
         SCHEMA_SERVICE_SAVE_PRESET,
@@ -101,9 +92,11 @@ class TapoCamEntity(Camera):
         self._sound_detection_duration = entry.data.get(SOUND_DETECTION_DURATION)
         self._sound_detection_reset = entry.data.get(SOUND_DETECTION_RESET)
         self._custom_stream = entry.data.get(CONF_CUSTOM_STREAM)
-        self._attributes = tapoData["camData"]["basic_info"]
+        self._attr_extra_state_attributes = tapoData["camData"]["basic_info"]
         self._attr_is_on = False
         self._attr_motion_detection_enabled = False
+        self._attr_icon = "mdi:cctv"
+        self._attr_should_poll = True
 
         self.updateCam(tapoData["camData"])
 
@@ -121,7 +114,9 @@ class TapoCamEntity(Camera):
 
     @callback
     def _noiseCallback(self, noiseDetected):
-        self._attributes["noise_detected"] = "on" if noiseDetected else "off"
+        self._attr_extra_state_attributes["noise_detected"] = (
+            "on" if noiseDetected else "off"
+        )
         for entity in self._hass.data[DOMAIN][self._entry.entry_id]["entities"]:
             if entity._enabled:
                 entity.async_write_ha_state()
@@ -147,29 +142,27 @@ class TapoCamEntity(Camera):
             return SUPPORT_ON_OFF
 
     @property
-    def icon(self) -> str:
-        return "mdi:cctv"
-
-    @property
     def name(self) -> str:
-        return self.getName()
+        name = self._attr_extra_state_attributes["device_alias"]
+        if self._hdstream:
+            name += " - HD"
+        else:
+            name += " - SD"
+        return name
 
     @property
     def unique_id(self) -> str:
-        return self.getUniqueID()
-
-    @property
-    def extra_state_attributes(self):
-        return self._attributes
-
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-        return self._state
+        if self._hdstream:
+            streamType = "hd"
+        else:
+            streamType = "sd"
+        return slugify(
+            f"{self._attr_extra_state_attributes['mac']}_{streamType}_tapo_control"
+        )
 
     @property
     def device_info(self) -> DeviceInfo:
-        return build_device_info(self._attributes)
+        return build_device_info(self._attr_extra_state_attributes)
 
     @property
     def motion_detection_enabled(self):
@@ -181,11 +174,7 @@ class TapoCamEntity(Camera):
 
     @property
     def model(self):
-        return self._attributes["device_model"]
-
-    @property
-    def should_poll(self):
-        return True
+        return self._attr_extra_state_attributes["device_model"]
 
     async def async_camera_image(self, width=None, height=None):
         ffmpeg = ImageFrame(self._ffmpeg.binary)
@@ -225,7 +214,9 @@ class TapoCamEntity(Camera):
             streamType = "stream1"
         else:
             streamType = "stream2"
-        streamURL = f"rtsp://{urllib.parse.quote_plus(self._username)}:{urllib.parse.quote_plus(self._password)}@{self._host}:554/{streamType}"
+        username = urllib.parse.quote_plus(self._username)
+        password = urllib.parse.quote_plus(self._password)
+        streamURL = f"rtsp://{username}:{password}@{self._host}:554/{streamType}"
         return streamURL
 
     async def async_update(self) -> None:
@@ -244,76 +235,15 @@ class TapoCamEntity(Camera):
 
     def updateCam(self, camData):
         if not camData:
-            self._state = "unavailable"
+            self._attr_state = "unavailable"
         else:
-            self._state = "idle"
+            self._attr_state = "idle"
             self._motion_detection_enabled = camData["motion_detection_enabled"]
 
             for attr, value in camData["basic_info"].items():
-                self._attributes[attr] = value
-            self._attributes["user"] = camData["user"]
-            self._attributes["presets"] = camData["presets"]
-
-    def getName(self):
-        name = self._attributes["device_alias"]
-        if self._hdstream:
-            name += " - HD"
-        else:
-            name += " - SD"
-        return name
-
-    def getUniqueID(self):
-        if self._hdstream:
-            streamType = "hd"
-        else:
-            streamType = "sd"
-        return slugify(f"{self._attributes['mac']}_{streamType}_tapo_control")
-
-    async def ptz(self, tilt=None, pan=None, distance=None):
-        if tilt:
-            if distance:
-                distance = float(distance)
-                if distance >= 0 and distance <= 1:
-                    degrees = 68 * distance
-                else:
-                    degrees = 5
-            else:
-                degrees = 5
-            if tilt == "UP":
-                await self.hass.async_add_executor_job(
-                    self._controller.moveMotor, 0, degrees
-                )
-            else:
-                await self.hass.async_add_executor_job(
-                    self._controller.moveMotor, 0, -degrees
-                )
-        elif pan:
-            if distance:
-                distance = float(distance)
-                if distance >= 0 and distance <= 1:
-                    degrees = 360 * distance
-                else:
-                    degrees = 5
-            else:
-                degrees = 5
-            if pan == "RIGHT":
-                await self.hass.async_add_executor_job(
-                    self._controller.moveMotor, degrees, 0
-                )
-            else:
-                await self.hass.async_add_executor_job(
-                    self._controller.moveMotor, -degrees, 0
-                )
-        else:
-            LOGGER.error(
-                "Incorrect additional PTZ properties."
-                + " You need to specify at least one of"
-                + TILT
-                + ", "
-                + PAN
-                + "."
-            )
-        await self._coordinator.async_request_refresh()
+                self._attr_extra_state_attributes[attr] = value
+            self._attr_extra_state_attributes["user"] = camData["user"]
+            self._attr_extra_state_attributes["presets"] = camData["presets"]
 
     async def async_enable_motion_detection(self):
         await self.hass.async_add_executor_job(
@@ -356,7 +286,7 @@ class TapoCamEntity(Camera):
             await self._coordinator.async_request_refresh()
         else:
             foundKey = False
-            for key, value in self._attributes["presets"].items():
+            for key, value in self._attr_extra_state_attributes["presets"].items():
                 if value == preset:
                     foundKey = key
             if foundKey:

@@ -27,6 +27,10 @@ async def async_setup_entry(
     buttons.append(TapoStopManualAlarmButton(entry, hass))
     buttons.append(TapoSyncTimeButton(entry, hass, config_entry.entry_id))
     buttons.append(TapoCalibrateButton(entry, hass))
+    buttons.append(TapoMoveUpButton(entry, hass))
+    buttons.append(TapoMoveDownButton(entry, hass))
+    buttons.append(TapoMoveRightButton(entry, hass))
+    buttons.append(TapoMoveLeftButton(entry, hass))
 
     async_add_entities(buttons)
 
@@ -94,3 +98,43 @@ class TapoCalibrateButton(TapoButtonEntity):
 
     async def async_press(self) -> None:
         await self._hass.async_add_executor_job(self._controller.calibrateMotor)
+
+
+class TapoMoveUpButton(TapoButtonEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant):
+        TapoButtonEntity.__init__(self, "Move Up", entry, hass, "mdi:arrow-up")
+
+    async def async_press(self) -> None:
+        degrees = self._entry["movement_angle"]
+        await self._hass.async_add_executor_job(self._controller.moveMotor, 0, degrees)
+        await self._coordinator.async_request_refresh()
+
+
+class TapoMoveDownButton(TapoButtonEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant):
+        TapoButtonEntity.__init__(self, "Move Down", entry, hass, "mdi:arrow-down")
+
+    async def async_press(self) -> None:
+        degrees = self._entry["movement_angle"]
+        await self._hass.async_add_executor_job(self._controller.moveMotor, 0, -degrees)
+        await self._coordinator.async_request_refresh()
+
+
+class TapoMoveRightButton(TapoButtonEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant):
+        TapoButtonEntity.__init__(self, "Move Right", entry, hass, "mdi:arrow-right")
+
+    async def async_press(self) -> None:
+        degrees = self._entry["movement_angle"]
+        await self._hass.async_add_executor_job(self._controller.moveMotor, degrees, 0)
+        await self._coordinator.async_request_refresh()
+
+
+class TapoMoveLeftButton(TapoButtonEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant):
+        TapoButtonEntity.__init__(self, "Move Left", entry, hass, "mdi:arrow-left")
+
+    async def async_press(self) -> None:
+        degrees = self._entry["movement_angle"]
+        await self._hass.async_add_executor_job(self._controller.moveMotor, -degrees, 0)
+        await self._coordinator.async_request_refresh()

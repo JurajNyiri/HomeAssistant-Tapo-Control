@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant
 
 class TapoEntity(Entity):
     def __init__(self, entry: dict, name_suffix: str):
+        self._entry = entry
         self._name = entry["name"]
         self._name_suffix = name_suffix
         self._controller = entry["controller"]
