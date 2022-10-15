@@ -1,10 +1,13 @@
-from ..utils import build_device_info
-from ..const import BRAND, LOGGER
+from homeassistant.core import HomeAssistant
+
 from homeassistant.components.button import ButtonEntity
 from homeassistant.components.select import SelectEntity
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.helpers.entity import DeviceInfo, Entity
-from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
+
+from ..const import BRAND, LOGGER
+from ..utils import build_device_info
 
 
 class TapoEntity(Entity):
@@ -58,6 +61,10 @@ class TapoSwitchEntity(SwitchEntity, TapoEntity):
         SwitchEntity.__init__(self)
         LOGGER.debug(f"Tapo {name_suffix} - init - end")
 
+    @property
+    def entity_category(self):
+        return EntityCategory.CONFIG
+
 
 class TapoButtonEntity(ButtonEntity, TapoEntity):
     def __init__(
@@ -95,3 +102,7 @@ class TapoSelectEntity(SelectEntity, TapoEntity):
         TapoEntity.__init__(self, entry, name_suffix)
         ButtonEntity.__init__(self)
         LOGGER.debug(f"Tapo {name_suffix} - init - end")
+
+    @property
+    def entity_category(self):
+        return EntityCategory.CONFIG

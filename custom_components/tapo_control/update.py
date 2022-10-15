@@ -1,10 +1,13 @@
-from .utils import build_device_info
-from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
 from typing import Callable
+
+from homeassistant.core import HomeAssistant
+
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.components.update import UpdateEntity, UpdateEntityFeature
 from homeassistant.helpers.entity import DeviceInfo
+
 from .const import DOMAIN, LOGGER
+from .utils import build_device_info
 
 
 async def async_setup_entry(

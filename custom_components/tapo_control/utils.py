@@ -1,12 +1,21 @@
+import asyncio
+import datetime
 import onvif
 import os
-import asyncio
-import urllib.parse
 import socket
-import datetime
 import time
+import urllib.parse
+
+from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from onvif import ONVIFCamera
 from pytapo import Tapo
+
+from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.components.ffmpeg import DATA_FFMPEG
+from homeassistant.components.onvif.event import EventManager
+from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
+from homeassistant.util import slugify
+
 from .const import (
     BRAND,
     ENABLE_MOTION_SENSOR,
@@ -15,12 +24,6 @@ from .const import (
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
 )
-from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
-from homeassistant.components.onvif.event import EventManager
-from homeassistant.components.ffmpeg import DATA_FFMPEG
-from homeassistant.helpers.entity import DeviceInfo
-from haffmpeg.tools import IMAGE_JPEG, ImageFrame
-from homeassistant.util import slugify
 
 
 def registerController(host, username, password):

@@ -1,7 +1,9 @@
-from homeassistant.components.number import RestoreNumber
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.core import HomeAssistant
+
+from homeassistant.components.number import RestoreNumber
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity import EntityCategory
 
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoEntity
@@ -37,6 +39,10 @@ class TapoMovementAngle(RestoreNumber, TapoEntity):
         TapoEntity.__init__(self, entry, "Movement Angle")
         RestoreNumber.__init__(self)
         LOGGER.debug("TapoMovementAngle - init - end")
+
+    @property
+    def entity_category(self):
+        return EntityCategory.CONFIG
 
     async def async_set_native_value(self, value: float) -> None:
         self._attr_native_value = self._entry["movement_angle"] = value
