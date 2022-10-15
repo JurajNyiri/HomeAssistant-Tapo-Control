@@ -140,3 +140,4 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
             option != "off",
             option if option != "off" else False,
         )
+        await self._coordinator.async_request_refresh()

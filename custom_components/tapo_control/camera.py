@@ -105,6 +105,8 @@ class TapoCamEntity(Camera):
         self._sound_detection_reset = entry.data.get(SOUND_DETECTION_RESET)
         self._custom_stream = entry.data.get(CONF_CUSTOM_STREAM)
         self._attributes = tapoData["camData"]["basic_info"]
+        self._attr_is_on = False
+        self._attr_motion_detection_enabled = False
 
         self.updateCam(tapoData["camData"])
 
@@ -229,8 +231,16 @@ class TapoCamEntity(Camera):
         streamURL = f"rtsp://{urllib.parse.quote_plus(self._username)}:{urllib.parse.quote_plus(self._password)}@{self._host}:554/{streamType}"
         return streamURL
 
-    async def async_update(self):
-        await self._coordinator.async_request_refresh()
+    async def async_update(self) -> None:
+        data = await self._hass.async_add_executor_job(self._controller.getPrivacyMode)
+        self._attr_is_on = "enabled" in data and data["enabled"] == "on"
+
+        data = await self._hass.async_add_executor_job(
+            self._controller.getMotionDetection
+        )
+        self._attr_motion_detection_enabled = (
+            "enabled" in data and data["enabled"] == "on"
+        )
 
     async def stream_source(self):
         return self.getStreamSource()
@@ -245,11 +255,6 @@ class TapoCamEntity(Camera):
             for attr, value in camData["basic_info"].items():
                 self._attributes[attr] = value
             self._attributes["user"] = camData["user"]
-            self._attributes["motion_detection_sensitivity"] = camData[
-                "motion_detection_sensitivity"
-            ]
-            self._attributes["alarm"] = camData["alarm"]
-            self._attributes["alarm_mode"] = camData["alarm_mode"]
             self._attributes["presets"] = camData["presets"]
 
     def getName(self):
@@ -332,20 +337,28 @@ class TapoCamEntity(Camera):
         await self._coordinator.async_request_refresh()
 
     async def async_enable_motion_detection(self):
-        # TODO
-        await self.set_motion_detection_mode(True)
+        await self.hass.async_add_executor_job(
+            self._controller.setMotionDetection, True
+        )
 
     async def async_disable_motion_detection(self):
-        # TODO
-        await self.set_motion_detection_mode(False)
+        await self.hass.async_add_executor_job(
+            self._controller.setMotionDetection, False
+        )
 
     async def async_turn_on(self):
-        # TODO
-        await self.set_privacy_mode("off")
+        await self._hass.async_add_executor_job(
+            self._controller.setPrivacyMode,
+            False,
+        )
+        await self._coordinator.async_request_refresh()
 
     async def async_turn_off(self):
-        # TODO
-        await self.set_privacy_mode("on")
+        await self._hass.async_add_executor_job(
+            self._controller.setPrivacyMode,
+            True,
+        )
+        await self._coordinator.async_request_refresh()
 
     async def save_preset(self, name):
         if not name == "" and not name.isnumeric():

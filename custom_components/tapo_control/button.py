@@ -47,7 +47,7 @@ class TapoRebootButton(TapoButtonEntity):
 class TapoFormatButton(TapoButtonEntity):
     def __init__(self, name, controller: Tapo, hass: HomeAssistant, attributes: dict):
         TapoButtonEntity.__init__(
-            self, name, "Format", controller, hass, attributes, "mdi:eraser"
+            self, name, "Format SD Card", controller, hass, attributes, "mdi:eraser"
         )
 
     async def async_press(self) -> None:

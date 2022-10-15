@@ -22,8 +22,9 @@ async def async_setup_entry(
 
     switches = []
     switches.append(await privacy_switch(name, controller, hass, attributes))
-    switches.append(await status_led_switch(name, controller, hass, attributes))
+    switches.append(await indicator_led_switch(name, controller, hass, attributes))
     switches.append(await auto_track_switch(name, controller, hass, attributes))
+    switches.append(await flip_switch(name, controller, hass, attributes))
 
     async_add_entities(switches)
 
@@ -38,14 +39,14 @@ async def privacy_switch(name, controller, hass, attributes):
     return TapoPrivacySwitch(name, controller, hass, attributes)
 
 
-async def status_led_switch(name, controller, hass, attributes):
+async def indicator_led_switch(name, controller, hass, attributes):
     try:
         await hass.async_add_executor_job(controller.getLED)
     except Exception:
-        LOGGER.info("Camera does not support status led")
+        LOGGER.info("Camera does not support indicator led")
         return None
-    LOGGER.debug("Creating status led switch")
-    return TapoStatusLedSwitch(name, controller, hass, attributes)
+    LOGGER.debug("Creating indicator led switch")
+    return TapoIndicatorLedSwitch(name, controller, hass, attributes)
 
 
 async def auto_track_switch(name, controller, hass, attributes):
@@ -58,6 +59,16 @@ async def auto_track_switch(name, controller, hass, attributes):
     return TapoAutoTrackSwitch(name, controller, hass, attributes)
 
 
+async def flip_switch(name, controller, hass, attributes):
+    try:
+        await hass.async_add_executor_job(controller.getImageFlipVertical)
+    except Exception:
+        LOGGER.info("Camera does not support flip")
+        return None
+    LOGGER.debug("Creating flip switch")
+    return TapoFlipSwitch(name, controller, hass, attributes)
+
+
 class TapoPrivacySwitch(TapoSwitchEntity):
     def __init__(self, name, controller: Tapo, hass: HomeAssistant, attributes: dict):
         TapoSwitchEntity.__init__(self, name, "Privacy", controller, hass, attributes)
@@ -67,12 +78,14 @@ class TapoPrivacySwitch(TapoSwitchEntity):
             self._controller.setPrivacyMode,
             True,
         )
+        await self._coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
         await self._hass.async_add_executor_job(
             self._controller.setPrivacyMode,
             False,
         )
+        await self._coordinator.async_request_refresh()
 
     async def async_update(self) -> None:
         data = await self._hass.async_add_executor_job(self._controller.getPrivacyMode)
@@ -82,15 +95,21 @@ class TapoPrivacySwitch(TapoSwitchEntity):
     @property
     def icon(self) -> str:
         if self.is_on:
-            return "mdi:eye"
+            return "mdi:eye-outline"
         else:
-            return "mdi:eye-off"
+            return "mdi:eye-off-outline"
 
 
-class TapoStatusLedSwitch(TapoSwitchEntity):
+class TapoIndicatorLedSwitch(TapoSwitchEntity):
     def __init__(self, name, controller: Tapo, hass: HomeAssistant, attributes: dict):
         TapoSwitchEntity.__init__(
-            self, name, "Status LED", controller, hass, attributes, "mdi:car-light-high"
+            self,
+            name,
+            "Indicator LED",
+            controller,
+            hass,
+            attributes,
+            "mdi:car-light-high",
         )
 
     async def async_turn_on(self) -> None:
@@ -109,6 +128,30 @@ class TapoStatusLedSwitch(TapoSwitchEntity):
         data = await self._hass.async_add_executor_job(self._controller.getLED)
 
         self._is_on = "enabled" in data and data["enabled"] == "on"
+
+
+class TapoFlipSwitch(TapoSwitchEntity):
+    def __init__(self, name, controller: Tapo, hass: HomeAssistant, attributes: dict):
+        TapoSwitchEntity.__init__(
+            self, name, "Flip", controller, hass, attributes, "mdi:flip-vertical"
+        )
+
+    async def async_turn_on(self) -> None:
+        await self._hass.async_add_executor_job(
+            self._controller.setImageFlipVertical,
+            True,
+        )
+
+    async def async_turn_off(self) -> None:
+        await self._hass.async_add_executor_job(
+            self._controller.setImageFlipVertical,
+            False,
+        )
+
+    async def async_update(self) -> None:
+        self._is_on = await self._hass.async_add_executor_job(
+            self._controller.getImageFlipVertical
+        )
 
 
 class TapoAutoTrackSwitch(TapoSwitchEntity):
