@@ -26,6 +26,7 @@ async def async_setup_entry(
     buttons.append(TapoStartManualAlarmButton(entry, hass))
     buttons.append(TapoStopManualAlarmButton(entry, hass))
     buttons.append(TapoSyncTimeButton(entry, hass, config_entry.entry_id))
+    buttons.append(TapoCalibrateButton(entry, hass))
 
     async_add_entities(buttons)
 
@@ -85,3 +86,11 @@ class TapoStopManualAlarmButton(TapoButtonEntity):
 
     async def async_press(self) -> None:
         await self._hass.async_add_executor_job(self._controller.stopManualAlarm)
+
+
+class TapoCalibrateButton(TapoButtonEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant):
+        TapoButtonEntity.__init__(self, "Calibrate", entry, hass)
+
+    async def async_press(self) -> None:
+        await self._hass.async_add_executor_job(self._controller.calibrateMotor)
