@@ -96,7 +96,6 @@ class TapoCamEntity(Camera):
         self._sound_detection_reset = entry.data.get(SOUND_DETECTION_RESET)
         self._custom_stream = entry.data.get(CONF_CUSTOM_STREAM)
         self._attr_extra_state_attributes = tapoData["camData"]["basic_info"]
-        self._attr_is_on = False
         self._attr_motion_detection_enabled = False
         self._attr_icon = "mdi:cctv"
         self._attr_should_poll = True
@@ -223,15 +222,13 @@ class TapoCamEntity(Camera):
         return streamURL
 
     async def async_update(self) -> None:
-        data = await self._hass.async_add_executor_job(self._controller.getPrivacyMode)
-        self._attr_is_on = "enabled" in data and data["enabled"] == "on"
-
         data = await self._hass.async_add_executor_job(
             self._controller.getMotionDetection
         )
         self._attr_motion_detection_enabled = (
             "enabled" in data and data["enabled"] == "on"
         )
+        await self._coordinator.async_request_refresh()
 
     async def stream_source(self):
         return self.getStreamSource()
@@ -252,11 +249,13 @@ class TapoCamEntity(Camera):
         await self.hass.async_add_executor_job(
             self._controller.setMotionDetection, True
         )
+        await self._coordinator.async_request_refresh()
 
     async def async_disable_motion_detection(self):
         await self.hass.async_add_executor_job(
             self._controller.setMotionDetection, False
         )
+        await self._coordinator.async_request_refresh()
 
     async def async_turn_on(self):
         await self._hass.async_add_executor_job(
