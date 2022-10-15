@@ -1,9 +1,10 @@
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from .const import DOMAIN, LOGGER
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from pytapo import Tapo
-from .tapo.entities import TapoButtonEntity, ButtonDeviceClass
+from homeassistant.components.button import ButtonDeviceClass
+
+from .const import DOMAIN, LOGGER
+from .tapo.entities import TapoButtonEntity
 from .utils import syncTime
 
 
@@ -18,23 +19,20 @@ async def async_setup_entry(
 ) -> None:
     LOGGER.debug("Setting up buttons")
     entry = hass.data[DOMAIN][config_entry.entry_id]
-    name = entry["name"]
-    controller: dict = entry["controller"]
-    attributes = entry["camData"]["basic_info"]
 
     buttons = []
-    buttons.append(TapoRebootButton(name, controller, hass, attributes))
-    buttons.append(TapoFormatButton(name, controller, hass, attributes))
-    buttons.append(TapoStartManualAlarmButton(name, controller, hass, attributes))
-    buttons.append(TapoStopManualAlarmButton(name, controller, hass, attributes))
-    buttons.append(TapoSyncTimeButton(config_entry, name, controller, hass, attributes))
+    buttons.append(TapoRebootButton(entry, hass))
+    buttons.append(TapoFormatButton(entry, hass))
+    buttons.append(TapoStartManualAlarmButton(entry, hass))
+    buttons.append(TapoStopManualAlarmButton(entry, hass))
+    buttons.append(TapoSyncTimeButton(entry, hass, config_entry.entry_id))
 
     async_add_entities(buttons)
 
 
 class TapoRebootButton(TapoButtonEntity):
-    def __init__(self, name, controller: Tapo, hass: HomeAssistant, attributes: dict):
-        TapoButtonEntity.__init__(self, name, "Reboot", controller, hass, attributes)
+    def __init__(self, entry: dict, hass: HomeAssistant):
+        TapoButtonEntity.__init__(self, "Reboot", entry, hass)
 
     async def async_press(self) -> None:
         await self._hass.async_add_executor_job(self._controller.reboot)
@@ -45,53 +43,43 @@ class TapoRebootButton(TapoButtonEntity):
 
 
 class TapoFormatButton(TapoButtonEntity):
-    def __init__(self, name, controller: Tapo, hass: HomeAssistant, attributes: dict):
-        TapoButtonEntity.__init__(
-            self, name, "Format SD Card", controller, hass, attributes, "mdi:eraser"
-        )
+    def __init__(self, entry: dict, hass: HomeAssistant):
+        TapoButtonEntity.__init__(self, "Format SD Card", entry, hass, "mdi:eraser")
 
     async def async_press(self) -> None:
         await self._hass.async_add_executor_job(self._controller.format)
 
 
 class TapoSyncTimeButton(TapoButtonEntity):
-    def __init__(
-        self, entry, name, controller: Tapo, hass: HomeAssistant, attributes: dict
-    ):
-        self._entry = entry
+    def __init__(self, entry: dict, hass: HomeAssistant, entry_id):
+        self._entry_id = entry_id
         TapoButtonEntity.__init__(
             self,
-            name,
             "Sync Time",
-            controller,
+            entry,
             hass,
-            attributes,
             "mdi:timer-sync-outline",
         )
 
     async def async_press(self) -> None:
-        await syncTime(self._hass, self._entry)
+        await syncTime(self._hass, self._entry_id)
 
 
 class TapoStartManualAlarmButton(TapoButtonEntity):
-    def __init__(self, name, controller: Tapo, hass: HomeAssistant, attributes: dict):
-        TapoButtonEntity.__init__(
-            self, name, "Manual Alarm Start", controller, hass, attributes, "mdi:alarm"
-        )
+    def __init__(self, entry: dict, hass: HomeAssistant):
+        TapoButtonEntity.__init__(self, "Manual Alarm Start", entry, hass, "mdi:alarm")
 
     async def async_press(self) -> None:
         await self._hass.async_add_executor_job(self._controller.startManualAlarm)
 
 
 class TapoStopManualAlarmButton(TapoButtonEntity):
-    def __init__(self, name, controller: Tapo, hass: HomeAssistant, attributes: dict):
+    def __init__(self, entry: dict, hass: HomeAssistant):
         TapoButtonEntity.__init__(
             self,
-            name,
             "Manual Alarm Stop",
-            controller,
+            entry,
             hass,
-            attributes,
             "mdi:alarm-off",
         )
 

@@ -245,8 +245,8 @@ async def getLatestFirmwareVersion(hass, entry, controller):
     return updateInfo
 
 
-async def syncTime(hass, entry):
-    device_mgmt = hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
+async def syncTime(hass, entry_id):
+    device_mgmt = hass.data[DOMAIN][entry_id]["onvifManagement"]
     if device_mgmt:
         now = datetime.datetime.utcnow()
 
@@ -262,7 +262,7 @@ async def syncTime(hass, entry):
             },
         }
         await device_mgmt.SetSystemDateAndTime(time_params)
-        hass.data[DOMAIN][entry.entry_id][
+        hass.data[DOMAIN][entry_id][
             "lastTimeSync"
         ] = datetime.datetime.utcnow().timestamp()
 
@@ -314,3 +314,13 @@ def build_device_info(attributes: dict) -> DeviceInfo:
         model=attributes["device_model"],
         sw_version=attributes["sw_version"],
     )
+
+
+async def check_and_create(entry, hass, clazz, check_function):
+    try:
+        await hass.async_add_executor_job(getattr(entry["controller"], check_function))
+    except Exception:
+        LOGGER.info(f"Camera does not support {clazz.__name__}")
+        return None
+    LOGGER.debug(f"Creating {clazz.__name__}")
+    return clazz(entry, hass)

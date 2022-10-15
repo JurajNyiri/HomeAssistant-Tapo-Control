@@ -212,7 +212,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         ts - hass.data[DOMAIN][entry.entry_id]["lastTimeSync"]
                         > TIME_SYNC_PERIOD
                     ):
-                        await syncTime(hass, entry)
+                        await syncTime(hass, entry.entry_id)
                 ts = datetime.datetime.utcnow().timestamp()
                 if (
                     ts - hass.data[DOMAIN][entry.entry_id]["lastFirmwareCheck"]
@@ -288,7 +288,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 LOGGER.debug("Seting up motion sensor for the first time.")
                 await setupOnvif(hass, entry)
             if enableTimeSync:
-                await syncTime(hass, entry)
+                await syncTime(hass, entry.entry_id)
 
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "button")

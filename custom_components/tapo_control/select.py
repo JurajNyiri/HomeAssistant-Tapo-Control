@@ -1,10 +1,10 @@
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from .const import DOMAIN, LOGGER
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from pytapo import Tapo
+
+from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoSelectEntity
-from .utils import syncTime
+from .utils import check_and_create
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -18,39 +18,29 @@ async def async_setup_entry(
 ) -> None:
     LOGGER.debug("Setting up selects")
     entry = hass.data[DOMAIN][config_entry.entry_id]
-    name = entry["name"]
-    controller: dict = entry["controller"]
-    attributes = entry["camData"]["basic_info"]
 
     selects = []
-    selects.append(TapoNightVisionSelect(name, controller, hass, attributes))
-    selects.append(TapoAutomaticAlarmModeSelect(name, controller, hass, attributes))
-    selects.append(await motion_detection_select(name, controller, hass, attributes))
+    selects.append(TapoNightVisionSelect(entry, hass))
+    selects.append(TapoAutomaticAlarmModeSelect(entry, hass))
+    selects.append(TapoLightFrequencySelect(entry, hass))
+    selects.append(
+        await check_and_create(
+            entry, hass, TapoMotionDetectionSelect, "getAutoTrackTarget"
+        )
+    )
 
     async_add_entities(selects)
 
 
-async def motion_detection_select(name, controller, hass, attributes):
-    try:
-        await hass.async_add_executor_job(controller.getAutoTrackTarget)
-    except Exception:
-        LOGGER.info("Camera does not support motion detection")
-        return None
-    LOGGER.debug("Creating motion detection select")
-    return TapoMotionDetectionSelect(name, controller, hass, attributes)
-
-
 class TapoNightVisionSelect(TapoSelectEntity):
-    def __init__(self, name, controller: Tapo, hass: HomeAssistant, attributes: dict):
+    def __init__(self, entry: dict, hass: HomeAssistant):
         self._attr_options = ["auto", "on", "off"]
         self._attr_current_option = None
         TapoSelectEntity.__init__(
             self,
-            name,
             "Night Vision",
-            controller,
+            entry,
             hass,
-            attributes,
             "mdi:theme-light-dark",
             "night_vision",
         )
@@ -66,17 +56,32 @@ class TapoNightVisionSelect(TapoSelectEntity):
         )
 
 
+class TapoLightFrequencySelect(TapoSelectEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant):
+        self._attr_options = ["auto", "50", "60"]
+        self._attr_current_option = None
+        TapoSelectEntity.__init__(self, "Light Frequency", entry, hass, "mdi:sine_wave")
+
+    async def async_update(self) -> None:
+        self._attr_current_option = await self._hass.async_add_executor_job(
+            self._controller.getLightFrequencyMode
+        )
+
+    async def async_select_option(self, option: str) -> None:
+        await self._hass.async_add_executor_job(
+            self._controller.setLightFrequencyMode, option
+        )
+
+
 class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
-    def __init__(self, name, controller: Tapo, hass: HomeAssistant, attributes: dict):
+    def __init__(self, entry: dict, hass: HomeAssistant):
         self._attr_options = ["both", "light", "sound", "off"]
         self._attr_current_option = None
         TapoSelectEntity.__init__(
             self,
-            name,
             "Automatic Alarm",
-            controller,
+            entry,
             hass,
-            attributes,
             "mdi:alarm-check",
             "alarm",
         )
@@ -105,16 +110,14 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
 
 
 class TapoMotionDetectionSelect(TapoSelectEntity):
-    def __init__(self, name, controller: Tapo, hass: HomeAssistant, attributes: dict):
+    def __init__(self, entry: dict, hass: HomeAssistant):
         self._attr_options = ["high", "normal", "low", "off"]
         self._attr_current_option = None
         TapoSelectEntity.__init__(
             self,
-            name,
             "Motion Detection",
-            controller,
+            entry,
             hass,
-            attributes,
             "mdi:motion-sensor",
             "motion_detection",
         )
