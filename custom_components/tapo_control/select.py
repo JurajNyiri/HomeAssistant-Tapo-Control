@@ -60,7 +60,7 @@ class TapoLightFrequencySelect(TapoSelectEntity):
     def __init__(self, entry: dict, hass: HomeAssistant):
         self._attr_options = ["auto", "50", "60"]
         self._attr_current_option = None
-        TapoSelectEntity.__init__(self, "Light Frequency", entry, hass, "mdi:sine_wave")
+        TapoSelectEntity.__init__(self, "Light Frequency", entry, hass, "mdi:sine-wave")
 
     async def async_update(self) -> None:
         self._attr_current_option = await self._hass.async_add_executor_job(
