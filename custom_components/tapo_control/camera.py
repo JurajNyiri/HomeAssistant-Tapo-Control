@@ -38,7 +38,6 @@ from .const import (
     SOUND_DETECTION_RESET,
     TILT,
     PAN,
-    PRESET,
     NAME,
     BRAND,
 )

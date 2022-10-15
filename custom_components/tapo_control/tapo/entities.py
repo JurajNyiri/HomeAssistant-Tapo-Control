@@ -87,7 +87,6 @@ class TapoSelectEntity(SelectEntity, TapoEntity):
         device_class=None,
     ):
         LOGGER.debug(f"Tapo {name_suffix} - init - start")
-        self._is_on = False
         self._hass = hass
         self._attr_icon = icon
         self._attr_device_class = device_class

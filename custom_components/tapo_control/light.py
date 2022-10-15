@@ -30,9 +30,6 @@ async def async_setup_entry(
 class TapoFloodlight(LightEntity, TapoEntity):
     def __init__(self, entry: dict, hass: HomeAssistant):
         LOGGER.debug("TapoFloodlight - init - start")
-        self._name = entry["name"]
-        self._controller = entry["controller"]
-        self._attributes = entry["attributes"]
         self._attr_is_on = False
         self._hass = hass
         self._attr_icon = "mdi:light-flood-down"
