@@ -319,11 +319,11 @@ def build_device_info(attributes: dict) -> DeviceInfo:
     )
 
 
-async def check_and_create(entry, hass, clazz, check_function):
+async def check_and_create(entry, hass, cls, check_function):
     try:
         await hass.async_add_executor_job(getattr(entry["controller"], check_function))
     except Exception:
-        LOGGER.info(f"Camera does not support {clazz.__name__}")
+        LOGGER.info(f"Camera does not support {cls.__name__}")
         return None
-    LOGGER.debug(f"Creating {clazz.__name__}")
-    return clazz(entry, hass)
+    LOGGER.debug(f"Creating {cls.__name__}")
+    return cls(entry, hass)
