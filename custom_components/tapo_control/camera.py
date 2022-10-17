@@ -196,7 +196,7 @@ class TapoCamEntity(Camera):
 
     @property
     def name(self) -> str:
-        return self.getName()
+        return self.getName().replace(' - ', ' ')
 
     @property
     def unique_id(self) -> str:
