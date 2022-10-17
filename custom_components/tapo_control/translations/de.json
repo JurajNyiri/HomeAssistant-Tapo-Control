@@ -27,13 +27,13 @@
           "enable_motion_sensor": "Enable motion sensor",
           "enable_time_sync": "Automatically synchronise time",
           "enable_stream": "Use Stream from Home Assistant (Neustart notwendig)",
-          "enable_sound_detection": "Geräuscherkennung aktivieren (Neustart notwendig)",
-          "sound_detection_peak": "[Sound Detection] Peak in dB. 0 is very loud and -100 is low.",
-          "sound_detection_duration": "[Sound Detection] How long the noise needs to be over the peak to trigger the state.",
-          "sound_detection_reset": "[Sound Detection] The time to reset the state after no new noise is over the peak.",
-          "extra_arguments": "[Requires restart] Extra arguments for ffmpeg (Neustart notwendig)",
+          "enable_sound_detection": "Geräuschsensor aktivieren (Neustart notwendig)",
+          "sound_detection_peak": "[Geräuschsensor] Schwellenwert in dB (0 ist laut, -100 ist leise).",
+          "sound_detection_duration": "[Geräuschsensor] Zeitintervall über dem Scwellenwert nach dem der Sensor ausgelöst wird.",
+          "sound_detection_reset": "[Geräuschsensor] Zeitintervall unter dem Schwellenwert nach dem der Sensor zurückgesetzt wird.",
+          "extra_arguments": "Extra FFmpeg Parameter (Neustart notwendig)",
           "custom_stream": "Custom stream link",
-          "rtsp_transport": "RTSP transport mechanism"
+          "rtsp_transport": "RTSP Transport Mechanismus"
         },
         "description": "Almost there!\nJust some final options..."
       }
@@ -47,7 +47,7 @@
       "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.",
       "camera_requires_admin": "Your camera requires cloud password for control",
       "already_configured": "IP Adresse ist schon konfiguriert",
-      "incorrect_peak_value": "Incorrect sound detection peak value."
+      "incorrect_peak_value": "Incorrect Geräuschsensor peak value."
     },
     "abort": {
       "already_configured": "IP Adresse ist schon konfiguriert",
@@ -64,14 +64,14 @@
           "enable_motion_sensor": "Bewegungssensor aktivieren",
           "enable_stream": "Kamera Stream nutzen (Neustart notwendig)",
           "enable_time_sync": "Zeit automatisch synchronisieren",
-          "enable_sound_detection": "Geräuscherkennung aktivieren (Neustart notwendig)",
-          "cloud_password": "Cloud Password (Optional)",
-          "sound_detection_peak": "[Sound Detection] Peak in dB. 0 is very loud and -100 is low.",
-          "sound_detection_duration": "[Sound Detection] How long the noise needs to be over the peak to trigger the state.",
-          "sound_detection_reset": "[Sound Detection] The time to reset the state after no new noise is over the peak.",
-          "extra_arguments": "Extra arguments for ffmpeg (Neustart notwendig)",
+          "enable_sound_detection": "Geräuschsensor aktivieren (Neustart notwendig)",
+          "cloud_password": "Tapo Cloud Passwort (optional)",
+          "sound_detection_peak": "[Geräuschsensor] Schwellenwert in dB (0 ist laut, -100 ist leise).",
+          "sound_detection_duration": "[Geräuschsensor] Zeitintervall über dem Scwellenwert nach dem der Sensor ausgelöst wird.",
+          "sound_detection_reset": "[Geräuschsensor] Zeitintervall unter dem Schwellenwert nach dem der Sensor zurückgesetzt wird.",
+          "extra_arguments": "Extra FFmpeg Parameter (Neustart notwendig)",
           "custom_stream": "Custom stream link",
-          "rtsp_transport": "RTSP transport mechanism"
+          "rtsp_transport": "RTSP Transport Mechanismus"
         },
         "description": "Passe die Einstellungen deiner Tapo Kamera an.\n\nUse stream from Home Assistant:\nYes - Longer playback delay, lower CPU usage, allows playback control\nNo - Very short playback delay, higher CPU usage, no playback control"
       }
@@ -82,7 +82,7 @@
       "connection_failed": "Verbindung fehlgeschlagen",
       "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.",
       "camera_requires_admin": "Camera requires cloud password for control",
-      "incorrect_peak_value": "Incorrect sound detection peak value."
+      "incorrect_peak_value": "Incorrect Geräuschsensor peak value."
     }
   }
 }
