@@ -196,7 +196,7 @@ class TapoCamEntity(Camera):
 
     @property
     def name(self) -> str:
-        return self.getName().replace(' - ', ' ')
+        return self.getName()
 
     @property
     def unique_id(self) -> str:
@@ -301,9 +301,9 @@ class TapoCamEntity(Camera):
     def getName(self):
         name = self._attributes["device_alias"]
         if self._hdstream:
-            name += " - HD"
+            name += " HD"
         else:
-            name += " - SD"
+            name += " SD"
         return name
 
     def getUniqueID(self):
