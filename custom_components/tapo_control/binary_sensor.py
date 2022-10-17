@@ -62,7 +62,7 @@ class TapoBinarySensor(BinarySensorEntity):
 
     @property
     def name(self) -> str:
-        return f"{self._name} - Motion"
+        return f"{self._name} Motion"
 
     @property
     def device_class(self) -> Optional[str]:
