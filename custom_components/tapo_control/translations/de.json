@@ -1,0 +1,88 @@
+{
+  "title": "Tapo: Kamerasteuerung",
+  "config": {
+    "flow_title": "Tapo: Kamerasteuerung {name}",
+    "step": {
+      "ip": {
+        "data": {
+          "ip_address": "IP Adresse"
+        },
+        "description": "Enter camera IP Adresse.\n\nMake sure to create camera account.\n\nCamera account is created via Tapo app at:\nCamera Settings > Advanced Settings > Camera Account.\n\n\n\nIf you are using vlans, or some other advanced networking, make sure ports 443, 554 and 2020 are opened for camera."
+      },
+      "auth": {
+        "data": {
+          "username": "Benutzername",
+          "password": "Passwort"
+        },
+        "description": "Enter camera account credentials.\n\nThis account is created via Tapo app at:\nCamera Settings > Advanced Settings > Camera Account"
+      },
+      "auth_cloud_password": {
+        "data": {
+          "cloud_password": "Cloud Passwort"
+        },
+        "description": "Camera requires your cloud password for control.\nThis is the password you used for your Tapo Cloud account with your email.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
+      },
+      "other_options": {
+        "data": {
+          "enable_motion_sensor": "Enable motion sensor",
+          "enable_time_sync": "Automatically synchronise time",
+          "enable_stream": "Use Stream from Home Assistant",
+          "enable_sound_detection": "[Requires restart] Enable sound threshold detection",
+          "sound_detection_peak": "[Sound Detection] Peak in dB. 0 is very loud and -100 is low.",
+          "sound_detection_duration": "[Sound Detection] How long the noise needs to be over the peak to trigger the state.",
+          "sound_detection_reset": "[Sound Detection] The time to reset the state after no new noise is over the peak.",
+          "extra_arguments": "[Requires restart] Extra arguments for ffmpeg",
+          "custom_stream": "Custom stream link",
+          "rtsp_transport": "RTSP transport mechanism"
+        },
+        "description": "Almost there!\nJust some final options..."
+      }
+    },
+    "error": {
+      "not_tapo_device": "IP Adresse is not a supported Tapo device",
+      "ports_closed": "Port 443, 554, or 2020 is closed",
+      "invalid_auth": "Invalid authentication data.\nMake sure you have created your 3rd party account via Tapo app.\nYou can also test if these credentials work via rtsp stream, for example VLC using link\nrtsp://username:password@IP Adresse:554/stream1",
+      "unknown": "Unbekannter Fehler",
+      "connection_failed": "Verbindung fehlgeschlagen",
+      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.",
+      "camera_requires_admin": "Your camera requires cloud password for control",
+      "already_configured": "IP Adresse ist schon konfiguriert",
+      "incorrect_peak_value": "Incorrect sound detection peak value."
+    },
+    "abort": {
+      "already_configured": "IP Adresse ist schon konfiguriert",
+      "not_tapo_device": "Discovered device is not a Tapo camera"
+    }
+  },
+  "options": {
+    "step": {
+      "auth": {
+        "data": {
+          "ip_address": "IP Adresse",
+          "username": "Benutzername",
+          "password": "Passwort",
+          "enable_motion_sensor": "Bewegungssensor aktivieren",
+          "enable_stream": "Kamera Stream nutzen (restart required)",
+          "enable_time_sync": "Zeit automatisch synchronisieren",
+          "enable_sound_detection": "Enable sound threshold detection (restart required)",
+          "cloud_password": "Cloud Password (Optional)",
+          "sound_detection_peak": "[Sound Detection] Peak in dB. 0 is very loud and -100 is low.",
+          "sound_detection_duration": "[Sound Detection] How long the noise needs to be over the peak to trigger the state.",
+          "sound_detection_reset": "[Sound Detection] The time to reset the state after no new noise is over the peak.",
+          "extra_arguments": "Extra arguments for ffmpeg (restart required)",
+          "custom_stream": "Custom stream link",
+          "rtsp_transport": "RTSP transport mechanism"
+        },
+        "description": "Modify settings of your Tapo Camera.\n\nUse stream from Home Assistant:\nYes - Longer playback delay, lower CPU usage, allows playback control\nNo - Very short playback delay, higher CPU usage, no playback control"
+      }
+    },
+    "error": {
+      "invalid_auth": "Ungültige Anmeldedaten",
+      "unknown": "Unbekannter Fehler",
+      "connection_failed": "Verbindung fehlgeschlagen",
+      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.",
+      "camera_requires_admin": "Camera requires cloud password for control",
+      "incorrect_peak_value": "Incorrect sound detection peak value."
+    }
+  }
+}
