@@ -26,8 +26,8 @@
         "data": {
           "enable_motion_sensor": "Habilitar sensor de movimento",
           "enable_time_sync": "Sincronizar Hora Automaticamente",
-          "enable_stream": "Usar stream do Home Assistant",
-          "enable_sound_detection": "Ativar detecção de limite de som",
+          "enable_stream": "Usar stream do Home Assistant (requer reinicialização)",
+          "enable_sound_detection": "Ativar detecção de limite de som (requer reinicialização)",
           "sound_detection_peak": "[Detecção de som] Pico em dB. 0 é muito alto e -100 é baixo.",
           "sound_detection_duration": "[Detecção de som] Quanto tempo o ruído precisa estar acima do pico para acionar o estado.",
           "sound_detection_reset": "[Detecção de som] O tempo para redefinir o estado depois que nenhum novo ruído ultrapassar o pico."
@@ -59,8 +59,8 @@
           "username": "Nome de Usuário",
           "password": "Senha",
           "enable_motion_sensor": "Habilitar sensor de movimento",
-          "enable_stream": "Usar stream do Home Assistant [requer reinicialização]",
-          "enable_sound_detection": "Ativar detecção de limite de som",
+          "enable_stream": "Usar stream do Home Assistant (requer reinicialização)",
+          "enable_sound_detection": "Ativar detecção de limite de som (requer reinicialização)",
           "enable_time_sync": "Sincronizar Hora Automaticamente",
           "cloud_password": "Senha cloud (Opcional)",
           "sound_detection_peak": "[Detecção de som] Pico em dB. 0 é muito alto e -100 é baixo.",
