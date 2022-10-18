@@ -21,19 +21,26 @@ async def async_setup_entry(
     entry = hass.data[DOMAIN][config_entry.entry_id]
 
     selects = []
+    LOGGER.debug("Adding TapoNightVisionSelect...")
     selects.append(TapoNightVisionSelect(entry, hass, config_entry))
+    LOGGER.debug("Adding TapoAutomaticAlarmModeSelect...")
     selects.append(TapoAutomaticAlarmModeSelect(entry, hass, config_entry))
+    LOGGER.debug("Adding TapoLightFrequencySelect...")
     selects.append(TapoLightFrequencySelect(entry, hass, config_entry))
-    selects.append(
-        await check_and_create(
-            entry, hass, TapoMotionDetectionSelect, "getAutoTrackTarget", config_entry
-        )
+
+    tapoMotionDetectionSelect = await check_and_create(
+        entry, hass, TapoMotionDetectionSelect, "getAutoTrackTarget", config_entry
     )
-    selects.append(
-        await check_and_create(
-            entry, hass, TapoMoveToPresetSelect, "getPresets", config_entry
-        )
+    if tapoMotionDetectionSelect:
+        LOGGER.debug("Adding TapoMotionDetectionSelect...")
+        selects.append(tapoMotionDetectionSelect)
+
+    tapoMoveToPresetSelect = await check_and_create(
+        entry, hass, TapoMoveToPresetSelect, "getPresets", config_entry
     )
+    if tapoMoveToPresetSelect:
+        LOGGER.debug("Adding TapoMoveToPresetSelect...")
+        selects.append(tapoMoveToPresetSelect)
 
     async_add_entities(selects)
 

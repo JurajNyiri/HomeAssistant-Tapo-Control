@@ -21,37 +21,51 @@ async def async_setup_entry(
     entry: dict = hass.data[DOMAIN][config_entry.entry_id]
 
     switches = []
-    switches.append(
-        await check_and_create(
-            entry, hass, TapoPrivacySwitch, "getPrivacyMode", config_entry
-        )
-    )
-    switches.append(
-        await check_and_create(
-            entry,
-            hass,
-            TapoLensDistortionCorrectionSwitch,
-            "getLensDistortionCorrection",
-            config_entry,
-        )
-    )
-    switches.append(
-        await check_and_create(
-            entry, hass, TapoIndicatorLedSwitch, "getLED", config_entry
-        )
-    )
-    switches.append(
-        await check_and_create(
-            entry, hass, TapoFlipSwitch, "getImageFlipVertical", config_entry
-        )
-    )
-    switches.append(
-        await check_and_create(
-            entry, hass, TapoAutoTrackSwitch, "getAutoTrackTarget", config_entry
-        )
-    )
 
-    async_add_entities(switches)
+    tapoPrivacySwitch = await check_and_create(
+        entry, hass, TapoPrivacySwitch, "getPrivacyMode", config_entry
+    )
+    if tapoPrivacySwitch:
+        LOGGER.debug("Adding tapoPrivacySwitch...")
+        switches.append(tapoPrivacySwitch)
+
+    tapoLensDistortionCorrectionSwitch = await check_and_create(
+        entry,
+        hass,
+        TapoLensDistortionCorrectionSwitch,
+        "getLensDistortionCorrection",
+        config_entry,
+    )
+    if tapoLensDistortionCorrectionSwitch:
+        LOGGER.debug("Adding tapoLensDistortionCorrectionSwitch...")
+        switches.append(tapoLensDistortionCorrectionSwitch)
+
+    tapoIndicatorLedSwitch = await check_and_create(
+        entry, hass, TapoIndicatorLedSwitch, "getLED", config_entry
+    )
+    if tapoIndicatorLedSwitch:
+        LOGGER.debug("Adding tapoIndicatorLedSwitch...")
+        switches.append(tapoIndicatorLedSwitch)
+
+    tapoFlipSwitch = await check_and_create(
+        entry, hass, TapoFlipSwitch, "getImageFlipVertical", config_entry
+    )
+    if tapoFlipSwitch:
+        LOGGER.debug("Adding tapoFlipSwitch...")
+        switches.append(tapoFlipSwitch)
+
+    tapoAutoTrackSwitch = await check_and_create(
+        entry, hass, TapoAutoTrackSwitch, "getAutoTrackTarget", config_entry
+    )
+    if tapoAutoTrackSwitch:
+        LOGGER.debug("Adding tapoAutoTrackSwitch...")
+        switches.append(tapoAutoTrackSwitch)
+
+    if switches:
+        LOGGER.debug("Adding switch entities...")
+        async_add_entities(switches)
+    else:
+        LOGGER.debug("No switch entities available.")
 
 
 class TapoLensDistortionCorrectionSwitch(TapoSwitchEntity):
