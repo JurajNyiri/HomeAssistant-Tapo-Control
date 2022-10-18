@@ -31,146 +31,6 @@ camera_image: camera.bedroom_hd
 camera_view: live
 ```
 
-### Camera control example
-
-![Example 3](example3.png)
-
-Example by [Roman Kaporin](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/15#issuecomment-705228868).
-
-Allows easy control of the camera.
-
-```yaml
-type: picture-glance
-title: Bedroom
-camera_image: camera.bedroom_hd
-camera_view: live
-entities:
-  - entity: button.bedroom_move_left
-    tap_action:
-      action: toggle
-  - entity: button.bedroom_move_up
-    tap_action:
-      action: toggle
-  - entity: button.bedroom_move_down
-    tap_action:
-      action: toggle
-  - entity: button.bedroom_move_right
-    tap_action:
-      action: toggle
-  - entity: switch.bedroom_privacy
-    tap_action:
-      action: toggle
-  - entity: button.bedroom_reboot
-    tap_action:
-      action: toggle
-hold_action:
-  action: more-info
-```
-
-### Camera Control Example with motion sensor
-
-This example uses [stack-in-card](https://github.com/custom-cards/stack-in-card), [lovelace-card-mod](https://github.com/thomasloven/lovelace-card-mod) to make a seamless combo-card.
-
-![Example 4](example4.png)
-
-```yaml
-type: "custom:stack-in-card"
-cards:
-  - type: picture-glance
-    title: Bedroom
-    camera_image: camera.tapo_camera_5489_sd
-    camera_view: live
-    entity: camera.tapo_camera_5489_hd
-    entities:
-      - entity: button.tapo_camera_5489_left
-        tap_action:
-          action: toggle
-    hold_action:
-      action: more-info
-    style: |
-      :host .box {
-        display: none
-      }
-  - type: glance
-    show_icon: true
-    show_name: false
-    show_state: false
-    style: |
-      ha-card.type-glance .entities,
-      ha-card.type-glance .entity {
-        padding: 0px;
-        margin: 0px;
-      }
-      ha-card.type-glance {
-        margin-top: 14px;
-      }
-    entities:
-      - entity: button.tapo_camera_5489_left
-        tap_action:
-          action: toggle
-      - entity: button.tapo_camera_5489_up
-        tap_action:
-          action: toggle
-      - entity: button.tapo_camera_5489_down
-        tap_action:
-          action: toggle
-      - entity: button.tapo_camera_5489_right
-        tap_action:
-          action: toggle
-  - type: glance
-    show_icon: true
-    show_name: false
-    show_state: false
-    style: |
-      ha-card.type-glance .entities,
-      ha-card.type-glance .entity {
-        padding: 0px;
-        margin: 0px;
-      }
-      ha-card.type-glance {
-        margin-bottom: 0px;
-      }
-    entities:
-      - entity: switch.tapo_camera_5489_privacy
-        tap_action:
-          action: toggle
-      - entity: camera.tapo_camera_5489_hd
-        icon: "mdi:theme-light-dark"
-        tap_action:
-          action: call-service
-          service: select.select_option
-          service_data:
-            entity_id: select.tapo_camera_5489_night_vision
-            option: auto
-      - entity: camera.tapo_camera_5489_hd
-        icon: "mdi:weather-sunny"
-        tap_action:
-          action: call-service
-          service: select.select_option
-          service_data:
-            entity_id: select.tapo_camera_5489_night_vision
-            option: "off"
-      - entity: camera.tapo_camera_5489_hd
-        icon: "mdi:weather-night"
-        tap_action:
-          action: call-service
-          service: select.select_option
-          service_data:
-            entity_id: select.tapo_camera_5489_night_vision
-            option: "on"
-  - type: entities
-    entities:
-      - entity: binary_sensor.tapo_camera_5489_motion
-        name: Motion Sensor
-    style: |
-      ha-card.type-entities {
-        margin-right: 14px;
-      }
-      ha-card.type-entities #states {
-        padding-top: 10px;
-      }
-```
-
 ### Picture Glance with live view and scripts, tap and hold actions
 
 ![Example 1](example1.png)
@@ -240,4 +100,61 @@ set_bedroom_camera_home:
       data: {}
       target:
         entity_id: switch.bedroom_privacy
+```
+
+### Camera control example with webrtc and scripts
+
+![Example 5](example5.png)
+
+```yaml
+type: custom:stack-in-card
+cards:
+  - type: custom:webrtc-camera
+    entity: camera.bedroom_sd
+  - type: horizontal-stack
+    cards:
+      - type: button
+        icon: mdi:arrow-left-drop-circle-outline
+        tap_action:
+          action: call-service
+          service: button.press
+          service_data:
+            entity_id: button.bedroom_move_left
+        entity_id: camera.bedroom_sd
+      - type: button
+        icon: mdi:arrow-up-drop-circle-outline
+        tap_action:
+          action: call-service
+          service: button.press
+          service_data:
+            entity_id: button.bedroom_move_up
+        entity_id: camera.bedroom_sd
+      - type: button
+        icon: mdi:arrow-down-drop-circle-outline
+        tap_action:
+          action: call-service
+          service: button.press
+          service_data:
+            entity_id: button.bedroom_move_down
+        entity_id: camera.bedroom_sd
+      - type: button
+        icon: mdi:arrow-right-drop-circle-outline
+        tap_action:
+          action: call-service
+          service: button.press
+          service_data:
+            entity_id: button.bedroom_move_right
+        entity_id: camera.bedroom_sd
+      - type: button
+        icon: mdi:home
+        tap_action:
+          action: call-service
+          service: script.set_bedroom_camera_home
+        entity_id: camera.bedroom_sd
+      - type: button
+        icon: mdi:palm-tree
+        tap_action:
+          action: call-service
+          service: script.set_bedroom_camera_away
+        entity_id: camera.bedroom_sd
 ```
