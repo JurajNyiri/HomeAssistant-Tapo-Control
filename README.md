@@ -34,7 +34,7 @@ To add multiple cameras, add integration multiple times.
 
 See [examples for lovelace cards](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/blob/main/examples/EXAMPLES_LOVELACE.md).
 
-## Services
+## Quick Start
 
 This custom component creates:
 
