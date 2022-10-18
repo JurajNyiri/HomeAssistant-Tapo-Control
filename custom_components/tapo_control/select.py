@@ -21,32 +21,29 @@ async def async_setup_entry(
     entry = hass.data[DOMAIN][config_entry.entry_id]
 
     selects = []
-    selects.append(TapoNightVisionSelect(entry, hass))
-    selects.append(TapoAutomaticAlarmModeSelect(entry, hass))
-    selects.append(TapoLightFrequencySelect(entry, hass))
+    selects.append(TapoNightVisionSelect(entry, hass, config_entry))
+    selects.append(TapoAutomaticAlarmModeSelect(entry, hass, config_entry))
+    selects.append(TapoLightFrequencySelect(entry, hass, config_entry))
     selects.append(
         await check_and_create(
-            entry, hass, TapoMotionDetectionSelect, "getAutoTrackTarget"
+            entry, hass, TapoMotionDetectionSelect, "getAutoTrackTarget", config_entry
         )
     )
     selects.append(
-        await check_and_create(entry, hass, TapoMoveToPresetSelect, "getPresets")
+        await check_and_create(
+            entry, hass, TapoMoveToPresetSelect, "getPresets", config_entry
+        )
     )
 
     async_add_entities(selects)
 
 
 class TapoNightVisionSelect(TapoSelectEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         self._attr_options = ["auto", "on", "off"]
         self._attr_current_option = None
         TapoSelectEntity.__init__(
-            self,
-            "Night Vision",
-            entry,
-            hass,
-            "mdi:theme-light-dark",
-            "night_vision",
+            self, "Night Vision", entry, hass, "mdi:theme-light-dark", "night_vision",
         )
 
     async def async_update(self) -> None:
@@ -61,7 +58,7 @@ class TapoNightVisionSelect(TapoSelectEntity):
 
 
 class TapoLightFrequencySelect(TapoSelectEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         self._attr_options = ["auto", "50", "60"]
         self._attr_current_option = None
         TapoSelectEntity.__init__(self, "Light Frequency", entry, hass, "mdi:sine-wave")
@@ -78,16 +75,11 @@ class TapoLightFrequencySelect(TapoSelectEntity):
 
 
 class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         self._attr_options = ["both", "light", "sound", "off"]
         self._attr_current_option = None
         TapoSelectEntity.__init__(
-            self,
-            "Automatic Alarm",
-            entry,
-            hass,
-            "mdi:alarm-check",
-            "alarm",
+            self, "Automatic Alarm", entry, hass, "mdi:alarm-check", "alarm",
         )
 
     async def async_update(self) -> None:
@@ -114,7 +106,7 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
 
 
 class TapoMotionDetectionSelect(TapoSelectEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         self._attr_options = ["high", "normal", "low", "off"]
         self._attr_current_option = None
         TapoSelectEntity.__init__(
@@ -151,7 +143,7 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
 
 
 class TapoMoveToPresetSelect(TapoSelectEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         self._presets = {}
         self._attr_options = []
         self._attr_current_option = None

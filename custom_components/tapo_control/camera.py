@@ -91,8 +91,9 @@ class TapoCamEntity(Camera):
         self._attr_motion_detection_enabled = False
         self._attr_icon = "mdi:cctv"
         self._attr_should_poll = True
+        self._is_cam_entity = True
 
-        self.updateCam(tapoData["camData"])
+        self.updateTapo(tapoData["camData"])
 
         hass.data[DOMAIN][entry.entry_id]["noiseSensorStarted"] = False
 
@@ -223,7 +224,7 @@ class TapoCamEntity(Camera):
     async def stream_source(self):
         return self.getStreamSource()
 
-    def updateCam(self, camData):
+    def updateTapo(self, camData):
         if not camData:
             self._attr_state = "unavailable"
         else:

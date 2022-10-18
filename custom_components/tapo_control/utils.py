@@ -68,14 +68,10 @@ async def isRtspStreamWorking(hass, host, username, password, full_url=""):
         ),
     )
     image = await asyncio.shield(
-        ffmpeg.get_image(
-            streaming_url,
-            output_format=IMAGE_JPEG,
-        )
+        ffmpeg.get_image(streaming_url, output_format=IMAGE_JPEG,)
     )
     LOGGER.debug(
-        "[isRtspStreamWorking][%s] Image data received.",
-        host,
+        "[isRtspStreamWorking][%s] Image data received.", host,
     )
     return not image == b""
 
@@ -134,6 +130,22 @@ async def getCamData(hass, controller):
     except Exception:
         privacy_mode = None
     camData["privacy_mode"] = privacy_mode
+
+    try:
+        lens_distrotion_correction = await hass.async_add_executor_job(
+            controller.getLensDistortionCorrection
+        )
+        lens_distrotion_correction = "on" if lens_distrotion_correction else "off"
+    except Exception:
+        lens_distrotion_correction = None
+    camData["lens_distrotion_correction"] = lens_distrotion_correction
+
+    try:
+        flip = await hass.async_add_executor_job(controller.getImageFlipVertical)
+        flip = "on" if flip else "off"
+    except Exception:
+        flip = None
+    camData["flip"] = flip
 
     try:
         alarmData = await hass.async_add_executor_job(controller.getAlarm)
@@ -319,11 +331,11 @@ def build_device_info(attributes: dict) -> DeviceInfo:
     )
 
 
-async def check_and_create(entry, hass, cls, check_function):
+async def check_and_create(entry, hass, cls, check_function, config_entry):
     try:
         await hass.async_add_executor_job(getattr(entry["controller"], check_function))
     except Exception:
         LOGGER.info(f"Camera does not support {cls.__name__}")
         return None
     LOGGER.debug(f"Creating {cls.__name__}")
-    return cls(entry, hass)
+    return cls(entry, hass, config_entry)

@@ -22,14 +22,14 @@ async def async_setup_entry(
     entry = hass.data[DOMAIN][config_entry.entry_id]
 
     light = await check_and_create(
-        entry, hass, TapoFloodlight, "getForceWhitelampState"
+        entry, hass, TapoFloodlight, "getForceWhitelampState", config_entry
     )
     if light is not None:
         async_add_entities([light])
 
 
 class TapoFloodlight(LightEntity, TapoEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         LOGGER.debug("TapoFloodlight - init - start")
         self._attr_is_on = False
         self._hass = hass
@@ -41,14 +41,12 @@ class TapoFloodlight(LightEntity, TapoEntity):
 
     async def async_turn_on(self) -> None:
         await self._hass.async_add_executor_job(
-            self._controller.setForceWhitelampState,
-            True,
+            self._controller.setForceWhitelampState, True,
         )
 
     async def async_turn_off(self) -> None:
         await self._hass.async_add_executor_job(
-            self._controller.setForceWhitelampState,
-            False,
+            self._controller.setForceWhitelampState, False,
         )
 
     async def async_update(self) -> None:

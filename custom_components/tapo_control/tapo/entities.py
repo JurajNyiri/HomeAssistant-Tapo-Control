@@ -6,13 +6,15 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.helpers.entity import EntityCategory
 
-from ..const import BRAND, LOGGER
+from ..const import BRAND, LOGGER, DOMAIN
 from ..utils import build_device_info
 
 
 class TapoEntity(Entity):
     def __init__(self, entry: dict, name_suffix: str):
         self._entry = entry
+        self._enabled = False
+        self._is_cam_entity = False
         self._name = entry["name"]
         self._name_suffix = name_suffix
         self._controller = entry["controller"]
@@ -41,6 +43,12 @@ class TapoEntity(Entity):
     def brand(self):
         return BRAND
 
+    async def async_added_to_hass(self) -> None:
+        self._enabled = True
+
+    async def async_will_remove_from_hass(self) -> None:
+        self._enabled = False
+
 
 class TapoSwitchEntity(SwitchEntity, TapoEntity):
     def __init__(
@@ -48,6 +56,7 @@ class TapoSwitchEntity(SwitchEntity, TapoEntity):
         name_suffix,
         entry: dict,
         hass: HomeAssistant,
+        config_entry,
         icon=None,
         device_class=None,
     ):
@@ -56,6 +65,8 @@ class TapoSwitchEntity(SwitchEntity, TapoEntity):
         self._hass = hass
         self._attr_icon = icon
         self._attr_device_class = device_class
+        hass.data[DOMAIN][config_entry.entry_id]["entities"].append(self)
+        self.updateTapo(hass.data[DOMAIN][config_entry.entry_id]["camData"])
 
         TapoEntity.__init__(self, entry, name_suffix)
         SwitchEntity.__init__(self)
