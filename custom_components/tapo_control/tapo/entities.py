@@ -21,7 +21,7 @@ class TapoEntity(Entity):
 
     @property
     def name(self) -> str:
-        return "{} - {}".format(self._name, self._name_suffix)
+        return "{} {}".format(self._name, self._name_suffix)
 
     @property
     def device_info(self) -> DeviceInfo:
