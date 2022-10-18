@@ -1,11 +1,14 @@
 from typing import Optional
-from .utils import build_device_info
+
+from homeassistant.core import HomeAssistant, callback
+
 from homeassistant.components.binary_sensor import BinarySensorEntity
-from homeassistant.core import callback
-from homeassistant.helpers.entity import DeviceInfo
-from .const import BRAND, DOMAIN, LOGGER
-from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.entity import DeviceInfo
+
+from .const import BRAND, DOMAIN, LOGGER
+from .utils import build_device_info
+
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True

@@ -1,12 +1,21 @@
+import asyncio
+import datetime
 import onvif
 import os
-import asyncio
-import urllib.parse
 import socket
-import datetime
 import time
+import urllib.parse
+
+from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from onvif import ONVIFCamera
 from pytapo import Tapo
+
+from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.components.ffmpeg import DATA_FFMPEG
+from homeassistant.components.onvif.event import EventManager
+from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
+from homeassistant.util import slugify
+
 from .const import (
     BRAND,
     ENABLE_MOTION_SENSOR,
@@ -15,12 +24,6 @@ from .const import (
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
 )
-from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
-from homeassistant.components.onvif.event import EventManager
-from homeassistant.components.ffmpeg import DATA_FFMPEG
-from homeassistant.helpers.entity import DeviceInfo
-from haffmpeg.tools import IMAGE_JPEG, ImageFrame
-from homeassistant.util import slugify
 
 
 def registerController(host, username, password):
@@ -127,6 +130,45 @@ async def getCamData(hass, controller):
     except Exception:
         privacy_mode = None
     camData["privacy_mode"] = privacy_mode
+
+    try:
+        lens_distrotion_correction = await hass.async_add_executor_job(
+            controller.getLensDistortionCorrection
+        )
+        lens_distrotion_correction = "on" if lens_distrotion_correction else "off"
+    except Exception:
+        lens_distrotion_correction = None
+    camData["lens_distrotion_correction"] = lens_distrotion_correction
+
+    try:
+        light_frequency_mode = await hass.async_add_executor_job(
+            controller.getLightFrequencyMode
+        )
+    except Exception:
+        light_frequency_mode = None
+    camData["light_frequency_mode"] = light_frequency_mode
+
+    try:
+        day_night_mode = await hass.async_add_executor_job(controller.getDayNightMode)
+    except Exception:
+        day_night_mode = None
+    camData["day_night_mode"] = day_night_mode
+
+    try:
+        force_white_lamp_state = await hass.async_add_executor_job(
+            controller.getForceWhitelampState
+        )
+        force_white_lamp_state = "on" if force_white_lamp_state else "off"
+    except Exception:
+        force_white_lamp_state = None
+    camData["force_white_lamp_state"] = force_white_lamp_state
+
+    try:
+        flip = await hass.async_add_executor_job(controller.getImageFlipVertical)
+        flip = "on" if flip else "off"
+    except Exception:
+        flip = None
+    camData["flip"] = flip
 
     try:
         alarmData = await hass.async_add_executor_job(controller.getAlarm)
@@ -241,8 +283,8 @@ async def getLatestFirmwareVersion(hass, entry, controller):
     return updateInfo
 
 
-async def syncTime(hass, entry):
-    device_mgmt = hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
+async def syncTime(hass, entry_id):
+    device_mgmt = hass.data[DOMAIN][entry_id]["onvifManagement"]
     if device_mgmt:
         now = datetime.datetime.utcnow()
 
@@ -258,7 +300,7 @@ async def syncTime(hass, entry):
             },
         }
         await device_mgmt.SetSystemDateAndTime(time_params)
-        hass.data[DOMAIN][entry.entry_id][
+        hass.data[DOMAIN][entry_id][
             "lastTimeSync"
         ] = datetime.datetime.utcnow().timestamp()
 
@@ -310,3 +352,13 @@ def build_device_info(attributes: dict) -> DeviceInfo:
         model=attributes["device_model"],
         sw_version=attributes["sw_version"],
     )
+
+
+async def check_and_create(entry, hass, cls, check_function, config_entry):
+    try:
+        await hass.async_add_executor_job(getattr(entry["controller"], check_function))
+    except Exception:
+        LOGGER.info(f"Camera does not support {cls.__name__}")
+        return None
+    LOGGER.debug(f"Creating {cls.__name__}")
+    return cls(entry, hass, config_entry)

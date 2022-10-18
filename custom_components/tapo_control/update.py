@@ -1,10 +1,13 @@
-from .utils import build_device_info
-from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
 from typing import Callable
+
+from homeassistant.core import HomeAssistant
+
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.components.update import UpdateEntity, UpdateEntityFeature
 from homeassistant.helpers.entity import DeviceInfo
+
 from .const import DOMAIN, LOGGER
+from .utils import build_device_info
 
 
 async def async_setup_entry(
@@ -18,10 +21,7 @@ async def async_setup_entry(
 
 class TapoCamUpdate(UpdateEntity):
     def __init__(
-        self,
-        hass: HomeAssistant,
-        entry: dict,
-        tapoData,
+        self, hass: HomeAssistant, entry: dict, tapoData,
     ):
         super().__init__()
         self._controller = tapoData["controller"]
@@ -32,7 +32,7 @@ class TapoCamUpdate(UpdateEntity):
         self._attributes = tapoData["camData"]["basic_info"]
         self._in_progress = False
 
-    def updateCam(self, camData):
+    def updateTapo(self, camData):
         if not camData:
             self._state = "unavailable"
         else:
@@ -123,9 +123,7 @@ class TapoCamUpdate(UpdateEntity):
         return "Tapo Camera: {0}".format(self._attributes["device_alias"])
 
     async def async_install(
-        self,
-        version,
-        backup,
+        self, version, backup,
     ):
         try:
             await self.hass.async_add_executor_job(

@@ -1,14 +1,14 @@
 import datetime
 
+from homeassistant.core import HomeAssistant
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_IP_ADDRESS,
     CONF_USERNAME,
     CONF_PASSWORD,
     EVENT_HOMEASSISTANT_STOP,
 )
-from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
@@ -132,9 +132,13 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    await hass.config_entries.async_forward_entry_unload(entry, "camera")
     await hass.config_entries.async_forward_entry_unload(entry, "binary_sensor")
+    await hass.config_entries.async_forward_entry_unload(entry, "button")
+    await hass.config_entries.async_forward_entry_unload(entry, "camera")
     await hass.config_entries.async_forward_entry_unload(entry, "light")
+    await hass.config_entries.async_forward_entry_unload(entry, "number")
+    await hass.config_entries.async_forward_entry_unload(entry, "select")
+    await hass.config_entries.async_forward_entry_unload(entry, "switch")
     await hass.config_entries.async_forward_entry_unload(entry, "update")
 
     if hass.data[DOMAIN][entry.entry_id]["events"]:
@@ -212,7 +216,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         ts - hass.data[DOMAIN][entry.entry_id]["lastTimeSync"]
                         > TIME_SYNC_PERIOD
                     ):
-                        await syncTime(hass, entry)
+                        await syncTime(hass, entry.entry_id)
                 ts = datetime.datetime.utcnow().timestamp()
                 if (
                     ts - hass.data[DOMAIN][entry.entry_id]["lastFirmwareCheck"]
@@ -239,17 +243,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 hass.data[DOMAIN][entry.entry_id]["camData"] = camData
                 for entity in hass.data[DOMAIN][entry.entry_id]["entities"]:
                     if entity._enabled:
-                        entity.updateCam(camData)
+                        entity.updateTapo(camData)
                         entity.async_schedule_update_ha_state(True)
                         if (
                             not hass.data[DOMAIN][entry.entry_id]["noiseSensorStarted"]
+                            and entity._is_cam_entity
                             and entity._enable_sound_detection
                         ):
                             await entity.startNoiseDetection()
                 if ("updateEntity" in hass.data[DOMAIN][entry.entry_id]) and hass.data[
                     DOMAIN
                 ][entry.entry_id]["updateEntity"]._enabled:
-                    hass.data[DOMAIN][entry.entry_id]["updateEntity"].updateCam(camData)
+                    hass.data[DOMAIN][entry.entry_id]["updateEntity"].updateTapo(
+                        camData
+                    )
                     hass.data[DOMAIN][entry.entry_id][
                         "updateEntity"
                     ].async_schedule_update_ha_state(True)
@@ -273,6 +280,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "onvifManagement": False,
             "eventsSetup": False,
             "events": False,
+            "entities": [],
             "name": camData["basic_info"]["device_alias"],
         }
         if motionSensor or enableTimeSync:
@@ -285,13 +293,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 LOGGER.debug("Seting up motion sensor for the first time.")
                 await setupOnvif(hass, entry)
             if enableTimeSync:
-                await syncTime(hass, entry)
+                await syncTime(hass, entry.entry_id)
 
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, "button")
+        )
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, "camera")
+        )
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "light")
         )
         hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "camera")
+            hass.config_entries.async_forward_entry_setup(entry, "number")
+        )
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, "select")
+        )
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, "switch")
         )
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "update")
