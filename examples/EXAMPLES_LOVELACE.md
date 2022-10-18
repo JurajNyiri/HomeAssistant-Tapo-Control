@@ -68,12 +68,13 @@ hold_action:
 ```
 
 ### Camera Control Example with motion sensor
+
 This example uses [stack-in-card](https://github.com/custom-cards/stack-in-card), [lovelace-card-mod](https://github.com/thomasloven/lovelace-card-mod) to make a seamless combo-card.
 
 ![Example 4](example4.png)
 
 ```yaml
-type: 'custom:stack-in-card'
+type: "custom:stack-in-card"
 cards:
   - type: picture-glance
     title: Bedroom
@@ -134,7 +135,7 @@ cards:
         tap_action:
           action: toggle
       - entity: camera.tapo_camera_5489_hd
-        icon: 'mdi:theme-light-dark'
+        icon: "mdi:theme-light-dark"
         tap_action:
           action: call-service
           service: select.select_option
@@ -142,21 +143,21 @@ cards:
             entity_id: select.tapo_camera_5489_night_vision
             option: auto
       - entity: camera.tapo_camera_5489_hd
-        icon: 'mdi:weather-sunny'
+        icon: "mdi:weather-sunny"
         tap_action:
           action: call-service
           service: select.select_option
           service_data:
             entity_id: select.tapo_camera_5489_night_vision
-            option: 'off'
+            option: "off"
       - entity: camera.tapo_camera_5489_hd
-        icon: 'mdi:weather-night'
+        icon: "mdi:weather-night"
         tap_action:
           action: call-service
           service: select.select_option
           service_data:
             entity_id: select.tapo_camera_5489_night_vision
-            option: 'on'
+            option: "on"
   - type: entities
     entities:
       - entity: binary_sensor.tapo_camera_5489_motion
@@ -168,73 +169,4 @@ cards:
       ha-card.type-entities #states {
         padding-top: 10px;
       }
-```
-
-### Picture Glance with live view and scripts, tap and hold actions
-
-![Example 1](example1.png)
-
-```yaml
-camera_image: camera.bedroom_hd
-camera_view: live
-entities:
-  - entity: script.set_bedroom_camera_home
-    icon: 'mdi:palm-tree'
-    tap_action:
-      action: call-service
-      service: script.set_bedroom_camera_away
-  - entity: script.set_bedroom_camera_home
-    icon: 'mdi:home'
-    tap_action:
-      action: call-service
-      service: script.set_bedroom_camera_home
-  - entity: binary_sensor.bedroom_motion
-  - entity: group.bedroom_upper_bed_left_lights
-    icon: 'mdi:coach-lamp'
-  - entity: group.bedroom_upper_bed_right_lights
-    icon: 'mdi:coach-lamp'
-  - entity: group.bedroom_ceiling_light
-    icon: 'mdi:ceiling-light'
-hold_action:
-  action: call-service
-  service: python_script.set_camera
-  service_data:
-    entity_id: sensor.show_camera
-    state: '70'
-tap_action:
-  action: more-info
-title: Bedroom
-type: picture-glance
-```
-
-- For entities, you can choose any entity in your home assistant
-- For the `hold_action`, I am using my custom python script which changes state of any entity. You could replace this with any other action similarly to `tap_action` in entities.
-- Binary sensor is automatically updated, put in your binary sensor for motion.
-
-I have chosen to use scripts to execute camera actions as they affect both privacy mode and ptz and I could use them also in my automations.
-
-```yaml
-set_bedroom_camera_away:
-  alias: Set Bedroom Camera Away
-  sequence:
-  - service: switch.turn_off
-    data:
-      entity_id: camera.bedroom_hd
-  - service: select.select_option
-    service_data:
-      entity_id: select.bedroom_preset
-      option: Room
-  mode: single
-set_bedroom_camera_home:
-  alias: Set Bedroom Camera Home
-  sequence:
-  - data:
-      preset: Privacy
-    service: tapo_control.ptz
-    entity_id: camera.bedroom_hd
-  - delay: 00:00:10
-  - service: switch.turn_on
-    data:
-      entity_id: camera.bedroom_hd
-  mode: single
 ```
