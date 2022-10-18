@@ -26,7 +26,6 @@ from .const import (
     RTSP_TRANS_PROTOCOLS,
 )
 
-
 @config_entries.HANDLERS.register(DOMAIN)
 class FlowHandler(config_entries.ConfigFlow):
     """Handle a config flow."""
@@ -209,6 +208,7 @@ class FlowHandler(config_entries.ConfigFlow):
                 }
             ),
             errors=errors,
+            LastStep=True,
         )
 
     async def async_step_auth_cloud_password(self, user_input=None):
@@ -257,6 +257,7 @@ class FlowHandler(config_entries.ConfigFlow):
                 }
             ),
             errors=errors,
+            LastStep=False,
         )
 
     async def async_step_ip(self, user_input=None):
@@ -336,6 +337,7 @@ class FlowHandler(config_entries.ConfigFlow):
                 }
             ),
             errors=errors,
+            LastStep=False,
         )
 
     async def async_step_auth(self, user_input=None):
@@ -435,6 +437,7 @@ class FlowHandler(config_entries.ConfigFlow):
                 }
             ),
             errors=errors,
+            LastStep=False,
         )
 
 
