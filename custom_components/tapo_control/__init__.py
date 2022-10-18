@@ -280,6 +280,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "onvifManagement": False,
             "eventsSetup": False,
             "events": False,
+            "entities": [],
             "name": camData["basic_info"]["device_alias"],
         }
         if motionSensor or enableTimeSync:

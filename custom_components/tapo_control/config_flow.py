@@ -212,7 +212,6 @@ class FlowHandler(ConfigFlow):
                 }
             ),
             errors=errors,
-            LastStep=True,
         )
 
     async def async_step_auth_cloud_password(self, user_input=None):
@@ -261,7 +260,6 @@ class FlowHandler(ConfigFlow):
                 }
             ),
             errors=errors,
-            LastStep=False,
         )
 
     async def async_step_ip(self, user_input=None):
@@ -341,7 +339,6 @@ class FlowHandler(ConfigFlow):
                 }
             ),
             errors=errors,
-            LastStep=False,
         )
 
     async def async_step_auth(self, user_input=None):
@@ -441,7 +438,6 @@ class FlowHandler(ConfigFlow):
                 }
             ),
             errors=errors,
-            LastStep=False,
         )
 
 

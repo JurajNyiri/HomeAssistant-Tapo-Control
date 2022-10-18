@@ -102,6 +102,7 @@ class TapoSelectEntity(SelectEntity, TapoEntity):
         name_suffix,
         entry: dict,
         hass: HomeAssistant,
+        config_entry,
         icon=None,
         device_class=None,
     ):
@@ -109,6 +110,8 @@ class TapoSelectEntity(SelectEntity, TapoEntity):
         self._hass = hass
         self._attr_icon = icon
         self._attr_device_class = device_class
+        hass.data[DOMAIN][config_entry.entry_id]["entities"].append(self)
+        self.updateTapo(hass.data[DOMAIN][config_entry.entry_id]["camData"])
 
         TapoEntity.__init__(self, entry, name_suffix)
         ButtonEntity.__init__(self)

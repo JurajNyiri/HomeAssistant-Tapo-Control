@@ -43,13 +43,20 @@ class TapoNightVisionSelect(TapoSelectEntity):
         self._attr_options = ["auto", "on", "off"]
         self._attr_current_option = None
         TapoSelectEntity.__init__(
-            self, "Night Vision", entry, hass, "mdi:theme-light-dark", "night_vision",
+            self,
+            "Night Vision",
+            entry,
+            hass,
+            config_entry,
+            "mdi:theme-light-dark",
+            "night_vision",
         )
 
-    async def async_update(self) -> None:
-        self._attr_current_option = await self._hass.async_add_executor_job(
-            self._controller.getDayNightMode
-        )
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = "unavailable"
+        else:
+            self._attr_current_option = camData["day_night_mode"]
 
     async def async_select_option(self, option: str) -> None:
         await self._hass.async_add_executor_job(
@@ -61,12 +68,20 @@ class TapoLightFrequencySelect(TapoSelectEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         self._attr_options = ["auto", "50", "60"]
         self._attr_current_option = None
-        TapoSelectEntity.__init__(self, "Light Frequency", entry, hass, "mdi:sine-wave")
+        TapoSelectEntity.__init__(
+            self, "Light Frequency", entry, hass, config_entry, "mdi:sine-wave"
+        )
 
     async def async_update(self) -> None:
         self._attr_current_option = await self._hass.async_add_executor_job(
             self._controller.getLightFrequencyMode
         )
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = "unavailable"
+        else:
+            self._attr_current_option = camData["light_frequency_mode"]
 
     async def async_select_option(self, option: str) -> None:
         await self._hass.async_add_executor_job(
@@ -79,22 +94,30 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
         self._attr_options = ["both", "light", "sound", "off"]
         self._attr_current_option = None
         TapoSelectEntity.__init__(
-            self, "Automatic Alarm", entry, hass, "mdi:alarm-check", "alarm",
+            self,
+            "Automatic Alarm",
+            entry,
+            hass,
+            config_entry,
+            "mdi:alarm-check",
+            "alarm",
         )
 
-    async def async_update(self) -> None:
-        data = await self._hass.async_add_executor_job(self._controller.getAlarm)
-        if "enabled" in data and data["enabled"] == "off":
-            self._attr_current_option = "off"
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = "unavailable"
         else:
-            light = "alarm_mode" in data and "light" in data["alarm_mode"]
-            sound = "alarm_mode" in data and "sound" in data["alarm_mode"]
-            if light and sound:
-                self._attr_current_option = "both"
-            elif light and not sound:
-                self._attr_current_option = "light"
+            if camData["alarm"] == "off":
+                self._attr_current_option = "off"
             else:
-                self._attr_current_option = "sound"
+                light = "light" in camData["alarm_mode"]
+                sound = "sound" in camData["alarm_mode"]
+                if light and sound:
+                    self._attr_current_option = "both"
+                elif light and not sound:
+                    self._attr_current_option = "light"
+                else:
+                    self._attr_current_option = "sound"
 
     async def async_select_option(self, option: str) -> None:
         await self.hass.async_add_executor_job(
@@ -114,24 +137,19 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
             "Motion Detection",
             entry,
             hass,
+            config_entry,
             "mdi:motion-sensor",
             "motion_detection",
         )
 
-    async def async_update(self) -> None:
-        data = await self._hass.async_add_executor_job(
-            self._controller.getMotionDetection
-        )
-        if "enabled" in data and data["enabled"] == "off":
-            self._attr_current_option = "off"
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = "unavailable"
         else:
-            digital_sensitivity = data["digital_sensitivity"]
-            if digital_sensitivity == "80":
-                self._attr_current_option = "high"
-            elif digital_sensitivity == "50":
-                self._attr_current_option = "normal"
+            if camData["motion_detection_enabled"] == "off":
+                self._attr_current_option = "off"
             else:
-                self._attr_current_option = "low"
+                self._attr_current_option = camData["motion_detection_sensitivity"]
 
     async def async_select_option(self, option: str) -> None:
         await self.hass.async_add_executor_job(
@@ -148,14 +166,17 @@ class TapoMoveToPresetSelect(TapoSelectEntity):
         self._attr_options = []
         self._attr_current_option = None
         TapoSelectEntity.__init__(
-            self, "Move to Preset", entry, hass, "mdi:arrow-decision"
+            self, "Move to Preset", entry, hass, config_entry, "mdi:arrow-decision"
         )
 
-    async def async_update(self) -> None:
-        data = await self._hass.async_add_executor_job(self._controller.getPresets)
-        self._presets = data
-        self._attr_options = list(data.values())
-        self._attr_current_option = None
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = "unavailable"
+        else:
+            self._attr_state = "idle"
+            self._presets = camData["presets"]
+            self._attr_options = list(camData["presets"].values())
+            self._attr_current_option = None
 
     async def async_select_option(self, option: str) -> None:
         foundKey = False

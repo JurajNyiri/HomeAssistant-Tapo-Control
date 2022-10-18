@@ -141,6 +141,20 @@ async def getCamData(hass, controller):
     camData["lens_distrotion_correction"] = lens_distrotion_correction
 
     try:
+        light_frequency_mode = await hass.async_add_executor_job(
+            controller.getLightFrequencyMode
+        )
+    except Exception:
+        light_frequency_mode = None
+    camData["light_frequency_mode"] = light_frequency_mode
+
+    try:
+        day_night_mode = await hass.async_add_executor_job(controller.getDayNightMode)
+    except Exception:
+        day_night_mode = None
+    camData["day_night_mode"] = day_night_mode
+
+    try:
         force_white_lamp_state = await hass.async_add_executor_job(
             controller.getForceWhitelampState
         )

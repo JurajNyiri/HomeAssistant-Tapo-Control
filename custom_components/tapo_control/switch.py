@@ -98,7 +98,6 @@ class TapoPrivacySwitch(TapoSwitchEntity):
         )
 
     def updateTapo(self, camData):
-        LOGGER.warn("Privacy update")
         if not camData:
             self._attr_state = "unavailable"
         else:

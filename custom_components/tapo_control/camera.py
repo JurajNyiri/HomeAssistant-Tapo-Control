@@ -57,11 +57,12 @@ async def async_setup_entry(
         SERVICE_DELETE_PRESET, SCHEMA_SERVICE_DELETE_PRESET, "delete_preset",
     )
 
-    hass.data[DOMAIN][entry.entry_id]["entities"] = [
-        TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id], True),
-        TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id], False),
-    ]
-    async_add_entities(hass.data[DOMAIN][entry.entry_id]["entities"])
+    hdStream = TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id], True)
+    sdStream = TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id], False)
+
+    hass.data[DOMAIN][entry.entry_id]["entities"].append(hdStream)
+    hass.data[DOMAIN][entry.entry_id]["entities"].append(sdStream)
+    async_add_entities([hdStream, sdStream])
 
 
 class TapoCamEntity(Camera):
