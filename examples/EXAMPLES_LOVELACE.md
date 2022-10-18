@@ -170,3 +170,74 @@ cards:
         padding-top: 10px;
       }
 ```
+
+### Picture Glance with live view and scripts, tap and hold actions
+
+![Example 1](example1.png)
+
+```yaml
+camera_image: camera.bedroom_hd
+camera_view: live
+entities:
+  - entity: script.set_bedroom_camera_home
+    icon: "mdi:palm-tree"
+    tap_action:
+      action: call-service
+      service: script.set_bedroom_camera_away
+  - entity: script.set_bedroom_camera_home
+    icon: "mdi:home"
+    tap_action:
+      action: call-service
+      service: script.set_bedroom_camera_home
+  - entity: binary_sensor.bedroom_motion
+  - entity: group.bedroom_upper_bed_left_lights
+    icon: "mdi:coach-lamp"
+  - entity: group.bedroom_upper_bed_right_lights
+    icon: "mdi:coach-lamp"
+  - entity: group.bedroom_ceiling_light
+    icon: "mdi:ceiling-light"
+hold_action:
+  action: call-service
+  service: python_script.set_camera
+  service_data:
+    entity_id: sensor.show_camera
+    state: "70"
+tap_action:
+  action: more-info
+title: Bedroom
+type: picture-glance
+```
+
+- For entities, you can choose any entity in your home assistant
+- For the `hold_action`, I am using my custom python script which changes state of any entity. You could replace this with any other action similarly to `tap_action` in entities.
+- Binary sensor is automatically updated, put in your binary sensor for motion.
+
+I have chosen to use scripts to execute camera actions as they affect both privacy mode and ptz and I could use them also in my automations.
+
+```yaml
+set_bedroom_camera_away:
+  alias: "Privacy: OFF"
+  sequence:
+    - service: switch.turn_off
+      data: {}
+      target:
+        entity_id: switch.bedroom_privacy
+    - service: select.select_option
+      data:
+        option: Room
+      target:
+        entity_id: select.bedroom_move_to_preset
+set_bedroom_camera_home:
+  alias: "Privacy: ON"
+  sequence:
+    - service: select.select_option
+      data:
+        option: Privacy
+      target:
+        entity_id: select.bedroom_move_to_preset
+    - delay: 00:00:10
+    - service: switch.turn_on
+      data: {}
+      target:
+        entity_id: switch.bedroom_privacy
+```
