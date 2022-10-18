@@ -102,7 +102,7 @@ set_bedroom_camera_home:
         entity_id: switch.bedroom_privacy
 ```
 
-### Camera control example with webrtc and scripts
+### Camera control example with webrtc and scripts using stack-in-card
 
 ![Example 5](example5.png)
 
