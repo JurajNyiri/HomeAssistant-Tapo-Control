@@ -35,6 +35,7 @@ class TapoFloodlight(LightEntity, TapoEntity):
         self._hass = hass
         self._attr_icon = "mdi:light-flood-down"
 
+        self.updateTapo(hass.data[DOMAIN][config_entry.entry_id]["camData"])
         TapoEntity.__init__(self, entry, "Floodlight")
         LightEntity.__init__(self)
         LOGGER.debug("TapoFloodlight - init - end")
@@ -49,7 +50,10 @@ class TapoFloodlight(LightEntity, TapoEntity):
             self._controller.setForceWhitelampState, False,
         )
 
-    async def async_update(self) -> None:
-        self._attr_is_on = await self._hass.async_add_executor_job(
-            self._controller.getForceWhitelampState
-        )
+    def updateTapo(self, camData):
+        LOGGER.warn("Privacy update")
+        if not camData:
+            self._attr_state = "unavailable"
+        else:
+            self._attr_state = "idle"
+            self._attr_is_on = camData["force_white_lamp_state"] == "on"

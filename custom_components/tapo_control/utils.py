@@ -141,6 +141,15 @@ async def getCamData(hass, controller):
     camData["lens_distrotion_correction"] = lens_distrotion_correction
 
     try:
+        force_white_lamp_state = await hass.async_add_executor_job(
+            controller.getForceWhitelampState
+        )
+        force_white_lamp_state = "on" if force_white_lamp_state else "off"
+    except Exception:
+        force_white_lamp_state = None
+    camData["force_white_lamp_state"] = force_white_lamp_state
+
+    try:
         flip = await hass.async_add_executor_job(controller.getImageFlipVertical)
         flip = "on" if flip else "off"
     except Exception:
