@@ -6,7 +6,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoButtonEntity
-from .utils import syncTime
+from .utils import syncTime, check_and_create
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -22,22 +22,29 @@ async def async_setup_entry(
     entry = hass.data[DOMAIN][config_entry.entry_id]
 
     buttons = []
-    buttons.append(TapoRebootButton(entry, hass))
-    buttons.append(TapoFormatButton(entry, hass))
-    buttons.append(TapoStartManualAlarmButton(entry, hass))
-    buttons.append(TapoStopManualAlarmButton(entry, hass))
-    buttons.append(TapoSyncTimeButton(entry, hass, config_entry.entry_id))
-    buttons.append(TapoCalibrateButton(entry, hass))
-    buttons.append(TapoMoveUpButton(entry, hass))
-    buttons.append(TapoMoveDownButton(entry, hass))
-    buttons.append(TapoMoveRightButton(entry, hass))
-    buttons.append(TapoMoveLeftButton(entry, hass))
+    buttons.append(TapoRebootButton(entry, hass, config_entry))
+    buttons.append(TapoFormatButton(entry, hass, config_entry))
+    buttons.append(TapoStartManualAlarmButton(entry, hass, config_entry))
+    buttons.append(TapoStopManualAlarmButton(entry, hass, config_entry))
+    buttons.append(TapoSyncTimeButton(entry, hass, config_entry))
+
+    tapoCalibrateButton = await check_and_create(
+        entry, hass, TapoCalibrateButton, "getPresets", config_entry
+    )
+    if tapoCalibrateButton:
+        buttons.append(tapoCalibrateButton)
+        buttons.append(TapoMoveUpButton(entry, hass, config_entry))
+        buttons.append(TapoMoveDownButton(entry, hass, config_entry))
+        buttons.append(TapoMoveRightButton(entry, hass, config_entry))
+        buttons.append(TapoMoveLeftButton(entry, hass, config_entry))
+    else:
+        LOGGER.info("Buttons: Camera does not support movement.")
 
     async_add_entities(buttons)
 
 
 class TapoRebootButton(TapoButtonEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         TapoButtonEntity.__init__(self, "Reboot", entry, hass)
 
     async def async_press(self) -> None:
@@ -49,7 +56,7 @@ class TapoRebootButton(TapoButtonEntity):
 
 
 class TapoFormatButton(TapoButtonEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         TapoButtonEntity.__init__(self, "Format SD Card", entry, hass, "mdi:eraser")
 
     async def async_press(self) -> None:
@@ -57,14 +64,10 @@ class TapoFormatButton(TapoButtonEntity):
 
 
 class TapoSyncTimeButton(TapoButtonEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant, entry_id):
-        self._entry_id = entry_id
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._entry_id = config_entry.entry_id
         TapoButtonEntity.__init__(
-            self,
-            "Sync Time",
-            entry,
-            hass,
-            "mdi:timer-sync-outline",
+            self, "Sync Time", entry, hass, "mdi:timer-sync-outline",
         )
 
     async def async_press(self) -> None:
@@ -72,7 +75,7 @@ class TapoSyncTimeButton(TapoButtonEntity):
 
 
 class TapoStartManualAlarmButton(TapoButtonEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         TapoButtonEntity.__init__(self, "Manual Alarm Start", entry, hass, "mdi:alarm")
 
     async def async_press(self) -> None:
@@ -80,13 +83,9 @@ class TapoStartManualAlarmButton(TapoButtonEntity):
 
 
 class TapoStopManualAlarmButton(TapoButtonEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         TapoButtonEntity.__init__(
-            self,
-            "Manual Alarm Stop",
-            entry,
-            hass,
-            "mdi:alarm-off",
+            self, "Manual Alarm Stop", entry, hass, "mdi:alarm-off",
         )
 
     async def async_press(self) -> None:
@@ -94,7 +93,7 @@ class TapoStopManualAlarmButton(TapoButtonEntity):
 
 
 class TapoCalibrateButton(TapoButtonEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         TapoButtonEntity.__init__(self, "Calibrate", entry, hass)
 
     async def async_press(self) -> None:
@@ -102,7 +101,7 @@ class TapoCalibrateButton(TapoButtonEntity):
 
 
 class TapoMoveUpButton(TapoButtonEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         TapoButtonEntity.__init__(self, "Move Up", entry, hass, "mdi:arrow-up")
 
     async def async_press(self) -> None:
@@ -112,7 +111,7 @@ class TapoMoveUpButton(TapoButtonEntity):
 
 
 class TapoMoveDownButton(TapoButtonEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         TapoButtonEntity.__init__(self, "Move Down", entry, hass, "mdi:arrow-down")
 
     async def async_press(self) -> None:
@@ -122,7 +121,7 @@ class TapoMoveDownButton(TapoButtonEntity):
 
 
 class TapoMoveRightButton(TapoButtonEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         TapoButtonEntity.__init__(self, "Move Right", entry, hass, "mdi:arrow-right")
 
     async def async_press(self) -> None:
@@ -132,7 +131,7 @@ class TapoMoveRightButton(TapoButtonEntity):
 
 
 class TapoMoveLeftButton(TapoButtonEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         TapoButtonEntity.__init__(self, "Move Left", entry, hass, "mdi:arrow-left")
 
     async def async_press(self) -> None:
