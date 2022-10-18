@@ -7,20 +7,23 @@
         "data": {
           "ip_address": "IP Adresse"
         },
-        "description": "Gib die IP Adresse der Kamera ein.\n\n\n\nWenn du VLANs benutzt, stelle sicher, dass die Ports 443, 554 und 2020 geöffnet sind."
+        "description": "Gib die IP Adresse der Kamera ein.\n\n\n\nWenn du VLANs benutzt, stelle sicher, dass die Ports 443, 554 und 2020 geöffnet sind.",
+        "title": "Tapo: Kamerasteuerung 1/4"
       },
       "auth": {
         "data": {
           "username": "Benutzername",
           "password": "Passwort"
         },
-        "description": "Gib die Anmeldedaten des Kamera Kontos ein.\n\nErstelle ein Kamera Konto in der Tapo App über:\nKameraeinstellungen > Erweiterte Einstellungen > Kamera Konto."
+        "description": "Gib die Anmeldedaten des Kamera Kontos ein.\n\nErstelle ein Kamera Konto in der Tapo App über:\nKameraeinstellungen > Erweiterte Einstellungen > Kamera Konto.",
+        "title": "Tapo: Kamerasteuerung 2/4"
       },
       "auth_cloud_password": {
         "data": {
           "cloud_password": "Tapo Account Passwort"
         },
-        "description": "Dein Tapo Account Passwort Camera requires your cloud password for control.\nThis is the password you used for your Tapo Cloud account with your email.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
+        "description": "Dein Tapo Account Passwort Camera requires your cloud password for control.\nThis is the password you used for your Tapo Cloud account with your email.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local.",
+        "title": "Tapo: Kamerasteuerung 3/4"
       },
       "other_options": {
         "data": {
@@ -35,7 +38,8 @@
           "custom_stream": "Custom stream link",
           "rtsp_transport": "RTSP Transport Mechanismus"
         },
-        "description": "Fast geschafft!\nNur noch ein paar letzte Einstellungen..."
+        "description": "Fast geschafft!\nNur noch ein paar letzte Einstellungen...",
+        "title": "Tapo: Kamerasteuerung 4/4"
       }
     },
     "error": {
