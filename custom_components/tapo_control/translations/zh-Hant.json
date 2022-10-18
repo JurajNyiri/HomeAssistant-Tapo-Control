@@ -7,20 +7,23 @@
         "data": {
           "ip_address": "IP Address"
         },
-        "description": "請輸入攝影機 IP 位址.\n\n請確定您有註冊攝影機帳號.\n\n可以到 Tapo App 註冊攝影機帳號:\n攝影機設定 > 進階設定 > 攝影機帳戶.\n\n\n\n如果您是使用 vlan (虛擬區域網路), 或是其他 advanced networking, 請確保 port 443,554,2020 為開啟狀態"
+        "description": "請輸入攝影機 IP 位址.\n\n請確定您有註冊攝影機帳號.\n\n可以到 Tapo App 註冊攝影機帳號:\n攝影機設定 > 進階設定 > 攝影機帳戶.\n\n\n\n如果您是使用 vlan (虛擬區域網路), 或是其他 advanced networking, 請確保 port 443,554,2020 為開啟狀態",
+        "title": "Tapo: Cameras Control 1/4"
       },
       "auth": {
         "data": {
           "username": "Username",
           "password": "Password"
         },
-        "description": "請輸入攝影機帳號與密碼.\n\n帳號透過 Tapo App 進行註冊，如未註冊請至:\n攝影機設定 > 進階設定 > 攝影機帳戶"
+        "description": "請輸入攝影機帳號與密碼.\n\n帳號透過 Tapo App 進行註冊，如未註冊請至:\n攝影機設定 > 進階設定 > 攝影機帳戶",
+        "title": "Tapo: Cameras Control 2/4"
       },
       "auth_cloud_password": {
         "data": {
           "cloud_password": "Cloud Password"
         },
-        "description": "攝影機需要您的雲端密碼(cloud password)才能控制.\n不需要Email，所有通訊都是本地進行傳輸."
+        "description": "攝影機需要您的雲端密碼(cloud password)才能控制.\n不需要Email，所有通訊都是本地進行傳輸.",
+        "title": "Tapo: Cameras Control 3/4"
       },
       "other_options": {
         "data": {
@@ -32,7 +35,8 @@
           "sound_detection_duration": "[Sound Detection] 噪音需要超過峰值持續多久的時間才能觸發該狀態。",
           "sound_detection_reset": "[Sound Detection] 如果在沒有新的噪音超過峰值的話，需要多久時間才會重置狀態。"
         },
-        "description": "快設定完成了!\n只剩下一些選項..."
+        "description": "快設定完成了!\n只剩下一些選項...",
+        "title": "Tapo: Cameras Control 4/4"
       }
     },
     "error": {
