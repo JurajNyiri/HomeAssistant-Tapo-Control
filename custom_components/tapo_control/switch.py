@@ -107,7 +107,7 @@ class TapoPrivacySwitch(TapoSwitchEntity):
     @property
     def icon(self) -> str:
         if self.is_on:
-            return "mdi:eye-outline-off"
+            return "mdi:eye-off-outline"
         else:
             return "mdi:eye-outline"
 
