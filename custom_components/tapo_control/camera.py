@@ -138,9 +138,9 @@ class TapoCamEntity(Camera):
     def name(self) -> str:
         name = self._attr_extra_state_attributes["device_alias"]
         if self._hdstream:
-            name += " HD"
+            name += " HD Stream"
         else:
-            name += " SD"
+            name += " SD Stream"
         return name
 
     @property
