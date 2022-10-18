@@ -38,10 +38,14 @@ See [examples for lovelace cards](https://github.com/JurajNyiri/HomeAssistant-Ta
 
 This custom component creates:
 
-- tapo_control.\* services to control a camera
-- 2 camera entities, one for HD and one for SD stream
-- 1 binary sensor for motion after the motion is detected for the first time
-- 1 light entity, if the camera supports a floodlight switch
+- Camera entities, one for HD and one for SD stream
+- Binary sensor for motion after the motion is detected for the first time
+- Light entity, if the camera supports a floodlight switch
+- Buttons for Calibrate, Format, Manual Alarm start & stop, Moving the camera, Reboot and syncing time
+- Switch entities for auto track, Flip setting, LED Indicator, Lens Distortion Correction and Privacy mode
+- Select entities for Automatic Alarm, Light Frequency, Motion Detection and Night Vision
+- Number entity for Movement Angle
+- And finally 2 tapo_control.\* services to control a camera
 
 Use these services in following service calls.
 
