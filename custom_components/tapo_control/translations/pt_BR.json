@@ -7,23 +7,20 @@
         "data": {
           "ip_address": "Endereço IP"
         },
-        "description": "Digite o endereço IP da câmera.\n\nCertifique-se de criar uma conta na câmera.\n\nEsta conta da câmera é criada no app Tappo, em:\nCamera Settings > Advanced Settings > Camera Account.\n\n\n\nSe você estiver utilizando vlan ou outro tipo de rede avançada, certifique-se que as portas 443, 554 e 2020 estão abertas para a câmera.",
-        "title": "Tapo: Cameras Control 1/4"
+        "description": "Digite o endereço IP da câmera.\n\nCertifique-se de criar uma conta na câmera.\n\nEsta conta da câmera é criada no app Tappo, em:\nCamera Settings > Advanced Settings > Camera Account.\n\n\n\nSe você estiver utilizando vlan ou outro tipo de rede avançada, certifique-se que as portas 443, 554 e 2020 estão abertas para a câmera."
       },
       "auth": {
         "data": {
           "username": "Usuário",
           "password": "Senha"
         },
-        "description": "Digite as credenciais da conta da câmera.\n\nEsta conta da câmera é criada no app Tappo, em:\nCamera Settings > Advanced Settings > Camera Account",
-        "title": "Tapo: Cameras Control 2/4"
+        "description": "Digite as credenciais da conta da câmera.\n\nEsta conta da câmera é criada no app Tappo, em:\nCamera Settings > Advanced Settings > Camera Account"
       },
       "auth_cloud_password": {
         "data": {
           "cloud_password": "Senha Cloud"
         },
-        "description": "A câmera precisa da sua senha cloud para controle.\nE-mail não é necessário e toda a comunicação continuará sendo totalmente local.",
-        "title": "Tapo: Cameras Control 3/4"
+        "description": "A câmera precisa da sua senha cloud para controle.\nE-mail não é necessário e toda a comunicação continuará sendo totalmente local."
       },
       "other_options": {
         "data": {
@@ -35,8 +32,7 @@
           "sound_detection_duration": "[Detecção de som] Quanto tempo o ruído precisa estar acima do pico para acionar o estado.",
           "sound_detection_reset": "[Detecção de som] O tempo para redefinir o estado depois que nenhum novo ruído ultrapassar o pico."
         },
-        "description": "Quase lá!\nSó mais algumas opções...",
-        "title": "Tapo: Cameras Control 4/4"
+        "description": "Quase lá!\nSó mais algumas opções..."
       }
     },
     "error": {
