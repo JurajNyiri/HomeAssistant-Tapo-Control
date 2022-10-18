@@ -1,0 +1,3 @@
+config/
+custom_components/tapo_control/__pycache__/
+custom_components/tapo_control/tapo/__pycache__/

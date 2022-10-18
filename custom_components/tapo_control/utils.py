@@ -1,12 +1,21 @@
+import asyncio
+import datetime
 import onvif
 import os
-import asyncio
-import urllib.parse
 import socket
-import datetime
 import time
+import urllib.parse
+
+from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from onvif import ONVIFCamera
 from pytapo import Tapo
+
+from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.components.ffmpeg import DATA_FFMPEG
+from homeassistant.components.onvif.event import EventManager
+from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
+from homeassistant.util import slugify
+
 from .const import (
     BRAND,
     ENABLE_MOTION_SENSOR,
@@ -15,12 +24,6 @@ from .const import (
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
 )
-from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
-from homeassistant.components.onvif.event import EventManager
-from homeassistant.components.ffmpeg import DATA_FFMPEG
-from homeassistant.helpers.entity import DeviceInfo
-from haffmpeg.tools import IMAGE_JPEG, ImageFrame
-from homeassistant.util import slugify
 
 
 def registerController(host, username, password):
@@ -65,10 +68,14 @@ async def isRtspStreamWorking(hass, host, username, password, full_url=""):
         ),
     )
     image = await asyncio.shield(
-        ffmpeg.get_image(streaming_url, output_format=IMAGE_JPEG,)
+        ffmpeg.get_image(
+            streaming_url,
+            output_format=IMAGE_JPEG,
+        )
     )
     LOGGER.debug(
-        "[isRtspStreamWorking][%s] Image data received.", host,
+        "[isRtspStreamWorking][%s] Image data received.",
+        host,
     )
     return not image == b""
 
@@ -241,8 +248,8 @@ async def getLatestFirmwareVersion(hass, entry, controller):
     return updateInfo
 
 
-async def syncTime(hass, entry):
-    device_mgmt = hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
+async def syncTime(hass, entry_id):
+    device_mgmt = hass.data[DOMAIN][entry_id]["onvifManagement"]
     if device_mgmt:
         now = datetime.datetime.utcnow()
 
@@ -258,7 +265,7 @@ async def syncTime(hass, entry):
             },
         }
         await device_mgmt.SetSystemDateAndTime(time_params)
-        hass.data[DOMAIN][entry.entry_id][
+        hass.data[DOMAIN][entry_id][
             "lastTimeSync"
         ] = datetime.datetime.utcnow().timestamp()
 
@@ -310,3 +317,13 @@ def build_device_info(attributes: dict) -> DeviceInfo:
         model=attributes["device_model"],
         sw_version=attributes["sw_version"],
     )
+
+
+async def check_and_create(entry, hass, cls, check_function):
+    try:
+        await hass.async_add_executor_job(getattr(entry["controller"], check_function))
+    except Exception:
+        LOGGER.info(f"Camera does not support {cls.__name__}")
+        return None
+    LOGGER.debug(f"Creating {cls.__name__}")
+    return cls(entry, hass)

@@ -35,7 +35,7 @@ camera_view: live
 
 ![Example 3](example3.png)
 
-Example by [Roman Kaporin](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/15#issuecomment-705228868). 
+Example by [Roman Kaporin](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/15#issuecomment-705228868).
 
 Allows easy control of the camera.
 
@@ -45,61 +45,24 @@ title: Bedroom
 camera_image: camera.bedroom_hd
 camera_view: live
 entities:
-  - entity: camera.bedroom_hd
-    icon: 'mdi:arrow-left-drop-circle-outline'
+  - entity: button.bedroom_move_left
     tap_action:
-      action: call-service
-      service: tapo_control.ptz
-      service_data:
-        entity_id: camera.bedroom_hd
-        pan: LEFT
-  - entity: camera.bedroom_hd
-    icon: 'mdi:arrow-up-drop-circle-outline'
+      action: toggle
+  - entity: button.bedroom_move_up
     tap_action:
-      action: call-service
-      service: tapo_control.ptz
-      service_data:
-        entity_id: camera.bedroom_hd
-        tilt: UP
-  - entity: camera.bedroom_hd
-    icon: 'mdi:arrow-down-drop-circle-outline'
+      action: toggle
+  - entity: button.bedroom_move_down
     tap_action:
-      action: call-service
-      service: tapo_control.ptz
-      service_data:
-        entity_id: camera.bedroom_hd
-        tilt: DOWN
-  - entity: camera.bedroom_hd
-    icon: 'mdi:arrow-right-drop-circle-outline'
+      action: toggle
+  - entity: button.bedroom_move_right
     tap_action:
-      action: call-service
-      service: tapo_control.ptz
-      service_data:
-        entity_id: camera.bedroom_hd
-        pan: RIGHT
-  - entity: camera.bedroom_hd
-    icon: 'mdi:eye-outline'
+      action: toggle
+  - entity: switch.bedroom_privacy
     tap_action:
-      action: call-service
-      service: tapo_control.set_privacy_mode
-      service_data:
-        entity_id: camera.bedroom_hd
-        privacy_mode: 'off'
-  - entity: camera.bedroom_hd
-    icon: 'mdi:eye-off-outline'
+      action: toggle
+  - entity: button.bedroom_reboot
     tap_action:
-      action: call-service
-      service: tapo_control.set_privacy_mode
-      service_data:
-        entity_id: camera.bedroom_hd
-        privacy_mode: 'on'
-  - entity: camera.bedroom_hd
-    icon: 'mdi:power'
-    tap_action:
-      action: call-service
-      service: tapo_control.reboot
-      service_data:
-        entity_id: camera.bedroom_hd
+      action: toggle
 hold_action:
   action: more-info
 ```
@@ -118,26 +81,21 @@ cards:
     camera_view: live
     entity: camera.tapo_camera_5489_hd
     entities:
-      - entity: camera.tapo_camera_5489_hd
-        icon: 'mdi:arrow-left-drop-circle-outline'
+      - entity: button.tapo_camera_5489_left
         tap_action:
-          action: call-service
-          service: tapo_control.ptz
-          service_data:
-            entity_id: camera.tapo_camera_5489_hd
-            pan: LEFT
+          action: toggle
     hold_action:
       action: more-info
     style: |
       :host .box {
-        display: none 
+        display: none
       }
   - type: glance
     show_icon: true
     show_name: false
     show_state: false
     style: |
-      ha-card.type-glance .entities, 
+      ha-card.type-glance .entities,
       ha-card.type-glance .entity {
         padding: 0px;
         margin: 0px;
@@ -146,44 +104,24 @@ cards:
         margin-top: 14px;
       }
     entities:
-      - entity: camera.tapo_camera_5489_hd
-        icon: 'mdi:arrow-left-drop-circle-outline'
+      - entity: button.tapo_camera_5489_left
         tap_action:
-          action: call-service
-          service: tapo_control.ptz
-          service_data:
-            entity_id: camera.tapo_camera_5489_hd
-            pan: LEFT
-      - entity: camera.tapo_camera_5489_hd
-        icon: 'mdi:arrow-up-drop-circle-outline'
+          action: toggle
+      - entity: button.tapo_camera_5489_up
         tap_action:
-          action: call-service
-          service: tapo_control.ptz
-          service_data:
-            entity_id: camera.tapo_camera_5489_hd
-            tilt: UP
-      - entity: camera.tapo_camera_5489_hd
-        icon: 'mdi:arrow-down-drop-circle-outline'
+          action: toggle
+      - entity: button.tapo_camera_5489_down
         tap_action:
-          action: call-service
-          service: tapo_control.ptz
-          service_data:
-            entity_id: camera.tapo_camera_5489_hd
-            tilt: DOWN
-      - entity: camera.tapo_camera_5489_hd
-        icon: 'mdi:arrow-right-drop-circle-outline'
+          action: toggle
+      - entity: button.tapo_camera_5489_right
         tap_action:
-          action: call-service
-          service: tapo_control.ptz
-          service_data:
-            entity_id: camera.tapo_camera_5489_hd
-            pan: RIGHT
+          action: toggle
   - type: glance
     show_icon: true
     show_name: false
     show_state: false
     style: |
-      ha-card.type-glance .entities, 
+      ha-card.type-glance .entities,
       ha-card.type-glance .entity {
         padding: 0px;
         margin: 0px;
@@ -192,44 +130,33 @@ cards:
         margin-bottom: 0px;
       }
     entities:
-      - entity: camera.tapo_camera_5489_hd
-        icon: 'mdi:eye-off-outline'
+      - entity: switch.tapo_camera_5489_privacy
         tap_action:
-          action: call-service
-          service: tapo_control.set_privacy_mode
-          service_data:
-            entity_id: camera.tapo_camera_5489_hd
-            privacy_mode: 'on'
-        hold_action:
-          action: call-service
-          service: tapo_control.set_privacy_mode
-          service_data:
-            entity_id: camera.tapo_camera_5489_hd
-            privacy_mode: 'off'
+          action: toggle
       - entity: camera.tapo_camera_5489_hd
         icon: 'mdi:theme-light-dark'
         tap_action:
           action: call-service
-          service: tapo_control.set_day_night_mode
+          service: select.select_option
           service_data:
-            entity_id: camera.tapo_camera_5489_hd
-            day_night_mode: auto
+            entity_id: select.tapo_camera_5489_night_vision
+            option: auto
       - entity: camera.tapo_camera_5489_hd
         icon: 'mdi:weather-sunny'
         tap_action:
           action: call-service
-          service: tapo_control.set_day_night_mode
+          service: select.select_option
           service_data:
-            entity_id: camera.tapo_camera_5489_hd
-            day_night_mode: 'off'
+            entity_id: select.tapo_camera_5489_night_vision
+            option: 'off'
       - entity: camera.tapo_camera_5489_hd
         icon: 'mdi:weather-night'
         tap_action:
           action: call-service
-          service: tapo_control.set_day_night_mode
+          service: select.select_option
           service_data:
-            entity_id: camera.tapo_camera_5489_hd
-            day_night_mode: 'on'
+            entity_id: select.tapo_camera_5489_night_vision
+            option: 'on'
   - type: entities
     entities:
       - entity: binary_sensor.tapo_camera_5489_motion
@@ -290,14 +217,13 @@ I have chosen to use scripts to execute camera actions as they affect both priva
 set_bedroom_camera_away:
   alias: Set Bedroom Camera Away
   sequence:
-  - data:
-      privacy_mode: 'off'
-    service: tapo_control.set_privacy_mode
-    entity_id: camera.bedroom_hd
-  - service: tapo_control.ptz
+  - service: switch.turn_off
     data:
-      preset: Room
-    entity_id: camera.bedroom_hd
+      entity_id: camera.bedroom_hd
+  - service: select.select_option
+    service_data:
+      entity_id: select.bedroom_preset
+      option: Room
   mode: single
 set_bedroom_camera_home:
   alias: Set Bedroom Camera Home
@@ -307,9 +233,8 @@ set_bedroom_camera_home:
     service: tapo_control.ptz
     entity_id: camera.bedroom_hd
   - delay: 00:00:10
-  - service: tapo_control.set_privacy_mode
+  - service: switch.turn_on
     data:
-      privacy_mode: 'on'
-    entity_id: camera.bedroom_hd
+      entity_id: camera.bedroom_hd
   mode: single
 ```

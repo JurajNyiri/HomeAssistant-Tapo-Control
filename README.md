@@ -32,7 +32,7 @@ Cameras are also automatically discovered when they are (re)connected to WIFI.
 
 To add multiple cameras, add integration multiple times.
 
-See [examples for lovelace cards](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/blob/main/examples/EXAMPLES_LOVELACE.md) or [examples for template entities](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/blob/main/examples/EXAMPLES_ENTITIES.md).
+See [examples for lovelace cards](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/blob/main/examples/EXAMPLES_LOVELACE.md).
 
 ## Services
 
@@ -44,107 +44,6 @@ This custom component creates:
 - 1 light entity, if the camera supports a floodlight switch
 
 Use these services in following service calls.
-
-<details>
-  <summary>tapo_control.ptz</summary>
-
-Pan and tilt camera.
-
-You are also able to use presets and set distance the ptz should travel.
-
-- **tilt** Optional: Tilt direction. Allowed values: UP, DOWN
-- **pan** Optional: Pan direction. Allowed values: RIGHT, LEFT
-- **preset** Optional: PTZ preset ID or a Name. See possible presets in entity attributes.
-- **distance** Optional: Distance coefficient. Sets how much PTZ should be executed in one request. Allowed values: floating point numbers, 0 to 1
-</details>
-
-<details>
-  <summary>tapo_control.set_privacy_mode</summary>
-
-Sets privacy mode.
-
-If privacy mode is turned on, camera does not record anything and does not respond to anything other than turning off privacy mode.
-
-- **privacy_mode** Required: Sets privacy mode for camera. Possible values: on, off
-</details>
-
-<details>
-  <summary>tapo_control.set_alarm</summary>
-
-Activates or deactivates active alarm.
-
-- **alarm** Required: Possible values: on, off
-</details>
-
-<details>
-  <summary>tapo_control.set_alarm_mode</summary>
-
-Sets alarm mode.
-
-If camera detects motion, it will sound an alarm, blink the LED or both.
-
-- **alarm_mode** Required: Sets alarm mode for camera. Possible values: on, off
-- **sound** Optional: Sets whether the alarm should use sound on motion detected. Possible values: on, off
-- **light** Optional: Sets whether the alarm should use light on motion detected. Possible values: on, off
-</details>
-
-<details>
-  <summary>tapo_control.set_led_mode</summary>
-
-Sets LED mode.
-
-When on, LED is turned on when camera is on.
-
-When off, LED is always off.
-
-- **led_mode** Required: Sets LED mode for camera. Possible values: on, off
-</details>
-
-<details>
-  <summary>tapo_control.format</summary>
-
-Formats SD card of a camera
-
-</details>
-
-<details>
-  <summary>tapo_control.set_motion_detection_mode</summary>
-
-Sets motion detection mode.
-
-Ability to set "high", "normal" or "low".
-
-These turn on motion detection and set sensitivity to corresponding values in the app.
-
-Also ability to set to "off", this turns off motion detection completely.
-
-Turning motion detection off does not affect settings for recordings so you do not need to re-set those unless you open the settings through the Tapo app.
-
-Notice: If you use motion detection triggered recording and you turn off motion recording, it will no longer record!
-
-- **motion_detection_mode** Required: Sets motion detection mode for camera. Possible values: high, normal, low, off
-</details>
-
-<details>
-  <summary>tapo_control.set_auto_track_mode</summary>
-
-**Starting with firmware 1.1.7 the feature requires Tapo Care subscription.**
-
-Sets auto track mode.
-
-With this mode, camera will be adjusting ptz to track whatever moving object it sees.
-
-Motion detection setting does not affect this mode.
-
-- **auto_track_mode** Required: Sets auto track mode for camera. Possible values: on, off
-</details>
-
-<details>
-  <summary>tapo_control.reboot</summary>
-
-Reboots the camera
-
-</details>
 
 <details>
   <summary>tapo_control.save_preset</summary>
@@ -160,23 +59,6 @@ Saves the current PTZ position to a preset
 Deletes a preset
 
 - **preset** Required: PTZ preset ID or a Name. See possible presets in entity attributes
-</details>
-
-<details>
-  <summary>tapo_control.set_day_night_mode</summary>
-
-Sets day or night mode
-
-- **day_night_mode** Required: Sets day/night mode for camera. Possible values: on, off, auto
-</details>
-
-<details>
-  <summary>tapo_control.synchronize_time</summary>
-
-Sets date and time on camera to the date of Home Assistant.
-
-This is also done automatically by integration every hour if enabled in configuration.
-
 </details>
 
 ## Sound Detection

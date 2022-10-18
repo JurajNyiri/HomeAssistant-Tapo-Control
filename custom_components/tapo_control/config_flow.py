@@ -1,9 +1,12 @@
-from homeassistant import config_entries
-from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
-from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
-from homeassistant.core import callback
-from homeassistant.helpers import device_registry as dr
 import voluptuous as vol
+
+from homeassistant.core import callback
+
+from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
+from homeassistant.config_entries import HANDLERS, ConfigFlow, OptionsFlow
+from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
+from homeassistant.helpers.device_registry import async_get as device_registry_async_get
+
 from .utils import (
     registerController,
     isRtspStreamWorking,
@@ -27,8 +30,8 @@ from .const import (
 )
 
 
-@config_entries.HANDLERS.register(DOMAIN)
-class FlowHandler(config_entries.ConfigFlow):
+@HANDLERS.register(DOMAIN)
+class FlowHandler(ConfigFlow):
     """Handle a config flow."""
 
     VERSION = 9
@@ -91,7 +94,8 @@ class FlowHandler(config_entries.ConfigFlow):
         rtsp_transport = RTSP_TRANS_PROTOCOLS[0]
         if user_input is not None:
             LOGGER.debug(
-                "[ADD DEVICE][%s] Verifying other options.", self.tapoHost,
+                "[ADD DEVICE][%s] Verifying other options.",
+                self.tapoHost,
             )
             if ENABLE_MOTION_SENSOR in user_input:
                 enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
@@ -138,7 +142,8 @@ class FlowHandler(config_entries.ConfigFlow):
             username = self.tapoUsername
             password = self.tapoPassword
             LOGGER.debug(
-                "[ADD DEVICE][%s] Saving entry.", self.tapoHost,
+                "[ADD DEVICE][%s] Saving entry.",
+                self.tapoHost,
             )
             return self.async_create_entry(
                 title=host,
@@ -161,7 +166,8 @@ class FlowHandler(config_entries.ConfigFlow):
             )
 
         LOGGER.debug(
-            "[ADD DEVICE][%s] Showing config flow for other options.", self.tapoHost,
+            "[ADD DEVICE][%s] Showing config flow for other options.",
+            self.tapoHost,
         )
         return self.async_show_form(
             step_id="other_options",
@@ -176,7 +182,8 @@ class FlowHandler(config_entries.ConfigFlow):
                         description={"suggested_value": enable_time_sync},
                     ): bool,
                     vol.Optional(
-                        ENABLE_STREAM, description={"suggested_value": enable_stream},
+                        ENABLE_STREAM,
+                        description={"suggested_value": enable_stream},
                     ): bool,
                     vol.Optional(
                         ENABLE_SOUND_DETECTION,
@@ -218,21 +225,24 @@ class FlowHandler(config_entries.ConfigFlow):
         if user_input is not None:
             try:
                 LOGGER.debug(
-                    "[ADD DEVICE][%s] Verifying cloud password.", self.tapoHost,
+                    "[ADD DEVICE][%s] Verifying cloud password.",
+                    self.tapoHost,
                 )
                 cloud_password = user_input[CLOUD_PASSWORD]
                 await self.hass.async_add_executor_job(
                     registerController, self.tapoHost, "admin", cloud_password
                 )
                 LOGGER.debug(
-                    "[ADD DEVICE][%s] Cloud password works for control.", self.tapoHost,
+                    "[ADD DEVICE][%s] Cloud password works for control.",
+                    self.tapoHost,
                 )
                 self.tapoCloudPassword = cloud_password
                 return await self.async_step_other_options()
             except Exception as e:
                 if "Failed to establish a new connection" in str(e):
                     LOGGER.debug(
-                        "[ADD DEVICE][%s] Connection failed.", self.tapoHost,
+                        "[ADD DEVICE][%s] Connection failed.",
+                        self.tapoHost,
                     )
                     errors["base"] = "connection_failed"
                 elif str(e) == "Invalid authentication data":
@@ -245,7 +255,8 @@ class FlowHandler(config_entries.ConfigFlow):
                     errors["base"] = "unknown"
                     LOGGER.error(e)
         LOGGER.debug(
-            "[ADD DEVICE][%s] Showing config flow for cloud password.", self.tapoHost,
+            "[ADD DEVICE][%s] Showing config flow for cloud password.",
+            self.tapoHost,
         )
         return self.async_show_form(
             step_id="auth_cloud_password",
@@ -309,7 +320,8 @@ class FlowHandler(config_entries.ConfigFlow):
                             raise Exception("not_tapo_device")
                 else:
                     LOGGER.debug(
-                        "[ADD DEVICE][%s] Port 443 is closed.", host,
+                        "[ADD DEVICE][%s] Port 443 is closed.",
+                        host,
                     )
                     raise Exception("Failed to establish a new connection")
             except Exception as e:
@@ -351,20 +363,24 @@ class FlowHandler(config_entries.ConfigFlow):
                 password = user_input[CONF_PASSWORD]
 
                 LOGGER.debug(
-                    "[ADD DEVICE][%s] Verifying ports all required camera ports.", host,
+                    "[ADD DEVICE][%s] Verifying ports all required camera ports.",
+                    host,
                 )
                 if not areCameraPortsOpened(host):
                     LOGGER.debug(
-                        "[ADD DEVICE][%s] Some of the required ports are closed.", host,
+                        "[ADD DEVICE][%s] Some of the required ports are closed.",
+                        host,
                     )
                     raise Exception("ports_closed")
                 else:
                     LOGGER.debug(
-                        "[ADD DEVICE][%s] All camera ports are opened.", host,
+                        "[ADD DEVICE][%s] All camera ports are opened.",
+                        host,
                     )
 
                 LOGGER.debug(
-                    "[ADD DEVICE][%s] Testing RTSP stream.", host,
+                    "[ADD DEVICE][%s] Testing RTSP stream.",
+                    host,
                 )
                 rtspStreamWorks = await isRtspStreamWorking(
                     self.hass, host, username, password
@@ -377,7 +393,8 @@ class FlowHandler(config_entries.ConfigFlow):
                     raise Exception("Invalid authentication data")
                 else:
                     LOGGER.debug(
-                        "[ADD DEVICE][%s] RTSP stream works.", host,
+                        "[ADD DEVICE][%s] RTSP stream works.",
+                        host,
                     )
 
                 self.tapoUsername = username
@@ -393,7 +410,8 @@ class FlowHandler(config_entries.ConfigFlow):
                         registerController, host, username, password
                     )
                     LOGGER.debug(
-                        "[ADD DEVICE][%s] Camera Account works for control.", host,
+                        "[ADD DEVICE][%s] Camera Account works for control.",
+                        host,
                     )
                 except Exception as e:
                     if str(e) == "Invalid authentication data":
@@ -420,7 +438,8 @@ class FlowHandler(config_entries.ConfigFlow):
                     LOGGER.error(e)
 
         LOGGER.debug(
-            "[ADD DEVICE][%s] Showing config flow for Camera Account.", host,
+            "[ADD DEVICE][%s] Showing config flow for Camera Account.",
+            host,
         )
         return self.async_show_form(
             step_id="auth",
@@ -438,7 +457,7 @@ class FlowHandler(config_entries.ConfigFlow):
         )
 
 
-class TapoOptionsFlowHandler(config_entries.OptionsFlow):
+class TapoOptionsFlowHandler(OptionsFlow):
     def __init__(self, config_entry):
         self.config_entry = config_entry
         self.options = dict(config_entry.options)
@@ -473,7 +492,8 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                     ip_address = user_input[CONF_IP_ADDRESS]
 
                 LOGGER.debug(
-                    "[%s] Verifying updated data.", ip_address,
+                    "[%s] Verifying updated data.",
+                    ip_address,
                 )
                 username = user_input[CONF_USERNAME]
                 password = user_input[CONF_PASSWORD]
@@ -492,7 +512,8 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                                 registerController, ip_address, "admin", cloud_password
                             )
                             LOGGER.debug(
-                                "[%s] Cloud password works for control.", ip_address,
+                                "[%s] Cloud password works for control.",
+                                ip_address,
                             )
                         except Exception as e:
                             LOGGER.debug(
@@ -567,7 +588,8 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                     int(sound_detection_peak) >= -100 and int(sound_detection_peak) <= 0
                 ):
                     LOGGER.debug(
-                        "[%s] Incorrect range for sound detection peak.", ip_address,
+                        "[%s] Incorrect range for sound detection peak.",
+                        ip_address,
                     )
                     raise Exception("Incorrect sound detection peak value.")
 
@@ -577,7 +599,8 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                     or self.config_entry.data[CONF_IP_ADDRESS] != ip_address
                 ):
                     LOGGER.debug(
-                        "[%s] Testing RTSP stream.", ip_address,
+                        "[%s] Testing RTSP stream.",
+                        ip_address,
                     )
                     rtspStreamWorks = await isRtspStreamWorking(
                         self.hass, ip_address, username, password, custom_stream
@@ -590,7 +613,8 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                         raise Exception("Invalid authentication data")
                     else:
                         LOGGER.debug(
-                            "[%s] RTSP stream works.", ip_address,
+                            "[%s] RTSP stream works.",
+                            ip_address,
                         )
                 else:
                     LOGGER.debug(
@@ -616,7 +640,8 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                                 registerController, ip_address, username, password
                             )
                             LOGGER.debug(
-                                "[%s] Camera Account works for control.", ip_address,
+                                "[%s] Camera Account works for control.",
+                                ip_address,
                             )
                         except Exception as e:
                             LOGGER.error(e)
@@ -636,7 +661,7 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
 
                 if ipChanged:
                     LOGGER.debug("[%s] IP Changed, cleaning up devices...", ip_address)
-                    device_registry = dr.async_get(self.hass)
+                    device_registry = device_registry_async_get(self.hass)
                     for deviceID in device_registry.devices:
                         device = device_registry.devices[deviceID]
                         LOGGER.debug("[%s] Removing device %s.", ip_address, deviceID)
@@ -653,7 +678,8 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                     )
 
                 LOGGER.debug(
-                    "[%s] Updating entry.", ip_address,
+                    "[%s] Updating entry.",
+                    ip_address,
                 )
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
@@ -677,14 +703,16 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                 )
                 if ipChanged:
                     LOGGER.debug(
-                        "[%s] IP Changed, reloading entry...", ip_address,
+                        "[%s] IP Changed, reloading entry...",
+                        ip_address,
                     )
                     await self.hass.config_entries.async_reload(
                         self.config_entry.entry_id
                     )
                 else:
                     LOGGER.debug(
-                        "[%s] Skipping reload of entry.", ip_address,
+                        "[%s] Skipping reload of entry.",
+                        ip_address,
                     )
                 return self.async_create_entry(title="", data=None)
             except Exception as e:
@@ -727,7 +755,8 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
                         description={"suggested_value": enable_time_sync},
                     ): bool,
                     vol.Optional(
-                        ENABLE_STREAM, description={"suggested_value": enable_stream},
+                        ENABLE_STREAM,
+                        description={"suggested_value": enable_stream},
                     ): bool,
                     vol.Optional(
                         ENABLE_SOUND_DETECTION,
@@ -761,4 +790,3 @@ class TapoOptionsFlowHandler(config_entries.OptionsFlow):
             ),
             errors=errors,
         )
-
