@@ -51,14 +51,10 @@ async def async_setup_entry(
 ):
     platform = entity_platform.current_platform.get()
     platform.async_register_entity_service(
-        SERVICE_SAVE_PRESET,
-        SCHEMA_SERVICE_SAVE_PRESET,
-        "save_preset",
+        SERVICE_SAVE_PRESET, SCHEMA_SERVICE_SAVE_PRESET, "save_preset",
     )
     platform.async_register_entity_service(
-        SERVICE_DELETE_PRESET,
-        SCHEMA_SERVICE_DELETE_PRESET,
-        "delete_preset",
+        SERVICE_DELETE_PRESET, SCHEMA_SERVICE_DELETE_PRESET, "delete_preset",
     )
 
     hass.data[DOMAIN][entry.entry_id]["entities"] = [
@@ -70,11 +66,7 @@ async def async_setup_entry(
 
 class TapoCamEntity(Camera):
     def __init__(
-        self,
-        hass: HomeAssistant,
-        entry: dict,
-        tapoData: dict,
-        HDStream: boolean,
+        self, hass: HomeAssistant, entry: dict, tapoData: dict, HDStream: boolean,
     ):
         super().__init__()
         self.stream_options[CONF_RTSP_TRANSPORT] = entry.data.get(CONF_RTSP_TRANSPORT)
@@ -126,8 +118,7 @@ class TapoCamEntity(Camera):
     async def startNoiseDetection(self):
         self._hass.data[DOMAIN][self._entry.entry_id]["noiseSensorStarted"] = True
         await self._noiseSensor.open_sensor(
-            input_source=self.getStreamSource(),
-            extra_cmd="-nostats",
+            input_source=self.getStreamSource(), extra_cmd="-nostats",
         )
 
     async def async_added_to_hass(self) -> None:
@@ -147,9 +138,9 @@ class TapoCamEntity(Camera):
     def name(self) -> str:
         name = self._attr_extra_state_attributes["device_alias"]
         if self._hdstream:
-            name += " - HD"
+            name += " HD"
         else:
-            name += " - SD"
+            name += " SD"
         return name
 
     @property
@@ -194,8 +185,7 @@ class TapoCamEntity(Camera):
         streaming_url = self.getStreamSource()
         stream = CameraMjpeg(self._ffmpeg.binary)
         await stream.open_camera(
-            streaming_url,
-            extra_cmd=self._extra_arguments,
+            streaming_url, extra_cmd=self._extra_arguments,
         )
         try:
             stream_reader = await stream.get_reader()
@@ -259,15 +249,13 @@ class TapoCamEntity(Camera):
 
     async def async_turn_on(self):
         await self._hass.async_add_executor_job(
-            self._controller.setPrivacyMode,
-            False,
+            self._controller.setPrivacyMode, False,
         )
         await self._coordinator.async_request_refresh()
 
     async def async_turn_off(self):
         await self._hass.async_add_executor_job(
-            self._controller.setPrivacyMode,
-            True,
+            self._controller.setPrivacyMode, True,
         )
         await self._coordinator.async_request_refresh()
 
