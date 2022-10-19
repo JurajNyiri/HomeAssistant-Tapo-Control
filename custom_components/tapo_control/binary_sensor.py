@@ -20,7 +20,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     name = hass.data[DOMAIN][entry.entry_id]["name"]
     camData = hass.data[DOMAIN][entry.entry_id]["camData"]
     entities = {
-        event.uid: TapoBinarySensor(event.uid, events, name, camData)
+        event.uid: TapoMotionSensor(event.uid, events, name, camData)
         for event in events.get_platform("binary_sensor")
     }
 
@@ -38,7 +38,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 LOGGER.debug(
                     "Found event which doesn't have entity yet, adding binary sensor!"
                 )
-                entities[event.uid] = TapoBinarySensor(event.uid, events, name, camData)
+                entities[event.uid] = TapoMotionSensor(event.uid, events, name, camData)
                 new_entities.append(entities[event.uid])
         async_add_entities(new_entities)
         LOGGER.debug(new_entities)
@@ -48,16 +48,16 @@ async def async_setup_entry(hass, entry, async_add_entities):
     return True
 
 
-class TapoBinarySensor(BinarySensorEntity):
+class TapoMotionSensor(BinarySensorEntity):
     def __init__(self, uid, events, name, camData):
-        LOGGER.debug("TapoBinarySensor - init - start")
+        LOGGER.debug("TapoMotionSensor - init - start")
         self._name = name
         self._attributes = camData["basic_info"]
         BinarySensorEntity.__init__(self)
 
         self.uid = uid
         self.events = events
-        LOGGER.debug("TapoBinarySensor - init - end")
+        LOGGER.debug("TapoMotionSensor - init - end")
 
     @property
     def is_on(self) -> bool:

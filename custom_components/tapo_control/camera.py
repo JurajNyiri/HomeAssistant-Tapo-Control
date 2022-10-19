@@ -234,6 +234,7 @@ class TapoCamEntity(Camera):
 
             for attr, value in camData["basic_info"].items():
                 self._attr_extra_state_attributes[attr] = value
+            self._attr_extra_state_attributes["alarm"] = camData["alarm"]
             self._attr_extra_state_attributes["user"] = camData["user"]
             self._attr_extra_state_attributes["presets"] = camData["presets"]
 
