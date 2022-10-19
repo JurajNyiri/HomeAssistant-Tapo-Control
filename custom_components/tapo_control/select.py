@@ -29,7 +29,7 @@ async def async_setup_entry(
     selects.append(TapoLightFrequencySelect(entry, hass, config_entry))
 
     tapoMotionDetectionSelect = await check_and_create(
-        entry, hass, TapoMotionDetectionSelect, "getAutoTrackTarget", config_entry
+        entry, hass, TapoMotionDetectionSelect, "getMotionDetection", config_entry
     )
     if tapoMotionDetectionSelect:
         LOGGER.debug("Adding TapoMotionDetectionSelect...")
