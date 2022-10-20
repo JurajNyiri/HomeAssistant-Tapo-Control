@@ -130,7 +130,7 @@ class TapoSoundBinarySensor(TapoBinarySensorEntity):
         TapoBinarySensorEntity.__init__(self, "Sound", entry, hass, config_entry, None, BinarySensorDeviceClass.SOUND)
 
         self._entry["entities"].append(self)
-        self.updateTapo(self._entry["camData"])
+        self.updateTapo(hass.data[DOMAIN][config_entry.entry_id]["camData"])
         self._is_cam_entity = True
         LOGGER.debug("TapoSoundBinarySensor - init - end")
 
@@ -167,4 +167,4 @@ class TapoSoundBinarySensor(TapoBinarySensorEntity):
         if not camData:
             self._attr_state = "unavailable"
         else:
-            self._attr_state = "idle"
+            self._attr_state = "off"
