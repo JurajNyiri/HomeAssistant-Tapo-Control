@@ -16,11 +16,17 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+):
     LOGGER.debug("Setting up binary sensor for motion.")
-    events = hass.data[DOMAIN][entry.entry_id]["events"]
-    name = hass.data[DOMAIN][entry.entry_id]["name"]
-    camData = hass.data[DOMAIN][entry.entry_id]["camData"]
+    entry = hass.data[DOMAIN][config_entry.entry_id]
+    
+    events = entry["events"]
+    name = entry["name"]
+    camData = entry["camData"]
     entities = {
         event.uid: TapoMotionSensor(event.uid, events, name, camData)
         for event in events.get_platform("binary_sensor")
@@ -31,7 +37,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     
     binarySensors = []
     LOGGER.debug("Adding TapoSoundBinarySensor...")
-    binarySensors.append(TapoSoundBinarySensor(hass.data[DOMAIN][entry.entry_id], hass, entry))
+    binarySensors.append(TapoSoundBinarySensor(entry, hass, config_entry))
     async_add_entities(binarySensors)
 
     @callback
