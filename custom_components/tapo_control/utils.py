@@ -328,7 +328,6 @@ async def setupEvents(hass, config_entry):
         if await events.async_start():
             LOGGER.debug("Events started.")
             if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
-                LOGGER.debug("TODO: Creating motion binary sensor...")
                 hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"] = True
                 if hass.data[DOMAIN][config_entry.entry_id]["eventsListener"]:
                     hass.data[DOMAIN][config_entry.entry_id][
