@@ -1,14 +1,15 @@
 from typing import Optional
 
 from homeassistant.core import HomeAssistant, callback
-
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.ffmpeg import DATA_FFMPEG
+from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import DeviceInfo
 
-from .const import BRAND, DOMAIN, LOGGER
+from .const import BRAND, DOMAIN, LOGGER, CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD, ENABLE_SOUND_DETECTION, SOUND_DETECTION_PEAK, SOUND_DETECTION_DURATION, SOUND_DETECTION_RESET
 from .utils import build_device_info
 
+import haffmpeg.sensor as ffmpeg_sensor
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
@@ -26,6 +27,11 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     LOGGER.debug("Creating binary sensor entity.")
     async_add_entities(entities.values())
+    
+    binarySensors = []
+    LOGGER.debug("Adding TapoSoundBinarySensor...")
+    binarySensors.append(TapoSoundBinarySensor(hass.data[DOMAIN][entry.entry_id], hass, entry))
+    async_add_entities(binarySensors)
 
     @callback
     def async_check_entities():
@@ -97,3 +103,64 @@ class TapoMotionSensor(BinarySensorEntity):
 
     async def async_added_to_hass(self):
         self.async_on_remove(self.events.async_add_listener(self.async_write_ha_state))
+
+
+class TapoSoundBinarySensor(TapoBinarySensorEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        LOGGER.debug("TapoSoundBinarySensor - init - start")
+        self._is_cam_entity = True
+        self._ffmpeg = hass.data[DATA_FFMPEG]
+        self._host = config_entry.data.get(CONF_IP_ADDRESS)
+        self._username = config_entry.data.get(CONF_USERNAME)
+        self._password = config_entry.data.get(CONF_PASSWORD)
+        self._enable_sound_detection = True #config_entry.data.get(ENABLE_SOUND_DETECTION)
+        self._sound_detection_peak = config_entry.data.get(SOUND_DETECTION_PEAK)
+        self._sound_detection_duration = config_entry.data.get(SOUND_DETECTION_DURATION)
+        self._sound_detection_reset = config_entry.data.get(SOUND_DETECTION_RESET)
+        hass.data[DOMAIN][config_entry.entry_id]["noiseSensorStarted"] = False
+
+        if self._enable_sound_detection:
+            LOGGER.warn("TapoSoundBinarySensor - enabled")
+            self._noiseSensor = ffmpeg_sensor.SensorNoise(
+                self._ffmpeg.binary, self._noiseCallback
+            )
+            self._noiseSensor.set_options(
+                time_duration=int(self._sound_detection_duration),
+                time_reset=int(self._sound_detection_reset),
+                peak=int(self._sound_detection_peak),
+            )
+
+        hass.data[DOMAIN][config_entry.entry_id]["entities"].append(self)
+        self.updateTapo(hass.data[DOMAIN][config_entry.entry_id]["camData"])
+        TapoBinarySensorEntity.__init__(self, "Sound", entry, hass, config_entry, BinarySensorDeviceClass.SOUND)
+
+        self._attributes["noise_detected"] = "off"
+
+        LOGGER.debug("TapoSoundBinarySensor - init - end")
+
+    @callback
+    def _noiseCallback(self, noiseDetected):
+        LOGGER.warn("TapoSoundBinarySensor - callback")
+        self._attributes["noise_detected"] = (
+            "on" if noiseDetected else "off"
+        )
+        self._attr_is_on = noiseDetected
+        for entity in self._hass.data[DOMAIN][self._entry.entry_id]["entities"]:
+            if entity._enabled:
+                entity.async_write_ha_state()
+
+
+    async def startNoiseDetection(self):
+        LOGGER.warn("TapoSoundBinarySensor - starting sensor")
+        self._hass.data[DOMAIN][self._entry.entry_id]["noiseSensorStarted"] = True
+        await self._noiseSensor.open_sensor(
+            input_source=self.getStreamSource(), extra_cmd="-nostats",
+        )
+
+    def updateTapo(self, camData):
+        LOGGER.warn("TapoSoundBinarySensor - update")
+        if not camData:
+            self._attr_state = "unavailable"
+        else:
+            self._attr_state = "idle"
+            # self._motion_detection_enabled = camData["motion_detection_enabled"]
