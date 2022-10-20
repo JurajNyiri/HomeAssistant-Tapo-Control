@@ -15,7 +15,6 @@ from homeassistant.components.camera import (
 )
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS, DATA_FFMPEG
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.aiohttp_client import async_aiohttp_proxy_stream
 from homeassistant.helpers.config_validation import boolean
@@ -24,7 +23,6 @@ from homeassistant.util import slugify
 
 from .const import (
     CONF_RTSP_TRANSPORT,
-    CONF_CUSTOM_STREAM,
     ENABLE_SOUND_DETECTION,
     ENABLE_STREAM,
     SERVICE_SAVE_PRESET,
@@ -39,7 +37,7 @@ from .const import (
     NAME,
     BRAND,
 )
-from .utils import build_device_info
+from .utils import build_device_info, getStreamSource
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -79,15 +77,11 @@ class TapoCamEntity(Camera):
         self._enabled = False
         self._hdstream = HDStream
         self._extra_arguments = entry.data.get(CONF_EXTRA_ARGUMENTS)
-        self._host = entry.data.get(CONF_IP_ADDRESS)
-        self._username = entry.data.get(CONF_USERNAME)
-        self._password = entry.data.get(CONF_PASSWORD)
         self._enable_stream = entry.data.get(ENABLE_STREAM)
         self._enable_sound_detection = entry.data.get(ENABLE_SOUND_DETECTION)
         self._sound_detection_peak = entry.data.get(SOUND_DETECTION_PEAK)
         self._sound_detection_duration = entry.data.get(SOUND_DETECTION_DURATION)
         self._sound_detection_reset = entry.data.get(SOUND_DETECTION_RESET)
-        self._custom_stream = entry.data.get(CONF_CUSTOM_STREAM)
         self._attr_extra_state_attributes = tapoData["camData"]["basic_info"]
         self._attr_motion_detection_enabled = False
         self._attr_icon = "mdi:cctv"
@@ -120,7 +114,8 @@ class TapoCamEntity(Camera):
     async def startNoiseDetection(self):
         self._hass.data[DOMAIN][self._entry.entry_id]["noiseSensorStarted"] = True
         await self._noiseSensor.open_sensor(
-            input_source=self.getStreamSource(), extra_cmd="-nostats",
+            input_source=getStreamSource(self._entry, self._hdstream),
+            extra_cmd="-nostats",
         )
 
     async def async_added_to_hass(self) -> None:
@@ -173,7 +168,7 @@ class TapoCamEntity(Camera):
 
     async def async_camera_image(self, width=None, height=None):
         ffmpeg = ImageFrame(self._ffmpeg.binary)
-        streaming_url = self.getStreamSource()
+        streaming_url = getStreamSource(self._entry, self._hdstream)
         image = await asyncio.shield(
             ffmpeg.get_image(
                 streaming_url,
@@ -184,7 +179,7 @@ class TapoCamEntity(Camera):
         return image
 
     async def handle_async_mjpeg_stream(self, request):
-        streaming_url = self.getStreamSource()
+        streaming_url = getStreamSource(self._entry, self._hdstream)
         stream = CameraMjpeg(self._ffmpeg.binary)
         await stream.open_camera(
             streaming_url, extra_cmd=self._extra_arguments,
@@ -200,19 +195,6 @@ class TapoCamEntity(Camera):
         finally:
             await stream.close()
 
-    def getStreamSource(self):
-        if self._custom_stream != "":
-            return self._custom_stream
-
-        if self._hdstream:
-            streamType = "stream1"
-        else:
-            streamType = "stream2"
-        username = urllib.parse.quote_plus(self._username)
-        password = urllib.parse.quote_plus(self._password)
-        streamURL = f"rtsp://{username}:{password}@{self._host}:554/{streamType}"
-        return streamURL
-
     async def async_update(self) -> None:
         data = await self._hass.async_add_executor_job(
             self._controller.getMotionDetection
@@ -223,7 +205,7 @@ class TapoCamEntity(Camera):
         await self._coordinator.async_request_refresh()
 
     async def stream_source(self):
-        return self.getStreamSource()
+        return getStreamSource(self._entry, self._hdstream)
 
     def updateTapo(self, camData):
         if not camData:

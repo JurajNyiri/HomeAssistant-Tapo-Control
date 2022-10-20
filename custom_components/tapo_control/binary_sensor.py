@@ -10,7 +10,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import DeviceInfo
 
 from .const import BRAND, DOMAIN, LOGGER, ENABLE_SOUND_DETECTION
-from .utils import build_device_info
+from .utils import build_device_info, getStreamSource
 from .tapo.entities import TapoBinarySensorEntity
 
 
@@ -41,6 +41,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class TapoNoiseBinarySensor(TapoBinarySensorEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         LOGGER.debug("TapoNoiseBinarySensor - init - start")
+        self._hass = hass
+        self._config_entry = config_entry
+        self._stream_source = getStreamSource(config_entry, False)
 
         TapoBinarySensorEntity.__init__(
             self,

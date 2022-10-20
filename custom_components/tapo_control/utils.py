@@ -23,7 +23,26 @@ from .const import (
     LOGGER,
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
+    CONF_CUSTOM_STREAM,
 )
+
+
+def getStreamSource(entry, hdStream):
+    custom_stream = entry.data.get(CONF_CUSTOM_STREAM)
+    username = entry.data.get(CONF_USERNAME)
+    password = entry.data.get(CONF_PASSWORD)
+    host = entry.data.get(CONF_IP_ADDRESS)
+    if custom_stream != "":
+        return custom_stream
+
+    if hdStream:
+        streamType = "stream1"
+    else:
+        streamType = "stream2"
+    username = urllib.parse.quote_plus(username)
+    password = urllib.parse.quote_plus(password)
+    streamURL = f"rtsp://{username}:{password}@{host}:554/{streamType}"
+    return streamURL
 
 
 def registerController(host, username, password):
