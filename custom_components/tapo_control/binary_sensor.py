@@ -108,11 +108,8 @@ class TapoMotionSensor(BinarySensorEntity):
 class TapoSoundBinarySensor(TapoBinarySensorEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         LOGGER.debug("TapoSoundBinarySensor - init - start")
-        self._is_cam_entity = True
+        self._config_entry = config_entry
         self._ffmpeg = hass.data[DATA_FFMPEG]
-        self._host = config_entry.data.get(CONF_IP_ADDRESS)
-        self._username = config_entry.data.get(CONF_USERNAME)
-        self._password = config_entry.data.get(CONF_PASSWORD)
         self._enable_sound_detection = True #config_entry.data.get(ENABLE_SOUND_DETECTION)
         self._sound_detection_peak = config_entry.data.get(SOUND_DETECTION_PEAK)
         self._sound_detection_duration = config_entry.data.get(SOUND_DETECTION_DURATION)
@@ -120,7 +117,6 @@ class TapoSoundBinarySensor(TapoBinarySensorEntity):
         hass.data[DOMAIN][config_entry.entry_id]["noiseSensorStarted"] = False
 
         if self._enable_sound_detection:
-            LOGGER.warn("TapoSoundBinarySensor - enabled")
             self._noiseSensor = ffmpeg_sensor.SensorNoise(
                 self._ffmpeg.binary, self._noiseCallback
             )
@@ -132,35 +128,42 @@ class TapoSoundBinarySensor(TapoBinarySensorEntity):
 
         hass.data[DOMAIN][config_entry.entry_id]["entities"].append(self)
         self.updateTapo(hass.data[DOMAIN][config_entry.entry_id]["camData"])
-        TapoBinarySensorEntity.__init__(self, "Sound", entry, hass, config_entry, BinarySensorDeviceClass.SOUND)
+        TapoBinarySensorEntity.__init__(self, "Sound", entry, hass, config_entry, None, BinarySensorDeviceClass.SOUND)
 
-        self._attributes["noise_detected"] = "off"
-
+        self._is_cam_entity = True
         LOGGER.debug("TapoSoundBinarySensor - init - end")
 
     @callback
     def _noiseCallback(self, noiseDetected):
-        LOGGER.warn("TapoSoundBinarySensor - callback")
-        self._attributes["noise_detected"] = (
-            "on" if noiseDetected else "off"
-        )
         self._attr_is_on = noiseDetected
-        for entity in self._hass.data[DOMAIN][self._entry.entry_id]["entities"]:
+        for entity in self._hass.data[DOMAIN][self._config_entry.entry_id]["entities"]:
             if entity._enabled:
                 entity.async_write_ha_state()
 
 
     async def startNoiseDetection(self):
-        LOGGER.warn("TapoSoundBinarySensor - starting sensor")
-        self._hass.data[DOMAIN][self._entry.entry_id]["noiseSensorStarted"] = True
+        self._hass.data[DOMAIN][self._config_entry.entry_id]["noiseSensorStarted"] = True
         await self._noiseSensor.open_sensor(
             input_source=self.getStreamSource(), extra_cmd="-nostats",
         )
 
+    def getStreamSource(self):
+        host = self._config_entry.data.get(CONF_IP_ADDRESS)
+        username = urllib.parse.quote_plus(self._config_entry.data.get(CONF_USERNAME))
+        password = urllib.parse.quote_plus(self._config_entry.data.get(CONF_PASSWORD))
+        custom_stream = self._config_entry.data.get(CONF_CUSTOM_STREAM)
+
+        if custom_stream != "":
+            return custom_stream
+
+        # if self._hdstream:
+        streamType = "stream1"
+        # else:
+        #     streamType = "stream2"
+        return f"rtsp://{username}:{password}@{host}:554/{streamType}"
+
     def updateTapo(self, camData):
-        LOGGER.warn("TapoSoundBinarySensor - update")
         if not camData:
             self._attr_state = "unavailable"
         else:
             self._attr_state = "idle"
-            # self._motion_detection_enabled = camData["motion_detection_enabled"]
