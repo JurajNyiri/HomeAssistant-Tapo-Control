@@ -98,8 +98,6 @@ class TapoNoiseBinarySensor(TapoBinarySensorEntity):
 
     @callback
     def _noiseCallback(self, noiseDetected):
-        LOGGER.warn("_noiseCallback")
-        LOGGER.warn(noiseDetected)
         self._attr_state = "on" if noiseDetected else "off"
         self.async_write_ha_state()
 
