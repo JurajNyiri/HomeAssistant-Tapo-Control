@@ -76,6 +76,10 @@ class TapoSwitchEntity(SwitchEntity, TapoEntity):
     def entity_category(self):
         return EntityCategory.CONFIG
 
+    @property
+    def state(self):
+        return self._attr_state
+
 
 class TapoButtonEntity(ButtonEntity, TapoEntity):
     def __init__(
@@ -94,6 +98,10 @@ class TapoButtonEntity(ButtonEntity, TapoEntity):
         TapoEntity.__init__(self, entry, name_suffix)
         ButtonEntity.__init__(self)
         LOGGER.debug(f"Tapo {name_suffix} - init - end")
+
+    @property
+    def state(self):
+        return self._attr_state
 
 
 class TapoSelectEntity(SelectEntity, TapoEntity):
@@ -120,3 +128,7 @@ class TapoSelectEntity(SelectEntity, TapoEntity):
     @property
     def entity_category(self):
         return EntityCategory.CONFIG
+
+    @property
+    def state(self):
+        return self._attr_state
