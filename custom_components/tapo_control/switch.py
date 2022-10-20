@@ -124,6 +124,10 @@ class TapoPrivacySwitch(TapoSwitchEntity):
             return "mdi:eye-off-outline"
         else:
             return "mdi:eye-outline"
+        
+    @property
+    def entity_category(self):
+        return None
 
 
 class TapoIndicatorLedSwitch(TapoSwitchEntity):
