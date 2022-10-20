@@ -61,6 +61,13 @@ async def async_setup_entry(
         LOGGER.debug("Adding tapoAutoTrackSwitch...")
         switches.append(tapoAutoTrackSwitch)
 
+    tapoMotionDetectionSwitch = await check_and_create(
+        entry, hass, TapoMotionDetectionSwitch, "getMotionDetection", config_entry
+    )
+    if tapoMotionDetectionSwitch:
+        LOGGER.debug("Adding tapoMotionDetectionSwitch...")
+        switches.append(tapoMotionDetectionSwitch)
+
     if switches:
         LOGGER.debug("Adding switch entities...")
         async_add_entities(switches)
@@ -200,3 +207,27 @@ class TapoAutoTrackSwitch(TapoSwitchEntity):
         else:
             self._attr_state = "idle"
             self._attr_is_on = camData["auto_track"] == "on"
+
+
+class TapoMotionDetectionSwitch(TapoSwitchEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        TapoSwitchEntity.__init__(
+            self, "Motion Detection", entry, hass, config_entry, "mdi:motion-sensor"
+        )
+
+    async def async_turn_on(self) -> None:
+        await self._hass.async_add_executor_job(
+            self._controller.setMotionDetection, True,
+        )
+
+    async def async_turn_off(self) -> None:
+        await self._hass.async_add_executor_job(
+            self._controller.setMotionDetection, False,
+        )
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = "unavailable"
+        else:
+            self._attr_state = "idle"
+            self._attr_is_on = camData["motion_detection_enabled"] == "on"
