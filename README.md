@@ -67,7 +67,7 @@ Deletes a preset
 
 ## Sound Detection
 
-Integration is capable of analysing sound from camera microphone and expose a new attribute noise_detected on cameras when a voice threshold is reached.
+Integration is capable of analysing sound from camera microphone and expose noise detected via binary_sensor.
 
 You need to enable this feature in integration options by checking "Enable sound threshold detection". After enabling it, you can also set any other options starting with [Sound Detection]. You will need to restart Home Asssistant after doing any changes.
 
