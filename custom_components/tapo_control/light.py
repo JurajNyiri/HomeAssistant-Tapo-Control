@@ -54,5 +54,5 @@ class TapoFloodlight(LightEntity, TapoEntity):
         if not camData:
             self._attr_state = "unavailable"
         else:
-            self._attr_state = "idle"
             self._attr_is_on = camData["force_white_lamp_state"] == "on"
+            self._attr_state = "on" if self._attr_is_on else "off"

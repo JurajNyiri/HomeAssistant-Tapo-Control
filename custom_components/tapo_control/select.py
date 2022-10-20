@@ -64,6 +64,7 @@ class TapoNightVisionSelect(TapoSelectEntity):
             self._attr_state = "unavailable"
         else:
             self._attr_current_option = camData["day_night_mode"]
+            self._attr_state = self._attr_current_option
 
     async def async_select_option(self, option: str) -> None:
         await self._hass.async_add_executor_job(
@@ -89,6 +90,7 @@ class TapoLightFrequencySelect(TapoSelectEntity):
             self._attr_state = "unavailable"
         else:
             self._attr_current_option = camData["light_frequency_mode"]
+            self._attr_state = self._attr_current_option
 
     async def async_select_option(self, option: str) -> None:
         await self._hass.async_add_executor_job(
@@ -125,6 +127,7 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
                     self._attr_current_option = "light"
                 else:
                     self._attr_current_option = "sound"
+            self._attr_state = self._attr_current_option
 
     async def async_select_option(self, option: str) -> None:
         await self.hass.async_add_executor_job(
@@ -157,6 +160,7 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
                 self._attr_current_option = "off"
             else:
                 self._attr_current_option = camData["motion_detection_sensitivity"]
+            self._attr_state = self._attr_current_option
 
     async def async_select_option(self, option: str) -> None:
         await self.hass.async_add_executor_job(
@@ -180,10 +184,10 @@ class TapoMoveToPresetSelect(TapoSelectEntity):
         if not camData:
             self._attr_state = "unavailable"
         else:
-            self._attr_state = "idle"
             self._presets = camData["presets"]
             self._attr_options = list(camData["presets"].values())
             self._attr_current_option = None
+            self._attr_state = self._attr_current_option
 
     async def async_select_option(self, option: str) -> None:
         foundKey = False

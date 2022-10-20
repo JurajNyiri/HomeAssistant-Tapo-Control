@@ -93,8 +93,8 @@ class TapoLensDistortionCorrectionSwitch(TapoSwitchEntity):
         if not camData:
             self._attr_state = "unavailable"
         else:
-            self._attr_state = "idle"
             self._attr_is_on = camData["lens_distrotion_correction"] == "on"
+            self._attr_state = "on" if self._attr_is_on else "off"
 
 
 class TapoPrivacySwitch(TapoSwitchEntity):
@@ -115,8 +115,8 @@ class TapoPrivacySwitch(TapoSwitchEntity):
         if not camData:
             self._attr_state = "unavailable"
         else:
-            self._attr_state = "idle"
             self._attr_is_on = camData["privacy_mode"] == "on"
+            self._attr_state = "on" if self._attr_is_on else "off"
 
     @property
     def icon(self) -> str:
@@ -124,7 +124,7 @@ class TapoPrivacySwitch(TapoSwitchEntity):
             return "mdi:eye-off-outline"
         else:
             return "mdi:eye-outline"
-        
+
     @property
     def entity_category(self):
         return None
@@ -150,8 +150,8 @@ class TapoIndicatorLedSwitch(TapoSwitchEntity):
         if not camData:
             self._attr_state = "unavailable"
         else:
-            self._attr_state = "idle"
             self._attr_is_on = camData["led"] == "on"
+            self._attr_state = "on" if self._attr_is_on else "off"
 
 
 class TapoFlipSwitch(TapoSwitchEntity):
@@ -174,8 +174,8 @@ class TapoFlipSwitch(TapoSwitchEntity):
         if not camData:
             self._attr_state = "unavailable"
         else:
-            self._attr_state = "idle"
             self._attr_is_on = camData["flip"] == "on"
+            self._attr_state = "on" if self._attr_is_on else "off"
 
 
 class TapoAutoTrackSwitch(TapoSwitchEntity):
@@ -198,5 +198,5 @@ class TapoAutoTrackSwitch(TapoSwitchEntity):
         if not camData:
             self._attr_state = "unavailable"
         else:
-            self._attr_state = "idle"
             self._attr_is_on = camData["auto_track"] == "on"
+            self._attr_state = "on" if self._attr_is_on else "off"
