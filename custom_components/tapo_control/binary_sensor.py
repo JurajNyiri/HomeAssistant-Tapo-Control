@@ -127,23 +127,23 @@ class TapoSoundBinarySensor(TapoBinarySensorEntity):
                 peak=int(self._sound_detection_peak),
             )
 
-        hass.data[DOMAIN][config_entry.entry_id]["entities"].append(self)
-        self.updateTapo(hass.data[DOMAIN][config_entry.entry_id]["camData"])
         TapoBinarySensorEntity.__init__(self, "Sound", entry, hass, config_entry, None, BinarySensorDeviceClass.SOUND)
 
+        self._entry["entities"].append(self)
+        self.updateTapo(self._entry["camData"])
         self._is_cam_entity = True
         LOGGER.debug("TapoSoundBinarySensor - init - end")
 
     @callback
     def _noiseCallback(self, noiseDetected):
         self._attr_is_on = noiseDetected
-        for entity in self._hass.data[DOMAIN][self._config_entry.entry_id]["entities"]:
+        for entity in self._entry["entities"]:
             if entity._enabled:
                 entity.async_write_ha_state()
 
 
     async def startNoiseDetection(self):
-        self._hass.data[DOMAIN][self._config_entry.entry_id]["noiseSensorStarted"] = True
+        self._entry["noiseSensorStarted"] = True
         await self._noiseSensor.open_sensor(
             input_source=self.getStreamSource(), extra_cmd="-nostats",
         )
