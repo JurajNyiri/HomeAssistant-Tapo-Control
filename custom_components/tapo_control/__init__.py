@@ -280,20 +280,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "onvifManagement": False,
             "eventsSetup": False,
             "events": False,
+            "eventsListener": False,
             "entities": [],
             "name": camData["basic_info"]["device_alias"],
         }
-        if motionSensor or enableTimeSync:
-            onvifDevice = await initOnvifEvents(hass, host, username, password)
-            hass.data[DOMAIN][entry.entry_id]["eventsDevice"] = onvifDevice["device"]
-            hass.data[DOMAIN][entry.entry_id]["onvifManagement"] = onvifDevice[
-                "device_mgmt"
-            ]
-            if motionSensor:
-                LOGGER.debug("Seting up motion sensor for the first time.")
-                await setupOnvif(hass, entry)
-            if enableTimeSync:
-                await syncTime(hass, entry.entry_id)
 
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "button")
@@ -316,6 +306,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "update")
         )
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, "binary_sensor")
+        )
+
+        # Needs to execute AFTER binary_sensor creation!
+        if motionSensor or enableTimeSync:
+            onvifDevice = await initOnvifEvents(hass, host, username, password)
+            hass.data[DOMAIN][entry.entry_id]["eventsDevice"] = onvifDevice["device"]
+            hass.data[DOMAIN][entry.entry_id]["onvifManagement"] = onvifDevice[
+                "device_mgmt"
+            ]
+            if motionSensor:
+                LOGGER.debug("Seting up motion sensor for the first time.")
+                await setupOnvif(hass, entry)
+            if enableTimeSync:
+                await syncTime(hass, entry.entry_id)
 
         async def unsubscribe(event):
             if hass.data[DOMAIN][entry.entry_id]["events"]:

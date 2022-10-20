@@ -2,7 +2,10 @@ from typing import Optional
 
 from homeassistant.core import HomeAssistant, callback
 
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.binary_sensor import (
+    BinarySensorEntity,
+    BinarySensorDeviceClass,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import DeviceInfo
 
@@ -14,38 +17,52 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(hass, config_entry, async_add_entities):
     LOGGER.debug("Setting up binary sensor for motion.")
-    events = hass.data[DOMAIN][entry.entry_id]["events"]
-    name = hass.data[DOMAIN][entry.entry_id]["name"]
-    camData = hass.data[DOMAIN][entry.entry_id]["camData"]
-    entities = {
-        event.uid: TapoMotionSensor(event.uid, events, name, camData)
-        for event in events.get_platform("binary_sensor")
-    }
 
-    LOGGER.debug("Creating binary sensor entity.")
-    async_add_entities(entities.values())
-
-    @callback
-    def async_check_entities():
-        LOGGER.debug("async_check_entities")
-        new_entities = []
-        LOGGER.debug("Looping through available events.")
-        for event in events.get_platform("binary_sensor"):
-            LOGGER.debug(event)
-            if event.uid not in entities:
-                LOGGER.debug(
-                    "Found event which doesn't have entity yet, adding binary sensor!"
-                )
-                entities[event.uid] = TapoMotionSensor(event.uid, events, name, camData)
-                new_entities.append(entities[event.uid])
-        async_add_entities(new_entities)
-        LOGGER.debug(new_entities)
-
-    events.async_add_listener(async_check_entities)
+    hass.data[DOMAIN][config_entry.entry_id]["eventsListener"] = EventsListener(
+        async_add_entities, hass, config_entry
+    )
 
     return True
+
+
+class EventsListener:
+    def __init__(self, async_add_entities, hass, config_entry):
+        LOGGER.debug("EventsListener init")
+        self.metaData = hass.data[DOMAIN][config_entry.entry_id]
+        self.async_add_entities = async_add_entities
+
+    def createBinarySensor(self):
+        LOGGER.debug("Creating binary sensor entity.")
+
+        events = self.metaData["events"]
+        name = self.metaData["name"]
+        camData = self.metaData["camData"]
+        entities = {
+            event.uid: TapoMotionSensor(event.uid, events, name, camData)
+            for event in events.get_platform("binary_sensor")
+        }
+        self.async_add_entities(entities.values())
+
+        @callback
+        def async_check_entities():
+            LOGGER.debug("async_check_entities")
+            new_entities = []
+            LOGGER.debug("Looping through available events.")
+            for event in events.get_platform("binary_sensor"):
+                LOGGER.debug(event)
+                if event.uid not in entities:
+                    LOGGER.debug(
+                        "Found event which doesn't have entity yet, adding binary sensor!"
+                    )
+                    entities[event.uid] = TapoMotionSensor(
+                        event.uid, events, name, camData
+                    )
+                    new_entities.append(entities[event.uid])
+            self.async_add_entities(new_entities)
+
+        events.async_add_listener(async_check_entities)
 
 
 class TapoMotionSensor(BinarySensorEntity):

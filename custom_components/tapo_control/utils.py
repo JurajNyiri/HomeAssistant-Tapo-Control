@@ -320,21 +320,25 @@ async def setupOnvif(hass, entry):
         )
 
 
-async def setupEvents(hass, entry):
+async def setupEvents(hass, config_entry):
     LOGGER.debug("setupEvents - entry")
-    if not hass.data[DOMAIN][entry.entry_id]["events"].started:
+    if not hass.data[DOMAIN][config_entry.entry_id]["events"].started:
         LOGGER.debug("Setting up events...")
-        events = hass.data[DOMAIN][entry.entry_id]["events"]
+        events = hass.data[DOMAIN][config_entry.entry_id]["events"]
         if await events.async_start():
             LOGGER.debug("Events started.")
-            if not hass.data[DOMAIN][entry.entry_id]["motionSensorCreated"]:
-                LOGGER.debug("Creating motion binary sensor...")
-                hass.data[DOMAIN][entry.entry_id]["motionSensorCreated"] = True
-                hass.async_create_task(
-                    hass.config_entries.async_forward_entry_setup(
-                        entry, "binary_sensor"
+            if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
+                LOGGER.debug("TODO: Creating motion binary sensor...")
+                hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"] = True
+                if hass.data[DOMAIN][config_entry.entry_id]["eventsListener"]:
+                    hass.data[DOMAIN][config_entry.entry_id][
+                        "eventsListener"
+                    ].createBinarySensor()
+                else:
+                    LOGGER.error(
+                        "Trying to create motion sensor but motion listener not set up!"
                     )
-                )
+
                 LOGGER.debug(
                     "Binary sensor creation for motion has been forwarded to component."
                 )
