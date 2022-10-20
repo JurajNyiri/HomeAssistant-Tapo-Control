@@ -200,3 +200,7 @@ class TapoMoveToPresetSelect(TapoSelectEntity):
             self._attr_current_option = None
         else:
             LOGGER.error(f"Preset {option} does not exist.")
+
+    @property
+    def entity_category(self):
+        return None
