@@ -160,4 +160,3 @@ class TapoBinarySensorEntity(BinarySensorEntity, TapoEntity):
     @property
     def state(self):
         return self._attr_state
-    
