@@ -10,6 +10,7 @@ from .const import BRAND, DOMAIN, LOGGER, CONF_IP_ADDRESS, CONF_USERNAME, CONF_P
 from .utils import build_device_info
 
 import haffmpeg.sensor as ffmpeg_sensor
+import urllib.parse
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
