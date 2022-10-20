@@ -9,8 +9,9 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import DeviceInfo
 
-from .const import BRAND, DOMAIN, LOGGER
+from .const import BRAND, DOMAIN, LOGGER, ENABLE_SOUND_DETECTION
 from .utils import build_device_info
+from .tapo.entities import TapoBinarySensorEntity
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -19,12 +20,41 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     LOGGER.debug("Setting up binary sensor for motion.")
+    entry = hass.data[DOMAIN][config_entry.entry_id]
 
     hass.data[DOMAIN][config_entry.entry_id]["eventsListener"] = EventsListener(
         async_add_entities, hass, config_entry
     )
 
+    binarySensors = []
+
+    if config_entry.data.get(ENABLE_SOUND_DETECTION):
+        LOGGER.debug("Adding TapoNoiseBinarySensor...")
+        binarySensors.append(TapoNoiseBinarySensor(entry, hass, config_entry))
+
+    if binarySensors:
+        async_add_entities(binarySensors)
+
     return True
+
+
+class TapoNoiseBinarySensor(TapoBinarySensorEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        LOGGER.debug("TapoNoiseBinarySensor - init - start")
+
+        TapoBinarySensorEntity.__init__(
+            self,
+            "Noise",
+            entry,
+            hass,
+            config_entry,
+            None,
+            BinarySensorDeviceClass.SOUND,
+        )
+
+        self._attr_state = "on"  # placeholder
+
+        LOGGER.debug("TapoNoiseBinarySensor - init - end")
 
 
 class EventsListener:
