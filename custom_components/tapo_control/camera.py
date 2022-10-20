@@ -1,12 +1,10 @@
 import asyncio
-import urllib.parse
-import haffmpeg.sensor as ffmpeg_sensor
 
 from haffmpeg.camera import CameraMjpeg
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from typing import Callable
 
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 
 from homeassistant.components.camera import (
     SUPPORT_ON_OFF,
@@ -23,7 +21,6 @@ from homeassistant.util import slugify
 
 from .const import (
     CONF_RTSP_TRANSPORT,
-    ENABLE_SOUND_DETECTION,
     ENABLE_STREAM,
     SERVICE_SAVE_PRESET,
     SCHEMA_SERVICE_SAVE_PRESET,
@@ -31,9 +28,6 @@ from .const import (
     SCHEMA_SERVICE_DELETE_PRESET,
     DOMAIN,
     LOGGER,
-    SOUND_DETECTION_DURATION,
-    SOUND_DETECTION_PEAK,
-    SOUND_DETECTION_RESET,
     NAME,
     BRAND,
 )
@@ -78,45 +72,14 @@ class TapoCamEntity(Camera):
         self._hdstream = HDStream
         self._extra_arguments = entry.data.get(CONF_EXTRA_ARGUMENTS)
         self._enable_stream = entry.data.get(ENABLE_STREAM)
-        self._enable_sound_detection = entry.data.get(ENABLE_SOUND_DETECTION)
-        self._sound_detection_peak = entry.data.get(SOUND_DETECTION_PEAK)
-        self._sound_detection_duration = entry.data.get(SOUND_DETECTION_DURATION)
-        self._sound_detection_reset = entry.data.get(SOUND_DETECTION_RESET)
         self._attr_extra_state_attributes = tapoData["camData"]["basic_info"]
         self._attr_motion_detection_enabled = False
         self._attr_icon = "mdi:cctv"
         self._attr_should_poll = True
         self._is_cam_entity = True
+        self._is_noise_sensor = False
 
         self.updateTapo(tapoData["camData"])
-
-        hass.data[DOMAIN][entry.entry_id]["noiseSensorStarted"] = False
-
-        if self._enable_sound_detection:
-            self._noiseSensor = ffmpeg_sensor.SensorNoise(
-                self._ffmpeg.binary, self._noiseCallback
-            )
-            self._noiseSensor.set_options(
-                time_duration=int(self._sound_detection_duration),
-                time_reset=int(self._sound_detection_reset),
-                peak=int(self._sound_detection_peak),
-            )
-
-    @callback
-    def _noiseCallback(self, noiseDetected):
-        self._attr_extra_state_attributes["noise_detected"] = (
-            "on" if noiseDetected else "off"
-        )
-        for entity in self._hass.data[DOMAIN][self._entry.entry_id]["entities"]:
-            if entity._enabled:
-                entity.async_write_ha_state()
-
-    async def startNoiseDetection(self):
-        self._hass.data[DOMAIN][self._entry.entry_id]["noiseSensorStarted"] = True
-        await self._noiseSensor.open_sensor(
-            input_source=getStreamSource(self._entry, self._hdstream),
-            extra_cmd="-nostats",
-        )
 
     async def async_added_to_hass(self) -> None:
         self._enabled = True

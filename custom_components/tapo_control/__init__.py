@@ -241,13 +241,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     camData = False
                     LOGGER.error(e)
                 hass.data[DOMAIN][entry.entry_id]["camData"] = camData
+
                 for entity in hass.data[DOMAIN][entry.entry_id]["entities"]:
                     if entity._enabled:
                         entity.updateTapo(camData)
                         entity.async_schedule_update_ha_state(True)
+                        # start noise detection
                         if (
                             not hass.data[DOMAIN][entry.entry_id]["noiseSensorStarted"]
-                            and entity._is_cam_entity
+                            and entity._is_noise_sensor
                             and entity._enable_sound_detection
                         ):
                             await entity.startNoiseDetection()

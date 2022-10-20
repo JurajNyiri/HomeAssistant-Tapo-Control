@@ -1,6 +1,7 @@
 from typing import Optional
 
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.components.ffmpeg import DATA_FFMPEG
 
 from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
@@ -9,9 +10,19 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import DeviceInfo
 
-from .const import BRAND, DOMAIN, LOGGER, ENABLE_SOUND_DETECTION
+from .const import (
+    BRAND,
+    DOMAIN,
+    LOGGER,
+    ENABLE_SOUND_DETECTION,
+    SOUND_DETECTION_PEAK,
+    SOUND_DETECTION_DURATION,
+    SOUND_DETECTION_RESET,
+)
 from .utils import build_device_info, getStreamSource
 from .tapo.entities import TapoBinarySensorEntity
+
+import haffmpeg.sensor as ffmpeg_sensor
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -41,10 +52,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class TapoNoiseBinarySensor(TapoBinarySensorEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         LOGGER.debug("TapoNoiseBinarySensor - init - start")
-        self._hass = hass
-        self._config_entry = config_entry
-        self._stream_source = getStreamSource(config_entry, False)
-
         TapoBinarySensorEntity.__init__(
             self,
             "Noise",
@@ -55,9 +62,46 @@ class TapoNoiseBinarySensor(TapoBinarySensorEntity):
             BinarySensorDeviceClass.SOUND,
         )
 
-        self._attr_state = "on"  # placeholder
+        self._hass = hass
+        self._config_entry = config_entry
+        self._is_noise_sensor = True
+        self._ffmpeg = hass.data[DATA_FFMPEG]
+        self._enable_sound_detection = config_entry.data.get(ENABLE_SOUND_DETECTION)
+        self._sound_detection_peak = config_entry.data.get(SOUND_DETECTION_PEAK)
+        self._sound_detection_duration = config_entry.data.get(SOUND_DETECTION_DURATION)
+        self._sound_detection_reset = config_entry.data.get(SOUND_DETECTION_RESET)
+
+        self._noiseSensor = ffmpeg_sensor.SensorNoise(
+            self._ffmpeg.binary, self._noiseCallback
+        )
+        self._noiseSensor.set_options(
+            time_duration=int(self._sound_detection_duration),
+            time_reset=int(self._sound_detection_reset),
+            peak=int(self._sound_detection_peak),
+        )
+
+        self._attr_state = "unavailable"
+
+        self._hass.data[DOMAIN][config_entry.entry_id]["noiseSensorStarted"] = False
 
         LOGGER.debug("TapoNoiseBinarySensor - init - end")
+
+    async def startNoiseDetection(self):
+        LOGGER.debug("startNoiseDetection")
+        self._hass.data[DOMAIN][self._config_entry.entry_id][
+            "noiseSensorStarted"
+        ] = True
+        await self._noiseSensor.open_sensor(
+            input_source=getStreamSource(self._config_entry, False),
+            extra_cmd="-nostats",
+        )
+
+    @callback
+    def _noiseCallback(self, noiseDetected):
+        LOGGER.warn("_noiseCallback")
+        LOGGER.warn(noiseDetected)
+        self._attr_state = "on" if noiseDetected else "off"
+        self.async_write_ha_state()
 
 
 class EventsListener:

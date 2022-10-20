@@ -16,6 +16,7 @@ class TapoEntity(Entity):
         self._entry = entry
         self._enabled = False
         self._is_cam_entity = False
+        self._is_noise_sensor = False
         self._name = entry["name"]
         self._name_suffix = name_suffix
         self._controller = entry["controller"]
