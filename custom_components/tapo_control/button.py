@@ -3,6 +3,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.components.button import ButtonDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity import EntityCategory
 
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoButtonEntity
@@ -54,6 +55,10 @@ class TapoRebootButton(TapoButtonEntity):
     def device_class(self) -> str:
         return ButtonDeviceClass.RESTART
 
+    @property
+    def entity_category(self):
+        return EntityCategory.CONFIG
+
 
 class TapoFormatButton(TapoButtonEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
@@ -61,6 +66,10 @@ class TapoFormatButton(TapoButtonEntity):
 
     async def async_press(self) -> None:
         await self._hass.async_add_executor_job(self._controller.format)
+
+    @property
+    def entity_category(self):
+        return EntityCategory.CONFIG
 
 
 class TapoSyncTimeButton(TapoButtonEntity):
@@ -72,6 +81,10 @@ class TapoSyncTimeButton(TapoButtonEntity):
 
     async def async_press(self) -> None:
         await syncTime(self._hass, self._entry_id)
+
+    @property
+    def entity_category(self):
+        return EntityCategory.CONFIG
 
 
 class TapoStartManualAlarmButton(TapoButtonEntity):
