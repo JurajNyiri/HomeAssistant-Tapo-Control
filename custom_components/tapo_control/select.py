@@ -188,7 +188,7 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
                 self._attr_current_option = camData["motion_detection_sensitivity"]
             LOGGER.debug("TapoMotionDetectionSelect updateTapo 6")
             self._attr_state = self._attr_current_option
-        LOGGER.debug("Updating TapoMotionDetectionSelect to: " + self._attr_state)
+        LOGGER.debug("Updating TapoMotionDetectionSelect to: " + str(self._attr_state))
 
     async def async_select_option(self, option: str) -> None:
         result = await self.hass.async_add_executor_job(
