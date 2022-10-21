@@ -106,8 +106,10 @@ class TapoPrivacySwitch(TapoSwitchEntity):
             self._controller.setPrivacyMode, True,
         )
         if result["error_code"] == 0:
+            LOGGER.info("Setting _attr_state to on")
             self._attr_state = "on"
         LOGGER.info("setPrivacyMode(" + str(True) + ")")
+        self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
@@ -115,8 +117,10 @@ class TapoPrivacySwitch(TapoSwitchEntity):
             self._controller.setPrivacyMode, False,
         )
         if result["error_code"] == 0:
+            LOGGER.info("Setting _attr_state to off")
             self._attr_state = "off"
         LOGGER.info("setPrivacyMode(" + str(False) + ")")
+        self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
