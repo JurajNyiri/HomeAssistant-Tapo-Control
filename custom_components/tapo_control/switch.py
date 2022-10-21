@@ -99,7 +99,7 @@ class TapoLensDistortionCorrectionSwitch(TapoSwitchEntity):
 
 class TapoPrivacySwitch(TapoSwitchEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        TapoSwitchEntity.__init__(self, "Privacy", entry, hass, config_entry)
+        TapoSwitchEntity.__init__(self, "Privacy Mode", entry, hass, config_entry)
 
     async def async_turn_on(self) -> None:
         await self._hass.async_add_executor_job(
