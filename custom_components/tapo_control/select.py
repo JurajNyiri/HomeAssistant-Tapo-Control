@@ -108,7 +108,7 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
             entry,
             hass,
             config_entry,
-            "mdi:alarm-check",
+            "mdi:alarm-light-outline",
             "alarm",
         )
 
