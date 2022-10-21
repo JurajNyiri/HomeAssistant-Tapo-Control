@@ -119,7 +119,7 @@ async def initOnvifEvents(hass, host, username, password):
 
 
 async def getCamData(hass, controller):
-    LOGGER.info("getCamData")
+    LOGGER.debug("getCamData")
     camData = {}
     presets = await hass.async_add_executor_job(controller.isSupportingPresets)
     camData["user"] = controller.user
@@ -235,7 +235,7 @@ async def getCamData(hass, controller):
         firmwareUpdateStatus = None
     camData["firmwareUpdateStatus"] = firmwareUpdateStatus
 
-    LOGGER.info("getCamData - done")
+    LOGGER.debug("getCamData - done")
     return camData
 
 

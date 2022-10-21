@@ -133,7 +133,7 @@ class TapoPrivacySwitch(TapoSwitchEntity):
         else:
             self._attr_is_on = camData["privacy_mode"] == "on"
             self._attr_state = "on" if self._attr_is_on else "off"
-        LOGGER.info("Updating TapoPrivacySwitch to: " + self._attr_state)
+        LOGGER.debug("Updating TapoPrivacySwitch to: " + self._attr_state)
 
     @property
     def icon(self) -> str:
@@ -230,7 +230,6 @@ class TapoAutoTrackSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setAutoTrackTarget, False,
         )
-        LOGGER.warn(result)
         if result["error_code"] == 0:
             self._attr_state = "off"
         self.async_write_ha_state()
