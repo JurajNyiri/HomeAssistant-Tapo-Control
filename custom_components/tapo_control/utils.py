@@ -120,15 +120,15 @@ async def initOnvifEvents(hass, host, username, password):
 
 async def getCamData(hass, controller):
     LOGGER.debug("getCamData")
+    data = await hass.async_add_executor_job(controller.getMost)
     camData = {}
-    presets = await hass.async_add_executor_job(controller.isSupportingPresets)
+
     camData["user"] = controller.user
-    camData["basic_info"] = await hass.async_add_executor_job(controller.getBasicInfo)
-    camData["basic_info"] = camData["basic_info"]["device_info"]["basic_info"]
+    camData["basic_info"] = data["getDeviceInfo"]["device_info"]["basic_info"]
     try:
-        motionDetectionData = await hass.async_add_executor_job(
-            controller.getMotionDetection
-        )
+        motionDetectionData = data["getDetectionConfig"]["motion_detection"][
+            "motion_det"
+        ]
         motion_detection_enabled = motionDetectionData["enabled"]
         if motionDetectionData["digital_sensitivity"] == "20":
             motion_detection_sensitivity = "low"
@@ -145,53 +145,57 @@ async def getCamData(hass, controller):
     camData["motion_detection_sensitivity"] = motion_detection_sensitivity
 
     try:
-        privacy_mode = await hass.async_add_executor_job(controller.getPrivacyMode)
-        privacy_mode = privacy_mode["enabled"]
+        presets = {
+            id: data["getPresetConfig"]["preset"]["preset"]["name"][key]
+            for key, id in enumerate(data["getPresetConfig"]["preset"]["preset"]["id"])
+        }
+    except Exception:
+        presets = False
+
+    try:
+        privacy_mode = data["getLensMaskConfig"]["lens_mask"]["lens_mask_info"][
+            "enabled"
+        ]
     except Exception:
         privacy_mode = None
     camData["privacy_mode"] = privacy_mode
 
     try:
-        lens_distrotion_correction = await hass.async_add_executor_job(
-            controller.getLensDistortionCorrection
-        )
-        lens_distrotion_correction = "on" if lens_distrotion_correction else "off"
+        lens_distrotion_correction = data["getLdc"]["image"]["switch"]["ldc"]
     except Exception:
         lens_distrotion_correction = None
     camData["lens_distrotion_correction"] = lens_distrotion_correction
 
     try:
-        light_frequency_mode = await hass.async_add_executor_job(
-            controller.getLightFrequencyMode
-        )
+        light_frequency_mode = data["getLdc"]["image"]["common"]["light_freq_mode"]
     except Exception:
         light_frequency_mode = None
     camData["light_frequency_mode"] = light_frequency_mode
 
     try:
-        day_night_mode = await hass.async_add_executor_job(controller.getDayNightMode)
+        day_night_mode = data["getLdc"]["image"]["common"]["inf_type"]
     except Exception:
         day_night_mode = None
     camData["day_night_mode"] = day_night_mode
 
     try:
-        force_white_lamp_state = await hass.async_add_executor_job(
-            controller.getForceWhitelampState
-        )
-        force_white_lamp_state = "on" if force_white_lamp_state else "off"
+        force_white_lamp_state = data["getLdc"]["image"]["switch"]["force_wtl_state"]
     except Exception:
         force_white_lamp_state = None
     camData["force_white_lamp_state"] = force_white_lamp_state
 
     try:
-        flip = await hass.async_add_executor_job(controller.getImageFlipVertical)
-        flip = "on" if flip else "off"
+        flip = (
+            "on"
+            if data["getLdc"]["image"]["switch"]["flip_type"] == "center"
+            else "off"
+        )
     except Exception:
         flip = None
     camData["flip"] = flip
 
     try:
-        alarmData = await hass.async_add_executor_job(controller.getAlarm)
+        alarmData = data["getLastAlarmInfo"]["msg_alarm"]["chn1_msg_alarm_info"]
         alarm = alarmData["enabled"]
         alarm_mode = alarmData["alarm_mode"]
     except Exception:
@@ -201,22 +205,22 @@ async def getCamData(hass, controller):
     camData["alarm_mode"] = alarm_mode
 
     try:
-        commonImageData = await hass.async_add_executor_job(controller.getCommonImage)
-        day_night_mode = commonImageData["image"]["common"]["inf_type"]
+        day_night_mode = data["getLdc"]["image"]["common"]["inf_type"]
     except Exception:
         day_night_mode = None
     camData["day_night_mode"] = day_night_mode
 
     try:
-        led = await hass.async_add_executor_job(controller.getLED)
-        led = led["enabled"]
+        led = data["getLedStatus"]["led"]["config"]["enabled"]
     except Exception:
         led = None
     camData["led"] = led
 
+    # todo rest
     try:
-        auto_track = await hass.async_add_executor_job(controller.getAutoTrackTarget)
-        auto_track = auto_track["enabled"]
+        auto_track = data["getTargetTrackConfig"]["target_track"]["target_track_info"][
+            "enabled"
+        ]
     except Exception:
         auto_track = None
     camData["auto_track"] = auto_track
@@ -227,10 +231,7 @@ async def getCamData(hass, controller):
         camData["presets"] = {}
 
     try:
-        firmwareUpdateStatus = await hass.async_add_executor_job(
-            controller.getFirmwareUpdateStatus
-        )
-        firmwareUpdateStatus = firmwareUpdateStatus["cloud_config"]
+        firmwareUpdateStatus = data["getFirmwareUpdateStatus"]["cloud_config"]
     except Exception:
         firmwareUpdateStatus = None
     camData["firmwareUpdateStatus"] = firmwareUpdateStatus
