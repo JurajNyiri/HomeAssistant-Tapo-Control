@@ -237,6 +237,7 @@ async def getCamData(hass, controller):
     camData["firmwareUpdateStatus"] = firmwareUpdateStatus
 
     LOGGER.debug("getCamData - done")
+    LOGGER.debug(camData)
     return camData
 
 
