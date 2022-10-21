@@ -130,6 +130,15 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
             self._attr_state = self._attr_current_option
 
     async def async_select_option(self, option: str) -> None:
+        LOGGER.debug(
+            "setAlarm("
+            + str(option != "off")
+            + ", "
+            + str(option == "off" or option in ["both", "sound"])
+            + ", "
+            + str(option == "off" or option in ["both", "light"])
+            + ")"
+        )
         await self.hass.async_add_executor_job(
             self._controller.setAlarm,
             option != "off",
@@ -161,12 +170,20 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
             else:
                 self._attr_current_option = camData["motion_detection_sensitivity"]
             self._attr_state = self._attr_current_option
+        LOGGER.debug("Updating TapoMotionDetectionSelect to: " + self._attr_state)
 
     async def async_select_option(self, option: str) -> None:
         await self.hass.async_add_executor_job(
             self._controller.setMotionDetection,
             option != "off",
             option if option != "off" else False,
+        )
+        LOGGER.debug(
+            "setMotionDetection("
+            + str(option != "off")
+            + ", "
+            + (str(option) if option != "off" else str(False))
+            + ")"
         )
         await self._coordinator.async_request_refresh()
 

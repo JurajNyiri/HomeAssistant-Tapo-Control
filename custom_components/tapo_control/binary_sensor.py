@@ -82,8 +82,6 @@ class TapoNoiseBinarySensor(TapoBinarySensorEntity):
 
         self._attr_state = "unavailable"
 
-        self._hass.data[DOMAIN][config_entry.entry_id]["noiseSensorStarted"] = False
-
         LOGGER.debug("TapoNoiseBinarySensor - init - end")
 
     async def startNoiseDetection(self):

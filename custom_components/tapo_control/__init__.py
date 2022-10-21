@@ -242,6 +242,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     LOGGER.error(e)
                 hass.data[DOMAIN][entry.entry_id]["camData"] = camData
 
+                LOGGER.debug("Updating entities...")
                 for entity in hass.data[DOMAIN][entry.entry_id]["entities"]:
                     if entity._enabled:
                         entity.updateTapo(camData)
@@ -284,6 +285,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "events": False,
             "eventsListener": False,
             "entities": [],
+            "noiseSensorStarted": False,
             "name": camData["basic_info"]["device_alias"],
         }
 
