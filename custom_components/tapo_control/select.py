@@ -1,5 +1,5 @@
+from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -85,13 +85,17 @@ class TapoLightFrequencySelect(TapoSelectEntity):
         )
 
     async def async_update(self) -> None:
-        self._attr_current_option = await self._hass.async_add_executor_job(
-            self._controller.getLightFrequencyMode
-        )
+        try:
+            self._attr_current_option = await self._hass.async_add_executor_job(
+                self._controller.getLightFrequencyMode
+            )
+        except Exception:
+            self._attr_state = STATE_UNAVAILABLE
+            self._attr_current_option = None
 
     def updateTapo(self, camData):
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_current_option = camData["light_frequency_mode"]
             self._attr_state = self._attr_current_option
@@ -122,7 +126,7 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
 
     def updateTapo(self, camData):
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             if camData["alarm"] == "off":
                 self._attr_current_option = "off"
@@ -175,7 +179,7 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
 
     def updateTapo(self, camData):
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             if camData["motion_detection_enabled"] == "off":
                 self._attr_current_option = "off"
@@ -207,7 +211,7 @@ class TapoMoveToPresetSelect(TapoSelectEntity):
 
     def updateTapo(self, camData):
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             self._presets = camData["presets"]
             self._attr_options = list(camData["presets"].values())
