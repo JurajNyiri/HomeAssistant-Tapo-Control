@@ -102,16 +102,22 @@ class TapoPrivacySwitch(TapoSwitchEntity):
         TapoSwitchEntity.__init__(self, "Privacy", entry, hass, config_entry)
 
     async def async_turn_on(self) -> None:
-        await self._hass.async_add_executor_job(
+        result = await self._hass.async_add_executor_job(
             self._controller.setPrivacyMode, True,
         )
-        LOGGER.debug("setPrivacyMode(" + str(True) + ")")
+        if result["error_code"] == 0:
+            self._attr_state = "on"
+        LOGGER.info("setPrivacyMode(" + str(True) + ")")
+        await self._coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
-        await self._hass.async_add_executor_job(
+        result = await self._hass.async_add_executor_job(
             self._controller.setPrivacyMode, False,
         )
-        LOGGER.debug("setPrivacyMode(" + str(False) + ")")
+        if result["error_code"] == 0:
+            self._attr_state = "off"
+        LOGGER.info("setPrivacyMode(" + str(False) + ")")
+        await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
         if not camData:
@@ -119,7 +125,7 @@ class TapoPrivacySwitch(TapoSwitchEntity):
         else:
             self._attr_is_on = camData["privacy_mode"] == "on"
             self._attr_state = "on" if self._attr_is_on else "off"
-        LOGGER.debug("Updating TapoPrivacySwitch to: " + self._attr_state)
+        LOGGER.info("Updating TapoPrivacySwitch to: " + self._attr_state)
 
     @property
     def icon(self) -> str:
