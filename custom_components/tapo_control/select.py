@@ -174,13 +174,19 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
         )
 
     def updateTapo(self, camData):
+        LOGGER.debug("TapoMotionDetectionSelect updateTapo 1")
         if not camData:
+            LOGGER.debug("TapoMotionDetectionSelect updateTapo 2")
             self._attr_state = "unavailable"
         else:
+            LOGGER.debug("TapoMotionDetectionSelect updateTapo 3")
             if camData["motion_detection_enabled"] == "off":
+                LOGGER.debug("TapoMotionDetectionSelect updateTapo 4")
                 self._attr_current_option = "off"
             else:
+                LOGGER.debug("TapoMotionDetectionSelect updateTapo 5")
                 self._attr_current_option = camData["motion_detection_sensitivity"]
+            LOGGER.debug("TapoMotionDetectionSelect updateTapo 6")
             self._attr_state = self._attr_current_option
         LOGGER.debug("Updating TapoMotionDetectionSelect to: " + self._attr_state)
 
