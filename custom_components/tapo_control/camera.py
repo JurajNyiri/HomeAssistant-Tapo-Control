@@ -4,8 +4,8 @@ from haffmpeg.camera import CameraMjpeg
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from typing import Callable
 
+from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
-
 from homeassistant.components.camera import (
     SUPPORT_ON_OFF,
     SUPPORT_STREAM,
@@ -159,12 +159,15 @@ class TapoCamEntity(Camera):
             await stream.close()
 
     async def async_update(self) -> None:
-        data = await self._hass.async_add_executor_job(
-            self._controller.getMotionDetection
-        )
-        self._attr_motion_detection_enabled = (
-            "enabled" in data and data["enabled"] == "on"
-        )
+        try:
+            data = await self._hass.async_add_executor_job(
+                self._controller.getMotionDetection
+            )
+            self._attr_motion_detection_enabled = (
+                "enabled" in data and data["enabled"] == "on"
+            )
+        except Exception:
+            self._attr_state = STATE_UNAVAILABLE
         await self._coordinator.async_request_refresh()
 
     async def stream_source(self):
@@ -172,7 +175,7 @@ class TapoCamEntity(Camera):
 
     def updateTapo(self, camData):
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_state = "idle"
             self._motion_detection_enabled = camData["motion_detection_enabled"]
