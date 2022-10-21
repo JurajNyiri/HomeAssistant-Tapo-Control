@@ -91,7 +91,6 @@ class TapoLightFrequencySelect(TapoSelectEntity):
             )
         except Exception:
             self._attr_state = STATE_UNAVAILABLE
-            self._attr_current_option = None
 
     def updateTapo(self, camData):
         if not camData:
