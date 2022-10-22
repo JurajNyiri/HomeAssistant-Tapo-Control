@@ -132,11 +132,20 @@ async def getCamData(hass, controller):
             "motion_det"
         ]
         motion_detection_enabled = motionDetectionData["enabled"]
-        if motionDetectionData["digital_sensitivity"] == "20":
+        if motionDetectionData["digital_sensitivity"] == "20" or (
+            "sensitivity" in motionDetectionData
+            and motionDetectionData["sensitivity"] == "low"
+        ):
             motion_detection_sensitivity = "low"
-        elif motionDetectionData["digital_sensitivity"] == "50":
+        elif motionDetectionData["digital_sensitivity"] == "50" or (
+            "sensitivity" in motionDetectionData
+            and motionDetectionData["sensitivity"] == "medium"
+        ):
             motion_detection_sensitivity = "normal"
-        elif motionDetectionData["digital_sensitivity"] == "80":
+        elif motionDetectionData["digital_sensitivity"] == "80" or (
+            "sensitivity" in motionDetectionData
+            and motionDetectionData["sensitivity"] == "high"
+        ):
             motion_detection_sensitivity = "high"
         else:
             motion_detection_sensitivity = None
