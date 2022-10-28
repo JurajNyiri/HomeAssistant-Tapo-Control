@@ -154,7 +154,7 @@ Users reported full functionality with following Tapo Cameras:
 - C310
 - C320WS
 
-The integration _should_ work with any other Tapo Cameras.
+The integration _should_ work with any other non-battery Tapo Cameras.
   
 Following cameras are not working:
   
