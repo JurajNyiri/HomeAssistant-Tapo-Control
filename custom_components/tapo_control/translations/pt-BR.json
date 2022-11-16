@@ -1,7 +1,7 @@
 {
-  "title": "Tapo: Cameras Control",
+  "title": "Tapo Cameras Control",
   "config": {
-    "flow_title": "Tapo: Cameras Control {name}",
+    "flow_title": "Tapo Cameras Control {name}",
     "step": {
       "ip": {
         "data": {
