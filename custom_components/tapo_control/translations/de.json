@@ -1,7 +1,7 @@
 {
-  "title": "Tapo: Kamerasteuerung",
+  "title": "Tapo Kamerasteuerung",
   "config": {
-    "flow_title": "Tapo: Kamerasteuerung {name}",
+    "flow_title": "Tapo Kamerasteuerung {name}",
     "step": {
       "ip": {
         "data": {
