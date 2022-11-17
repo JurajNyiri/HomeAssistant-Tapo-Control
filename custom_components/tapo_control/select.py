@@ -1,5 +1,5 @@
+from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -85,13 +85,16 @@ class TapoLightFrequencySelect(TapoSelectEntity):
         )
 
     async def async_update(self) -> None:
-        self._attr_current_option = await self._hass.async_add_executor_job(
-            self._controller.getLightFrequencyMode
-        )
+        try:
+            self._attr_current_option = await self._hass.async_add_executor_job(
+                self._controller.getLightFrequencyMode
+            )
+        except Exception:
+            self._attr_state = STATE_UNAVAILABLE
 
     def updateTapo(self, camData):
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_current_option = camData["light_frequency_mode"]
             self._attr_state = self._attr_current_option
@@ -122,7 +125,7 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
 
     def updateTapo(self, camData):
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             if camData["alarm"] == "off":
                 self._attr_current_option = "off"
@@ -177,7 +180,7 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
         LOGGER.debug("TapoMotionDetectionSelect updateTapo 1")
         if not camData:
             LOGGER.debug("TapoMotionDetectionSelect updateTapo 2")
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             LOGGER.debug("TapoMotionDetectionSelect updateTapo 3")
             if camData["motion_detection_enabled"] == "off":
@@ -213,7 +216,7 @@ class TapoMoveToPresetSelect(TapoSelectEntity):
 
     def updateTapo(self, camData):
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             self._presets = camData["presets"]
             self._attr_options = list(camData["presets"].values())
