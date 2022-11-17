@@ -150,11 +150,15 @@ class TapoSelectEntity(SelectEntity, TapoEntity):
         self._hass = hass
         self._attr_icon = icon
         self._attr_device_class = device_class
+        LOGGER.debug(f"Tapo {name_suffix} - init - append")
         hass.data[DOMAIN][config_entry.entry_id]["entities"].append(self)
+        LOGGER.debug(f"Tapo {name_suffix} - init - update")
         self.updateTapo(hass.data[DOMAIN][config_entry.entry_id]["camData"])
 
+        LOGGER.debug(f"Tapo {name_suffix} - init - TapoEntity")
         TapoEntity.__init__(self, entry, name_suffix)
-        ButtonEntity.__init__(self)
+        LOGGER.debug(f"Tapo {name_suffix} - init - SelectEntity")
+        SelectEntity.__init__(self)
         LOGGER.debug(f"Tapo {name_suffix} - init - end")
 
     @property

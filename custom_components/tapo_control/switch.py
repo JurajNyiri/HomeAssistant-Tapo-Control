@@ -133,7 +133,7 @@ class TapoPrivacySwitch(TapoSwitchEntity):
         else:
             self._attr_is_on = camData["privacy_mode"] == "on"
             self._attr_state = "on" if self._attr_is_on else "off"
-        LOGGER.debug("Updating TapoPrivacySwitch to: " + self._attr_state)
+        LOGGER.debug("Updating TapoPrivacySwitch to: " + str(self._attr_state))
 
     @property
     def icon(self) -> str:

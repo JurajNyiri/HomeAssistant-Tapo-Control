@@ -154,7 +154,11 @@ Users reported full functionality with following Tapo Cameras:
 - C310
 - C320WS
 
-The integration _should_ work with any other Tapo Cameras.
+The integration _should_ work with any other non-battery Tapo Cameras.
+  
+Following cameras are not working:
+  
+- C420S2 (see here https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/243)
 
 If you had success with some other model, please report it via a new issue.
 

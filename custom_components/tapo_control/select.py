@@ -119,7 +119,7 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
             entry,
             hass,
             config_entry,
-            "mdi:alarm-check",
+            "mdi:alarm-light-outline",
             "alarm",
         )
 
@@ -177,15 +177,21 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
         )
 
     def updateTapo(self, camData):
+        LOGGER.debug("TapoMotionDetectionSelect updateTapo 1")
         if not camData:
+            LOGGER.debug("TapoMotionDetectionSelect updateTapo 2")
             self._attr_state = STATE_UNAVAILABLE
         else:
+            LOGGER.debug("TapoMotionDetectionSelect updateTapo 3")
             if camData["motion_detection_enabled"] == "off":
+                LOGGER.debug("TapoMotionDetectionSelect updateTapo 4")
                 self._attr_current_option = "off"
             else:
+                LOGGER.debug("TapoMotionDetectionSelect updateTapo 5")
                 self._attr_current_option = camData["motion_detection_sensitivity"]
+            LOGGER.debug("TapoMotionDetectionSelect updateTapo 6")
             self._attr_state = self._attr_current_option
-        LOGGER.debug("Updating TapoMotionDetectionSelect to: " + self._attr_state)
+        LOGGER.debug("Updating TapoMotionDetectionSelect to: " + str(self._attr_state))
 
     async def async_select_option(self, option: str) -> None:
         result = await self.hass.async_add_executor_job(
