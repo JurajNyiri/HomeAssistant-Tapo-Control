@@ -239,6 +239,7 @@ class FlowHandler(ConfigFlow):
                         "[ADD DEVICE][%s] Connection failed.", self.tapoHost,
                     )
                     errors["base"] = "connection_failed"
+                    LOGGER.error(e)
                 elif str(e) == "Invalid authentication data":
                     LOGGER.debug(
                         "[ADD DEVICE][%s] Invalid cloud password provided.",
@@ -320,6 +321,7 @@ class FlowHandler(ConfigFlow):
             except Exception as e:
                 if "Failed to establish a new connection" in str(e):
                     errors["base"] = "connection_failed"
+                    LOGGER.error(e)
                 elif "already_configured" in str(e):
                     errors["base"] = "already_configured"
                 elif "not_tapo_device" in str(e):
@@ -417,6 +419,7 @@ class FlowHandler(ConfigFlow):
             except Exception as e:
                 if "Failed to establish a new connection" in str(e):
                     errors["base"] = "connection_failed"
+                    LOGGER.error(e)
                 elif "ports_closed" in str(e):
                     errors["base"] = "ports_closed"
                 elif str(e) == "Invalid authentication data":
@@ -697,6 +700,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
             except Exception as e:
                 if "Failed to establish a new connection" in str(e):
                     errors["base"] = "connection_failed"
+                    LOGGER.error(e)
                 elif str(e) == "Invalid authentication data":
                     errors["base"] = "invalid_auth"
                 elif str(e) == "Incorrect cloud password":

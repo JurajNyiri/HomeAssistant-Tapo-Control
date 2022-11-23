@@ -51,6 +51,7 @@ class TapoFloodlight(LightEntity, TapoEntity):
         )
 
     def updateTapo(self, camData):
+        LOGGER.debug("Updating light state.")
         if not camData:
             self._attr_state = "unavailable"
         else:
