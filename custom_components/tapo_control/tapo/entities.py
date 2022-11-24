@@ -3,6 +3,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.components.button import ButtonEntity
 from homeassistant.components.select import SelectEntity
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.components.light import LightEntity
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.helpers.entity import EntityCategory
@@ -134,6 +135,32 @@ class TapoBinarySensorEntity(BinarySensorEntity, TapoEntity):
     @property
     def state(self):
         return self._attr_state
+
+
+class TapoLightEntity(LightEntity, TapoEntity):
+    def __init__(
+        self,
+        name_suffix,
+        entry: dict,
+        hass: HomeAssistant,
+        config_entry,
+        icon=None,
+        device_class=None,
+    ):
+        LOGGER.debug(f"Tapo {name_suffix} - init - start")
+        self._hass = hass
+        self._attr_icon = icon
+        self._attr_device_class = device_class
+        LOGGER.debug(f"Tapo {name_suffix} - init - append")
+        hass.data[DOMAIN][config_entry.entry_id]["entities"].append(self)
+        LOGGER.debug(f"Tapo {name_suffix} - init - update")
+        self.updateTapo(hass.data[DOMAIN][config_entry.entry_id]["camData"])
+
+        LOGGER.debug(f"Tapo {name_suffix} - init - TapoEntity")
+        TapoEntity.__init__(self, entry, name_suffix)
+        LOGGER.debug(f"Tapo {name_suffix} - init - SelectEntity")
+        LightEntity.__init__(self)
+        LOGGER.debug(f"Tapo {name_suffix} - init - end")
 
 
 class TapoSelectEntity(SelectEntity, TapoEntity):
