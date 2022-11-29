@@ -39,14 +39,28 @@ class TapoFloodlight(TapoLightEntity):
         LOGGER.debug("TapoFloodlight - init - end")
 
     async def async_turn_on(self) -> None:
-        await self._hass.async_add_executor_job(
+        LOGGER.debug("Turning on light")
+        result = await self._hass.async_add_executor_job(
             self._controller.setForceWhitelampState, True,
         )
+        LOGGER.debug(result)
+        if result["error_code"] == 0:
+            LOGGER.debug("Setting light state to: on")
+            self._attr_state = "on"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
-        await self._hass.async_add_executor_job(
+        LOGGER.debug("Turning off light")
+        result = await self._hass.async_add_executor_job(
             self._controller.setForceWhitelampState, False,
         )
+        LOGGER.debug(result)
+        if result["error_code"] == 0:
+            LOGGER.debug("Setting light state to: off")
+            self._attr_state = "off"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
         LOGGER.debug("Updating light state.")
