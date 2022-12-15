@@ -312,6 +312,9 @@ class FlowHandler(ConfigFlow):
                                 "[ADD DEVICE][%s] Camera control is not available, IP is not a Tapo device.",
                                 host,
                             )
+                            LOGGER.debug(
+                                "[ADD DEVICE][%s] Received error: %s", host, str(e)
+                            )
                             raise Exception("not_tapo_device")
                 else:
                     LOGGER.debug(
