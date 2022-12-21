@@ -20,11 +20,22 @@ async def async_setup_entry(
     LOGGER.debug("Setting up light for floodlight")
     entry = hass.data[DOMAIN][config_entry.entry_id]
 
-    light = await check_and_create(
-        entry, hass, TapoFloodlight, "getForceWhitelampState", config_entry
-    )
-    if light is not None:
-        async_add_entities([light])
+    async def setupEntities(entry):
+        lights = []
+
+        tapoFloodlight = await check_and_create(
+            entry, hass, TapoFloodlight, "getForceWhitelampState", config_entry
+        )
+        if tapoFloodlight:
+            LOGGER.debug("Adding tapoFloodlight...")
+            lights.append(tapoFloodlight)
+        return lights
+
+    lights = await setupEntities(entry)
+    for childDevice in entry["childDevices"]:
+        lights.extend(await setupEntities(childDevice))
+
+    async_add_entities(lights)
 
 
 class TapoFloodlight(TapoLightEntity):

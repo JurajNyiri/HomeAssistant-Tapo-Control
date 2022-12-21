@@ -370,10 +370,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "button")
         )
-        """
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "light")
         )
+        """
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "number")
         )
