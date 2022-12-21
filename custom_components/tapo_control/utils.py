@@ -8,7 +8,7 @@ import urllib.parse
 
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from onvif import ONVIFCamera
-from .pytapo import Tapo  # todo change me back
+from pytapo import Tapo
 
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.ffmpeg import DATA_FFMPEG
