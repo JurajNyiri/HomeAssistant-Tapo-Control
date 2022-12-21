@@ -249,7 +249,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     someCameraEnabled = True
 
             if someCameraEnabled:
-
                 # Update data for all controllers
                 updateDataForAllControllers = {}
                 for controller in hass.data[DOMAIN][entry.entry_id]["allControllers"]:
@@ -266,7 +265,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 ] = updateDataForAllControllers[tapoController]
 
                 LOGGER.debug("Updating entities...")
-                for entity in hass.data[DOMAIN][entry.entry_id]["entities"]:
+
+                # Gather all entities, including of children devices
+                allEntities = hass.data[DOMAIN][entry.entry_id]["entities"]
+                for childDevice in hass.data[DOMAIN][entry.entry_id]["childDevices"]:
+                    allEntities.extend(childDevice["entities"])
+
+                for entity in allEntities:
                     if entity["entity"]._enabled:
                         entity["camData"] = updateDataForAllControllers[
                             entity["entry"]["controller"]
@@ -282,6 +287,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             and entity["entity"]._enable_sound_detection
                         ):
                             await entity["entity"].startNoiseDetection()
+
                 if ("updateEntity" in hass.data[DOMAIN][entry.entry_id]) and hass.data[
                     DOMAIN
                 ][entry.entry_id]["updateEntity"]._enabled:
