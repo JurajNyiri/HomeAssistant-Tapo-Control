@@ -228,7 +228,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         ts - hass.data[DOMAIN][entry.entry_id]["lastTimeSync"]
                         > TIME_SYNC_PERIOD
                     ):
-                        # todo: add for child devices too
                         await syncTime(hass, entry.entry_id)
                 ts = datetime.datetime.utcnow().timestamp()
                 if (
