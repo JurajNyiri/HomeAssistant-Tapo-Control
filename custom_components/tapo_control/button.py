@@ -89,7 +89,9 @@ class TapoSyncTimeButton(TapoButtonEntity):
 
 class TapoStartManualAlarmButton(TapoButtonEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        TapoButtonEntity.__init__(self, "Manual Alarm Start", entry, hass, "mdi:alarm-light-outline")
+        TapoButtonEntity.__init__(
+            self, "Manual Alarm Start", entry, hass, "mdi:alarm-light-outline"
+        )
 
     async def async_press(self) -> None:
         await self._hass.async_add_executor_job(self._controller.startManualAlarm)

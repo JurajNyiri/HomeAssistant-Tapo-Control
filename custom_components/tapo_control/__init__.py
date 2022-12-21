@@ -292,12 +292,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "button")
         )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "camera")
-        )
+        if camData["childDevices"] is None:
+            hass.async_create_task(
+                hass.config_entries.async_forward_entry_setup(entry, "camera")
+            )
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "light")
         )
+
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "number")
         )
@@ -307,6 +309,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "switch")
         )
+
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "update")
         )
@@ -315,7 +318,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
 
         # Needs to execute AFTER binary_sensor creation!
-        if motionSensor or enableTimeSync:
+        if camData["childDevices"] is None and (motionSensor or enableTimeSync):
             onvifDevice = await initOnvifEvents(hass, host, username, password)
             hass.data[DOMAIN][entry.entry_id]["eventsDevice"] = onvifDevice["device"]
             hass.data[DOMAIN][entry.entry_id]["onvifManagement"] = onvifDevice[

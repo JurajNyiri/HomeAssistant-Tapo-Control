@@ -8,7 +8,7 @@ import urllib.parse
 
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from onvif import ONVIFCamera
-from pytapo import Tapo
+from .pytapo import Tapo  # todo change me back
 
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.ffmpeg import DATA_FFMPEG
@@ -212,6 +212,15 @@ async def getCamData(hass, controller):
     except Exception:
         alarm = None
         alarm_mode = None
+
+    if alarm is None or alarm_mode is None:
+        try:
+            alarmData = data["getAlarmConfig"]
+            alarm = alarmData["enabled"]
+            alarm_mode = alarmData["alarm_mode"]
+        except Exception:
+            alarm = None
+            alarm_mode = None
     camData["alarm"] = alarm
     camData["alarm_mode"] = alarm_mode
 
@@ -246,6 +255,12 @@ async def getCamData(hass, controller):
     except Exception:
         firmwareUpdateStatus = None
     camData["firmwareUpdateStatus"] = firmwareUpdateStatus
+
+    try:
+        childDevices = data["getChildDeviceList"]
+    except Exception:
+        childDevices = None
+    camData["childDevices"] = childDevices
 
     LOGGER.debug("getCamData - done")
     LOGGER.debug("Processed update data:")
