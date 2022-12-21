@@ -22,54 +22,54 @@ async def async_setup_entry(
 
     switches = []
 
-    for childDevice in entry["childDevices"]:
+    async def setupEntities(entry):
+        switches = []
         tapoPrivacySwitch = await check_and_create(
-            childDevice, hass, TapoPrivacySwitch, "getPrivacyMode", config_entry
+            entry, hass, TapoPrivacySwitch, "getPrivacyMode", config_entry
         )
         if tapoPrivacySwitch:
             LOGGER.debug("Adding tapoPrivacySwitch...")
             switches.append(tapoPrivacySwitch)
-    """
 
-    tapoPrivacySwitch = await check_and_create(
-        entry, hass, TapoPrivacySwitch, "getPrivacyMode", config_entry
-    )
-    if tapoPrivacySwitch:
-        LOGGER.debug("Adding tapoPrivacySwitch...")
-        switches.append(tapoPrivacySwitch)
+        tapoLensDistortionCorrectionSwitch = await check_and_create(
+            entry,
+            hass,
+            TapoLensDistortionCorrectionSwitch,
+            "getLensDistortionCorrection",
+            config_entry,
+        )
+        if tapoLensDistortionCorrectionSwitch:
+            LOGGER.debug("Adding tapoLensDistortionCorrectionSwitch...")
+            switches.append(tapoLensDistortionCorrectionSwitch)
 
-    tapoLensDistortionCorrectionSwitch = await check_and_create(
-        entry,
-        hass,
-        TapoLensDistortionCorrectionSwitch,
-        "getLensDistortionCorrection",
-        config_entry,
-    )
-    if tapoLensDistortionCorrectionSwitch:
-        LOGGER.debug("Adding tapoLensDistortionCorrectionSwitch...")
-        switches.append(tapoLensDistortionCorrectionSwitch)
+        tapoIndicatorLedSwitch = await check_and_create(
+            entry, hass, TapoIndicatorLedSwitch, "getLED", config_entry
+        )
+        if tapoIndicatorLedSwitch:
+            LOGGER.debug("Adding tapoIndicatorLedSwitch...")
+            switches.append(tapoIndicatorLedSwitch)
 
-    tapoIndicatorLedSwitch = await check_and_create(
-        entry, hass, TapoIndicatorLedSwitch, "getLED", config_entry
-    )
-    if tapoIndicatorLedSwitch:
-        LOGGER.debug("Adding tapoIndicatorLedSwitch...")
-        switches.append(tapoIndicatorLedSwitch)
+        tapoFlipSwitch = await check_and_create(
+            entry, hass, TapoFlipSwitch, "getImageFlipVertical", config_entry
+        )
+        if tapoFlipSwitch:
+            LOGGER.debug("Adding tapoFlipSwitch...")
+            switches.append(tapoFlipSwitch)
 
-    tapoFlipSwitch = await check_and_create(
-        entry, hass, TapoFlipSwitch, "getImageFlipVertical", config_entry
-    )
-    if tapoFlipSwitch:
-        LOGGER.debug("Adding tapoFlipSwitch...")
-        switches.append(tapoFlipSwitch)
+        tapoAutoTrackSwitch = await check_and_create(
+            entry, hass, TapoAutoTrackSwitch, "getAutoTrackTarget", config_entry
+        )
+        if tapoAutoTrackSwitch:
+            LOGGER.debug("Adding tapoAutoTrackSwitch...")
+            switches.append(tapoAutoTrackSwitch)
 
-    tapoAutoTrackSwitch = await check_and_create(
-        entry, hass, TapoAutoTrackSwitch, "getAutoTrackTarget", config_entry
-    )
-    if tapoAutoTrackSwitch:
-        LOGGER.debug("Adding tapoAutoTrackSwitch...")
-        switches.append(tapoAutoTrackSwitch)
-    """
+        return switches
+
+    switches = await setupEntities(entry)
+
+    for childDevice in entry["childDevices"]:
+        switches.extend(await setupEntities(childDevice))
+
     if switches:
         LOGGER.debug("Adding switch entities...")
         async_add_entities(switches)
