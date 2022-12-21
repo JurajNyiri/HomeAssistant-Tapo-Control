@@ -3,6 +3,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.components.button import ButtonEntity
 from homeassistant.components.select import SelectEntity
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.components.update import UpdateEntity
 from homeassistant.components.light import LightEntity
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.helpers.entity import DeviceInfo, Entity
@@ -57,6 +58,36 @@ class TapoEntity(Entity):
 
     def updateTapo(self, camData):
         pass
+
+
+class TapoUpdateEntity(UpdateEntity, TapoEntity):
+    def __init__(
+        self,
+        name_suffix,
+        entry: dict,
+        hass: HomeAssistant,
+        config_entry,
+        icon=None,
+        device_class=None,
+    ):
+        LOGGER.debug(f"Tapo {name_suffix} - init - start")
+        self._attr_is_on = False
+        self._hass = hass
+        self._attr_icon = icon
+        self._attr_device_class = device_class
+        self.updateTapo(entry["camData"])
+
+        TapoEntity.__init__(self, entry, name_suffix)
+        UpdateEntity.__init__(self)
+        LOGGER.debug(f"Tapo {name_suffix} - init - end")
+
+    @property
+    def entity_category(self):
+        return EntityCategory.CONFIG
+
+    @property
+    def state(self):
+        return self._attr_state
 
 
 class TapoSwitchEntity(SwitchEntity, TapoEntity):
@@ -128,7 +159,7 @@ class TapoBinarySensorEntity(BinarySensorEntity, TapoEntity):
         self._hass = hass
         self._attr_icon = icon
         self._attr_device_class = device_class
-        entry["entities"].append(self)
+        entry["entities"].append({"entity": self, "entry": entry})
         self.updateTapo(entry["camData"])
 
         TapoEntity.__init__(self, entry, name_suffix)
@@ -155,7 +186,7 @@ class TapoLightEntity(LightEntity, TapoEntity):
         self._attr_icon = icon
         self._attr_device_class = device_class
         LOGGER.debug(f"Tapo {name_suffix} - init - append")
-        entry["entities"].append(self)
+        entry["entities"].append({"entity": self, "entry": entry})
         LOGGER.debug(f"Tapo {name_suffix} - init - update")
         self.updateTapo(entry["camData"])
 
@@ -181,7 +212,7 @@ class TapoSelectEntity(SelectEntity, TapoEntity):
         self._attr_icon = icon
         self._attr_device_class = device_class
         LOGGER.debug(f"Tapo {name_suffix} - init - append")
-        entry["entities"].append(self)
+        entry["entities"].append({"entity": self, "entry": entry})
         LOGGER.debug(f"Tapo {name_suffix} - init - update")
         self.updateTapo(entry["camData"])
 

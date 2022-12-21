@@ -8,6 +8,7 @@ from homeassistant.helpers.entity import DeviceInfo
 
 from .const import DOMAIN, LOGGER
 from .utils import build_device_info
+from .tapo.entities import TapoUpdateEntity
 
 
 async def async_setup_entry(
@@ -31,14 +32,23 @@ async def async_setup_entry(
 
 class TapoCamUpdate(UpdateEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        super().__init__()
-        self._controller = entry["controller"]
-        self._coordinator = entry["coordinator"]
-        self._entry = entry
-        self._hass = hass
-        self._enabled = False
-        self._attributes = entry["camData"]["basic_info"]
         self._in_progress = False
+        self._hass = hass
+        TapoUpdateEntity.__init__(self, "Update", entry, hass, config_entry)
+
+    @property
+    def name(self) -> str:
+        return "{} {}".format(self._name, self._name_suffix)
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return build_device_info(self._attributes)
+
+    @property
+    def unique_id(self) -> str:
+        id_suffix = "".join(self._name_suffix.split())
+
+        return "{}-{}".format(self._name, id_suffix).lower()
 
     def updateTapo(self, camData):
         if not camData:
@@ -78,14 +88,6 @@ class TapoCamUpdate(UpdateEntity):
             return None
 
     @property
-    def name(self) -> str:
-        return "Camera - " + self._attributes["device_alias"]
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        return build_device_info(self._attributes)
-
-    @property
     def in_progress(self) -> bool:
         return self._in_progress
 
@@ -120,10 +122,6 @@ class TapoCamUpdate(UpdateEntity):
             )
         else:
             return None
-
-    @property
-    def title(self) -> str:
-        return "Tapo Camera: {0}".format(self._attributes["device_alias"])
 
     async def async_install(
         self, version, backup,
