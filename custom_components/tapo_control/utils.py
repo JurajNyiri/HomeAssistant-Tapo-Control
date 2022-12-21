@@ -205,6 +205,16 @@ async def getCamData(hass, controller):
         )
     except Exception:
         flip = None
+
+    if flip is None:
+        try:
+            flip = (
+                "on"
+                if data["getRotationStatus"]["image"]["switch"]["flip_type"] == "center"
+                else "off"
+            )
+        except Exception:
+            flip = None
     camData["flip"] = flip
 
     try:
