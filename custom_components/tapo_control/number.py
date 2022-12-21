@@ -48,6 +48,9 @@ class TapoMovementAngle(RestoreNumber, TapoEntity):
         RestoreNumber.__init__(self)
         LOGGER.debug("TapoMovementAngle - init - end")
 
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
     @property
     def entity_category(self):
         return EntityCategory.CONFIG

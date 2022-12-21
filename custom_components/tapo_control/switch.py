@@ -88,6 +88,9 @@ class TapoLensDistortionCorrectionSwitch(TapoSwitchEntity):
             "mdi:google-lens",
         )
 
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
     async def async_turn_on(self) -> None:
         result = await self._hass.async_add_executor_job(
             self._controller.setLensDistortionCorrection, True,
@@ -117,6 +120,9 @@ class TapoLensDistortionCorrectionSwitch(TapoSwitchEntity):
 class TapoPrivacySwitch(TapoSwitchEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         TapoSwitchEntity.__init__(self, "Privacy", entry, hass, config_entry)
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
 
     async def async_turn_on(self) -> None:
         result = await self._hass.async_add_executor_job(
@@ -162,6 +168,9 @@ class TapoIndicatorLedSwitch(TapoSwitchEntity):
             self, "Indicator LED", entry, hass, config_entry, "mdi:car-light-high"
         )
 
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
     async def async_turn_on(self) -> None:
         result = await self._hass.async_add_executor_job(
             self._controller.setLEDEnabled, True,
@@ -194,6 +203,9 @@ class TapoFlipSwitch(TapoSwitchEntity):
             self, "Flip", entry, hass, config_entry, "mdi:flip-vertical"
         )
 
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
     async def async_turn_on(self) -> None:
         result = await self._hass.async_add_executor_job(
             self._controller.setImageFlipVertical, True,
@@ -225,6 +237,9 @@ class TapoAutoTrackSwitch(TapoSwitchEntity):
         TapoSwitchEntity.__init__(
             self, "Auto Track", entry, hass, config_entry, "mdi:radar"
         )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
 
     async def async_turn_on(self) -> None:
         result = await self._hass.async_add_executor_job(

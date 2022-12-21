@@ -38,6 +38,9 @@ class TapoFloodlight(TapoLightEntity):
         )
         LOGGER.debug("TapoFloodlight - init - end")
 
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
     async def async_turn_on(self) -> None:
         LOGGER.debug("Turning on light")
         result = await self._hass.async_add_executor_job(

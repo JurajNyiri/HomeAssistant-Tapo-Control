@@ -74,6 +74,9 @@ class TapoNightVisionSelect(TapoSelectEntity):
             "night_vision",
         )
 
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
     def updateTapo(self, camData):
         if not camData:
             self._attr_state = "unavailable"
@@ -100,12 +103,7 @@ class TapoLightFrequencySelect(TapoSelectEntity):
         )
 
     async def async_update(self) -> None:
-        try:
-            self._attr_current_option = await self._hass.async_add_executor_job(
-                self._controller.getLightFrequencyMode
-            )
-        except Exception:
-            self._attr_state = STATE_UNAVAILABLE
+        await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
         if not camData:
@@ -137,6 +135,9 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
             "mdi:alarm-light-outline",
             "alarm",
         )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
         if not camData:
@@ -191,6 +192,9 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
             "motion_detection",
         )
 
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
     def updateTapo(self, camData):
         LOGGER.debug("TapoMotionDetectionSelect updateTapo 1")
         if not camData:
@@ -228,6 +232,9 @@ class TapoMoveToPresetSelect(TapoSelectEntity):
         TapoSelectEntity.__init__(
             self, "Move to Preset", entry, hass, config_entry, "mdi:arrow-decision"
         )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
         if not camData:
