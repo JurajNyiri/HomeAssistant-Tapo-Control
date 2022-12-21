@@ -167,6 +167,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 registerController, host, username, password
             )
 
+        def getAllEntities(entry):
+            # Gather all entities, including of children devices
+            allEntities = entry["entities"]
+            for childDevice in entry["childDevices"]:
+                allEntities.extend(childDevice["entities"])
+            return allEntities
+
         async def async_update_data():
             LOGGER.debug("async_update_data - entry")
             host = entry.data.get(CONF_IP_ADDRESS)
@@ -257,7 +264,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             # cameras state
             LOGGER.debug("async_update_data - before someCameraEnabled check")
             someCameraEnabled = False
-            for entity in hass.data[DOMAIN][entry.entry_id]["entities"]:
+            allEntities = getAllEntities(hass.data[DOMAIN][entry.entry_id])
+            for entity in allEntities:
                 LOGGER.debug(entity["entity"])
                 if entity["entity"]._enabled:
                     LOGGER.debug("async_update_data - enabling someCameraEnabled check")
@@ -283,9 +291,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 LOGGER.debug("Updating entities...")
 
                 # Gather all entities, including of children devices
-                allEntities = hass.data[DOMAIN][entry.entry_id]["entities"]
-                for childDevice in hass.data[DOMAIN][entry.entry_id]["childDevices"]:
-                    allEntities.extend(childDevice["entities"])
+                allEntities = getAllEntities(hass.data[DOMAIN][entry.entry_id])
 
                 for entity in allEntities:
                     if entity["entity"]._enabled:
