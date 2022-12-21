@@ -155,10 +155,10 @@ Users reported full functionality with following Tapo Cameras:
 - C320WS
 
 The integration _should_ work with any other non-battery Tapo Cameras.
-  
-Following cameras are not working:
-  
-- C420S2 (see here https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/243)
+
+Battery cameras controlled via HUB are working only for control:
+
+- C420S2
 
 If you had success with some other model, please report it via a new issue.
 
@@ -177,6 +177,7 @@ Join discussion on [Discord](https://discord.gg/pa54QyK).
 - [Tim Zhang](https://github.com/ttimasdf) for additional research for Mercury camera on [his github repository](https://github.com/ttimasdf/mercury-ipc-control)
 - [Gábor Szabados](https://github.com/GSzabados) for doing research and gathering all the information above in [Home Assistant Community forum](https://community.home-assistant.io/t/use-pan-tilt-function-for-tp-link-tapo-c200-from-home-assistant/170143/18)
 - [Davide Depau](https://github.com/Depau) for additional [research](https://md.depau.eu/s/r1Ys_oWoP) of the cameras and work on pytapo library
+- [Joe Bebo](https://github.com/bebo-dot-dev) for [documenting](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/243) the communication protocol for cameras which use a hub
 
 <a href="https://www.buymeacoffee.com/jurajnyiri" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png" alt="Buy Me A Coffee"  width="150px" ></a>
 
