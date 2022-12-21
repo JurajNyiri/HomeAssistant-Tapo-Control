@@ -7,6 +7,7 @@ from homeassistant.helpers.entity import EntityCategory
 
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoEntity
+from .utils import check_and_create
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -21,13 +22,20 @@ async def async_setup_entry(
     LOGGER.debug("Setting up number for movement angle")
     entry = hass.data[DOMAIN][config_entry.entry_id]
 
-    number = TapoMovementAngle(entry, hass)
-    if number is not None:
-        async_add_entities([number])
+    numbers = []
+
+    tapoMovementAngle = await check_and_create(
+        entry, hass, TapoMovementAngle, "getPresets", config_entry
+    )
+    if tapoMovementAngle:
+        LOGGER.debug("Adding TapoMoveToPresetSelect...")
+        numbers.append(tapoMovementAngle)
+
+    async_add_entities(numbers)
 
 
 class TapoMovementAngle(RestoreNumber, TapoEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         LOGGER.debug("TapoMovementAngle - init - start")
         self._attr_native_min_value = 5
         self._attr_native_max_value = 120
