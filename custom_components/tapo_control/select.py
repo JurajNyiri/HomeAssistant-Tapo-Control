@@ -85,7 +85,7 @@ class TapoNightVisionSelect(TapoSelectEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setDayNightMode, option
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = option
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -118,7 +118,7 @@ class TapoLightFrequencySelect(TapoSelectEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setLightFrequencyMode, option
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = option
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -171,7 +171,7 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
             option == "off" or option in ["both", "sound"],
             option == "off" or option in ["both", "light"],
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = option
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -214,7 +214,7 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
             option != "off",
             option if option != "off" else False,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = option
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()

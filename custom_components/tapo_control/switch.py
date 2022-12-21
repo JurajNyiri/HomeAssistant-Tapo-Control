@@ -83,7 +83,7 @@ class TapoLensDistortionCorrectionSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setLensDistortionCorrection, True,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "on"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -92,7 +92,7 @@ class TapoLensDistortionCorrectionSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setLensDistortionCorrection, False,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "off"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -113,7 +113,7 @@ class TapoPrivacySwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setPrivacyMode, True,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "on"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -122,7 +122,7 @@ class TapoPrivacySwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setPrivacyMode, False,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "off"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -157,7 +157,7 @@ class TapoIndicatorLedSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setLEDEnabled, True,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "on"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -166,7 +166,7 @@ class TapoIndicatorLedSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setLEDEnabled, False,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "off"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -189,7 +189,7 @@ class TapoFlipSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setImageFlipVertical, True,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "on"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -198,7 +198,7 @@ class TapoFlipSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setImageFlipVertical, False,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "off"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -221,7 +221,7 @@ class TapoAutoTrackSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setAutoTrackTarget, True,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "on"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -230,7 +230,7 @@ class TapoAutoTrackSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setAutoTrackTarget, False,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "off"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()

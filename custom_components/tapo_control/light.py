@@ -44,7 +44,7 @@ class TapoFloodlight(TapoLightEntity):
             self._controller.setForceWhitelampState, True,
         )
         LOGGER.debug(result)
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             LOGGER.debug("Setting light state to: on")
             self._attr_state = "on"
         self.async_write_ha_state()
@@ -56,7 +56,7 @@ class TapoFloodlight(TapoLightEntity):
             self._controller.setForceWhitelampState, False,
         )
         LOGGER.debug(result)
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             LOGGER.debug("Setting light state to: off")
             self._attr_state = "off"
         self.async_write_ha_state()
