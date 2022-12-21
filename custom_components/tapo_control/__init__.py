@@ -234,12 +234,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     ts - hass.data[DOMAIN][entry.entry_id]["lastFirmwareCheck"]
                     > UPDATE_CHECK_PERIOD
                 ):
-                    # todo: add for child devices too
                     hass.data[DOMAIN][entry.entry_id][
                         "latestFirmwareVersion"
                     ] = await getLatestFirmwareVersion(
-                        hass, entry, hass.data[DOMAIN][entry.entry_id]["controller"]
+                        hass,
+                        entry,
+                        hass.data[DOMAIN][entry.entry_id],
+                        hass.data[DOMAIN][entry.entry_id]["controller"],
                     )
+                    for childDevice in hass.data[DOMAIN][entry.entry_id][
+                        "childDevices"
+                    ]:
+                        childDevice[
+                            "latestFirmwareVersion"
+                        ] = await getLatestFirmwareVersion(
+                            hass,
+                            entry,
+                            hass.data[DOMAIN][entry.entry_id],
+                            childDevice["controller"],
+                        )
 
             # cameras state
             someCameraEnabled = False
