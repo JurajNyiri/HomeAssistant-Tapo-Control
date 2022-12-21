@@ -397,6 +397,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "binary_sensor")
         )
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, "sensor")
+        )
 
         # Needs to execute AFTER binary_sensor creation!
         if camData["childDevices"] is None and (motionSensor or enableTimeSync):
