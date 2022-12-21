@@ -22,6 +22,15 @@ async def async_setup_entry(
 
     switches = []
 
+    for childDevice in entry["childDevices"]:
+        tapoPrivacySwitch = await check_and_create(
+            childDevice, hass, TapoPrivacySwitch, "getPrivacyMode", config_entry
+        )
+        if tapoPrivacySwitch:
+            LOGGER.debug("Adding tapoPrivacySwitch...")
+            switches.append(tapoPrivacySwitch)
+    """
+
     tapoPrivacySwitch = await check_and_create(
         entry, hass, TapoPrivacySwitch, "getPrivacyMode", config_entry
     )
@@ -60,7 +69,7 @@ async def async_setup_entry(
     if tapoAutoTrackSwitch:
         LOGGER.debug("Adding tapoAutoTrackSwitch...")
         switches.append(tapoAutoTrackSwitch)
-
+    """
     if switches:
         LOGGER.debug("Adding switch entities...")
         async_add_entities(switches)

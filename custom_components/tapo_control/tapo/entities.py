@@ -18,7 +18,10 @@ class TapoEntity(Entity):
         self._enabled = False
         self._is_cam_entity = False
         self._is_noise_sensor = False
-        self._name = entry["name"]
+        if self._entry["isChild"]:
+            self._name = entry["camData"]["basic_info"]["device_alias"]
+        else:
+            self._name = entry["name"]
         self._name_suffix = name_suffix
         self._controller = entry["controller"]
         self._coordinator = entry["coordinator"]
@@ -71,8 +74,8 @@ class TapoSwitchEntity(SwitchEntity, TapoEntity):
         self._hass = hass
         self._attr_icon = icon
         self._attr_device_class = device_class
-        hass.data[DOMAIN][config_entry.entry_id]["entities"].append(self)
-        self.updateTapo(hass.data[DOMAIN][config_entry.entry_id]["camData"])
+        entry["entities"].append({"entity": self, "entry": entry})
+        self.updateTapo(entry["camData"])
 
         TapoEntity.__init__(self, entry, name_suffix)
         SwitchEntity.__init__(self)
@@ -125,8 +128,8 @@ class TapoBinarySensorEntity(BinarySensorEntity, TapoEntity):
         self._hass = hass
         self._attr_icon = icon
         self._attr_device_class = device_class
-        hass.data[DOMAIN][config_entry.entry_id]["entities"].append(self)
-        self.updateTapo(hass.data[DOMAIN][config_entry.entry_id]["camData"])
+        entry["entities"].append(self)
+        self.updateTapo(entry["camData"])
 
         TapoEntity.__init__(self, entry, name_suffix)
         BinarySensorEntity.__init__(self)
@@ -152,9 +155,9 @@ class TapoLightEntity(LightEntity, TapoEntity):
         self._attr_icon = icon
         self._attr_device_class = device_class
         LOGGER.debug(f"Tapo {name_suffix} - init - append")
-        hass.data[DOMAIN][config_entry.entry_id]["entities"].append(self)
+        entry["entities"].append(self)
         LOGGER.debug(f"Tapo {name_suffix} - init - update")
-        self.updateTapo(hass.data[DOMAIN][config_entry.entry_id]["camData"])
+        self.updateTapo(entry["camData"])
 
         LOGGER.debug(f"Tapo {name_suffix} - init - TapoEntity")
         TapoEntity.__init__(self, entry, name_suffix)
@@ -178,9 +181,9 @@ class TapoSelectEntity(SelectEntity, TapoEntity):
         self._attr_icon = icon
         self._attr_device_class = device_class
         LOGGER.debug(f"Tapo {name_suffix} - init - append")
-        hass.data[DOMAIN][config_entry.entry_id]["entities"].append(self)
+        entry["entities"].append(self)
         LOGGER.debug(f"Tapo {name_suffix} - init - update")
-        self.updateTapo(hass.data[DOMAIN][config_entry.entry_id]["camData"])
+        self.updateTapo(entry["camData"])
 
         LOGGER.debug(f"Tapo {name_suffix} - init - TapoEntity")
         TapoEntity.__init__(self, entry, name_suffix)
