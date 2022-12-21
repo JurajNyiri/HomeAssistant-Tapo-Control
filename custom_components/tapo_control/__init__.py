@@ -292,14 +292,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "button")
         )
-        if camData["childDevices"] is None:
+        if camData["childDevices"] is False or camData["childDevices"] is None:
             hass.async_create_task(
                 hass.config_entries.async_forward_entry_setup(entry, "camera")
             )
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "light")
         )
-
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "number")
         )
@@ -309,7 +308,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "switch")
         )
-
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "update")
         )
