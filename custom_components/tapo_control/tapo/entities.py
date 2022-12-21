@@ -5,6 +5,7 @@ from homeassistant.components.select import SelectEntity
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.components.update import UpdateEntity
 from homeassistant.components.light import LightEntity
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.helpers.entity import EntityCategory
@@ -115,6 +116,33 @@ class TapoSwitchEntity(SwitchEntity, TapoEntity):
     @property
     def entity_category(self):
         return EntityCategory.CONFIG
+
+    @property
+    def state(self):
+        return self._attr_state
+
+
+class TapoSensorEntity(SensorEntity, TapoEntity):
+    def __init__(
+        self,
+        name_suffix,
+        entry: dict,
+        hass: HomeAssistant,
+        config_entry,
+        icon=None,
+        device_class=None,
+    ):
+        LOGGER.debug(f"Tapo {name_suffix} - init - start")
+        self._attr_is_on = False
+        self._hass = hass
+        self._attr_icon = icon
+        self._attr_device_class = device_class
+        entry["entities"].append({"entity": self, "entry": entry})
+
+        TapoEntity.__init__(self, entry, name_suffix)
+        SensorEntity.__init__(self)
+        self.updateTapo(entry["camData"])
+        LOGGER.debug(f"Tapo {name_suffix} - init - end")
 
     @property
     def state(self):

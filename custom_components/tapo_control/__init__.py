@@ -255,10 +255,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         )
 
             # cameras state
+            LOGGER.debug("async_update_data - before someCameraEnabled check")
             someCameraEnabled = False
             for entity in hass.data[DOMAIN][entry.entry_id]["entities"]:
+                LOGGER.debug(entity["entity"])
                 if entity["entity"]._enabled:
+                    LOGGER.debug("async_update_data - enabling someCameraEnabled check")
                     someCameraEnabled = True
+                    break
 
             if someCameraEnabled:
                 # Update data for all controllers
@@ -285,6 +289,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
                 for entity in allEntities:
                     if entity["entity"]._enabled:
+                        LOGGER.debug("Updating entity...")
+                        LOGGER.debug(entity["entity"])
                         entity["camData"] = updateDataForAllControllers[
                             entity["entry"]["controller"]
                         ]
