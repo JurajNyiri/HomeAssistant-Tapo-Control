@@ -25,9 +25,21 @@ async def async_setup_entry(
     buttons = []
     buttons.append(TapoRebootButton(entry, hass, config_entry))
     buttons.append(TapoFormatButton(entry, hass, config_entry))
-    buttons.append(TapoStartManualAlarmButton(entry, hass, config_entry))
-    buttons.append(TapoStopManualAlarmButton(entry, hass, config_entry))
     buttons.append(TapoSyncTimeButton(entry, hass, config_entry))
+
+    tapoStartManualAlarmButton = await check_and_create(
+        entry, hass, TapoStartManualAlarmButton, "getAlarm", config_entry
+    )
+    if tapoStartManualAlarmButton:
+        LOGGER.debug("Adding tapoStartManualAlarmButton...")
+        buttons.append(tapoStartManualAlarmButton)
+
+    tapoStopManualAlarmButton = await check_and_create(
+        entry, hass, TapoStopManualAlarmButton, "getAlarm", config_entry
+    )
+    if tapoStopManualAlarmButton:
+        LOGGER.debug("Adding tapoStopManualAlarmButton...")
+        buttons.append(tapoStopManualAlarmButton)
 
     tapoCalibrateButton = await check_and_create(
         entry, hass, TapoCalibrateButton, "getPresets", config_entry
