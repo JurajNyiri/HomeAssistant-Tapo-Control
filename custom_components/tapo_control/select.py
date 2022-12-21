@@ -113,7 +113,6 @@ class TapoLightFrequencySelect(TapoSelectEntity):
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
-        LOGGER.warn(camData["light_frequency_mode"])
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
