@@ -5,8 +5,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoSensorEntity
-from .utils import check_and_create
-import random
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,

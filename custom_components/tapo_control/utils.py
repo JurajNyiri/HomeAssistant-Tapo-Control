@@ -127,6 +127,8 @@ async def getCamData(hass, controller):
     LOGGER.debug(data)
     camData = {}
 
+    camData["raw"] = data
+
     camData["user"] = controller.user
     camData["basic_info"] = data["getDeviceInfo"]["device_info"]["basic_info"]
     try:
@@ -425,11 +427,95 @@ def build_device_info(attributes: dict) -> DeviceInfo:
     )
 
 
+def pytapoFunctionMap(pytapoFunctionName):
+    if pytapoFunctionName == "getPrivacyMode":
+        return ["getLensMaskConfig"]
+    elif pytapoFunctionName == "getBasicInfo":
+        return ["getDeviceInfo"]
+    elif pytapoFunctionName == "getMotionDetection":
+        return ["getDetectionConfig"]
+    elif pytapoFunctionName == "getLdc":
+        return ["getLensDistortionCorrection"]
+    elif pytapoFunctionName == "getAlarm":
+        return ["getLastAlarmInfo", "getAlarmConfig"]
+    elif pytapoFunctionName == "getLED":
+        return ["getLedStatus"]
+    elif pytapoFunctionName == "getAutoTrackTarget":
+        return ["getTargetTrackConfig"]
+    elif pytapoFunctionName == "getPresets":
+        return ["getPresetConfig"]
+    elif pytapoFunctionName == "getFirmwareUpdateStatus":
+        return ["getFirmwareUpdateStatus"]
+    elif pytapoFunctionName == "getMediaEncrypt":
+        return ["getMediaEncrypt"]
+    elif pytapoFunctionName == "getLightFrequencyMode":
+        return ["getLightFrequencyInfo", "getLightFrequencyCapability"]
+    elif pytapoFunctionName == "getChildDevices":
+        return ["getChildDeviceList"]
+    elif pytapoFunctionName == "getRotationStatus":
+        return ["getRotationStatus"]
+    elif pytapoFunctionName == "getForceWhitelampState":
+        return ["getLdc"]
+    elif pytapoFunctionName == "getDayNightMode":
+        return ["getLightFrequencyInfo"]
+    elif pytapoFunctionName == "getImageFlipVertical":
+        return ["getRotationStatus", "getLdc"]
+    elif pytapoFunctionName == "getLensDistortionCorrection":
+        return ["getLdc"]
+    return []
+
+
+def isCacheSupported(check_function, rawData):
+    rawFunctions = pytapoFunctionMap(check_function)
+    for function in rawFunctions:
+        if function in rawData and rawData[function]:
+            if check_function == "getForceWhitelampState":
+                return (
+                    "image" in rawData["getLdc"]
+                    and "switch" in rawData["getLdc"]["image"]
+                    and "force_wtl_state" in rawData["getLdc"]["image"]["switch"]
+                )
+            elif check_function == "getDayNightMode":
+                return (
+                    "image" in rawData["getLightFrequencyInfo"]
+                    and "common" in rawData["getLightFrequencyInfo"]["image"]
+                    and "inf_type"
+                    in rawData["getLightFrequencyInfo"]["image"]["common"]
+                )
+            elif check_function == "getImageFlipVertical":
+                return (
+                    "image" in rawData["getLdc"]
+                    and "switch" in rawData["getLdc"]["image"]
+                    and "flip_type" in rawData["getLdc"]["image"]["switch"]
+                ) or (
+                    "image" in rawData["getRotationStatus"]
+                    and "switch" in rawData["getRotationStatus"]["image"]
+                    and "flip_type" in rawData["getRotationStatus"]["image"]["switch"]
+                )
+            elif check_function == "getLensDistortionCorrection":
+                return (
+                    "image" in rawData["getLdc"]
+                    and "switch" in rawData["getLdc"]["image"]
+                    and "ldc" in rawData["getLdc"]["image"]["switch"]
+                )
+            return True
+    return False
+
+
 async def check_and_create(entry, hass, cls, check_function, config_entry):
-    try:
-        await hass.async_add_executor_job(getattr(entry["controller"], check_function))
-    except Exception:
-        LOGGER.info(f"Camera does not support {cls.__name__}")
-        return None
-    LOGGER.debug(f"Creating {cls.__name__}")
-    return cls(entry, hass, config_entry)
+    if isCacheSupported(check_function, entry["camData"]["raw"]):
+        LOGGER.debug(
+            f"Found cached capability {check_function}, creating {cls.__name__}"
+        )
+        return cls(entry, hass, config_entry)
+    else:
+        LOGGER.debug(f"Capability {check_function} not found, querying again...")
+        try:
+            await hass.async_add_executor_job(
+                getattr(entry["controller"], check_function)
+            )
+        except Exception:
+            LOGGER.info(f"Camera does not support {cls.__name__}")
+            return None
+        LOGGER.debug(f"Creating {cls.__name__}")
+        return cls(entry, hass, config_entry)
