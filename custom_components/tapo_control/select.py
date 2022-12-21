@@ -23,8 +23,13 @@ async def async_setup_entry(
     selects = []
     LOGGER.debug("Adding TapoNightVisionSelect...")
     selects.append(TapoNightVisionSelect(entry, hass, config_entry))
-    LOGGER.debug("Adding TapoLightFrequencySelect...")
-    selects.append(TapoLightFrequencySelect(entry, hass, config_entry))
+
+    tapoLightFrequencySelect = await check_and_create(
+        entry, hass, TapoLightFrequencySelect, "getLightFrequencyMode", config_entry
+    )
+    if tapoLightFrequencySelect:
+        LOGGER.debug("Adding tapoLightFrequencySelect...")
+        selects.append(tapoLightFrequencySelect)
 
     tapoAutomaticAlarmModeSelect = await check_and_create(
         entry, hass, TapoAutomaticAlarmModeSelect, "getAlarm", config_entry
