@@ -20,42 +20,48 @@ async def async_setup_entry(
     LOGGER.debug("Setting up selects")
     entry = hass.data[DOMAIN][config_entry.entry_id]
 
-    selects = []
+    async def setupEntities(entry):
+        selects = []
 
-    tapoNightVisionSelect = await check_and_create(
-        entry, hass, TapoNightVisionSelect, "getDayNightMode", config_entry
-    )
-    if tapoNightVisionSelect:
-        LOGGER.debug("Adding tapoNightVisionSelect...")
-        selects.append(tapoNightVisionSelect)
+        tapoNightVisionSelect = await check_and_create(
+            entry, hass, TapoNightVisionSelect, "getDayNightMode", config_entry
+        )
+        if tapoNightVisionSelect:
+            LOGGER.debug("Adding tapoNightVisionSelect...")
+            selects.append(tapoNightVisionSelect)
 
-    tapoLightFrequencySelect = await check_and_create(
-        entry, hass, TapoLightFrequencySelect, "getLightFrequencyMode", config_entry
-    )
-    if tapoLightFrequencySelect:
-        LOGGER.debug("Adding tapoLightFrequencySelect...")
-        selects.append(tapoLightFrequencySelect)
+        tapoLightFrequencySelect = await check_and_create(
+            entry, hass, TapoLightFrequencySelect, "getLightFrequencyMode", config_entry
+        )
+        if tapoLightFrequencySelect:
+            LOGGER.debug("Adding tapoLightFrequencySelect...")
+            selects.append(tapoLightFrequencySelect)
 
-    tapoAutomaticAlarmModeSelect = await check_and_create(
-        entry, hass, TapoAutomaticAlarmModeSelect, "getAlarm", config_entry
-    )
-    if tapoAutomaticAlarmModeSelect:
-        LOGGER.debug("Adding tapoAutomaticAlarmModeSelect...")
-        selects.append(tapoAutomaticAlarmModeSelect)
+        tapoAutomaticAlarmModeSelect = await check_and_create(
+            entry, hass, TapoAutomaticAlarmModeSelect, "getAlarm", config_entry
+        )
+        if tapoAutomaticAlarmModeSelect:
+            LOGGER.debug("Adding tapoAutomaticAlarmModeSelect...")
+            selects.append(tapoAutomaticAlarmModeSelect)
 
-    tapoMotionDetectionSelect = await check_and_create(
-        entry, hass, TapoMotionDetectionSelect, "getMotionDetection", config_entry
-    )
-    if tapoMotionDetectionSelect:
-        LOGGER.debug("Adding TapoMotionDetectionSelect...")
-        selects.append(tapoMotionDetectionSelect)
+        tapoMotionDetectionSelect = await check_and_create(
+            entry, hass, TapoMotionDetectionSelect, "getMotionDetection", config_entry
+        )
+        if tapoMotionDetectionSelect:
+            LOGGER.debug("Adding TapoMotionDetectionSelect...")
+            selects.append(tapoMotionDetectionSelect)
 
-    tapoMoveToPresetSelect = await check_and_create(
-        entry, hass, TapoMoveToPresetSelect, "getPresets", config_entry
-    )
-    if tapoMoveToPresetSelect:
-        LOGGER.debug("Adding TapoMoveToPresetSelect...")
-        selects.append(tapoMoveToPresetSelect)
+        tapoMoveToPresetSelect = await check_and_create(
+            entry, hass, TapoMoveToPresetSelect, "getPresets", config_entry
+        )
+        if tapoMoveToPresetSelect:
+            LOGGER.debug("Adding TapoMoveToPresetSelect...")
+            selects.append(tapoMoveToPresetSelect)
+        return selects
+
+    selects = await setupEntities(entry)
+    for childDevice in entry["childDevices"]:
+        selects.extend(await setupEntities(childDevice))
 
     async_add_entities(selects)
 
@@ -96,6 +102,7 @@ class TapoNightVisionSelect(TapoSelectEntity):
 
 class TapoLightFrequencySelect(TapoSelectEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        LOGGER.warn("TapoLightFrequencySelect init")
         self._attr_options = ["auto", "50", "60"]
         self._attr_current_option = None
         TapoSelectEntity.__init__(
@@ -106,6 +113,7 @@ class TapoLightFrequencySelect(TapoSelectEntity):
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
+        LOGGER.warn(camData["light_frequency_mode"])
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:

@@ -52,8 +52,12 @@ async def async_setup_entry(
     hdStream = TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id], True)
     sdStream = TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id], False)
 
-    hass.data[DOMAIN][entry.entry_id]["entities"].append(hdStream)
-    hass.data[DOMAIN][entry.entry_id]["entities"].append(sdStream)
+    hass.data[DOMAIN][entry.entry_id]["entities"].append(
+        {"entity": hdStream, "entry": entry}
+    )
+    hass.data[DOMAIN][entry.entry_id]["entities"].append(
+        {"entity": sdStream, "entry": entry}
+    )
     async_add_entities([hdStream, sdStream])
 
 

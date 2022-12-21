@@ -183,6 +183,14 @@ async def getCamData(hass, controller):
         light_frequency_mode = data["getLdc"]["image"]["common"]["light_freq_mode"]
     except Exception:
         light_frequency_mode = None
+
+    if light_frequency_mode is None:
+        try:
+            light_frequency_mode = data["getLightFrequencyInfo"]["image"]["common"][
+                "light_freq_mode"
+            ]
+        except Exception:
+            light_frequency_mode = None
     camData["light_frequency_mode"] = light_frequency_mode
 
     try:
