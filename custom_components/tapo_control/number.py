@@ -22,14 +22,21 @@ async def async_setup_entry(
     LOGGER.debug("Setting up number for movement angle")
     entry = hass.data[DOMAIN][config_entry.entry_id]
 
-    numbers = []
+    async def setupEntities(entry):
+        numbers = []
 
-    tapoMovementAngle = await check_and_create(
-        entry, hass, TapoMovementAngle, "getPresets", config_entry
-    )
-    if tapoMovementAngle:
-        LOGGER.debug("Adding TapoMoveToPresetSelect...")
-        numbers.append(tapoMovementAngle)
+        tapoMovementAngle = await check_and_create(
+            entry, hass, TapoMovementAngle, "getPresets", config_entry
+        )
+        if tapoMovementAngle:
+            LOGGER.debug("Adding TapoMovementAngle...")
+            numbers.append(tapoMovementAngle)
+        return numbers
+
+    numbers = await setupEntities(entry)
+
+    for childDevice in entry["childDevices"]:
+        numbers.extend(await setupEntities(childDevice))
 
     async_add_entities(numbers)
 
