@@ -22,24 +22,47 @@ async def async_setup_entry(
     LOGGER.debug("Setting up buttons")
     entry = hass.data[DOMAIN][config_entry.entry_id]
 
-    buttons = []
-    buttons.append(TapoRebootButton(entry, hass, config_entry))
-    buttons.append(TapoFormatButton(entry, hass, config_entry))
-    buttons.append(TapoStartManualAlarmButton(entry, hass, config_entry))
-    buttons.append(TapoStopManualAlarmButton(entry, hass, config_entry))
-    buttons.append(TapoSyncTimeButton(entry, hass, config_entry))
+    async def setupEntities(entry):
+        buttons = []
+        if not entry["isChild"]:
+            buttons.append(TapoRebootButton(entry, hass, config_entry))
+            buttons.append(TapoFormatButton(entry, hass, config_entry))
 
-    tapoCalibrateButton = await check_and_create(
-        entry, hass, TapoCalibrateButton, "getPresets", config_entry
-    )
-    if tapoCalibrateButton:
-        buttons.append(tapoCalibrateButton)
-        buttons.append(TapoMoveUpButton(entry, hass, config_entry))
-        buttons.append(TapoMoveDownButton(entry, hass, config_entry))
-        buttons.append(TapoMoveRightButton(entry, hass, config_entry))
-        buttons.append(TapoMoveLeftButton(entry, hass, config_entry))
-    else:
-        LOGGER.info("Buttons: Camera does not support movement.")
+            tapoStartManualAlarmButton = await check_and_create(
+                entry, hass, TapoStartManualAlarmButton, "getAlarm", config_entry
+            )
+            if tapoStartManualAlarmButton:
+                LOGGER.debug("Adding tapoStartManualAlarmButton...")
+                buttons.append(tapoStartManualAlarmButton)
+
+            tapoStopManualAlarmButton = await check_and_create(
+                entry, hass, TapoStopManualAlarmButton, "getAlarm", config_entry
+            )
+            if tapoStopManualAlarmButton:
+                LOGGER.debug("Adding tapoStopManualAlarmButton...")
+                buttons.append(tapoStopManualAlarmButton)
+
+            if not entry["isParent"]:
+                buttons.append(TapoSyncTimeButton(entry, hass, config_entry))
+
+        tapoCalibrateButton = await check_and_create(
+            entry, hass, TapoCalibrateButton, "getPresets", config_entry
+        )
+        if tapoCalibrateButton:
+            buttons.append(tapoCalibrateButton)
+            buttons.append(TapoMoveUpButton(entry, hass, config_entry))
+            buttons.append(TapoMoveDownButton(entry, hass, config_entry))
+            buttons.append(TapoMoveRightButton(entry, hass, config_entry))
+            buttons.append(TapoMoveLeftButton(entry, hass, config_entry))
+        else:
+            LOGGER.info("Buttons: Camera does not support movement.")
+
+        return buttons
+
+    buttons = await setupEntities(entry)
+
+    for childDevice in entry["childDevices"]:
+        buttons.extend(await setupEntities(childDevice))
 
     async_add_entities(buttons)
 
@@ -89,7 +112,9 @@ class TapoSyncTimeButton(TapoButtonEntity):
 
 class TapoStartManualAlarmButton(TapoButtonEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        TapoButtonEntity.__init__(self, "Manual Alarm Start", entry, hass, "mdi:alarm-light-outline")
+        TapoButtonEntity.__init__(
+            self, "Manual Alarm Start", entry, hass, "mdi:alarm-light-outline"
+        )
 
     async def async_press(self) -> None:
         await self._hass.async_add_executor_job(self._controller.startManualAlarm)

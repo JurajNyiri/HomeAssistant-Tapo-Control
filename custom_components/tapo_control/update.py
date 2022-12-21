@@ -8,29 +8,47 @@ from homeassistant.helpers.entity import DeviceInfo
 
 from .const import DOMAIN, LOGGER
 from .utils import build_device_info
+from .tapo.entities import TapoUpdateEntity
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: Callable
+    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: Callable
 ):
-    hass.data[DOMAIN][entry.entry_id]["updateEntity"] = TapoCamUpdate(
-        hass, entry, hass.data[DOMAIN][entry.entry_id]
-    )
-    async_add_entities([hass.data[DOMAIN][entry.entry_id]["updateEntity"]])
+    entry = hass.data[DOMAIN][config_entry.entry_id]
+
+    async def setupEntities(entry):
+        updates = []
+        entry["updateEntity"] = TapoCamUpdate(entry, hass, entry)
+        updates.append(entry["updateEntity"])
+
+        return updates
+
+    updates = await setupEntities(entry)
+    for childDevice in entry["childDevices"]:
+        updates.extend(await setupEntities(childDevice))
+
+    async_add_entities(updates)
 
 
 class TapoCamUpdate(UpdateEntity):
-    def __init__(
-        self, hass: HomeAssistant, entry: dict, tapoData,
-    ):
-        super().__init__()
-        self._controller = tapoData["controller"]
-        self._coordinator = tapoData["coordinator"]
-        self._entry = entry
-        self._hass = hass
-        self._enabled = False
-        self._attributes = tapoData["camData"]["basic_info"]
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         self._in_progress = False
+        self._hass = hass
+        TapoUpdateEntity.__init__(self, "Update", entry, hass, config_entry)
+
+    @property
+    def name(self) -> str:
+        return "{} {}".format(self._name, self._name_suffix)
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return build_device_info(self._attributes)
+
+    @property
+    def unique_id(self) -> str:
+        id_suffix = "".join(self._name_suffix.split())
+
+        return "{}-{}".format(self._name, id_suffix).lower()
 
     def updateTapo(self, camData):
         if not camData:
@@ -60,23 +78,14 @@ class TapoCamUpdate(UpdateEntity):
     async def async_release_notes(self) -> str:
         """Return the release notes."""
         if (
-            self._hass.data[DOMAIN][self._entry.entry_id]["latestFirmwareVersion"]
-            and "release_log"
-            in self._hass.data[DOMAIN][self._entry.entry_id]["latestFirmwareVersion"]
+            self._entry["latestFirmwareVersion"]
+            and "release_log" in self._entry["latestFirmwareVersion"]
         ):
-            return self._hass.data[DOMAIN][self._entry.entry_id][
-                "latestFirmwareVersion"
-            ]["release_log"].replace("\\n", "\n")
+            return self._entry["latestFirmwareVersion"]["release_log"].replace(
+                "\\n", "\n"
+            )
         else:
             return None
-
-    @property
-    def name(self) -> str:
-        return "Camera - " + self._attributes["device_alias"]
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        return build_device_info(self._attributes)
 
     @property
     def in_progress(self) -> bool:
@@ -89,27 +98,23 @@ class TapoCamUpdate(UpdateEntity):
     @property
     def latest_version(self) -> str:
         if (
-            self._hass.data[DOMAIN][self._entry.entry_id]["latestFirmwareVersion"]
-            and "version"
-            in self._hass.data[DOMAIN][self._entry.entry_id]["latestFirmwareVersion"]
+            self._entry["latestFirmwareVersion"]
+            and "version" in self._entry["latestFirmwareVersion"]
         ):
-            return self._hass.data[DOMAIN][self._entry.entry_id][
-                "latestFirmwareVersion"
-            ]["version"]
+            return self._entry["latestFirmwareVersion"]["version"]
         else:
             return self._attributes["sw_version"]
 
     @property
     def release_summary(self) -> str:
         if (
-            self._hass.data[DOMAIN][self._entry.entry_id]["latestFirmwareVersion"]
-            and "release_log"
-            in self._hass.data[DOMAIN][self._entry.entry_id]["latestFirmwareVersion"]
+            self._entry["latestFirmwareVersion"]
+            and "release_log" in self._entry["latestFirmwareVersion"]
         ):
             maxLength = 255
-            releaseLog = self._hass.data[DOMAIN][self._entry.entry_id][
-                "latestFirmwareVersion"
-            ]["release_log"].replace("\\n", "\n")
+            releaseLog = self._entry["latestFirmwareVersion"]["release_log"].replace(
+                "\\n", "\n"
+            )
             return (
                 (releaseLog[: maxLength - 3] + "...")
                 if len(releaseLog) > maxLength
@@ -117,10 +122,6 @@ class TapoCamUpdate(UpdateEntity):
             )
         else:
             return None
-
-    @property
-    def title(self) -> str:
-        return "Tapo Camera: {0}".format(self._attributes["device_alias"])
 
     async def async_install(
         self, version, backup,

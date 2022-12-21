@@ -45,8 +45,10 @@ def getStreamSource(entry, hdStream):
     return streamURL
 
 
-def registerController(host, username, password):
-    return Tapo(host, username, password)
+def registerController(
+    host, username, password, password_cloud="", super_secret_key="", device_id=None
+):
+    return Tapo(host, username, password, password_cloud, super_secret_key, device_id)
 
 
 def isOpen(ip, port):
@@ -181,6 +183,14 @@ async def getCamData(hass, controller):
         light_frequency_mode = data["getLdc"]["image"]["common"]["light_freq_mode"]
     except Exception:
         light_frequency_mode = None
+
+    if light_frequency_mode is None:
+        try:
+            light_frequency_mode = data["getLightFrequencyInfo"]["image"]["common"][
+                "light_freq_mode"
+            ]
+        except Exception:
+            light_frequency_mode = None
     camData["light_frequency_mode"] = light_frequency_mode
 
     try:
@@ -203,6 +213,16 @@ async def getCamData(hass, controller):
         )
     except Exception:
         flip = None
+
+    if flip is None:
+        try:
+            flip = (
+                "on"
+                if data["getRotationStatus"]["image"]["switch"]["flip_type"] == "center"
+                else "off"
+            )
+        except Exception:
+            flip = None
     camData["flip"] = flip
 
     try:
@@ -212,6 +232,15 @@ async def getCamData(hass, controller):
     except Exception:
         alarm = None
         alarm_mode = None
+
+    if alarm is None or alarm_mode is None:
+        try:
+            alarmData = data["getAlarmConfig"]
+            alarm = alarmData["enabled"]
+            alarm_mode = alarmData["alarm_mode"]
+        except Exception:
+            alarm = None
+            alarm_mode = None
     camData["alarm"] = alarm
     camData["alarm_mode"] = alarm_mode
 
@@ -246,6 +275,12 @@ async def getCamData(hass, controller):
     except Exception:
         firmwareUpdateStatus = None
     camData["firmwareUpdateStatus"] = firmwareUpdateStatus
+
+    try:
+        childDevices = data["getChildDeviceList"]
+    except Exception:
+        childDevices = None
+    camData["childDevices"] = childDevices
 
     LOGGER.debug("getCamData - done")
     LOGGER.debug("Processed update data:")

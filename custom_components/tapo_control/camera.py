@@ -39,8 +39,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: Callable
+    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: Callable
 ):
+    entry: dict = hass.data[DOMAIN][config_entry.entry_id]
+
     platform = entity_platform.current_platform.get()
     platform.async_register_entity_service(
         SERVICE_SAVE_PRESET, SCHEMA_SERVICE_SAVE_PRESET, "save_preset",
@@ -49,37 +51,39 @@ async def async_setup_entry(
         SERVICE_DELETE_PRESET, SCHEMA_SERVICE_DELETE_PRESET, "delete_preset",
     )
 
-    hdStream = TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id], True)
-    sdStream = TapoCamEntity(hass, entry, hass.data[DOMAIN][entry.entry_id], False)
+    hdStream = TapoCamEntity(hass, config_entry, entry, True)
+    sdStream = TapoCamEntity(hass, config_entry, entry, False)
 
-    hass.data[DOMAIN][entry.entry_id]["entities"].append(hdStream)
-    hass.data[DOMAIN][entry.entry_id]["entities"].append(sdStream)
+    entry["entities"].append({"entity": hdStream, "entry": entry})
+    entry["entities"].append({"entity": sdStream, "entry": entry})
     async_add_entities([hdStream, sdStream])
 
 
 class TapoCamEntity(Camera):
     def __init__(
-        self, hass: HomeAssistant, entry: dict, tapoData: dict, HDStream: boolean,
+        self, hass: HomeAssistant, config_entry: dict, entry: dict, HDStream: boolean,
     ):
         super().__init__()
-        self.stream_options[CONF_RTSP_TRANSPORT] = entry.data.get(CONF_RTSP_TRANSPORT)
-        self._controller = tapoData["controller"]
-        self._coordinator = tapoData["coordinator"]
+        self.stream_options[CONF_RTSP_TRANSPORT] = config_entry.data.get(
+            CONF_RTSP_TRANSPORT
+        )
+        self._controller = entry["controller"]
+        self._coordinator = entry["coordinator"]
         self._ffmpeg = hass.data[DATA_FFMPEG]
-        self._entry = entry
+        self._config_entry = config_entry
         self._hass = hass
         self._enabled = False
         self._hdstream = HDStream
-        self._extra_arguments = entry.data.get(CONF_EXTRA_ARGUMENTS)
-        self._enable_stream = entry.data.get(ENABLE_STREAM)
-        self._attr_extra_state_attributes = tapoData["camData"]["basic_info"]
+        self._extra_arguments = config_entry.data.get(CONF_EXTRA_ARGUMENTS)
+        self._enable_stream = config_entry.data.get(ENABLE_STREAM)
+        self._attr_extra_state_attributes = entry["camData"]["basic_info"]
         self._attr_motion_detection_enabled = False
         self._attr_icon = "mdi:cctv"
         self._attr_should_poll = True
         self._is_cam_entity = True
         self._is_noise_sensor = False
 
-        self.updateTapo(tapoData["camData"])
+        self.updateTapo(entry["camData"])
 
     async def async_added_to_hass(self) -> None:
         self._enabled = True
@@ -131,7 +135,7 @@ class TapoCamEntity(Camera):
 
     async def async_camera_image(self, width=None, height=None):
         ffmpeg = ImageFrame(self._ffmpeg.binary)
-        streaming_url = getStreamSource(self._entry, self._hdstream)
+        streaming_url = getStreamSource(self._config_entry, self._hdstream)
         image = await asyncio.shield(
             ffmpeg.get_image(
                 streaming_url,
@@ -142,7 +146,7 @@ class TapoCamEntity(Camera):
         return image
 
     async def handle_async_mjpeg_stream(self, request):
-        streaming_url = getStreamSource(self._entry, self._hdstream)
+        streaming_url = getStreamSource(self._config_entry, self._hdstream)
         stream = CameraMjpeg(self._ffmpeg.binary)
         await stream.open_camera(
             streaming_url, extra_cmd=self._extra_arguments,
@@ -171,7 +175,7 @@ class TapoCamEntity(Camera):
         await self._coordinator.async_request_refresh()
 
     async def stream_source(self):
-        return getStreamSource(self._entry, self._hdstream)
+        return getStreamSource(self._config_entry, self._hdstream)
 
     def updateTapo(self, camData):
         if not camData:

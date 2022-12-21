@@ -22,44 +22,53 @@ async def async_setup_entry(
 
     switches = []
 
-    tapoPrivacySwitch = await check_and_create(
-        entry, hass, TapoPrivacySwitch, "getPrivacyMode", config_entry
-    )
-    if tapoPrivacySwitch:
-        LOGGER.debug("Adding tapoPrivacySwitch...")
-        switches.append(tapoPrivacySwitch)
+    async def setupEntities(entry):
+        switches = []
+        tapoPrivacySwitch = await check_and_create(
+            entry, hass, TapoPrivacySwitch, "getPrivacyMode", config_entry
+        )
+        if tapoPrivacySwitch:
+            LOGGER.debug("Adding tapoPrivacySwitch...")
+            switches.append(tapoPrivacySwitch)
 
-    tapoLensDistortionCorrectionSwitch = await check_and_create(
-        entry,
-        hass,
-        TapoLensDistortionCorrectionSwitch,
-        "getLensDistortionCorrection",
-        config_entry,
-    )
-    if tapoLensDistortionCorrectionSwitch:
-        LOGGER.debug("Adding tapoLensDistortionCorrectionSwitch...")
-        switches.append(tapoLensDistortionCorrectionSwitch)
+        tapoLensDistortionCorrectionSwitch = await check_and_create(
+            entry,
+            hass,
+            TapoLensDistortionCorrectionSwitch,
+            "getLensDistortionCorrection",
+            config_entry,
+        )
+        if tapoLensDistortionCorrectionSwitch:
+            LOGGER.debug("Adding tapoLensDistortionCorrectionSwitch...")
+            switches.append(tapoLensDistortionCorrectionSwitch)
 
-    tapoIndicatorLedSwitch = await check_and_create(
-        entry, hass, TapoIndicatorLedSwitch, "getLED", config_entry
-    )
-    if tapoIndicatorLedSwitch:
-        LOGGER.debug("Adding tapoIndicatorLedSwitch...")
-        switches.append(tapoIndicatorLedSwitch)
+        tapoIndicatorLedSwitch = await check_and_create(
+            entry, hass, TapoIndicatorLedSwitch, "getLED", config_entry
+        )
+        if tapoIndicatorLedSwitch:
+            LOGGER.debug("Adding tapoIndicatorLedSwitch...")
+            switches.append(tapoIndicatorLedSwitch)
 
-    tapoFlipSwitch = await check_and_create(
-        entry, hass, TapoFlipSwitch, "getImageFlipVertical", config_entry
-    )
-    if tapoFlipSwitch:
-        LOGGER.debug("Adding tapoFlipSwitch...")
-        switches.append(tapoFlipSwitch)
+        tapoFlipSwitch = await check_and_create(
+            entry, hass, TapoFlipSwitch, "getImageFlipVertical", config_entry
+        )
+        if tapoFlipSwitch:
+            LOGGER.debug("Adding tapoFlipSwitch...")
+            switches.append(tapoFlipSwitch)
 
-    tapoAutoTrackSwitch = await check_and_create(
-        entry, hass, TapoAutoTrackSwitch, "getAutoTrackTarget", config_entry
-    )
-    if tapoAutoTrackSwitch:
-        LOGGER.debug("Adding tapoAutoTrackSwitch...")
-        switches.append(tapoAutoTrackSwitch)
+        tapoAutoTrackSwitch = await check_and_create(
+            entry, hass, TapoAutoTrackSwitch, "getAutoTrackTarget", config_entry
+        )
+        if tapoAutoTrackSwitch:
+            LOGGER.debug("Adding tapoAutoTrackSwitch...")
+            switches.append(tapoAutoTrackSwitch)
+
+        return switches
+
+    switches = await setupEntities(entry)
+
+    for childDevice in entry["childDevices"]:
+        switches.extend(await setupEntities(childDevice))
 
     if switches:
         LOGGER.debug("Adding switch entities...")
@@ -79,11 +88,14 @@ class TapoLensDistortionCorrectionSwitch(TapoSwitchEntity):
             "mdi:google-lens",
         )
 
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
     async def async_turn_on(self) -> None:
         result = await self._hass.async_add_executor_job(
             self._controller.setLensDistortionCorrection, True,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "on"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -92,7 +104,7 @@ class TapoLensDistortionCorrectionSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setLensDistortionCorrection, False,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "off"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -109,11 +121,14 @@ class TapoPrivacySwitch(TapoSwitchEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         TapoSwitchEntity.__init__(self, "Privacy", entry, hass, config_entry)
 
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
     async def async_turn_on(self) -> None:
         result = await self._hass.async_add_executor_job(
             self._controller.setPrivacyMode, True,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "on"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -122,7 +137,7 @@ class TapoPrivacySwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setPrivacyMode, False,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "off"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -153,11 +168,14 @@ class TapoIndicatorLedSwitch(TapoSwitchEntity):
             self, "Indicator LED", entry, hass, config_entry, "mdi:car-light-high"
         )
 
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
     async def async_turn_on(self) -> None:
         result = await self._hass.async_add_executor_job(
             self._controller.setLEDEnabled, True,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "on"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -166,7 +184,7 @@ class TapoIndicatorLedSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setLEDEnabled, False,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "off"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -185,11 +203,14 @@ class TapoFlipSwitch(TapoSwitchEntity):
             self, "Flip", entry, hass, config_entry, "mdi:flip-vertical"
         )
 
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
     async def async_turn_on(self) -> None:
         result = await self._hass.async_add_executor_job(
             self._controller.setImageFlipVertical, True,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "on"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -198,7 +219,7 @@ class TapoFlipSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setImageFlipVertical, False,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "off"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -217,11 +238,14 @@ class TapoAutoTrackSwitch(TapoSwitchEntity):
             self, "Auto Track", entry, hass, config_entry, "mdi:radar"
         )
 
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
     async def async_turn_on(self) -> None:
         result = await self._hass.async_add_executor_job(
             self._controller.setAutoTrackTarget, True,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "on"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -230,7 +254,7 @@ class TapoAutoTrackSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setAutoTrackTarget, False,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "off"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()

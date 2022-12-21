@@ -20,11 +20,22 @@ async def async_setup_entry(
     LOGGER.debug("Setting up light for floodlight")
     entry = hass.data[DOMAIN][config_entry.entry_id]
 
-    light = await check_and_create(
-        entry, hass, TapoFloodlight, "getForceWhitelampState", config_entry
-    )
-    if light is not None:
-        async_add_entities([light])
+    async def setupEntities(entry):
+        lights = []
+
+        tapoFloodlight = await check_and_create(
+            entry, hass, TapoFloodlight, "getForceWhitelampState", config_entry
+        )
+        if tapoFloodlight:
+            LOGGER.debug("Adding tapoFloodlight...")
+            lights.append(tapoFloodlight)
+        return lights
+
+    lights = await setupEntities(entry)
+    for childDevice in entry["childDevices"]:
+        lights.extend(await setupEntities(childDevice))
+
+    async_add_entities(lights)
 
 
 class TapoFloodlight(TapoLightEntity):
@@ -38,13 +49,16 @@ class TapoFloodlight(TapoLightEntity):
         )
         LOGGER.debug("TapoFloodlight - init - end")
 
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
     async def async_turn_on(self) -> None:
         LOGGER.debug("Turning on light")
         result = await self._hass.async_add_executor_job(
             self._controller.setForceWhitelampState, True,
         )
         LOGGER.debug(result)
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             LOGGER.debug("Setting light state to: on")
             self._attr_state = "on"
         self.async_write_ha_state()
@@ -56,7 +70,7 @@ class TapoFloodlight(TapoLightEntity):
             self._controller.setForceWhitelampState, False,
         )
         LOGGER.debug(result)
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             LOGGER.debug("Setting light state to: off")
             self._attr_state = "off"
         self.async_write_ha_state()
