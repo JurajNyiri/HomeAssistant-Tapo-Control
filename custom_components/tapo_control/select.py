@@ -102,7 +102,6 @@ class TapoNightVisionSelect(TapoSelectEntity):
 
 class TapoLightFrequencySelect(TapoSelectEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        LOGGER.warn("TapoLightFrequencySelect init")
         self._attr_options = ["auto", "50", "60"]
         self._attr_current_option = None
         TapoSelectEntity.__init__(
