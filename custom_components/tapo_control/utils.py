@@ -120,6 +120,12 @@ async def initOnvifEvents(hass, host, username, password):
     return False
 
 
+def tryParseInt(value):
+    try:
+        return int(value)
+    except:
+        return None
+
 async def getCamData(hass, controller):
     LOGGER.debug("getCamData")
     data = await hass.async_add_executor_job(controller.getMost)
@@ -158,6 +164,27 @@ async def getCamData(hass, controller):
         motion_detection_sensitivity = None
     camData["motion_detection_enabled"] = motion_detection_enabled
     camData["motion_detection_sensitivity"] = motion_detection_sensitivity
+
+    try:
+        personDetectionData = data["getPersonDetectionConfig"]["people_detection"][
+            "detection"
+        ]
+        person_detection_enabled = personDetectionData["enabled"]
+        person_detection_sensitivity = None
+
+        sensitivity = tryParseInt(personDetectionData["sensitivity"])
+        if sensitivity is not None:
+            if sensitivity <= 33:
+                person_detection_sensitivity = "low"
+            elif sensitivity <= 66:
+                person_detection_sensitivity = "normal"
+            else:
+                person_detection_sensitivity = "high"
+    except Exception:
+        person_detection_enabled = None
+        person_detection_sensitivity = None
+    camData["person_detection_enabled"] = person_detection_enabled
+    camData["person_detection_sensitivity"] = person_detection_sensitivity
 
     try:
         presets = {
