@@ -123,8 +123,10 @@ async def initOnvifEvents(hass, host, username, password):
 def tryParseInt(value):
     try:
         return int(value)
-    except:
+    except Exception as e:
+        LOGGER.error("Couldnt parse as integer: %s", str(e))
         return None
+
 
 async def getCamData(hass, controller):
     LOGGER.debug("getCamData")
