@@ -199,6 +199,26 @@ async def getCamData(hass, controller):
         day_night_mode = data["getLdc"]["image"]["common"]["inf_type"]
     except Exception:
         day_night_mode = None
+
+    if day_night_mode is None:
+        try:
+            if (
+                data["getNightVisionModeConfig"]["image"]["switch"]["night_vision_mode"]
+                == "inf_night_vision"
+            ):
+                day_night_mode = "on"
+            elif (
+                data["getNightVisionModeConfig"]["image"]["switch"]["night_vision_mode"]
+                == "wtl_night_vision"
+            ):
+                day_night_mode = "off"
+            elif (
+                data["getNightVisionModeConfig"]["image"]["switch"]["night_vision_mode"]
+                == "md_night_vision"
+            ):
+                day_night_mode = "auto"
+        except Exception:
+            day_night_mode = None
     camData["day_night_mode"] = day_night_mode
 
     try:
@@ -245,12 +265,6 @@ async def getCamData(hass, controller):
             alarm_mode = None
     camData["alarm"] = alarm
     camData["alarm_mode"] = alarm_mode
-
-    try:
-        day_night_mode = data["getLdc"]["image"]["common"]["inf_type"]
-    except Exception:
-        day_night_mode = None
-    camData["day_night_mode"] = day_night_mode
 
     try:
         led = data["getLedStatus"]["led"]["config"]["enabled"]
@@ -457,7 +471,7 @@ def pytapoFunctionMap(pytapoFunctionName):
     elif pytapoFunctionName == "getForceWhitelampState":
         return ["getLdc"]
     elif pytapoFunctionName == "getDayNightMode":
-        return ["getLightFrequencyInfo"]
+        return ["getLightFrequencyInfo", "getNightVisionModeConfig"]
     elif pytapoFunctionName == "getImageFlipVertical":
         return ["getRotationStatus", "getLdc"]
     elif pytapoFunctionName == "getLensDistortionCorrection":
