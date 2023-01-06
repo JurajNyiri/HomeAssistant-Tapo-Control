@@ -151,6 +151,7 @@ Users reported full functionality with following Tapo Cameras:
 - C110
 - C200
 - C210
+- C225
 - C310
 - C320WS
 
