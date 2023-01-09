@@ -312,8 +312,9 @@ class FlowHandler(ConfigFlow):
                                 return await self.async_step_auth()
                         else:
                             LOGGER.debug(
-                                "[ADD DEVICE][%s] Camera control is not available, IP is not a Tapo device.",
+                                "[ADD DEVICE][%s] Camera control is not available, IP is not a Tapo device. Error: %s",
                                 host,
+                                str(e),
                             )
                             raise Exception("not_tapo_device")
                 else:
