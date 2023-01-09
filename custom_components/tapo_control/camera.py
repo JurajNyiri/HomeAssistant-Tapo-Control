@@ -78,7 +78,6 @@ class TapoCamEntity(Camera):
         self._enable_stream = config_entry.data.get(ENABLE_STREAM)
         self._attr_extra_state_attributes = entry["camData"]["basic_info"]
         self._attr_motion_detection_enabled = False
-        self._attr_person_detection_enabled = False
         self._attr_icon = "mdi:cctv"
         self._attr_should_poll = True
         self._is_cam_entity = True
@@ -127,10 +126,6 @@ class TapoCamEntity(Camera):
         return self._motion_detection_enabled
 
     @property
-    def person_detection_enabled(self):
-        return self._person_detection_enabled
-
-    @property
     def brand(self):
         return BRAND
 
@@ -175,12 +170,6 @@ class TapoCamEntity(Camera):
             self._attr_motion_detection_enabled = (
                 "enabled" in data and data["enabled"] == "on"
             )
-            data = await self._hass.async_add_executor_job(
-                self._controller.getPersonDetection
-            )
-            self._attr_person_detection_enabled = (
-                "enabled" in data and data["enabled"] == "on"
-            )
         except Exception:
             self._attr_state = STATE_UNAVAILABLE
         await self._coordinator.async_request_refresh()
@@ -194,7 +183,6 @@ class TapoCamEntity(Camera):
         else:
             self._attr_state = "idle"
             self._motion_detection_enabled = camData["motion_detection_enabled"]
-            self._person_detection_enabled = camData["person_detection_enabled"]
 
             for attr, value in camData["basic_info"].items():
                 self._attr_extra_state_attributes[attr] = value
@@ -211,18 +199,6 @@ class TapoCamEntity(Camera):
     async def async_disable_motion_detection(self):
         await self.hass.async_add_executor_job(
             self._controller.setMotionDetection, False
-        )
-        await self._coordinator.async_request_refresh()
-
-    async def async_enable_person_detection(self):
-        await self.hass.async_add_executor_job(
-            self._controller.setPersonDetection, True
-        )
-        await self._coordinator.async_request_refresh()
-
-    async def async_disable_person_detection(self):
-        await self.hass.async_add_executor_job(
-            self._controller.setPersonDetection, False
         )
         await self._coordinator.async_request_refresh()
 
