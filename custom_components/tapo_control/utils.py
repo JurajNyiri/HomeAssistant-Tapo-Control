@@ -477,6 +477,8 @@ def pytapoFunctionMap(pytapoFunctionName):
         return ["getDeviceInfo"]
     elif pytapoFunctionName == "getMotionDetection":
         return ["getDetectionConfig"]
+    elif pytapoFunctionName == "getPersonDetection":
+        return ["getPersonDetectionConfig"]
     elif pytapoFunctionName == "getLdc":
         return ["getLensDistortionCorrection"]
     elif pytapoFunctionName == "getAlarm":
