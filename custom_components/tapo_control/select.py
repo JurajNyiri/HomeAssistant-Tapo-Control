@@ -274,7 +274,7 @@ class TapoPersonDetectionSelect(TapoSelectEntity):
             option != "off",
             option if option != "off" else False,
         )
-        if result["error_code"] == 0:
+        if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = option
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
