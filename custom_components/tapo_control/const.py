@@ -46,6 +46,13 @@ LOGGER = logging.getLogger("custom_components." + DOMAIN)
 TIME_SYNC_PERIOD = 3600
 UPDATE_CHECK_PERIOD = 86400
 
+SERVICE_PTZ = "ptz"
+SCHEMA_SERVICE_PTZ = {
+    vol.Optional(TILT): vol.In(["UP", "DOWN"]),
+    vol.Optional(PAN): vol.In(["RIGHT", "LEFT"]),
+    vol.Optional(PRESET): cv.string,
+    vol.Optional(DISTANCE): cv.string,
+}
 
 SERVICE_SAVE_PRESET = "save_preset"
 SCHEMA_SERVICE_SAVE_PRESET = {

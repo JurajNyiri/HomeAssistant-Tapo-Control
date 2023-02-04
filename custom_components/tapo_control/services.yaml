@@ -1,3 +1,30 @@
+ptz:
+  name: PTZ
+  description: Pan and tilt camera
+  target:
+    entity:
+      domain: camera
+      integration: tapo_control
+  fields:
+    tilt:
+      description: "Tilt direction."
+      example: "UP"
+      name: Tilt
+      selector:
+        select:
+          options:
+            - "UP"
+            - "DOWN"
+    pan:
+      name: Pan
+      description: "Pan direction."
+      example: "RIGHT"
+      selector:
+        select:
+          options:
+            - "RIGHT"
+            - "LEFT"
+
 save_preset:
   name: Save preset
   description: Saves the current PTZ position to a preset

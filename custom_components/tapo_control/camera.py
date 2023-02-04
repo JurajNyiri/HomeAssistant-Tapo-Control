@@ -22,6 +22,8 @@ from homeassistant.util import slugify
 from .const import (
     CONF_RTSP_TRANSPORT,
     ENABLE_STREAM,
+    SERVICE_PTZ,
+    SCHEMA_SERVICE_PTZ,
     SERVICE_SAVE_PRESET,
     SCHEMA_SERVICE_SAVE_PRESET,
     SERVICE_DELETE_PRESET,
@@ -44,6 +46,9 @@ async def async_setup_entry(
     entry: dict = hass.data[DOMAIN][config_entry.entry_id]
 
     platform = entity_platform.current_platform.get()
+    platform.async_register_entity_service(
+        SERVICE_PTZ, SCHEMA_SERVICE_PTZ, "ptz",
+    )
     platform.async_register_entity_service(
         SERVICE_SAVE_PRESET, SCHEMA_SERVICE_SAVE_PRESET, "save_preset",
     )
@@ -189,6 +194,70 @@ class TapoCamEntity(Camera):
             self._attr_extra_state_attributes["alarm"] = camData["alarm"]
             self._attr_extra_state_attributes["user"] = camData["user"]
             self._attr_extra_state_attributes["presets"] = camData["presets"]
+
+    async def ptz(self, tilt=None, pan=None, preset=None, distance=None):
+        if preset:
+            if preset.isnumeric():
+                await self.hass.async_add_executor_job(
+                    self._controller.setPreset, preset
+                )
+            else:
+                foundKey = False
+                for key, value in self._attributes["presets"].items():
+                    if value == preset:
+                        foundKey = key
+                if foundKey:
+                    await self.hass.async_add_executor_job(
+                        self._controller.setPreset, foundKey
+                    )
+                else:
+                    LOGGER.error("Preset " + preset + " does not exist.")
+        elif tilt:
+            if distance:
+                distance = float(distance)
+                if distance >= 0 and distance <= 1:
+                    degrees = 68 * distance
+                else:
+                    degrees = 5
+            else:
+                degrees = 5
+            if tilt == "UP":
+                await self.hass.async_add_executor_job(
+                    self._controller.moveMotor, 0, degrees
+                )
+            else:
+                await self.hass.async_add_executor_job(
+                    self._controller.moveMotor, 0, -degrees
+                )
+        elif pan:
+            if distance:
+                distance = float(distance)
+                if distance >= 0 and distance <= 1:
+                    degrees = 360 * distance
+                else:
+                    degrees = 5
+            else:
+                degrees = 5
+            if pan == "RIGHT":
+                await self.hass.async_add_executor_job(
+                    self._controller.moveMotor, degrees, 0
+                )
+            else:
+                await self.hass.async_add_executor_job(
+                    self._controller.moveMotor, -degrees, 0
+                )
+        else:
+            LOGGER.error(
+                "Incorrect additional PTZ properties."
+                + " You need to specify at least one of"
+                + TILT
+                + ", "
+                + PAN
+                + ", "
+                + PRESET
+                + "."
+            )
+        await self._coordinator.async_request_refresh()
 
     async def async_enable_motion_detection(self):
         await self.hass.async_add_executor_job(
