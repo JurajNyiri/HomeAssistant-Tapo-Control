@@ -86,9 +86,8 @@ class TapoSiren(TapoSirenEntity):
 
         if result_has_error(result):
             self._attr_available = False
-            return
-
-        self._is_on = True
+        else:
+            self._is_on = True
 
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
@@ -100,9 +99,8 @@ class TapoSiren(TapoSirenEntity):
 
         if result_has_error(result):
             self._attr_available = False
-            return
-
-        self._is_on = False
+        else:
+            self._is_on = False
 
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
