@@ -26,13 +26,22 @@ async def async_setup_entry(
     LOGGER.debug("Setting up sirens")
     entry: dict = hass.data[DOMAIN][config_entry.entry_id]
 
-    tapoSiren = await check_and_create(entry, hass, TapoSiren, "getAlarm", config_entry)
+    async def setupEntities(entry):
+        sirens = []
+        tapoSiren = await check_and_create(
+            entry, hass, TapoSiren, "getAlarm", config_entry
+        )
+        if tapoSiren:
+            LOGGER.debug("Adding TapoSirenEntity...")
+            sirens.append(tapoSiren)
 
-    if tapoSiren:
-        LOGGER.debug("Adding siren entity...")
-        async_add_entities(tapoSiren)
-    else:
-        LOGGER.debug("No siren entity available.")
+        return sirens
+
+    sirens = await setupEntities(entry)
+    for childDevice in entry["childDevices"]:
+        sirens.extend(await setupEntities(childDevice))
+
+    async_add_entities(sirens)
 
 
 class TapoSirenEntity(SirenEntity, TapoEntity):
@@ -42,36 +51,25 @@ class TapoSirenEntity(SirenEntity, TapoEntity):
 
         LOGGER.debug(f"Tapo {name_suffix} - init - start")
 
-        LOGGER.debug(f"Tapo {name_suffix} - init - start")
-        self._attr_is_on = False
         self._hass = hass
+
         entry["entities"].append({"entity": self, "entry": entry})
         self.updateTapo(entry["camData"])
 
         self._attr_is_on = False
-        self._attr_supported_features = (
-            SUPPORT_TURN_ON | SUPPORT_TURN_OFF | SUPPORT_TONES
-        )
-        self._attr_available_tones = {
-            "LIGHT_AND_SOUND": "Light and sound",
-            "LIGHT_ONLY": "Light only",
-            "SOUND_ONLY": "Sound only",
-        }
+        self._attr_supported_features = SUPPORT_TURN_ON | SUPPORT_TURN_OFF
+
+        # self._attr_supported_features = self._attr_supported_features | SUPPORT_TONES
+        # self._attr_available_tones = {
+        #     "LIGHT_AND_SOUND": "Light and sound",
+        #     "LIGHT_ONLY": "Light only",
+        #     "SOUND_ONLY": "Sound only",
+        # }
 
         TapoEntity.__init__(self, entry, name_suffix)
         SirenEntity.__init__(self)
 
-        # self._enabled = True
-
         LOGGER.debug(f"Tapo {name_suffix} - init - end")
-
-    @property
-    def entity_category(self):
-        return EntityCategory.CONFIG
-
-    @property
-    def state(self):
-        return self._attr_state
 
 
 class TapoSiren(TapoSirenEntity):
@@ -81,20 +79,44 @@ class TapoSiren(TapoSirenEntity):
     async def async_update(self) -> None:
         await self._coordinator.async_request_refresh()
 
-    async def async_turn_on(self) -> None:
+    async def async_turn_on(self, **kwargs) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.startManualAlarm,
+        )
+
+        if result_has_error(result):
+            self._attr_available = False
+            return
+
+        self._is_on = True
+
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
 
-    async def async_turn_off(self) -> None:
+    async def async_turn_off(self, **kwargs) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.stopManualAlarm,
+        )
+
+        if result_has_error(result):
+            self._attr_available = False
+            return
+
+        self._is_on = False
+
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_available = False
         else:
-            self._attr_state = camData["alarm"] == "on"
+            self._attr_available = True
+            self._is_on = camData["alarm"] == "on"
 
-    @property
-    def entity_category(self):
-        return None
+
+def result_has_error(result):
+    if "error_code" not in result or result["error_code"] == 0:
+        return False
+    else:
+        return True
