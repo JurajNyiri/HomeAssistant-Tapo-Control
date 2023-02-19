@@ -40,7 +40,7 @@ class TapoMediaSource(MediaSource):
         self.entry = entry
 
     async def async_resolve_media(self, item: MediaSourceItem) -> PlayMedia:
-        raise Exception("Not implemented yet.")
+        raise Unresolvable("Not implemented yet.")
         LOGGER.warn("TODO async_resolve_media")
 
     async def async_browse_media(self, item: MediaSourceItem,) -> BrowseMediaSource:
