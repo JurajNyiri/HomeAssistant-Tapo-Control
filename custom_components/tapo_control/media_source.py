@@ -14,6 +14,9 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN, LOGGER
 
+from pytapo import Tapo
+from datetime import datetime, timezone
+
 
 async def async_get_media_source(hass: HomeAssistant) -> TapoMediaSource:
     """Set up Radio Browser media source."""
@@ -37,32 +40,116 @@ class TapoMediaSource(MediaSource):
         self.entry = entry
 
     async def async_resolve_media(self, item: MediaSourceItem) -> PlayMedia:
+        raise Exception("Not implemented yet.")
         LOGGER.warn("TODO async_resolve_media")
 
     async def async_browse_media(self, item: MediaSourceItem,) -> BrowseMediaSource:
 
-        for key in self.hass.data[DOMAIN]:
-            LOGGER.warn(key)
-
-        return BrowseMediaSource(
-            domain=DOMAIN,
-            identifier=None,
-            media_class=MediaClass.DIRECTORY,
-            media_content_type=MediaType.VIDEO,
-            title=self.name,
-            can_play=False,
-            can_expand=True,
-            children_media_class=MediaClass.DIRECTORY,
-            children=[
-                BrowseMediaSource(
+        if item.identifier is None:
+            return BrowseMediaSource(
+                domain=DOMAIN,
+                identifier="tapo",
+                media_class=MediaClass.DIRECTORY,
+                media_content_type=MediaType.VIDEO,
+                title=self.name,
+                can_play=False,
+                can_expand=True,
+                children_media_class=MediaClass.DIRECTORY,
+                children=[
+                    BrowseMediaSource(
+                        domain=DOMAIN,
+                        identifier=f"tapo/{entry}",
+                        media_class=MediaClass.DIRECTORY,
+                        media_content_type=MediaType.VIDEO,
+                        title=self.hass.data[DOMAIN][entry]["name"],
+                        can_play=False,
+                        can_expand=True,
+                    )
+                    for entry in self.hass.data[DOMAIN]
+                ],
+            )
+        else:
+            path = item.identifier.split("/")
+            if len(path) == 2:
+                entry = path[1]
+                tapoController: Tapo = self.hass.data[DOMAIN][entry]["controller"]
+                recordingsList = await self.hass.async_add_executor_job(
+                    tapoController.getRecordingsList
+                )
+                recordingsDates = []
+                for searchResult in recordingsList:
+                    for key in searchResult:
+                        recordingsDates.append(searchResult[key]["date"])
+                return BrowseMediaSource(
                     domain=DOMAIN,
-                    identifier=f"{entry}",
+                    identifier=f"tapo/{entry}",
                     media_class=MediaClass.DIRECTORY,
                     media_content_type=MediaType.VIDEO,
                     title=self.hass.data[DOMAIN][entry]["name"],
                     can_play=False,
                     can_expand=True,
+                    children_media_class=MediaClass.DIRECTORY,
+                    children=[
+                        BrowseMediaSource(
+                            domain=DOMAIN,
+                            identifier=f"tapo/{entry}/{date}",
+                            media_class=MediaClass.DIRECTORY,
+                            media_content_type=MediaType.VIDEO,
+                            title=date,
+                            can_play=False,
+                            can_expand=True,
+                        )
+                        for date in recordingsDates
+                    ],
                 )
-                for entry in self.hass.data[DOMAIN]
-            ],
-        )
+            elif len(path) == 3:
+                entry = path[1]
+                date = path[2]
+                tapoController: Tapo = self.hass.data[DOMAIN][entry]["controller"]
+                recordingsForDay = await self.hass.async_add_executor_job(
+                    tapoController.getRecordings, date
+                )
+                videoNames = []
+                for searchResult in recordingsForDay:
+                    for key in searchResult:
+                        # todo: check if this works
+                        startTS = searchResult[key]["startTime"]
+                        endTS = searchResult[key]["endTime"]
+                        timezoneDiff = -1 * (
+                            int(datetime.now().timestamp())
+                            - int(
+                                datetime.now().replace(tzinfo=timezone.utc).timestamp()
+                            )
+                        )
+
+                        startDate = datetime.fromtimestamp(startTS + timezoneDiff)
+                        endDate = datetime.fromtimestamp(endTS + timezoneDiff)
+                        videoName = f"{startDate.strftime('%H:%M:%S')} - {endDate.strftime('%H:%M:%S')}"
+                        videoNames.append(videoName)
+
+                return BrowseMediaSource(
+                    domain=DOMAIN,
+                    identifier=f"tapo/{entry}/",
+                    media_class=MediaClass.DIRECTORY,
+                    media_content_type=MediaType.VIDEO,
+                    title=f"{self.hass.data[DOMAIN][entry]['name']} - {date}",
+                    can_play=False,
+                    can_expand=True,
+                    children_media_class=MediaClass.DIRECTORY,
+                    children=[
+                        BrowseMediaSource(
+                            domain=DOMAIN,
+                            identifier=f"tapo/{entry}/{date}/{videoName}",
+                            media_class=MediaClass.VIDEO,
+                            media_content_type=MediaType.VIDEO,
+                            title=videoName,
+                            can_play=True,
+                            can_expand=False,
+                        )
+                        for videoName in videoNames
+                    ],
+                )
+
+            else:
+                LOGGER.error("Not implemented")
+
