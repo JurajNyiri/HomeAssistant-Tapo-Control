@@ -40,6 +40,7 @@ class TapoMediaSource(MediaSource):
         self.entry = entry
 
     async def async_resolve_media(self, item: MediaSourceItem) -> PlayMedia:
+        LOGGER.warn(item)
         raise Unresolvable("Not implemented yet.")
         LOGGER.warn("TODO async_resolve_media")
 
@@ -125,7 +126,9 @@ class TapoMediaSource(MediaSource):
                         startDate = datetime.fromtimestamp(startTS + timezoneDiff)
                         endDate = datetime.fromtimestamp(endTS + timezoneDiff)
                         videoName = f"{startDate.strftime('%H:%M:%S')} - {endDate.strftime('%H:%M:%S')}"
-                        videoNames.append(videoName)
+                        videoNames.append(
+                            {"name": videoName, "startDate": startTS, "endDate": endTS}
+                        )
 
                 return BrowseMediaSource(
                     domain=DOMAIN,
@@ -139,14 +142,14 @@ class TapoMediaSource(MediaSource):
                     children=[
                         BrowseMediaSource(
                             domain=DOMAIN,
-                            identifier=f"tapo/{entry}/{date}/{videoName}",
+                            identifier=f"tapo/{entry}/{date}/{data['startDate']}/{data['endDate']}",
                             media_class=MediaClass.VIDEO,
                             media_content_type=MediaType.VIDEO,
-                            title=videoName,
+                            title=data["name"],
                             can_play=True,
                             can_expand=False,
                         )
-                        for videoName in videoNames
+                        for data in videoNames
                     ],
                 )
 
