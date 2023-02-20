@@ -6,6 +6,8 @@ TODO:
 - Background scheduled task which automatically downloads and caches videos per selected period (and deletes old stuff and hot/cold storage)
 - Handle weird error that sometimes happens causing downloader to get stuck and never recovers until restart
 - Change hot storage to keep recordings for 1 hour minimum so that more than 2 users can watch recordings at the same time
+- Get full home assistant url so that recordings can be played on other devices
+- Fix timezone incorrect times in files
 
 """
 
@@ -151,15 +153,9 @@ class TapoMediaSource(MediaSource):
                         # todo: check if this works
                         startTS = searchResult[key]["startTime"]
                         endTS = searchResult[key]["endTime"]
-                        timezoneDiff = -1 * (
-                            int(datetime.now().timestamp())
-                            - int(
-                                datetime.now().replace(tzinfo=timezone.utc).timestamp()
-                            )
-                        )
 
-                        startDate = datetime.fromtimestamp(startTS + timezoneDiff)
-                        endDate = datetime.fromtimestamp(endTS + timezoneDiff)
+                        startDate = datetime.fromtimestamp(startTS)
+                        endDate = datetime.fromtimestamp(endTS)
                         videoName = f"{startDate.strftime('%H:%M:%S')} - {endDate.strftime('%H:%M:%S')}"
                         videoNames.append(
                             {"name": videoName, "startDate": startTS, "endDate": endTS}
