@@ -45,6 +45,10 @@ class TapoMediaSource(MediaSource):
         path = item.identifier.split("/")
         if len(path) == 5:
             entry = path[1]
+            if self.hass.data[DOMAIN][entry]["isDownloadingStream"]:
+                raise Unresolvable(
+                    "Already downloading a recording, please try again later."
+                )
             date = path[2]
             tapoController: Tapo = self.hass.data[DOMAIN][entry]["controller"]
             startDate = int(path[3])
@@ -62,8 +66,9 @@ class TapoMediaSource(MediaSource):
             pathlib.Path(filePath).mkdir(parents=True, exist_ok=True)
             downloader = Downloader(tapoController, startDate, endDate, filePath, 0,)
 
-            LOGGER.warn("waiting")
+            self.hass.data[DOMAIN][entry]["isDownloadingStream"] = True
             downloadedFile = await downloader.downloadFile(LOGGER)
+            self.hass.data[DOMAIN][entry]["isDownloadingStream"] = False
             downloadedFilePath = downloadedFile["fileName"][6:]  # remove ./www/
             LOGGER.warn(downloadedFile)
 
