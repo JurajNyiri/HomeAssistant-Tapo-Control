@@ -1,10 +1,17 @@
 import asyncio
 import datetime
+import hashlib
+import pathlib
 import onvif
 import os
+import shutil
 import socket
 import time
 import urllib.parse
+import uuid
+from homeassistant.core import HomeAssistant
+from pytapo.media_stream.downloader import Downloader
+from homeassistant.components.media_source.error import Unresolvable
 
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from onvif import ONVIFCamera
@@ -25,6 +32,8 @@ from .const import (
     ENABLE_TIME_SYNC,
     CONF_CUSTOM_STREAM,
 )
+
+UUID = uuid.uuid4().hex
 
 
 def getStreamSource(entry, hdStream):
@@ -60,6 +69,69 @@ def isOpen(ip, port):
         return True
     except Exception:
         return False
+
+
+def deleteFilesOlderThan(dirPath, deleteOlderThan):
+    now = datetime.datetime.utcnow().timestamp()
+    for f in os.listdir(dirPath):
+        filePath = os.path.join(dirPath, f)
+        last_modified = os.stat(filePath).st_mtime
+        if now - last_modified > deleteOlderThan:
+            os.remove(filePath)
+
+
+async def getRecording(
+    hass: HomeAssistant,
+    tapo: Tapo,
+    entry_id: str,
+    date: str,
+    startDate: int,
+    endDate: int,
+) -> str:
+    # this NEEDS to happen otherwise camera does not send data!
+    await hass.async_add_executor_job(tapo.getRecordings, date)
+
+    coldDirPath = f"./.storage/{DOMAIN}/{entry_id}/"
+
+    # Delete everything other than 24 hours from cold storage
+    deleteFilesOlderThan(coldDirPath, 24 * 60 * 60)
+
+    hotDirPath = f"./www/{DOMAIN}/{entry_id}/"
+    pathlib.Path(coldDirPath).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(hotDirPath).mkdir(parents=True, exist_ok=True)
+    downloader = Downloader(
+        tapo,
+        startDate,
+        endDate,
+        coldDirPath,
+        0,
+        None,
+        None,
+        hashlib.md5((str(startDate) + str(endDate)).encode()).hexdigest() + ".mp4",
+    )
+    # todo: automatic deletion of recordings longer than X in hot storage
+
+    hass.data[DOMAIN][entry_id]["isDownloadingStream"] = True
+    downloadedFile = await downloader.downloadFile(LOGGER)
+    hass.data[DOMAIN][entry_id]["isDownloadingStream"] = False
+    if downloadedFile["currentAction"] == "Recording in progress":
+        raise Unresolvable("Recording is currently in progress.")
+
+    coldFilePath = downloadedFile["fileName"]
+    hotFilePath = (
+        coldFilePath.replace("./.storage/", "./www/").replace(".mp4", "")
+        + UUID
+        + ".mp4"
+    )
+    shutil.copyfile(coldFilePath, hotFilePath)
+
+    # todo: move this to as scheduled job
+    # Delete everything other than this file from hot storage
+    deleteFilesOlderThan(hotDirPath, 1)
+
+    fileWebPath = hotFilePath[6:]  # remove ./www/
+
+    return f"/local/{fileWebPath}"
 
 
 def areCameraPortsOpened(host):

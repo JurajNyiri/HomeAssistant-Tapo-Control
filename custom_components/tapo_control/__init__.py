@@ -160,7 +160,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     try:
         if cloud_password != "":
             tapoController = await hass.async_add_executor_job(
-                registerController, host, "admin", cloud_password
+                registerController, host, "admin", cloud_password, cloud_password
             )
         else:
             tapoController = await hass.async_add_executor_job(
@@ -349,6 +349,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "childDevices": [],
             "isChild": False,
             "isParent": False,
+            "isDownloadingStream": False,
         }
 
         if camData["childDevices"] is False or camData["childDevices"] is None:
