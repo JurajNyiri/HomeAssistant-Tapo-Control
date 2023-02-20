@@ -17,6 +17,7 @@ from .const import DOMAIN, LOGGER
 from pytapo import Tapo
 from pytapo.media_stream.downloader import Downloader
 from datetime import datetime, timezone
+import pathlib
 
 
 async def async_get_media_source(hass: HomeAssistant) -> TapoMediaSource:
@@ -57,10 +58,9 @@ class TapoMediaSource(MediaSource):
 
             # test folder creation
             # todo: secure folder path so that it is not easily findable!
-            filePath = f"tapo/{self.hass.data[DOMAIN][entry]['name']}/"
-            downloader = Downloader(
-                tapoController, startDate, endDate, f"./www/{filePath}", 0,
-            )
+            filePath = f"./www/tapo/{self.hass.data[DOMAIN][entry]['name']}/"
+            pathlib.Path(filePath).mkdir(parents=True, exist_ok=True)
+            downloader = Downloader(tapoController, startDate, endDate, filePath, 0,)
 
             LOGGER.warn("waiting")
             downloadedFile = await downloader.downloadFile(LOGGER)
