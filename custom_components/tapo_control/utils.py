@@ -75,7 +75,6 @@ def deleteFilesOlderThan(dirPath, deleteOlderThan):
     now = datetime.datetime.utcnow().timestamp()
     for f in os.listdir(dirPath):
         filePath = os.path.join(dirPath, f)
-        LOGGER.error(filePath)
         last_modified = os.stat(filePath).st_mtime
         if now - last_modified > deleteOlderThan:
             os.remove(filePath)
