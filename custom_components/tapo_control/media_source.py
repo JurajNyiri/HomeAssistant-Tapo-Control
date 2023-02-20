@@ -23,8 +23,8 @@ from datetime import datetime, timezone
 async def async_get_media_source(hass: HomeAssistant) -> TapoMediaSource:
     """Set up Radio Browser media source."""
     LOGGER.warn("async_get_media_source")
+    # TODO: handle case where cloud password was not set with nice error
 
-    # Radio browser support only a single config entry
     entry = hass.config_entries.async_entries(DOMAIN)[0]
 
     return TapoMediaSource(hass, entry)
@@ -61,6 +61,7 @@ class TapoMediaSource(MediaSource):
             url = await getRecording(
                 self.hass, tapoController, entry, date, startDate, endDate
             )
+            LOGGER.warn(url)
 
             return PlayMedia(url, "video/mp4")
         else:

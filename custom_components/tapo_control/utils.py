@@ -4,9 +4,11 @@ import hashlib
 import pathlib
 import onvif
 import os
+import shutil
 import socket
 import time
 import urllib.parse
+import uuid
 from homeassistant.core import HomeAssistant
 from pytapo.media_stream.downloader import Downloader
 from homeassistant.components.media_source.error import Unresolvable
@@ -30,6 +32,8 @@ from .const import (
     ENABLE_TIME_SYNC,
     CONF_CUSTOM_STREAM,
 )
+
+UUID = uuid.uuid4().hex
 
 
 def getStreamSource(entry, hdStream):
@@ -78,21 +82,21 @@ async def getRecording(
     # this NEEDS to happen otherwise camera does not send data!
     await hass.async_add_executor_job(tapo.getRecordings, date)
 
-    # test folder creation
-    # todo: secure folder path so that it is not easily findable!
-    filePath = f"./www/tapo/{entry_id}/"
-    pathlib.Path(filePath).mkdir(parents=True, exist_ok=True)
+    coldDirPath = f"./.storage/{DOMAIN}/{entry_id}/"
+    hotDirPath = f"./www/{DOMAIN}/{entry_id}/"
+    pathlib.Path(coldDirPath).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(hotDirPath).mkdir(parents=True, exist_ok=True)
     downloader = Downloader(
         tapo,
         startDate,
         endDate,
-        filePath,
+        coldDirPath,
         0,
         None,
         None,
         hashlib.md5((str(startDate) + str(endDate)).encode()).hexdigest() + ".mp4",
     )
-    # filename should also have unique random identifier when moving from cold storage
+    # todo: automatic deletion of recordings longer than X in hot storage
 
     hass.data[DOMAIN][entry_id]["isDownloadingStream"] = True
     downloadedFile = await downloader.downloadFile(LOGGER)
@@ -100,7 +104,15 @@ async def getRecording(
     if downloadedFile["currentAction"] == "Recording in progress":
         raise Unresolvable("Recording is currently in progress.")
 
-    fileWebPath = downloadedFile["fileName"][6:]  # remove ./www/
+    coldFilePath = downloadedFile["fileName"]
+    hotFilePath = (
+        coldFilePath.replace("./.storage/", "./www/").replace(".mp4", "")
+        + UUID
+        + ".mp4"
+    )
+    shutil.copyfile(coldFilePath, hotFilePath)
+
+    fileWebPath = hotFilePath[6:]  # remove ./www/
 
     return f"/local/{fileWebPath}"
 
