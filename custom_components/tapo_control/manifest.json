@@ -5,7 +5,7 @@
   "issue_tracker": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues",
   "codeowners": ["@JurajNyiri"],
   "version": "4.2.1",
-  "requirements": ["pytapo==3.1.2", "onvif-zeep-async==1.2.0"],
+  "requirements": ["pytapo==3.1.4", "onvif-zeep-async==1.2.0"],
   "dependencies": ["ffmpeg"],
   "config_flow": true,
   "homeassistant": "2022.4.0",

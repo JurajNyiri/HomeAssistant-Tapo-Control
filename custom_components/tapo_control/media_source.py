@@ -15,6 +15,7 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN, LOGGER
 
 from pytapo import Tapo
+from pytapo.media_stream.downloader import Downloader
 from datetime import datetime, timezone
 
 
@@ -40,9 +41,37 @@ class TapoMediaSource(MediaSource):
         self.entry = entry
 
     async def async_resolve_media(self, item: MediaSourceItem) -> PlayMedia:
-        LOGGER.warn(item)
-        raise Unresolvable("Not implemented yet.")
-        LOGGER.warn("TODO async_resolve_media")
+        path = item.identifier.split("/")
+        if len(path) == 5:
+            entry = path[1]
+            date = path[2]
+            tapoController: Tapo = self.hass.data[DOMAIN][entry]["controller"]
+            startDate = int(path[3])
+            endDate = int(path[4])
+
+            LOGGER.warn(startDate)
+            LOGGER.warn(endDate)
+
+            # this NEEDS to happen otherwise camera does not send data!
+            await self.hass.async_add_executor_job(tapoController.getRecordings, date)
+
+            # test folder creation
+            # todo: secure folder path so that it is not easily findable!
+            filePath = f"tapo/{self.hass.data[DOMAIN][entry]['name']}/"
+            downloader = Downloader(
+                tapoController, startDate, endDate, f"./www/{filePath}", 0,
+            )
+
+            LOGGER.warn("waiting")
+            downloadedFile = await downloader.downloadFile(LOGGER)
+            downloadedFilePath = downloadedFile["fileName"][6:]  # remove ./www/
+            LOGGER.warn(downloadedFile)
+
+            return PlayMedia(
+                f"http://localhost:8123/local/{downloadedFilePath}", "video/mp4"
+            )
+        else:
+            raise Unresolvable("Incorrect path.")
 
     async def async_browse_media(self, item: MediaSourceItem,) -> BrowseMediaSource:
 
