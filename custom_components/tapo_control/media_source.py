@@ -69,6 +69,8 @@ class TapoMediaSource(MediaSource):
             self.hass.data[DOMAIN][entry]["isDownloadingStream"] = True
             downloadedFile = await downloader.downloadFile(LOGGER)
             self.hass.data[DOMAIN][entry]["isDownloadingStream"] = False
+            if downloadedFile["currentAction"] == "Recording in progress":
+                raise Unresolvable("Recording is currently in progress.")
             downloadedFilePath = downloadedFile["fileName"][6:]  # remove ./www/
             LOGGER.warn(downloadedFile)
 
