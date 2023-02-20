@@ -71,6 +71,16 @@ def isOpen(ip, port):
         return False
 
 
+def deleteFilesOlderThan(dirPath, deleteOlderThan):
+    now = datetime.datetime.utcnow().timestamp()
+    for f in os.listdir(dirPath):
+        filePath = os.path.join(dirPath, f)
+        LOGGER.error(filePath)
+        last_modified = os.stat(filePath).st_mtime
+        if now - last_modified > deleteOlderThan:
+            os.remove(filePath)
+
+
 async def getRecording(
     hass: HomeAssistant,
     tapo: Tapo,
@@ -83,6 +93,10 @@ async def getRecording(
     await hass.async_add_executor_job(tapo.getRecordings, date)
 
     coldDirPath = f"./.storage/{DOMAIN}/{entry_id}/"
+
+    # Delete everything other than 24 hours from cold storage
+    deleteFilesOlderThan(coldDirPath, 24 * 60 * 60)
+
     hotDirPath = f"./www/{DOMAIN}/{entry_id}/"
     pathlib.Path(coldDirPath).mkdir(parents=True, exist_ok=True)
     pathlib.Path(hotDirPath).mkdir(parents=True, exist_ok=True)
@@ -111,6 +125,10 @@ async def getRecording(
         + ".mp4"
     )
     shutil.copyfile(coldFilePath, hotFilePath)
+
+    # todo: move this to as scheduled job
+    # Delete everything other than this file from hot storage
+    deleteFilesOlderThan(hotDirPath, 1)
 
     fileWebPath = hotFilePath[6:]  # remove ./www/
 
