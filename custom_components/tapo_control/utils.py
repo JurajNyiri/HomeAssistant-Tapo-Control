@@ -1,10 +1,15 @@
 import asyncio
 import datetime
+import hashlib
+import pathlib
 import onvif
 import os
 import socket
 import time
 import urllib.parse
+from homeassistant.core import HomeAssistant
+from pytapo.media_stream.downloader import Downloader
+from homeassistant.components.media_source.error import Unresolvable
 
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from onvif import ONVIFCamera
@@ -60,6 +65,44 @@ def isOpen(ip, port):
         return True
     except Exception:
         return False
+
+
+async def getRecording(
+    hass: HomeAssistant,
+    tapo: Tapo,
+    entry_id: str,
+    date: str,
+    startDate: int,
+    endDate: int,
+) -> str:
+    # this NEEDS to happen otherwise camera does not send data!
+    await hass.async_add_executor_job(tapo.getRecordings, date)
+
+    # test folder creation
+    # todo: secure folder path so that it is not easily findable!
+    filePath = f"./www/tapo/{entry_id}/"
+    pathlib.Path(filePath).mkdir(parents=True, exist_ok=True)
+    downloader = Downloader(
+        tapo,
+        startDate,
+        endDate,
+        filePath,
+        0,
+        None,
+        None,
+        hashlib.md5((str(startDate) + str(endDate)).encode()).hexdigest() + ".mp4",
+    )
+    # filename should also have unique random identifier when moving from cold storage
+
+    hass.data[DOMAIN][entry_id]["isDownloadingStream"] = True
+    downloadedFile = await downloader.downloadFile(LOGGER)
+    hass.data[DOMAIN][entry_id]["isDownloadingStream"] = False
+    if downloadedFile["currentAction"] == "Recording in progress":
+        raise Unresolvable("Recording is currently in progress.")
+
+    fileWebPath = downloadedFile["fileName"][6:]  # remove ./www/
+
+    return f"/local/{fileWebPath}"
 
 
 def areCameraPortsOpened(host):
