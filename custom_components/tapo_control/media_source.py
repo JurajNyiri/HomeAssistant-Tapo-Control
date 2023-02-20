@@ -1,3 +1,14 @@
+"""
+TODO:
+
+- Handler for when camera is missing cloud password
+- Rewrite config flow to always request cloud password
+- Background scheduled task which automatically downloads and caches videos per selected period (and deletes old stuff and hot/cold storage)
+- Handle weird error that sometimes happens causing downloader to get stuck and never recovers until restart
+
+"""
+
+
 from __future__ import annotations
 
 
