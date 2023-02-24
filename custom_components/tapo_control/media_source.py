@@ -6,8 +6,6 @@ TODO:
 - Background scheduled task which automatically downloads and caches videos per selected period (and deletes old stuff and hot/cold storage)
 - Handle weird error that sometimes happens causing downloader to get stuck and never recovers until restart
 - Change hot storage to keep recordings for 1 hour minimum so that more than 2 users can watch recordings at the same time
-- Get full home assistant url so that recordings can be played on other devices
-- Fix timezone incorrect times in files
 
 """
 
