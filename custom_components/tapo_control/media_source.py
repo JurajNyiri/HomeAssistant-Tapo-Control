@@ -151,15 +151,9 @@ class TapoMediaSource(MediaSource):
                         # todo: check if this works
                         startTS = searchResult[key]["startTime"]
                         endTS = searchResult[key]["endTime"]
-                        timezoneDiff = -1 * (
-                            int(datetime.now().timestamp())
-                            - int(
-                                datetime.now().replace(tzinfo=timezone.utc).timestamp()
-                            )
-                        )
 
-                        startDate = datetime.fromtimestamp(startTS + timezoneDiff)
-                        endDate = datetime.fromtimestamp(endTS + timezoneDiff)
+                        startDate = datetime.fromtimestamp(startTS)
+                        endDate = datetime.fromtimestamp(endTS)
                         videoName = f"{startDate.strftime('%H:%M:%S')} - {endDate.strftime('%H:%M:%S')}"
                         videoNames.append(
                             {"name": videoName, "startDate": startTS, "endDate": endTS}
