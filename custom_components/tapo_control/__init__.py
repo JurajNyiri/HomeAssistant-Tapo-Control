@@ -138,6 +138,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_unload(entry, "light")
     await hass.config_entries.async_forward_entry_unload(entry, "number")
     await hass.config_entries.async_forward_entry_unload(entry, "select")
+    await hass.config_entries.async_forward_entry_unload(entry, "siren")
     await hass.config_entries.async_forward_entry_unload(entry, "switch")
     await hass.config_entries.async_forward_entry_unload(entry, "update")
 
@@ -330,6 +331,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         hass.data[DOMAIN][entry.entry_id] = {
             "controller": tapoController,
+            "usingCloudPassword": cloud_password != "",
             "allControllers": [tapoController],
             "update_listener": entry.add_update_listener(update_listener),
             "coordinator": tapoCoordinator,
@@ -403,6 +405,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "select")
+        )
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, "siren")
         )
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "update")

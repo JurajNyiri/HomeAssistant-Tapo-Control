@@ -423,6 +423,7 @@ async def update_listener(hass, entry):
             tapoController = await hass.async_add_executor_job(
                 registerController, host, username, password
             )
+        hass.data[DOMAIN][entry.entry_id]["usingCloudPassword"] = cloud_password != ""
         hass.data[DOMAIN][entry.entry_id]["controller"] = tapoController
     except Exception:
         LOGGER.error(
