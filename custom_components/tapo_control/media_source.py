@@ -1,7 +1,6 @@
 """
 TODO:
 
-- Handler for when camera is missing cloud password
 - Rewrite config flow to always request cloud password
 - Background scheduled task which automatically downloads and caches videos per selected period (and deletes old stuff and hot/cold storage)
 - Handle weird error that sometimes happens causing downloader to get stuck and never recovers until restart
@@ -80,7 +79,6 @@ class TapoMediaSource(MediaSource):
             raise Unresolvable("Incorrect path.")
 
     async def async_browse_media(self, item: MediaSourceItem,) -> BrowseMediaSource:
-
         if item.identifier is None:
             return BrowseMediaSource(
                 domain=DOMAIN,
@@ -108,6 +106,10 @@ class TapoMediaSource(MediaSource):
             path = item.identifier.split("/")
             if len(path) == 2:
                 entry = path[1]
+                if self.hass.data[DOMAIN][entry]["usingCloudPassword"] is False:
+                    raise Unresolvable(
+                        "Cloud password is required in order to play recordings.\nSet cloud password inside Settings > Devices & Services > Tapo: Cameras Control > Configure."
+                    )
                 tapoController: Tapo = self.hass.data[DOMAIN][entry]["controller"]
                 recordingsList = await self.hass.async_add_executor_job(
                     tapoController.getRecordingsList

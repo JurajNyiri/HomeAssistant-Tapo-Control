@@ -330,6 +330,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         hass.data[DOMAIN][entry.entry_id] = {
             "controller": tapoController,
+            "usingCloudPassword": cloud_password != "",
             "allControllers": [tapoController],
             "update_listener": entry.add_update_listener(update_listener),
             "coordinator": tapoCoordinator,
