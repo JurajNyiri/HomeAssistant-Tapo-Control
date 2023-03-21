@@ -170,7 +170,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         def getAllEntities(entry):
             # Gather all entities, including of children devices
-            allEntities = entry["entities"]
+            allEntities = entry["entities"].copy()
             for childDevice in entry["childDevices"]:
                 allEntities.extend(childDevice["entities"])
             return allEntities
