@@ -200,15 +200,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         onvifDevice = await initOnvifEvents(
                             hass, host, username, password
                         )
-                        LOGGER.debug(onvifDevice)
-                        hass.data[DOMAIN][entry.entry_id]["eventsDevice"] = onvifDevice[
-                            "device"
-                        ]
-                        hass.data[DOMAIN][entry.entry_id][
-                            "onvifManagement"
-                        ] = onvifDevice["device_mgmt"]
-                        if motionSensor:
-                            await setupOnvif(hass, entry)
+                        if onvifDevice:
+                            LOGGER.debug(onvifDevice)
+                            hass.data[DOMAIN][entry.entry_id][
+                                "eventsDevice"
+                            ] = onvifDevice["device"]
+                            hass.data[DOMAIN][entry.entry_id][
+                                "onvifManagement"
+                            ] = onvifDevice["device_mgmt"]
+                            if motionSensor:
+                                await setupOnvif(hass, entry)
                     elif (
                         not hass.data[DOMAIN][entry.entry_id]["eventsSetup"]
                         and motionSensor
