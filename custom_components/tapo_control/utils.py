@@ -19,7 +19,7 @@ from pytapo import Tapo
 
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.ffmpeg import DATA_FFMPEG
-from homeassistant.components.onvif.event import EventManager
+from .EventManager import TapoEventManager
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.util import slugify
 
@@ -230,6 +230,9 @@ async def initOnvifEvents(hass, host, username, password):
         device_info = await device_mgmt.GetDeviceInformation()
         if "Manufacturer" not in device_info:
             raise Exception("Onvif connection has failed.")
+
+        LOGGER.warn(device)
+        LOGGER.warn(device_mgmt)
 
         return {"device": device, "device_mgmt": device_mgmt}
     except Exception:
@@ -540,8 +543,8 @@ async def syncTime(hass, entry_id):
 async def setupOnvif(hass, entry):
     LOGGER.debug("setupOnvif - entry")
     if hass.data[DOMAIN][entry.entry_id]["eventsDevice"]:
-        LOGGER.debug("Setting up onvif...")
-        hass.data[DOMAIN][entry.entry_id]["events"] = EventManager(
+        LOGGER.warn("Setting up onvif...")
+        hass.data[DOMAIN][entry.entry_id]["events"] = TapoEventManager(
             hass,
             hass.data[DOMAIN][entry.entry_id]["eventsDevice"],
             f"{entry.entry_id}_tapo_events",
@@ -553,12 +556,12 @@ async def setupOnvif(hass, entry):
 
 
 async def setupEvents(hass, config_entry):
-    LOGGER.debug("setupEvents - entry")
+    LOGGER.warn("setupEvents - entry")
     if not hass.data[DOMAIN][config_entry.entry_id]["events"].started:
-        LOGGER.debug("Setting up events...")
+        LOGGER.warn("Setting up events...")
         events = hass.data[DOMAIN][config_entry.entry_id]["events"]
         if await events.async_start():
-            LOGGER.debug("Events started.")
+            LOGGER.warn("Events started.")
             if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
                 hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"] = True
                 if hass.data[DOMAIN][config_entry.entry_id]["eventsListener"]:

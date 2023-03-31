@@ -102,12 +102,12 @@ class TapoNoiseBinarySensor(TapoBinarySensorEntity):
 
 class EventsListener:
     def __init__(self, async_add_entities, hass, config_entry):
-        LOGGER.debug("EventsListener init")
+        LOGGER.warn("EventsListener init")
         self.metaData = hass.data[DOMAIN][config_entry.entry_id]
         self.async_add_entities = async_add_entities
 
     def createBinarySensor(self):
-        LOGGER.debug("Creating binary sensor entity.")
+        LOGGER.warn("Creating binary sensor entity.")
 
         events = self.metaData["events"]
         name = self.metaData["name"]
@@ -120,11 +120,11 @@ class EventsListener:
 
         @callback
         def async_check_entities():
-            LOGGER.debug("async_check_entities")
+            LOGGER.warn("async_check_entities")
             new_entities = []
-            LOGGER.debug("Looping through available events.")
+            LOGGER.warn("Looping through available events.")
             for event in events.get_platform("binary_sensor"):
-                LOGGER.debug(event)
+                LOGGER.warn(event)
                 if event.uid not in entities:
                     LOGGER.debug(
                         "Found event which doesn't have entity yet, adding binary sensor!"
