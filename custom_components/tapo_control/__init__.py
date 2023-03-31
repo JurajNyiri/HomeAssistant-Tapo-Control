@@ -22,6 +22,7 @@ from .const import (
     CLOUD_PASSWORD,
     ENABLE_STREAM,
     ENABLE_TIME_SYNC,
+    MEDIA_CLEANUP_PERIOD,
     RTSP_TRANS_PROTOCOLS,
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
@@ -30,6 +31,7 @@ from .const import (
     UPDATE_CHECK_PERIOD,
 )
 from .utils import (
+    mediaCleanup,
     registerController,
     getCamData,
     setupOnvif,
@@ -228,16 +230,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         "Not updating motion sensor because device is child or parent."
                     )
 
+                ts = datetime.datetime.utcnow().timestamp()
                 if (
                     hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
                     and enableTimeSync
                 ):
-                    ts = datetime.datetime.utcnow().timestamp()
                     if (
                         ts - hass.data[DOMAIN][entry.entry_id]["lastTimeSync"]
                         > TIME_SYNC_PERIOD
                     ):
                         await syncTime(hass, entry.entry_id)
+                if (
+                    ts - hass.data[DOMAIN][entry.entry_id]["lastMediaCleanup"]
+                    > MEDIA_CLEANUP_PERIOD
+                ):
+                    mediaCleanup(hass, entry.entry_id)
                 ts = datetime.datetime.utcnow().timestamp()
                 if (
                     ts - hass.data[DOMAIN][entry.entry_id]["lastFirmwareCheck"]
@@ -338,6 +345,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "coordinator": tapoCoordinator,
             "camData": camData,
             "lastTimeSync": 0,
+            "lastMediaCleanup": 0,
             "lastFirmwareCheck": 0,
             "latestFirmwareVersion": False,
             "motionSensorCreated": False,
@@ -381,6 +389,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         "coordinator": tapoCoordinator,
                         "camData": childCamData,
                         "lastTimeSync": 0,
+                        "lastMediaCleanup": 0,
                         "lastFirmwareCheck": 0,
                         "latestFirmwareVersion": False,
                         "motionSensorCreated": False,

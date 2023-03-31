@@ -25,8 +25,10 @@ from homeassistant.util import slugify
 
 from .const import (
     BRAND,
+    COLD_DIR_DELETE_TIME,
     ENABLE_MOTION_SENSOR,
     DOMAIN,
+    HOT_DIR_DELETE_TIME,
     LOGGER,
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
@@ -71,6 +73,43 @@ def isOpen(ip, port):
         return False
 
 
+def getColdDirPathForEntry(entry_id):
+    return f"./.storage/{DOMAIN}/{entry_id}/"
+
+
+def getHotDirPathForEntry(entry_id):
+    return f"./www/{DOMAIN}/{entry_id}/"
+
+
+def mediaCleanup(hass, entry_id):
+    LOGGER.debug("Initiating media cleanup for entity " + entry_id + "...")
+    hass.data[DOMAIN][entry_id][
+        "lastMediaCleanup"
+    ] = datetime.datetime.utcnow().timestamp()
+    coldDirPath = getColdDirPathForEntry(entry_id)
+    hotDirPath = getHotDirPathForEntry(entry_id)
+
+    # Delete everything other than COLD_DIR_DELETE_TIME seconds from cold storage
+    LOGGER.debug(
+        "Deleting cold storage files older than "
+        + str(COLD_DIR_DELETE_TIME)
+        + " seconds for entity "
+        + entry_id
+        + "..."
+    )
+    deleteFilesOlderThan(coldDirPath, COLD_DIR_DELETE_TIME)
+
+    # Delete everything other than HOT_DIR_DELETE_TIME seconds from hot storage
+    LOGGER.debug(
+        "Deleting hot storage files older than "
+        + str(HOT_DIR_DELETE_TIME)
+        + " seconds for entity "
+        + entry_id
+        + "..."
+    )
+    deleteFilesOlderThan(hotDirPath, HOT_DIR_DELETE_TIME)
+
+
 def deleteFilesOlderThan(dirPath, deleteOlderThan):
     now = datetime.datetime.utcnow().timestamp()
     if os.path.exists(dirPath):
@@ -92,12 +131,11 @@ async def getRecording(
     # this NEEDS to happen otherwise camera does not send data!
     await hass.async_add_executor_job(tapo.getRecordings, date)
 
-    coldDirPath = f"./.storage/{DOMAIN}/{entry_id}/"
+    mediaCleanup(hass, entry_id)
 
-    # Delete everything other than 24 hours from cold storage
-    deleteFilesOlderThan(coldDirPath, 24 * 60 * 60)
+    coldDirPath = getColdDirPathForEntry(entry_id)
+    hotDirPath = getHotDirPathForEntry(entry_id)
 
-    hotDirPath = f"./www/{DOMAIN}/{entry_id}/"
     pathlib.Path(coldDirPath).mkdir(parents=True, exist_ok=True)
     pathlib.Path(hotDirPath).mkdir(parents=True, exist_ok=True)
     downloader = Downloader(
@@ -125,10 +163,6 @@ async def getRecording(
         + ".mp4"
     )
     shutil.copyfile(coldFilePath, hotFilePath)
-
-    # todo: move this to as scheduled job
-    # Delete everything other than 1 hour from hot storage
-    deleteFilesOlderThan(hotDirPath, 60 * 60)
 
     fileWebPath = hotFilePath[6:]  # remove ./www/
 

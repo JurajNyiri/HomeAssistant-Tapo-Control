@@ -3,6 +3,7 @@ TODO:
 
 - Background scheduled task which automatically downloads and caches videos per selected period (and deletes old stuff and hot/cold storage)
 - Handle weird error that sometimes happens causing downloader to get stuck and never recovers until restart
+- Clear cold/hot storage on config entry deletion
 """
 
 
