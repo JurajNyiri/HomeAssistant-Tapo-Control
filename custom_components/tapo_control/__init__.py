@@ -1,4 +1,6 @@
 import datetime
+import os
+import shutil
 
 from homeassistant.core import HomeAssistant
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
@@ -31,6 +33,9 @@ from .const import (
     UPDATE_CHECK_PERIOD,
 )
 from .utils import (
+    deleteDir,
+    getColdDirPathForEntry,
+    getHotDirPathForEntry,
     mediaCleanup,
     registerController,
     getCamData,
@@ -147,6 +152,21 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if hass.data[DOMAIN][entry.entry_id]["events"]:
         await hass.data[DOMAIN][entry.entry_id]["events"].async_stop()
     return True
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    LOGGER.debug("async_remove_entry")
+    entry_id = entry.entry_id
+    coldDirPath = getColdDirPathForEntry(entry_id)
+    hotDirPath = getHotDirPathForEntry(entry_id)
+
+    # Delete all media stored in cold storage for entity
+    LOGGER.debug("Deleting cold storage files for entity " + entry_id + "...")
+    deleteDir(coldDirPath)
+
+    # Delete all media stored in hot storage for entity
+    LOGGER.debug("Deleting hot storage files for entity " + entry_id + "...")
+    deleteDir(hotDirPath)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):

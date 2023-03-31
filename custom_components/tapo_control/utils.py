@@ -110,6 +110,17 @@ def mediaCleanup(hass, entry_id):
     deleteFilesOlderThan(hotDirPath, HOT_DIR_DELETE_TIME)
 
 
+def deleteDir(dirPath):
+    if (
+        os.path.exists(dirPath)
+        and os.path.isdir(dirPath)
+        and dirPath != "/"
+        and "tapo_control/" in dirPath
+    ):
+        LOGGER.debug("Deleting folder " + dirPath + "...")
+        shutil.rmtree(dirPath)
+
+
 def deleteFilesOlderThan(dirPath, deleteOlderThan):
     now = datetime.datetime.utcnow().timestamp()
     if os.path.exists(dirPath):
