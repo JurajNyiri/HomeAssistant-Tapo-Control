@@ -127,8 +127,8 @@ async def getRecording(
     shutil.copyfile(coldFilePath, hotFilePath)
 
     # todo: move this to as scheduled job
-    # Delete everything other than this file from hot storage
-    deleteFilesOlderThan(hotDirPath, 1)
+    # Delete everything other than 1 hour from hot storage
+    deleteFilesOlderThan(hotDirPath, 60 * 60)
 
     fileWebPath = hotFilePath[6:]  # remove ./www/
 
