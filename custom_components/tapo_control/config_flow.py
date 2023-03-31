@@ -350,6 +350,61 @@ class FlowHandler(ConfigFlow):
             last_step=False,
         )
 
+    async def async_step_auth_optional_cloud(self, user_input=None):
+        """Enter and process cloud password if needed"""
+        errors = {}
+        if user_input is not None:
+            if CLOUD_PASSWORD in user_input:
+                try:
+                    LOGGER.debug(
+                        "[ADD DEVICE][%s] Verifying cloud password.", self.tapoHost,
+                    )
+                    cloud_password = user_input[CLOUD_PASSWORD]
+                    await self.hass.async_add_executor_job(
+                        registerController, self.tapoHost, "admin", cloud_password
+                    )
+                    LOGGER.debug(
+                        "[ADD DEVICE][%s] Cloud password works for control.",
+                        self.tapoHost,
+                    )
+                    self.tapoCloudPassword = cloud_password
+                    return await self.async_step_other_options()
+                except Exception as e:
+                    if "Failed to establish a new connection" in str(e):
+                        LOGGER.debug(
+                            "[ADD DEVICE][%s] Connection failed.", self.tapoHost,
+                        )
+                        errors["base"] = "connection_failed"
+                        LOGGER.error(e)
+                    elif str(e) == "Invalid authentication data":
+                        LOGGER.debug(
+                            "[ADD DEVICE][%s] Invalid cloud password provided.",
+                            self.tapoHost,
+                        )
+                        errors["base"] = "invalid_auth_cloud"
+                    else:
+                        errors["base"] = "unknown"
+                        LOGGER.error(e)
+            else:
+                self.tapoCloudPassword = ""
+                return await self.async_step_other_options()
+        cloud_password = ""
+        LOGGER.debug(
+            "[ADD DEVICE][%s] Showing config flow for cloud password.", self.tapoHost,
+        )
+        return self.async_show_form(
+            step_id="auth_optional_cloud",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CLOUD_PASSWORD, description={"suggested_value": cloud_password}
+                    ): str,
+                }
+            ),
+            errors=errors,
+            last_step=False,
+        )
+
     async def async_step_auth(self, user_input=None):
         """Provide authentication data."""
         errors = {}
@@ -418,7 +473,7 @@ class FlowHandler(ConfigFlow):
                         LOGGER.error(e)
                         raise Exception(e)
 
-                return await self.async_step_other_options()
+                return await self.async_step_auth_optional_cloud()
 
             except Exception as e:
                 if "Failed to establish a new connection" in str(e):

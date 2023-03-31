@@ -28,7 +28,7 @@ from .const import DOMAIN, LOGGER
 from .utils import getRecording
 
 from pytapo import Tapo
-from datetime import datetime, timezone
+from datetime import datetime
 
 
 async def async_get_media_source(hass: HomeAssistant) -> TapoMediaSource:
