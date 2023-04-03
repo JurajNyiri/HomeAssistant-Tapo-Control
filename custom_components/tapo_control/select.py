@@ -117,6 +117,14 @@ async def async_setup_entry(
         if tapoMoveToPresetSelect:
             LOGGER.debug("Adding TapoMoveToPresetSelect...")
             selects.append(tapoMoveToPresetSelect)
+
+        tapoPatrolModeSelect = await check_and_create(
+            entry, hass, TapoPatrolModeSelect, "getPresets", config_entry
+        )
+        if tapoPatrolModeSelect:
+            LOGGER.debug("Adding TapoPatrolModeSelect...")
+            selects.append(tapoPatrolModeSelect)
+
         return selects
 
     selects = await setupEntities(entry)
@@ -124,6 +132,49 @@ async def async_setup_entry(
         selects.extend(await setupEntities(childDevice))
 
     async_add_entities(selects)
+
+
+class TapoPatrolModeSelect(TapoSelectEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._attr_options = ["Horizontal", "Vertical", "off"]
+        self._attr_current_option = None
+        TapoSelectEntity.__init__(
+            self,
+            "Patrol Mode",
+            entry,
+            hass,
+            config_entry,
+            "mdi:swap-horizontal",
+            "patrol_mode",
+        )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = "unavailable"
+        else:
+            self._attr_current_option = None
+            self._attr_state = self._attr_current_option
+
+    async def async_select_option(self, option: str) -> None:
+        if option == "off":
+            result = await self._hass.async_add_executor_job(
+                self._controller.setCruise, False
+            )
+        else:
+            result = await self._hass.async_add_executor_job(
+                self._controller.setCruise, True, "x" if option == "Horizontal" else "y"
+            )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = option
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    @property
+    def entity_category(self):
+        return None
 
 
 class TapoNightVisionSelect(TapoSelectEntity):
