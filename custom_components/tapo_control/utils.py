@@ -307,7 +307,7 @@ async def getCamData(hass, controller):
     camData["person_detection_sensitivity"] = person_detection_sensitivity
 
     try:
-        vehicleDetectionData = data["getVehicleDetectionConfig"]["people_detection"][
+        vehicleDetectionData = data["getVehicleDetectionConfig"]["vehicle_detection"][
             "detection"
         ]
         vehicle_detection_enabled = vehicleDetectionData["enabled"]
