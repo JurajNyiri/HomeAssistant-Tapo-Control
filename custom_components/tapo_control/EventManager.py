@@ -26,7 +26,7 @@ class TapoEventManager(EventManager):
             topic = msg.Topic._value_1
             if not (parser := PARSERS.get(topic)):
                 if topic not in UNHANDLED_TOPICS:
-                    LOGGER.info(
+                    LOGGER.error(
                         "No registered handler for event from %s: %s",
                         self.unique_id,
                         msg,
@@ -37,7 +37,11 @@ class TapoEventManager(EventManager):
             event = await parser(self.unique_id, msg)
 
             if not event:
-                LOGGER.info("Unable to parse event from %s: %s", self.unique_id, msg)
+                LOGGER.error("Unable to parse event from %s: %s", self.unique_id, msg)
                 return
+
+            LOGGER.warn(
+                "Found event %s: %s", self.unique_id, msg,
+            )
 
             self._events[event.uid] = event
