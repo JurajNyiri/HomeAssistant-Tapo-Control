@@ -430,6 +430,49 @@ class TapoPetDetectionSelect(TapoSelectEntity):
         await self._coordinator.async_request_refresh()
 
 
+class TapoBarkDetectionSelect(TapoSelectEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._attr_options = ["high", "normal", "low", "off"]
+        self._attr_current_option = None
+        TapoSelectEntity.__init__(
+            self,
+            "Bark Detection",
+            entry,
+            hass,
+            config_entry,
+            "mdi:dog",
+            "bark_detection",
+        )
+
+    def updateTapo(self, camData):
+        LOGGER.debug("TapoBarkDetectionSelect updateTapo 1")
+        if not camData:
+            LOGGER.debug("TapoBarkDetectionSelect updateTapo 2")
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            LOGGER.debug("TapoBarkDetectionSelect updateTapo 3")
+            if camData["bark_detection_enabled"] == "off":
+                LOGGER.debug("TapoBarkDetectionSelect updateTapo 4")
+                self._attr_current_option = "off"
+            else:
+                LOGGER.debug("TapoBarkDetectionSelect updateTapo 5")
+                self._attr_current_option = camData["bark_detection_sensitivity"]
+            LOGGER.debug("TapoBarkDetectionSelect updateTapo 6")
+            self._attr_state = self._attr_current_option
+        LOGGER.debug("Updating TapoBarkDetectionSelect to: " + str(self._attr_state))
+
+    async def async_select_option(self, option: str) -> None:
+        result = await self.hass.async_add_executor_job(
+            self._controller.setBarkDetection,
+            option != "off",
+            option if option != "off" else False,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = option
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+
 class TapoMoveToPresetSelect(TapoSelectEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         self._presets = {}

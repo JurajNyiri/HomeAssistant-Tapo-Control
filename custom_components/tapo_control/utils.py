@@ -366,6 +366,27 @@ async def getCamData(hass, controller):
     camData["pet_detection_sensitivity"] = pet_detection_sensitivity
 
     try:
+        barkDetectionData = data["getBarkDetectionConfig"]["bark_detection"][
+            "detection"
+        ]
+        bark_detection_enabled = barkDetectionData["enabled"]
+        bark_detection_sensitivity = None
+
+        sensitivity = tryParseInt(barkDetectionData["sensitivity"])
+        if sensitivity is not None:
+            if sensitivity <= 33:
+                bark_detection_sensitivity = "low"
+            elif sensitivity <= 66:
+                bark_detection_sensitivity = "normal"
+            else:
+                bark_detection_sensitivity = "high"
+    except Exception:
+        bark_detection_enabled = None
+        bark_detection_sensitivity = None
+    camData["bark_detection_enabled"] = bark_detection_enabled
+    camData["bark_detection_sensitivity"] = bark_detection_sensitivity
+
+    try:
         presets = {
             id: data["getPresetConfig"]["preset"]["preset"]["name"][key]
             for key, id in enumerate(data["getPresetConfig"]["preset"]["preset"]["id"])
