@@ -72,6 +72,13 @@ async def async_setup_entry(
             LOGGER.debug("Adding tapoBabyCryDetectionSelect...")
             selects.append(tapoBabyCryDetectionSelect)
 
+        tapoPetDetectionSelect = await check_and_create(
+            entry, hass, TapoPetDetectionSelect, "getPetDetection", config_entry
+        )
+        if tapoPetDetectionSelect:
+            LOGGER.debug("Adding tapoPetDetectionSelect...")
+            selects.append(tapoPetDetectionSelect)
+
         tapoMoveToPresetSelect = await check_and_create(
             entry, hass, TapoMoveToPresetSelect, "getPresets", config_entry
         )
@@ -371,6 +378,49 @@ class TapoBabyCryDetectionSelect(TapoSelectEntity):
     async def async_select_option(self, option: str) -> None:
         result = await self.hass.async_add_executor_job(
             self._controller.setBabyCryDetection,
+            option != "off",
+            option if option != "off" else False,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = option
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+
+class TapoPetDetectionSelect(TapoSelectEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._attr_options = ["high", "normal", "low", "off"]
+        self._attr_current_option = None
+        TapoSelectEntity.__init__(
+            self,
+            "Pet Detection",
+            entry,
+            hass,
+            config_entry,
+            "mdi:paw",
+            "pet_detection",
+        )
+
+    def updateTapo(self, camData):
+        LOGGER.debug("TapoPetDetectionSelect updateTapo 1")
+        if not camData:
+            LOGGER.debug("TapoPetDetectionSelect updateTapo 2")
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            LOGGER.debug("TapoPetDetectionSelect updateTapo 3")
+            if camData["pet_detection_enabled"] == "off":
+                LOGGER.debug("TapoPetDetectionSelect updateTapo 4")
+                self._attr_current_option = "off"
+            else:
+                LOGGER.debug("TapoPetDetectionSelect updateTapo 5")
+                self._attr_current_option = camData["pet_detection_sensitivity"]
+            LOGGER.debug("TapoPetDetectionSelect updateTapo 6")
+            self._attr_state = self._attr_current_option
+        LOGGER.debug("Updating TapoPetDetectionSelect to: " + str(self._attr_state))
+
+    async def async_select_option(self, option: str) -> None:
+        result = await self.hass.async_add_executor_job(
+            self._controller.setPetDetection,
             option != "off",
             option if option != "off" else False,
         )
