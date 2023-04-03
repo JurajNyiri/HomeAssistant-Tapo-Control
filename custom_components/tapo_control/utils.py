@@ -328,6 +328,25 @@ async def getCamData(hass, controller):
     camData["vehicle_detection_sensitivity"] = vehicle_detection_sensitivity
 
     try:
+        babyCryDetectionData = data["getBCDConfig"]["sound_detection"]["bcd"]
+        babyCry_detection_enabled = babyCryDetectionData["enabled"]
+        babyCry_detection_sensitivity = None
+
+        sensitivity = babyCryDetectionData["sensitivity"]
+        if sensitivity is not None:
+            if sensitivity == "low":
+                babyCry_detection_sensitivity = "low"
+            elif sensitivity == "medium":
+                babyCry_detection_sensitivity = "normal"
+            else:
+                babyCry_detection_sensitivity = "high"
+    except Exception:
+        babyCry_detection_enabled = None
+        babyCry_detection_sensitivity = None
+    camData["babyCry_detection_enabled"] = babyCry_detection_enabled
+    camData["babyCry_detection_sensitivity"] = babyCry_detection_sensitivity
+
+    try:
         presets = {
             id: data["getPresetConfig"]["preset"]["preset"]["name"][key]
             for key, id in enumerate(data["getPresetConfig"]["preset"]["preset"]["id"])

@@ -65,6 +65,13 @@ async def async_setup_entry(
             LOGGER.debug("Adding tapoVehicleDetectionSelect...")
             selects.append(tapoVehicleDetectionSelect)
 
+        tapoBabyCryDetectionSelect = await check_and_create(
+            entry, hass, TapoBabyCryDetectionSelect, "getBabyCryDetection", config_entry
+        )
+        if tapoBabyCryDetectionSelect:
+            LOGGER.debug("Adding tapoBabyCryDetectionSelect...")
+            selects.append(tapoBabyCryDetectionSelect)
+
         tapoMoveToPresetSelect = await check_and_create(
             entry, hass, TapoMoveToPresetSelect, "getPresets", config_entry
         )
@@ -297,7 +304,7 @@ class TapoVehicleDetectionSelect(TapoSelectEntity):
             entry,
             hass,
             config_entry,
-            "mdi:account-alert",
+            "mdi:truck-alert-outline",
             "vehicle_detection",
         )
 
@@ -308,7 +315,7 @@ class TapoVehicleDetectionSelect(TapoSelectEntity):
             self._attr_state = STATE_UNAVAILABLE
         else:
             LOGGER.debug("TapoVehicleDetectionSelect updateTapo 3")
-            if camData["Vehicle_detection_enabled"] == "off":
+            if camData["vehicle_detection_enabled"] == "off":
                 LOGGER.debug("TapoVehicleDetectionSelect updateTapo 4")
                 self._attr_current_option = "off"
             else:
@@ -321,6 +328,49 @@ class TapoVehicleDetectionSelect(TapoSelectEntity):
     async def async_select_option(self, option: str) -> None:
         result = await self.hass.async_add_executor_job(
             self._controller.setVehicleDetection,
+            option != "off",
+            option if option != "off" else False,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = option
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+
+class TapoBabyCryDetectionSelect(TapoSelectEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._attr_options = ["high", "normal", "low", "off"]
+        self._attr_current_option = None
+        TapoSelectEntity.__init__(
+            self,
+            "Baby Cry Detection",
+            entry,
+            hass,
+            config_entry,
+            "mdi:emoticon-cry-outline",
+            "baby_cry_detection",
+        )
+
+    def updateTapo(self, camData):
+        LOGGER.debug("TapoBabyCryDetectionSelect updateTapo 1")
+        if not camData:
+            LOGGER.debug("TapoBabyCryDetectionSelect updateTapo 2")
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            LOGGER.debug("TapoBabyCryDetectionSelect updateTapo 3")
+            if camData["babyCry_detection_enabled"] == "off":
+                LOGGER.debug("TapoBabyCryDetectionSelect updateTapo 4")
+                self._attr_current_option = "off"
+            else:
+                LOGGER.debug("TapoBabyCryDetectionSelect updateTapo 5")
+                self._attr_current_option = camData["babyCry_detection_sensitivity"]
+            LOGGER.debug("TapoBabyCryDetectionSelect updateTapo 6")
+            self._attr_state = self._attr_current_option
+        LOGGER.debug("Updating TapoBabyCryDetectionSelect to: " + str(self._attr_state))
+
+    async def async_select_option(self, option: str) -> None:
+        result = await self.hass.async_add_executor_job(
+            self._controller.setBabyCryDetection,
             option != "off",
             option if option != "off" else False,
         )
