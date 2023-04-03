@@ -408,6 +408,27 @@ async def getCamData(hass, controller):
     camData["meow_detection_sensitivity"] = meow_detection_sensitivity
 
     try:
+        glassDetectionData = data["getGlassDetectionConfig"]["glass_detection"][
+            "detection"
+        ]
+        glass_detection_enabled = glassDetectionData["enabled"]
+        glass_detection_sensitivity = None
+
+        sensitivity = tryParseInt(glassDetectionData["sensitivity"])
+        if sensitivity is not None:
+            if sensitivity <= 33:
+                glass_detection_sensitivity = "low"
+            elif sensitivity <= 66:
+                glass_detection_sensitivity = "normal"
+            else:
+                glass_detection_sensitivity = "high"
+    except Exception:
+        glass_detection_enabled = None
+        glass_detection_sensitivity = None
+    camData["glass_detection_enabled"] = glass_detection_enabled
+    camData["glass_detection_sensitivity"] = glass_detection_sensitivity
+
+    try:
         presets = {
             id: data["getPresetConfig"]["preset"]["preset"]["name"][key]
             for key, id in enumerate(data["getPresetConfig"]["preset"]["preset"]["id"])
