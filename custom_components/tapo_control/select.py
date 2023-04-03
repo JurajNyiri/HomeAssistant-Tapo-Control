@@ -104,6 +104,13 @@ async def async_setup_entry(
             LOGGER.debug("Adding tapoGlassBreakDetectionSelect...")
             selects.append(tapoGlassBreakDetectionSelect)
 
+        tapoTamperDetectionSelect = await check_and_create(
+            entry, hass, TapoTamperDetectionSelect, "getTamperDetection", config_entry
+        )
+        if tapoTamperDetectionSelect:
+            LOGGER.debug("Adding tapoTamperDetectionSelect...")
+            selects.append(tapoTamperDetectionSelect)
+
         tapoMoveToPresetSelect = await check_and_create(
             entry, hass, TapoMoveToPresetSelect, "getPresets", config_entry
         )
@@ -577,6 +584,49 @@ class TapoGlassBreakDetectionSelect(TapoSelectEntity):
     async def async_select_option(self, option: str) -> None:
         result = await self.hass.async_add_executor_job(
             self._controller.setGlassBreakDetection,
+            option != "off",
+            option if option != "off" else False,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = option
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+
+class TapoTamperDetectionSelect(TapoSelectEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._attr_options = ["high", "normal", "low", "off"]
+        self._attr_current_option = None
+        TapoSelectEntity.__init__(
+            self,
+            "Tamper Detection",
+            entry,
+            hass,
+            config_entry,
+            "mdi:camera-enhance",
+            "tamper_detection",
+        )
+
+    def updateTapo(self, camData):
+        LOGGER.debug("TapoTamperDetectionSelect updateTapo 1")
+        if not camData:
+            LOGGER.debug("TapoTamperDetectionSelect updateTapo 2")
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            LOGGER.debug("TapoTamperDetectionSelect updateTapo 3")
+            if camData["tamper_detection_enabled"] == "off":
+                LOGGER.debug("TapoTamperDetectionSelect updateTapo 4")
+                self._attr_current_option = "off"
+            else:
+                LOGGER.debug("TapoTamperDetectionSelect updateTapo 5")
+                self._attr_current_option = camData["tamper_detection_sensitivity"]
+            LOGGER.debug("TapoTamperDetectionSelect updateTapo 6")
+            self._attr_state = self._attr_current_option
+        LOGGER.debug("Updating TapoTamperDetectionSelect to: " + str(self._attr_state))
+
+    async def async_select_option(self, option: str) -> None:
+        result = await self.hass.async_add_executor_job(
+            self._controller.setTamperDetection,
             option != "off",
             option if option != "off" else False,
         )

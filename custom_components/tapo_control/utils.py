@@ -429,6 +429,26 @@ async def getCamData(hass, controller):
     camData["glass_detection_sensitivity"] = glass_detection_sensitivity
 
     try:
+        tamperDetectionData = data["getTamperDetectionConfig"]["tamper_detection"][
+            "tamper_det"
+        ]
+        tamper_detection_enabled = tamperDetectionData["enabled"]
+        tamper_detection_sensitivity = None
+
+        if sensitivity is not None:
+            if sensitivity == "low":
+                tamper_detection_sensitivity = "low"
+            elif sensitivity == "medium":
+                tamper_detection_sensitivity = "normal"
+            else:
+                tamper_detection_sensitivity = "high"
+    except Exception:
+        tamper_detection_enabled = None
+        tamper_detection_sensitivity = None
+    camData["tamper_detection_enabled"] = tamper_detection_enabled
+    camData["tamper_detection_sensitivity"] = tamper_detection_sensitivity
+
+    try:
         presets = {
             id: data["getPresetConfig"]["preset"]["preset"]["name"][key]
             for key, id in enumerate(data["getPresetConfig"]["preset"]["preset"]["id"])
