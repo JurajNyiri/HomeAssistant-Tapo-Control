@@ -307,6 +307,27 @@ async def getCamData(hass, controller):
     camData["person_detection_sensitivity"] = person_detection_sensitivity
 
     try:
+        vehicleDetectionData = data["getVehicleDetectionConfig"]["people_detection"][
+            "detection"
+        ]
+        vehicle_detection_enabled = vehicleDetectionData["enabled"]
+        vehicle_detection_sensitivity = None
+
+        sensitivity = tryParseInt(vehicleDetectionData["sensitivity"])
+        if sensitivity is not None:
+            if sensitivity <= 33:
+                vehicle_detection_sensitivity = "low"
+            elif sensitivity <= 66:
+                vehicle_detection_sensitivity = "normal"
+            else:
+                vehicle_detection_sensitivity = "high"
+    except Exception:
+        vehicle_detection_enabled = None
+        vehicle_detection_sensitivity = None
+    camData["vehicle_detection_enabled"] = vehicle_detection_enabled
+    camData["vehicle_detection_sensitivity"] = vehicle_detection_sensitivity
+
+    try:
         presets = {
             id: data["getPresetConfig"]["preset"]["preset"]["name"][key]
             for key, id in enumerate(data["getPresetConfig"]["preset"]["preset"]["id"])
@@ -598,6 +619,20 @@ def pytapoFunctionMap(pytapoFunctionName):
         return ["getDetectionConfig"]
     elif pytapoFunctionName == "getPersonDetection":
         return ["getPersonDetectionConfig"]
+    elif pytapoFunctionName == "getVehicleDetection":
+        return ["getVehicleDetectionConfig"]
+    elif pytapoFunctionName == "getBabyCryDetection":
+        return ["getBCDConfig"]
+    elif pytapoFunctionName == "getPetDetection":
+        return ["getPetDetectionConfig"]
+    elif pytapoFunctionName == "getBarkDetection":
+        return ["getBarkDetectionConfig"]
+    elif pytapoFunctionName == "getMeowDetection":
+        return ["getMeowDetectionConfig"]
+    elif pytapoFunctionName == "getGlassBreakDetection":
+        return ["getGlassDetectionConfig"]
+    elif pytapoFunctionName == "getTamperDetection":
+        return ["getTamperDetectionConfig"]
     elif pytapoFunctionName == "getLdc":
         return ["getLensDistortionCorrection"]
     elif pytapoFunctionName == "getAlarm":
