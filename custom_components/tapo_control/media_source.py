@@ -19,13 +19,14 @@ from homeassistant.components.media_source.models import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.util import dt
 
 from .const import DOMAIN, LOGGER
 
 from .utils import getRecording
 
 from pytapo import Tapo
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 async def async_get_media_source(hass: HomeAssistant) -> TapoMediaSource:
@@ -147,12 +148,16 @@ class TapoMediaSource(MediaSource):
                 videoNames = []
                 for searchResult in recordingsForDay:
                     for key in searchResult:
-                        # todo: check if this works
-                        startTS = searchResult[key]["startTime"]
-                        endTS = searchResult[key]["endTime"]
-
-                        startDate = datetime.fromtimestamp(startTS)
-                        endDate = datetime.fromtimestamp(endTS)
+                        startTS = (
+                            searchResult[key]["startTime"]
+                            - self.hass.data[DOMAIN][entry]["timezoneOffset"]
+                        )
+                        endTS = (
+                            searchResult[key]["endTime"]
+                            - self.hass.data[DOMAIN][entry]["timezoneOffset"]
+                        )
+                        startDate = dt.as_local(dt.utc_from_timestamp(startTS))
+                        endDate = dt.as_local(dt.utc_from_timestamp(endTS))
                         videoName = f"{startDate.strftime('%H:%M:%S')} - {endDate.strftime('%H:%M:%S')}"
                         videoNames.append(
                             {"name": videoName, "startDate": startTS, "endDate": endTS}

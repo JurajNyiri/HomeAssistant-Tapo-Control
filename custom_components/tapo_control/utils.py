@@ -131,6 +131,10 @@ def deleteFilesOlderThan(dirPath, deleteOlderThan):
                 os.remove(filePath)
 
 
+def processDownload(status):
+    LOGGER.debug(status)
+
+
 async def getRecording(
     hass: HomeAssistant,
     tapo: Tapo,
@@ -149,20 +153,15 @@ async def getRecording(
 
     pathlib.Path(coldDirPath).mkdir(parents=True, exist_ok=True)
     pathlib.Path(hotDirPath).mkdir(parents=True, exist_ok=True)
+
+    downloadUID = hashlib.md5((str(startDate) + str(endDate)).encode()).hexdigest()
     downloader = Downloader(
-        tapo,
-        startDate,
-        endDate,
-        coldDirPath,
-        0,
-        None,
-        None,
-        hashlib.md5((str(startDate) + str(endDate)).encode()).hexdigest() + ".mp4",
+        tapo, startDate, endDate, coldDirPath, 0, None, None, downloadUID + ".mp4",
     )
     # todo: automatic deletion of recordings longer than X in hot storage
 
     hass.data[DOMAIN][entry_id]["isDownloadingStream"] = True
-    downloadedFile = await downloader.downloadFile(LOGGER)
+    downloadedFile = await downloader.downloadFile(processDownload)
     hass.data[DOMAIN][entry_id]["isDownloadingStream"] = False
     if downloadedFile["currentAction"] == "Recording in progress":
         raise Unresolvable("Recording is currently in progress.")

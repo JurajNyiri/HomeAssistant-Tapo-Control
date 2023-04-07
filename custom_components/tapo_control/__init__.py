@@ -13,6 +13,7 @@ from homeassistant.const import (
 )
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.util import dt
 
 from .const import (
     CONF_RTSP_TRANSPORT,
@@ -356,6 +357,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
 
         camData = await getCamData(hass, tapoController)
+        cameraTime = await hass.async_add_executor_job(tapoController.getTime)
+        cameraTS = cameraTime["system"]["clock_status"]["seconds_from_1970"]
+        currentTS = dt.as_timestamp(dt.now())
 
         hass.data[DOMAIN][entry.entry_id] = {
             "controller": tapoController,
@@ -381,6 +385,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "isChild": False,
             "isParent": False,
             "isDownloadingStream": False,
+            "timezoneOffset": cameraTS - currentTS,
         }
 
         if camData["childDevices"] is False or camData["childDevices"] is None:
