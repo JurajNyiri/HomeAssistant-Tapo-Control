@@ -53,24 +53,27 @@ class TapoMediaSource(MediaSource):
     async def async_resolve_media(self, item: MediaSourceItem) -> PlayMedia:
         path = item.identifier.split("/")
         if len(path) == 5:
-            entry = path[1]
-            if self.hass.data[DOMAIN][entry]["isDownloadingStream"]:
-                raise Unresolvable(
-                    "Already downloading a recording, please try again later."
+            try:
+                entry = path[1]
+                if self.hass.data[DOMAIN][entry]["isDownloadingStream"]:
+                    raise Unresolvable(
+                        "Already downloading a recording, please try again later."
+                    )
+                date = path[2]
+                tapoController: Tapo = self.hass.data[DOMAIN][entry]["controller"]
+                startDate = int(path[3])
+                endDate = int(path[4])
+
+                LOGGER.debug(startDate)
+                LOGGER.debug(endDate)
+
+                self.hass.data[DOMAIN][entry]["isDownloadingStream"] = True
+                url = await getRecording(
+                    self.hass, tapoController, entry, date, startDate, endDate
                 )
-            date = path[2]
-            tapoController: Tapo = self.hass.data[DOMAIN][entry]["controller"]
-            startDate = int(path[3])
-            endDate = int(path[4])
-
-            LOGGER.debug(startDate)
-            LOGGER.debug(endDate)
-
-            self.hass.data[DOMAIN][entry]["isDownloadingStream"] = True
-            url = await getRecording(
-                self.hass, tapoController, entry, date, startDate, endDate
-            )
-            LOGGER.debug(url)
+                LOGGER.debug(url)
+            except Exception as e:
+                LOGGER.error(e)
 
             return PlayMedia(url, "video/mp4")
         else:
@@ -160,7 +163,11 @@ class TapoMediaSource(MediaSource):
                         endDate = dt.as_local(dt.utc_from_timestamp(endTS))
                         videoName = f"{startDate.strftime('%H:%M:%S')} - {endDate.strftime('%H:%M:%S')}"
                         videoNames.append(
-                            {"name": videoName, "startDate": startTS, "endDate": endTS}
+                            {
+                                "name": videoName,
+                                "startDate": searchResult[key]["startTime"],
+                                "endDate": searchResult[key]["endTime"],
+                            }
                         )
 
                 return BrowseMediaSource(
