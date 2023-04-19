@@ -74,12 +74,16 @@ class TapoMediaSource(MediaSource):
                 LOGGER.debug(url)
             except Exception as e:
                 LOGGER.error(e)
+                raise Unresolvable(e)
 
             return PlayMedia(url, "video/mp4")
         else:
             raise Unresolvable("Incorrect path.")
 
-    async def async_browse_media(self, item: MediaSourceItem,) -> BrowseMediaSource:
+    async def async_browse_media(
+        self,
+        item: MediaSourceItem,
+    ) -> BrowseMediaSource:
         if item.identifier is None:
             return BrowseMediaSource(
                 domain=DOMAIN,
@@ -195,4 +199,3 @@ class TapoMediaSource(MediaSource):
 
             else:
                 LOGGER.error("Not implemented")
-
