@@ -73,12 +73,16 @@ def isOpen(ip, port):
         return False
 
 
+def getDataPath():
+    return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+
+
 def getColdDirPathForEntry(entry_id):
-    return f"./.storage/{DOMAIN}/{entry_id}/"
+    return os.path.join(getDataPath(), f".storage/{DOMAIN}/{entry_id}/")
 
 
 def getHotDirPathForEntry(entry_id):
-    return f"./www/{DOMAIN}/{entry_id}/"
+    return os.path.join(getDataPath(), f"www/{DOMAIN}/{entry_id}/")
 
 
 def mediaCleanup(hass, entry_id):
@@ -175,13 +179,13 @@ async def getRecording(
 
     coldFilePath = downloadedFile["fileName"]
     hotFilePath = (
-        coldFilePath.replace("./.storage/", "./www/").replace(".mp4", "")
+        coldFilePath.replace("/.storage/", "/www/").replace(".mp4", "")
         + UUID
         + ".mp4"
     )
     shutil.copyfile(coldFilePath, hotFilePath)
 
-    fileWebPath = hotFilePath[6:]  # remove ./www/
+    fileWebPath = hotFilePath[hotFilePath.index("/www/") + 5:]  # remove ./www/
 
     return f"/local/{fileWebPath}"
 
