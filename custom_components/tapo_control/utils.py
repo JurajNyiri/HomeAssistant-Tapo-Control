@@ -179,7 +179,7 @@ async def getRecording(
 
     coldFilePath = downloadedFile["fileName"]
     hotFilePath = (
-        coldFilePath.replace("/storage/", "/www/").replace(".mp4", "")
+        coldFilePath.replace("/.storage/", "/www/").replace(".mp4", "")
         + UUID
         + ".mp4"
     )
