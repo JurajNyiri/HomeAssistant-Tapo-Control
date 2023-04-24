@@ -23,6 +23,7 @@ from homeassistant.components.onvif.event import EventManager
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.util import slugify
 
+
 from .const import (
     BRAND,
     COLD_DIR_DELETE_TIME,
@@ -74,7 +75,9 @@ def isOpen(ip, port):
 
 
 def getDataPath():
-    return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+    return os.path.abspath(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+    )
 
 
 def getColdDirPathForEntry(entry_id):
@@ -179,13 +182,11 @@ async def getRecording(
 
     coldFilePath = downloadedFile["fileName"]
     hotFilePath = (
-        coldFilePath.replace("/.storage/", "/www/").replace(".mp4", "")
-        + UUID
-        + ".mp4"
+        coldFilePath.replace("/.storage/", "/www/").replace(".mp4", "") + UUID + ".mp4"
     )
     shutil.copyfile(coldFilePath, hotFilePath)
 
-    fileWebPath = hotFilePath[hotFilePath.index("/www/") + 5:]  # remove ./www/
+    fileWebPath = hotFilePath[hotFilePath.index("/www/") + 5 :]  # remove ./www/
 
     return f"/local/{fileWebPath}"
 
@@ -239,15 +240,20 @@ async def initOnvifEvents(hass, host, username, password):
         no_cache=True,
     )
     try:
+        LOGGER.warn("[initOnvifEvents] Creating onvif connection...")
         await device.update_xaddrs()
+        LOGGER.warn("[initOnvifEvents] Connection estabilished.")
         device_mgmt = device.create_devicemgmt_service()
+        LOGGER.warn("[initOnvifEvents] Getting device information...")
         device_info = await device_mgmt.GetDeviceInformation()
+        LOGGER.warn("[initOnvifEvents] Got device information.")
         if "Manufacturer" not in device_info:
             raise Exception("Onvif connection has failed.")
 
         return {"device": device, "device_mgmt": device_mgmt}
-    except Exception:
-        pass
+    except Exception as e:
+        LOGGER.error("[initOnvifEvents] Initiating onvif connection failed.")
+        LOGGER.error(e)
 
     return False
 
@@ -694,13 +700,14 @@ async def syncTime(hass, entry_id):
 
 
 async def setupOnvif(hass, entry):
-    LOGGER.debug("setupOnvif - entry")
+    LOGGER.warn("setupOnvif - entry")
     if hass.data[DOMAIN][entry.entry_id]["eventsDevice"]:
-        LOGGER.debug("Setting up onvif...")
+        LOGGER.warn("Setting up onvif...")
         hass.data[DOMAIN][entry.entry_id]["events"] = EventManager(
             hass,
             hass.data[DOMAIN][entry.entry_id]["eventsDevice"],
-            f"{entry.entry_id}_tapo_events",
+            entry,
+            hass.data[DOMAIN][entry.entry_id]["name"],
         )
 
         hass.data[DOMAIN][entry.entry_id]["eventsSetup"] = await setupEvents(
@@ -709,12 +716,12 @@ async def setupOnvif(hass, entry):
 
 
 async def setupEvents(hass, config_entry):
-    LOGGER.debug("setupEvents - entry")
+    LOGGER.warn("setupEvents - entry")
     if not hass.data[DOMAIN][config_entry.entry_id]["events"].started:
-        LOGGER.debug("Setting up events...")
+        LOGGER.warn("Setting up events...")
         events = hass.data[DOMAIN][config_entry.entry_id]["events"]
         if await events.async_start():
-            LOGGER.debug("Events started.")
+            LOGGER.warn("Events started.")
             if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
                 hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"] = True
                 if hass.data[DOMAIN][config_entry.entry_id]["eventsListener"]:
@@ -726,7 +733,7 @@ async def setupEvents(hass, config_entry):
                         "Trying to create motion sensor but motion listener not set up!"
                     )
 
-                LOGGER.debug(
+                LOGGER.warn(
                     "Binary sensor creation for motion has been forwarded to component."
                 )
             return True
