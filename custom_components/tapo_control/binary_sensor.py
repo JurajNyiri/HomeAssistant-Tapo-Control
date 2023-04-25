@@ -32,7 +32,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
-    LOGGER.warn("Setting up binary sensor for motion.")
+    LOGGER.debug("Setting up binary sensor for motion.")
     entry = hass.data[DOMAIN][config_entry.entry_id]
 
     hass.data[DOMAIN][config_entry.entry_id]["eventsListener"] = EventsListener(
@@ -104,12 +104,12 @@ class TapoNoiseBinarySensor(TapoBinarySensorEntity):
 
 class EventsListener:
     def __init__(self, async_add_entities, hass, config_entry):
-        LOGGER.warn("EventsListener init")
+        LOGGER.debug("EventsListener init")
         self.metaData = hass.data[DOMAIN][config_entry.entry_id]
         self.async_add_entities = async_add_entities
 
     def createBinarySensor(self):
-        LOGGER.warn("Creating binary sensor entity.")
+        LOGGER.debug("Creating binary sensor entity.")
 
         events = self.metaData["events"]
         name = self.metaData["name"]
@@ -120,20 +120,19 @@ class EventsListener:
         }
         self.async_add_entities(entities.values())
         uids_by_platform = events.get_uids_by_platform("binary_sensor")
-        LOGGER.warn(uids_by_platform)
 
         @callback
         def async_check_entities():
-            LOGGER.warn("async_check_entities")
+            LOGGER.debug("async_check_entities")
             nonlocal uids_by_platform
             if not (missing := uids_by_platform.difference(entities)):
                 return
             new_entities: dict[str, TapoMotionSensor] = {
                 uid: TapoMotionSensor(uid, events, name, camData) for uid in missing
             }
-            LOGGER.warn("async_check_entities2")
+            LOGGER.debug("async_check_entities2")
             if new_entities:
-                LOGGER.warn("async_check_entities3")
+                LOGGER.debug("async_check_entities3")
                 entities.update(new_entities)
                 self.async_add_entities(new_entities.values())
 
@@ -162,8 +161,6 @@ class TapoMotionSensor(BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        LOGGER.warn("is_on")
-        LOGGER.warn(self.events.get_uid(self.uid))
         """Return true if the binary sensor is on."""
         if (event := self.events.get_uid(self._attr_unique_id)) is not None:
             return event.value

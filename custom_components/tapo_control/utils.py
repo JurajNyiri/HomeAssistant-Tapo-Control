@@ -240,13 +240,13 @@ async def initOnvifEvents(hass, host, username, password):
         no_cache=True,
     )
     try:
-        LOGGER.warn("[initOnvifEvents] Creating onvif connection...")
+        LOGGER.debug("[initOnvifEvents] Creating onvif connection...")
         await device.update_xaddrs()
-        LOGGER.warn("[initOnvifEvents] Connection estabilished.")
+        LOGGER.debug("[initOnvifEvents] Connection estabilished.")
         device_mgmt = device.create_devicemgmt_service()
-        LOGGER.warn("[initOnvifEvents] Getting device information...")
+        LOGGER.debug("[initOnvifEvents] Getting device information...")
         device_info = await device_mgmt.GetDeviceInformation()
-        LOGGER.warn("[initOnvifEvents] Got device information.")
+        LOGGER.debug("[initOnvifEvents] Got device information.")
         if "Manufacturer" not in device_info:
             raise Exception("Onvif connection has failed.")
 
@@ -700,9 +700,9 @@ async def syncTime(hass, entry_id):
 
 
 async def setupOnvif(hass, entry):
-    LOGGER.warn("setupOnvif - entry")
+    LOGGER.debug("setupOnvif - entry")
     if hass.data[DOMAIN][entry.entry_id]["eventsDevice"]:
-        LOGGER.warn("Setting up onvif...")
+        LOGGER.debug("Setting up onvif...")
         hass.data[DOMAIN][entry.entry_id]["events"] = EventManager(
             hass,
             hass.data[DOMAIN][entry.entry_id]["eventsDevice"],
@@ -716,12 +716,12 @@ async def setupOnvif(hass, entry):
 
 
 async def setupEvents(hass, config_entry):
-    LOGGER.warn("setupEvents - entry")
+    LOGGER.debug("setupEvents - entry")
     if not hass.data[DOMAIN][config_entry.entry_id]["events"].started:
-        LOGGER.warn("Setting up events...")
+        LOGGER.debug("Setting up events...")
         events = hass.data[DOMAIN][config_entry.entry_id]["events"]
         if await events.async_start():
-            LOGGER.warn("Events started.")
+            LOGGER.debug("Events started.")
             if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
                 hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"] = True
                 if hass.data[DOMAIN][config_entry.entry_id]["eventsListener"]:
@@ -733,7 +733,7 @@ async def setupEvents(hass, config_entry):
                         "Trying to create motion sensor but motion listener not set up!"
                     )
 
-                LOGGER.warn(
+                LOGGER.debug(
                     "Binary sensor creation for motion has been forwarded to component."
                 )
             return True

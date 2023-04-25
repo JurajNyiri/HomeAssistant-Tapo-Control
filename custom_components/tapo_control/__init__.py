@@ -212,9 +212,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         not hass.data[DOMAIN][entry.entry_id]["eventsDevice"]
                         or not hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
                     ):
-                        LOGGER.warn("Setting up subscription to motion sensor...")
                         # retry if connection to onvif failed
-                        LOGGER.warn("Initiating onvif.")
+                        LOGGER.debug("Setting up subscription to motion sensor...")
                         onvifDevice = await initOnvifEvents(
                             hass, host, username, password
                         )
