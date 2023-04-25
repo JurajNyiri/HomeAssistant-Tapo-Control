@@ -7,8 +7,10 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
     BinarySensorDeviceClass,
 )
+from homeassistant.const import STATE_ON
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.util.enum import try_parse_enum
 
 from .const import (
     BRAND,
@@ -117,23 +119,22 @@ class EventsListener:
             for event in events.get_platform("binary_sensor")
         }
         self.async_add_entities(entities.values())
+        uids_by_platform = events.get_uids_by_platform("binary_sensor")
 
         @callback
         def async_check_entities():
             LOGGER.debug("async_check_entities")
-            new_entities = []
-            LOGGER.debug("Looping through available events.")
-            for event in events.get_platform("binary_sensor"):
-                LOGGER.debug(event)
-                if event.uid not in entities:
-                    LOGGER.debug(
-                        "Found event which doesn't have entity yet, adding binary sensor!"
-                    )
-                    entities[event.uid] = TapoMotionSensor(
-                        event.uid, events, name, camData
-                    )
-                    new_entities.append(entities[event.uid])
-            self.async_add_entities(new_entities)
+            nonlocal uids_by_platform
+            if not (missing := uids_by_platform.difference(entities)):
+                return
+            new_entities: dict[str, TapoMotionSensor] = {
+                uid: TapoMotionSensor(uid, events, name, camData) for uid in missing
+            }
+            LOGGER.debug("async_check_entities2")
+            if new_entities:
+                LOGGER.debug("async_check_entities3")
+                entities.update(new_entities)
+                self.async_add_entities(new_entities.values())
 
         events.async_add_listener(async_check_entities)
 
@@ -141,17 +142,29 @@ class EventsListener:
 class TapoMotionSensor(BinarySensorEntity):
     def __init__(self, uid, events, name, camData):
         LOGGER.debug("TapoMotionSensor - init - start")
+        self._attr_unique_id = uid
         self._name = name
         self._attributes = camData["basic_info"]
-        BinarySensorEntity.__init__(self)
-
+        self._attr_device_class = BinarySensorDeviceClass.MOTION
         self.uid = uid
         self.events = events
+        event = events.get_uid(uid)
+
+        self._attr_device_class = try_parse_enum(
+            BinarySensorDeviceClass, event.device_class
+        )
+        self._attr_entity_category = event.entity_category
+        self._attr_entity_registry_enabled_default = event.entity_enabled
+        self._attr_is_on = event.value
+        BinarySensorEntity.__init__(self)
         LOGGER.debug("TapoMotionSensor - init - end")
 
     @property
     def is_on(self) -> bool:
-        return self.events.get_uid(self.uid).value
+        """Return true if the binary sensor is on."""
+        if (event := self.events.get_uid(self._attr_unique_id)) is not None:
+            return event.value
+        return self._attr_is_on
 
     @property
     def name(self) -> str:

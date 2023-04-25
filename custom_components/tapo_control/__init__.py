@@ -173,6 +173,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     cloud_password = entry.data.get(CLOUD_PASSWORD)
     enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
 
+    # todo: figure out where to set officially?
+    entry.unique_id = DOMAIN + host
+
     try:
         if cloud_password != "":
             tapoController = await hass.async_add_executor_job(
@@ -209,9 +212,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         not hass.data[DOMAIN][entry.entry_id]["eventsDevice"]
                         or not hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
                     ):
-                        LOGGER.debug("Setting up subscription to motion sensor...")
                         # retry if connection to onvif failed
-                        LOGGER.debug("Initiating onvif.")
+                        LOGGER.debug("Setting up subscription to motion sensor...")
                         onvifDevice = await initOnvifEvents(
                             hass, host, username, password
                         )
