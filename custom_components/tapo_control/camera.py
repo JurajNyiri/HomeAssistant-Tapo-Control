@@ -45,10 +45,14 @@ async def async_setup_entry(
 
     platform = entity_platform.current_platform.get()
     platform.async_register_entity_service(
-        SERVICE_SAVE_PRESET, SCHEMA_SERVICE_SAVE_PRESET, "save_preset",
+        SERVICE_SAVE_PRESET,
+        SCHEMA_SERVICE_SAVE_PRESET,
+        "save_preset",
     )
     platform.async_register_entity_service(
-        SERVICE_DELETE_PRESET, SCHEMA_SERVICE_DELETE_PRESET, "delete_preset",
+        SERVICE_DELETE_PRESET,
+        SCHEMA_SERVICE_DELETE_PRESET,
+        "delete_preset",
     )
 
     hdStream = TapoCamEntity(hass, config_entry, entry, True)
@@ -61,7 +65,11 @@ async def async_setup_entry(
 
 class TapoCamEntity(Camera):
     def __init__(
-        self, hass: HomeAssistant, config_entry: dict, entry: dict, HDStream: boolean,
+        self,
+        hass: HomeAssistant,
+        config_entry: dict,
+        entry: dict,
+        HDStream: boolean,
     ):
         super().__init__()
         self.stream_options[CONF_RTSP_TRANSPORT] = config_entry.data.get(
@@ -149,7 +157,8 @@ class TapoCamEntity(Camera):
         streaming_url = getStreamSource(self._config_entry, self._hdstream)
         stream = CameraMjpeg(self._ffmpeg.binary)
         await stream.open_camera(
-            streaming_url, extra_cmd=self._extra_arguments,
+            streaming_url,
+            extra_cmd=self._extra_arguments,
         )
         try:
             stream_reader = await stream.get_reader()
@@ -189,6 +198,10 @@ class TapoCamEntity(Camera):
             self._attr_extra_state_attributes["alarm"] = camData["alarm"]
             self._attr_extra_state_attributes["user"] = camData["user"]
             self._attr_extra_state_attributes["presets"] = camData["presets"]
+            # Disable incorrect location report by camera
+            self._attr_extra_state_attributes["longitude"] = 0
+            self._attr_extra_state_attributes["latitude"] = 0
+            self._attr_extra_state_attributes["has_set_location_info"] = 0
 
     async def async_enable_motion_detection(self):
         await self.hass.async_add_executor_job(
@@ -204,13 +217,15 @@ class TapoCamEntity(Camera):
 
     async def async_turn_on(self):
         await self._hass.async_add_executor_job(
-            self._controller.setPrivacyMode, False,
+            self._controller.setPrivacyMode,
+            False,
         )
         await self._coordinator.async_request_refresh()
 
     async def async_turn_off(self):
         await self._hass.async_add_executor_job(
-            self._controller.setPrivacyMode, True,
+            self._controller.setPrivacyMode,
+            True,
         )
         await self._coordinator.async_request_refresh()
 
