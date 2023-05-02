@@ -720,7 +720,15 @@ async def setupEvents(hass, config_entry):
     if not hass.data[DOMAIN][config_entry.entry_id]["events"].started:
         LOGGER.debug("Setting up events...")
         events = hass.data[DOMAIN][config_entry.entry_id]["events"]
-        if await events.async_start():
+        onvif_capabilities = await hass.data[DOMAIN][config_entry.entry_id][
+            "eventsDevice"
+        ].get_capabilities()
+        onvif_capabilities = onvif_capabilities or {}
+        pull_point_support = onvif_capabilities.get("Events", {}).get(
+            "WSPullPointSupport"
+        )
+        LOGGER.debug("WSPullPointSupport: %s", pull_point_support)
+        if await events.async_start(pull_point_support is not False, True):
             LOGGER.debug("Events started.")
             if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
                 hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"] = True
