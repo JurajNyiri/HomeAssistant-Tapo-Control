@@ -757,6 +757,7 @@ def build_device_info(attributes: dict) -> DeviceInfo:
         manufacturer=BRAND,
         model=attributes["device_model"],
         sw_version=attributes["sw_version"],
+        hw_version=attributes["hw_version"],
     )
 
 
