@@ -83,7 +83,9 @@ Motion sensor is added only after a motion is detected for the first time.
 - Make sure the camera has motion detection turned on
 - Make sure the camera has privacy mode turned off
 - Make sure the camera can see you and your movement
+- If you have webhooks enabled, and your Home Assistant internal URL is reachable on HTTP, make sure camera can reach it. 
 - Make sure you have correct IP set for Home Assistant. Turn on Advanced Mode under `/profile`. Go to `/config/network` and under `Network Adapter` verify correct IP is shown for the device. If it is not correct, under `Home Assistant URL` uncheck `Automatic` next to `Local Network` and set it to `http://<some IP address>:8123`. **DO NOT USE HTTPS**.
+- Certain camera firmwares have pullpoint broken, with only webhooks working. If you are not able to run webhooks because of above (https, or vlan setup), binary sensor will never show up.
 - Try walking in front of the camera
 - If above didn't work, restart the camera and try again
 
