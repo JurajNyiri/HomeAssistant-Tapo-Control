@@ -243,7 +243,7 @@ async def initOnvifEvents(hass, host, username, password):
         LOGGER.debug("[initOnvifEvents] Creating onvif connection...")
         await device.update_xaddrs()
         LOGGER.debug("[initOnvifEvents] Connection estabilished.")
-        device_mgmt = device.create_devicemgmt_service()
+        device_mgmt = await device.create_devicemgmt_service()
         LOGGER.debug("[initOnvifEvents] Getting device information...")
         device_info = await device_mgmt.GetDeviceInformation()
         LOGGER.debug("[initOnvifEvents] Got device information.")
@@ -728,7 +728,8 @@ async def setupEvents(hass, config_entry):
             "WSPullPointSupport"
         )
         LOGGER.debug("WSPullPointSupport: %s", pull_point_support)
-        if await events.async_start(pull_point_support is not False, True):
+        # Setting Webhooks to False specifically as they seem broken on Tapo
+        if await events.async_start(pull_point_support is not False, False):
             LOGGER.debug("Events started.")
             if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
                 hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"] = True
