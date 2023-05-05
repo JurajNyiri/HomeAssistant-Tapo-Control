@@ -2,7 +2,10 @@ import asyncio
 import datetime
 import hashlib
 import pathlib
-import onvif
+
+from .lib.onvifZeepAsync import ONVIFCamera
+from .lib.onvif.event import EventManager
+
 import os
 import shutil
 import socket
@@ -14,15 +17,12 @@ from pytapo.media_stream.downloader import Downloader
 from homeassistant.components.media_source.error import Unresolvable
 
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
-from onvif import ONVIFCamera
 from pytapo import Tapo
 
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.ffmpeg import DATA_FFMPEG
-from homeassistant.components.onvif.event import EventManager
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.util import slugify
-
 
 from .const import (
     BRAND,
@@ -236,7 +236,7 @@ async def initOnvifEvents(hass, host, username, password):
         2020,
         username,
         password,
-        f"{os.path.dirname(onvif.__file__)}/wsdl/",
+        f"{os.path.dirname(__file__)}/lib/onvifZeepAsync/wsdl/",
         no_cache=True,
     )
     try:
@@ -706,8 +706,7 @@ async def setupOnvif(hass, entry):
         hass.data[DOMAIN][entry.entry_id]["events"] = EventManager(
             hass,
             hass.data[DOMAIN][entry.entry_id]["eventsDevice"],
-            entry,
-            hass.data[DOMAIN][entry.entry_id]["name"],
+            f"{entry.entry_id}_tapo_events",
         )
 
         hass.data[DOMAIN][entry.entry_id]["eventsSetup"] = await setupEvents(
@@ -720,15 +719,7 @@ async def setupEvents(hass, config_entry):
     if not hass.data[DOMAIN][config_entry.entry_id]["events"].started:
         LOGGER.debug("Setting up events...")
         events = hass.data[DOMAIN][config_entry.entry_id]["events"]
-        onvif_capabilities = await hass.data[DOMAIN][config_entry.entry_id][
-            "eventsDevice"
-        ].get_capabilities()
-        onvif_capabilities = onvif_capabilities or {}
-        pull_point_support = onvif_capabilities.get("Events", {}).get(
-            "WSPullPointSupport"
-        )
-        LOGGER.debug("WSPullPointSupport: %s", pull_point_support)
-        if await events.async_start(pull_point_support is not False, True):
+        if await events.async_start():
             LOGGER.debug("Events started.")
             if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
                 hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"] = True

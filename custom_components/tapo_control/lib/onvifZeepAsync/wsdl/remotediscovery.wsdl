@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="http://www.onvif.org/onvif/ver20/util/onvif-wsdl-viewer.xsl"?>
+<!--
+Copyright (c) 2008-2010 by ONVIF: Open Network Video Interface Forum. All rights reserved.
+
+Recipients of this document may copy, distribute, publish, or display this document so long as this copyright notice, license and disclaimer are retained with all copies of the document. No license is granted to modify this document.
+
+THIS DOCUMENT IS PROVIDED "AS IS," AND THE CORPORATION AND ITS MEMBERS AND THEIR AFFILIATES, MAKE NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO, WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, OR TITLE; THAT THE CONTENTS OF THIS DOCUMENT ARE SUITABLE FOR ANY PURPOSE; OR THAT THE IMPLEMENTATION OF SUCH CONTENTS WILL NOT INFRINGE ANY PATENTS, COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS.
+IN NO EVENT WILL THE CORPORATION OR ITS MEMBERS OR THEIR AFFILIATES BE LIABLE FOR ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL, PUNITIVE OR CONSEQUENTIAL DAMAGES, ARISING OUT OF OR RELATING TO ANY USE OR DISTRIBUTION OF THIS DOCUMENT, WHETHER OR NOT (1) THE CORPORATION, MEMBERS OR THEIR AFFILIATES HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES, OR (2) SUCH DAMAGES WERE REASONABLY FORESEEABLE, AND ARISING OUT OF OR RELATING TO ANY USE OR DISTRIBUTION OF THIS DOCUMENT.  THE FOREGOING DISCLAIMER AND LIMITATION ON LIABILITY DO NOT APPLY TO, INVALIDATE, OR LIMIT REPRESENTATIONS AND WARRANTIES MADE BY THE MEMBERS AND THEIR RESPECTIVE AFFILIATES TO THE CORPORATION AND OTHER MEMBERS IN CERTAIN WRITTEN POLICIES OF THE CORPORATION.
+-->
+<wsdl:definitions xmlns:dn="http://www.onvif.org/ver10/network/wsdl" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.onvif.org/ver10/network/wsdl">
+	<wsdl:types>
+		<xs:schema targetNamespace="http://www.onvif.org/ver10/network/wsdl" xmlns:d="http://schemas.xmlsoap.org/ws/2005/04/discovery" elementFormDefault="qualified">
+			<xs:import namespace="http://schemas.xmlsoap.org/ws/2005/04/discovery" schemaLocation="./ws-discovery.xsd"/>
+			<!--  Message Request/Responses elements  -->
+			<!--===============================-->
+			<xs:element name="Hello" type="d:HelloType"/>
+			<xs:element name="HelloResponse" type="d:ResolveType"/>
+			<xs:element name="Probe" type="d:ProbeType"/>
+			<xs:element name="ProbeResponse" type="d:ProbeMatchesType"/>
+			<xs:element name="Bye" type="d:ByeType"/>
+			<xs:element name="ByeResponse" type="d:ResolveType"/>
+			<!--===============================-->
+		</xs:schema>
+	</wsdl:types>
+	<wsdl:message name="HelloRequest">
+		<wsdl:part name="parameters" element="dn:Hello"/>
+	</wsdl:message>
+	<wsdl:message name="HelloResponse">
+		<wsdl:part name="parameters" element="dn:HelloResponse"/>
+	</wsdl:message>
+	<wsdl:message name="ProbeRequest">
+		<wsdl:part name="parameters" element="dn:Probe"/>
+	</wsdl:message>
+	<wsdl:message name="ProbeResponse">
+		<wsdl:part name="parameters" element="dn:ProbeResponse"/>
+	</wsdl:message>
+	<wsdl:message name="ByeRequest">
+		<wsdl:part name="parameters" element="dn:Bye"/>
+	</wsdl:message>
+	<wsdl:message name="ByeResponse">
+		<wsdl:part name="parameters" element="dn:ByeResponse"/>
+	</wsdl:message>
+	<wsdl:portType name="RemoteDiscoveryPort">
+		<wsdl:operation name="Hello">
+			<wsdl:input message="dn:HelloRequest" dn:Action="http://schemas.xmlsoap.org/ws/2005/04/discovery/Hello"/>
+			<wsdl:output message="dn:HelloResponse" dn:Action="http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe"/>
+		</wsdl:operation>
+		<wsdl:operation name="Bye">
+			<wsdl:input message="dn:ByeRequest" dn:Action="http://schemas.xmlsoap.org/ws/2005/04/discovery/Bye"/>
+			<wsdl:output message="dn:ByeResponse"/>
+		</wsdl:operation>
+	</wsdl:portType>
+	<wsdl:portType name="DiscoveryLookupPort">
+		<wsdl:operation name="Probe">
+			<wsdl:input message="dn:ProbeRequest" dn:Action="http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe"/>
+			<wsdl:output message="dn:ProbeResponse" dn:Action="http://schemas.xmlsoap.org/ws/2005/04/discovery/ProbeMatches"/>
+		</wsdl:operation>
+	</wsdl:portType>
+	<wsdl:binding name="RemoteDiscoveryBinding" type="dn:RemoteDiscoveryPort">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<wsdl:operation name="Hello">
+			<soap:operation soapAction="http://www.onvif.org/ver10/network/wsdl/Hello"/>
+			<wsdl:input>
+				<soap:body parts="parameters" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body parts="parameters" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="Bye">
+			<soap:operation soapAction="http://www.onvif.org/ver10/network/wsdl/Bye"/>
+			<wsdl:input>
+				<soap:body parts="parameters" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body parts="parameters" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+	</wsdl:binding>
+	<wsdl:binding name="DiscoveryLookupBinding" type="dn:DiscoveryLookupPort">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<wsdl:operation name="Probe">
+			<soap:operation soapAction="http://www.onvif.org/ver10/network/wsdl/Probe"/>
+			<wsdl:input>
+				<soap:body parts="parameters" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body parts="parameters" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+	</wsdl:binding>
+</wsdl:definitions>
