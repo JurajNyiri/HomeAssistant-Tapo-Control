@@ -16,13 +16,14 @@ from homeassistant.components.media_source.error import Unresolvable
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from onvif import ONVIFCamera
 from pytapo import Tapo
+from yarl import URL
+from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.ffmpeg import DATA_FFMPEG
 from homeassistant.components.onvif.event import EventManager
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.util import slugify
-
 
 from .const import (
     BRAND,
@@ -37,6 +38,19 @@ from .const import (
 )
 
 UUID = uuid.uuid4().hex
+
+
+def isUsingHTTPS(hass):
+    try:
+        base_url = get_url(hass, prefer_external=False)
+    except NoURLAvailableError:
+        try:
+            base_url = get_url(hass, prefer_external=True)
+        except NoURLAvailableError:
+            LOGGER.warn("Failed to detect base_url schema, not using webhooks.")
+            return True
+    LOGGER.debug("Detected base_url schema: " + URL(base_url).scheme)
+    return URL(base_url).scheme == "https"
 
 
 def getStreamSource(entry, hdStream):
@@ -728,8 +742,9 @@ async def setupEvents(hass, config_entry):
             "WSPullPointSupport"
         )
         LOGGER.debug("WSPullPointSupport: %s", pull_point_support)
+        shouldUseWebhooks = isUsingHTTPS(hass) is False
         # Setting Webhooks to False specifically as they seem broken on Tapo
-        if await events.async_start(pull_point_support is not False, True):
+        if await events.async_start(pull_point_support is not False, shouldUseWebhooks):
             LOGGER.debug("Events started.")
             if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
                 hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"] = True
