@@ -47,8 +47,8 @@ def isUsingHTTPS(hass):
         try:
             base_url = get_url(hass, prefer_external=True)
         except NoURLAvailableError:
-            LOGGER.debug("Failed to detect base_url schema.")
-            return False
+            LOGGER.warn("Failed to detect base_url schema, not using webhooks.")
+            return True
     LOGGER.debug("Detected base_url schema: " + URL(base_url).scheme)
     return URL(base_url).scheme == "https"
 
@@ -742,10 +742,9 @@ async def setupEvents(hass, config_entry):
             "WSPullPointSupport"
         )
         LOGGER.debug("WSPullPointSupport: %s", pull_point_support)
+        shouldUseWebhooks = isUsingHTTPS(hass) is False
         # Setting Webhooks to False specifically as they seem broken on Tapo
-        if await events.async_start(
-            pull_point_support is not False, isUsingHTTPS(hass) is False
-        ):
+        if await events.async_start(pull_point_support is not False, shouldUseWebhooks):
             LOGGER.debug("Events started.")
             if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
                 hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"] = True
