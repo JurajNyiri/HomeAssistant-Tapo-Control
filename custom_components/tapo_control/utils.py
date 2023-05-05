@@ -2,10 +2,7 @@ import asyncio
 import datetime
 import hashlib
 import pathlib
-
-from .lib.onvifZeepAsync import ONVIFCamera
-from .lib.onvif.event import EventManager
-
+import onvif
 import os
 import shutil
 import socket
@@ -17,12 +14,15 @@ from pytapo.media_stream.downloader import Downloader
 from homeassistant.components.media_source.error import Unresolvable
 
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
+from onvif import ONVIFCamera
 from pytapo import Tapo
 
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.ffmpeg import DATA_FFMPEG
+from homeassistant.components.onvif.event import EventManager
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.util import slugify
+
 
 from .const import (
     BRAND,
@@ -236,14 +236,14 @@ async def initOnvifEvents(hass, host, username, password):
         2020,
         username,
         password,
-        f"{os.path.dirname(__file__)}/lib/onvifZeepAsync/wsdl/",
+        f"{os.path.dirname(onvif.__file__)}/wsdl/",
         no_cache=True,
     )
     try:
         LOGGER.debug("[initOnvifEvents] Creating onvif connection...")
         await device.update_xaddrs()
         LOGGER.debug("[initOnvifEvents] Connection estabilished.")
-        device_mgmt = device.create_devicemgmt_service()
+        device_mgmt = await device.create_devicemgmt_service()
         LOGGER.debug("[initOnvifEvents] Getting device information...")
         device_info = await device_mgmt.GetDeviceInformation()
         LOGGER.debug("[initOnvifEvents] Got device information.")
@@ -706,7 +706,8 @@ async def setupOnvif(hass, entry):
         hass.data[DOMAIN][entry.entry_id]["events"] = EventManager(
             hass,
             hass.data[DOMAIN][entry.entry_id]["eventsDevice"],
-            f"{entry.entry_id}_tapo_events",
+            entry,
+            hass.data[DOMAIN][entry.entry_id]["name"],
         )
 
         hass.data[DOMAIN][entry.entry_id]["eventsSetup"] = await setupEvents(
@@ -719,7 +720,16 @@ async def setupEvents(hass, config_entry):
     if not hass.data[DOMAIN][config_entry.entry_id]["events"].started:
         LOGGER.debug("Setting up events...")
         events = hass.data[DOMAIN][config_entry.entry_id]["events"]
-        if await events.async_start():
+        onvif_capabilities = await hass.data[DOMAIN][config_entry.entry_id][
+            "eventsDevice"
+        ].get_capabilities()
+        onvif_capabilities = onvif_capabilities or {}
+        pull_point_support = onvif_capabilities.get("Events", {}).get(
+            "WSPullPointSupport"
+        )
+        LOGGER.debug("WSPullPointSupport: %s", pull_point_support)
+        # Setting Webhooks to False specifically as they seem broken on Tapo
+        if await events.async_start(pull_point_support is not False, True):
             LOGGER.debug("Events started.")
             if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
                 hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"] = True

@@ -11,7 +11,8 @@
     "pytapo==3.1.12"
   ],
   "dependencies": [
-    "ffmpeg"
+    "ffmpeg",
+    "onvif"
   ],
   "config_flow": true,
   "homeassistant": "2023.4.5",

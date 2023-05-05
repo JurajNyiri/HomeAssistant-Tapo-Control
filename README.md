@@ -83,6 +83,7 @@ Motion sensor is added only after a motion is detected for the first time.
 - Make sure the camera has motion detection turned on
 - Make sure the camera has privacy mode turned off
 - Make sure the camera can see you and your movement
+- Make sure you have correct IP set for Home Assistant. Turn on Advanced Mode under `/profile`. Go to `/config/network` and under `Network Adapter` verify correct IP is shown for the device. If it is not correct, under `Home Assistant URL` uncheck `Automatic` next to `Local Network` and set it to `http://<some IP address>:8123`. **DO NOT USE HTTPS**.
 - Try walking in front of the camera
 - If above didn't work, restart the camera and try again
 
