@@ -155,6 +155,7 @@ class TapoMotionSensor(BinarySensorEntity):
         )
         self._attr_entity_category = event.entity_category
         self._attr_entity_registry_enabled_default = event.entity_enabled
+        self._attr_name = f"{self._name} {event.name}"
         self._attr_is_on = event.value
         self._attr_device_class = event.device_class
         self._attr_enabled = event.entity_enabled
@@ -170,7 +171,7 @@ class TapoMotionSensor(BinarySensorEntity):
 
     @property
     def name(self) -> str:
-        return f"{self._name} Motion"
+        return self._attr_name
 
     @property
     def device_class(self) -> Optional[str]:
