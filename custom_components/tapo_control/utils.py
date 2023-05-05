@@ -729,7 +729,7 @@ async def setupEvents(hass, config_entry):
         )
         LOGGER.debug("WSPullPointSupport: %s", pull_point_support)
         # Setting Webhooks to False specifically as they seem broken on Tapo
-        if await events.async_start(pull_point_support is not False, False):
+        if await events.async_start(pull_point_support is not False, True):
             LOGGER.debug("Events started.")
             if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
                 hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"] = True
