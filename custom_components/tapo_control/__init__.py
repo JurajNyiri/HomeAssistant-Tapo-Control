@@ -235,9 +235,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             "Setting up subcription to motion sensor events..."
                         )
                         # retry if subscription to events failed
-                        hass.data[DOMAIN][entry.entry_id][
-                            "eventsSetup"
-                        ] = await setupEvents(hass, entry)
+                        try:
+                            hass.data[DOMAIN][entry.entry_id][
+                                "eventsSetup"
+                            ] = await setupEvents(hass, entry)
+                        except AssertionError as e:
+                            if str(e) != "PullPoint manager already started":
+                                raise AssertionError(e)
+
                     else:
                         LOGGER.debug("Motion sensor: OK")
                 else:
