@@ -38,6 +38,7 @@ from .utils import (
     deleteDir,
     getColdDirPathForEntry,
     getHotDirPathForEntry,
+    isUsingHTTPS,
     mediaCleanup,
     registerController,
     getCamData,
@@ -181,6 +182,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
     cloud_password = entry.data.get(CLOUD_PASSWORD)
     enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
+
+    if isUsingHTTPS(hass):
+        LOGGER.warn(
+            "Home Assistant is running on HTTPS or it was not able to detect base_url schema. Disabling webhooks."
+        )
 
     # todo: figure out where to set officially?
     entry.unique_id = DOMAIN + host
