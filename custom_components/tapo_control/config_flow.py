@@ -535,8 +535,6 @@ class TapoOptionsFlowHandler(OptionsFlow):
     # todo rewrite strings into variables
     async def async_step_init(self, user_input=None):
         errors = {}
-        LOGGER.warn("async_step_init")
-        LOGGER.warn(user_input)
         if user_input is not None:
             if "tapo_config_action" in user_input:
                 nextAction = user_input["tapo_config_action"]
@@ -548,6 +546,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     On this screen, text field will be shown including the figured base_url and the action it took (enabled or disabled webhooks)
                     Also create a new issue template, for motion sensor, requiring users to go through this screen and screenshot it
                     Screen could also have stuff like firmware, hw, maybe even try configure the sensor and do some kind of debugging?
+                    Flow could restart camera, make sure motion sensor is not enabled and require disable and HA restart if it is etc.
                     Finally, add an option to disable webhooks in configuration section
                     """
                 else:
@@ -559,8 +558,8 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     "select": {
                         "options": [
                             "Configure device",
-                            "Help me debug motion sensor",
-                            "incorrect",
+                            # "Help me debug motion sensor",
+                            # "incorrect",
                         ],
                     }
                 }
