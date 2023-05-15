@@ -19,6 +19,7 @@ from .const import (
     CONF_RTSP_TRANSPORT,
     ENABLE_SOUND_DETECTION,
     CONF_CUSTOM_STREAM,
+    ENABLE_WEBHOOKS,
     LOGGER,
     DOMAIN,
     ENABLE_MOTION_SENSOR,
@@ -37,6 +38,7 @@ from .utils import (
     deleteDir,
     getColdDirPathForEntry,
     getHotDirPathForEntry,
+    isUsingHTTPS,
     mediaCleanup,
     registerController,
     getCamData,
@@ -126,6 +128,14 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
         config_entry.version = 9
 
+    if config_entry.version == 9:
+        new = {**config_entry.data}
+        new[ENABLE_WEBHOOKS] = True
+
+        config_entry.data = {**new}
+
+        config_entry.version = 10
+
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
     return True
@@ -172,6 +182,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
     cloud_password = entry.data.get(CLOUD_PASSWORD)
     enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
+
+    if isUsingHTTPS(hass):
+        LOGGER.warn(
+            "Home Assistant is running on HTTPS or it was not able to detect base_url schema. Disabling webhooks."
+        )
 
     # todo: figure out where to set officially?
     entry.unique_id = DOMAIN + host

@@ -31,6 +31,7 @@
       "other_options": {
         "data": {
           "enable_motion_sensor": "Enable motion sensor",
+          "enable_webhooks": "Enable webhooks",
           "enable_time_sync": "Automatically synchronise time",
           "enable_stream": "Use Stream from Home Assistant",
           "enable_sound_detection": "[Requires restart] Enable sound threshold detection",
@@ -62,12 +63,19 @@
   },
   "options": {
     "step": {
+      "init": {
+        "data": {
+          "tapo_config_action": "Action"
+        },
+        "description": "What do you want to do?"
+      },
       "auth": {
         "data": {
           "ip_address": "IP Address",
           "username": "Username",
           "password": "Password",
           "enable_motion_sensor": "Enable motion sensor",
+          "enable_webhooks": "Enable webhooks",
           "enable_stream": "Use Stream from Home Assistant [requires restart]",
           "enable_time_sync": "Automatically synchronise time",
           "enable_sound_detection": "[Requires restart] Enable sound threshold detection",
@@ -88,7 +96,8 @@
       "connection_failed": "Connection failed",
       "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.",
       "camera_requires_admin": "Camera requires cloud password for control",
-      "incorrect_peak_value": "Incorrect sound detection peak value."
+      "incorrect_peak_value": "Incorrect sound detection peak value.",
+      "incorrect_options_action": "Incorrect action chosen"
     }
   }
 }
