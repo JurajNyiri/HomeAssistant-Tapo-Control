@@ -33,6 +33,7 @@ TOGGLE_STATES = ["on", "off"]
 CONF_RTSP_TRANSPORT = "rtsp_transport"
 RTSP_TRANS_PROTOCOLS = ["tcp", "udp", "udp_multicast", "http"]
 
+ENABLE_WEBHOOKS = "enable_webhooks"
 ENABLE_STREAM = "enable_stream"
 ENABLE_SOUND_DETECTION = "enable_sound_detection"
 SOUND_DETECTION_PEAK = "sound_detection_peak"

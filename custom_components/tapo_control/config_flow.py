@@ -19,6 +19,7 @@ from .const import (
     ENABLE_MOTION_SENSOR,
     ENABLE_STREAM,
     ENABLE_SOUND_DETECTION,
+    ENABLE_WEBHOOKS,
     LOGGER,
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
@@ -35,7 +36,7 @@ from .const import (
 class FlowHandler(ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 9
+    VERSION = 10
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -84,6 +85,7 @@ class FlowHandler(ConfigFlow):
         """Enter and process final options"""
         errors = {}
         enable_motion_sensor = True
+        enable_webhooks = True
         enable_stream = True
         enable_time_sync = False
         enable_sound_detection = False
@@ -102,6 +104,10 @@ class FlowHandler(ConfigFlow):
                 enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
             else:
                 enable_motion_sensor = False
+            if ENABLE_WEBHOOKS in user_input:
+                enable_webhooks = user_input[ENABLE_WEBHOOKS]
+            else:
+                enable_webhooks = False
             if ENABLE_STREAM in user_input:
                 enable_stream = user_input[ENABLE_STREAM]
             else:
@@ -150,6 +156,7 @@ class FlowHandler(ConfigFlow):
                 title=host,
                 data={
                     ENABLE_MOTION_SENSOR: enable_motion_sensor,
+                    ENABLE_WEBHOOKS: enable_webhooks,
                     ENABLE_STREAM: enable_stream,
                     ENABLE_TIME_SYNC: enable_time_sync,
                     CONF_IP_ADDRESS: host,
@@ -177,6 +184,10 @@ class FlowHandler(ConfigFlow):
                     vol.Optional(
                         ENABLE_MOTION_SENSOR,
                         description={"suggested_value": enable_motion_sensor},
+                    ): bool,
+                    vol.Optional(
+                        ENABLE_WEBHOOKS,
+                        description={"suggested_value": enable_webhooks},
                     ): bool,
                     vol.Optional(
                         ENABLE_TIME_SYNC,
@@ -581,6 +592,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
         password = self.config_entry.data[CONF_PASSWORD]
         cloud_password = self.config_entry.data[CLOUD_PASSWORD]
         enable_motion_sensor = self.config_entry.data[ENABLE_MOTION_SENSOR]
+        enable_webhooks = self.config_entry.data[ENABLE_WEBHOOKS]
         enable_stream = self.config_entry.data[ENABLE_STREAM]
         enable_sound_detection = self.config_entry.data[ENABLE_SOUND_DETECTION]
         enable_time_sync = self.config_entry.data[ENABLE_TIME_SYNC]
@@ -642,6 +654,11 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     enable_motion_sensor = user_input[ENABLE_MOTION_SENSOR]
                 else:
                     enable_motion_sensor = False
+
+                if ENABLE_WEBHOOKS in user_input:
+                    enable_webhooks = user_input[ENABLE_WEBHOOKS]
+                else:
+                    enable_webhooks = False
 
                 if ENABLE_STREAM in user_input:
                     enable_stream = user_input[ENABLE_STREAM]
@@ -791,6 +808,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     data={
                         ENABLE_STREAM: enable_stream,
                         ENABLE_MOTION_SENSOR: enable_motion_sensor,
+                        ENABLE_WEBHOOKS: enable_webhooks,
                         ENABLE_SOUND_DETECTION: enable_sound_detection,
                         CONF_IP_ADDRESS: ip_address,
                         CONF_USERNAME: username,
@@ -854,6 +872,10 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     vol.Optional(
                         ENABLE_MOTION_SENSOR,
                         description={"suggested_value": enable_motion_sensor},
+                    ): bool,
+                    vol.Optional(
+                        ENABLE_WEBHOOKS,
+                        description={"suggested_value": enable_webhooks},
                     ): bool,
                     vol.Optional(
                         ENABLE_TIME_SYNC,

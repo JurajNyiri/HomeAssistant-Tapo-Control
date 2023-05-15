@@ -19,6 +19,7 @@ from .const import (
     CONF_RTSP_TRANSPORT,
     ENABLE_SOUND_DETECTION,
     CONF_CUSTOM_STREAM,
+    ENABLE_WEBHOOKS,
     LOGGER,
     DOMAIN,
     ENABLE_MOTION_SENSOR,
@@ -125,6 +126,14 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         config_entry.data = {**new}
 
         config_entry.version = 9
+
+    if config_entry.version == 9:
+        new = {**config_entry.data}
+        new[ENABLE_WEBHOOKS] = True
+
+        config_entry.data = {**new}
+
+        config_entry.version = 10
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 

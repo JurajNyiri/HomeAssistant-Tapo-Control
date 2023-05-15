@@ -31,6 +31,7 @@
       "other_options": {
         "data": {
           "enable_motion_sensor": "Enable motion sensor",
+          "enable_webhooks": "Enable webhooks",
           "enable_time_sync": "Automatically synchronise time",
           "enable_stream": "Use Stream from Home Assistant (restart required)",
           "enable_sound_detection": "Enable sound threshold detection (restart required)",
@@ -74,6 +75,7 @@
           "username": "Username",
           "password": "Password",
           "enable_motion_sensor": "Enable motion sensor",
+          "enable_webhooks": "Enable webhooks",
           "enable_stream": "Use Stream from Home Assistant (restart required)",
           "enable_time_sync": "Automatically synchronise time",
           "enable_sound_detection": "Enable sound threshold detection (restart required)",
