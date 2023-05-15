@@ -30,6 +30,7 @@ from .const import (
     COLD_DIR_DELETE_TIME,
     ENABLE_MOTION_SENSOR,
     DOMAIN,
+    ENABLE_WEBHOOKS,
     HOT_DIR_DELETE_TIME,
     LOGGER,
     CLOUD_PASSWORD,
@@ -47,7 +48,6 @@ def isUsingHTTPS(hass):
         try:
             base_url = get_url(hass, prefer_external=True)
         except NoURLAvailableError:
-            LOGGER.warn("Failed to detect base_url schema, not using webhooks.")
             return True
     LOGGER.debug("Detected base_url schema: " + URL(base_url).scheme)
     return URL(base_url).scheme == "https"
@@ -731,6 +731,14 @@ async def setupOnvif(hass, entry):
 
 async def setupEvents(hass, config_entry):
     LOGGER.debug("setupEvents - entry")
+    shouldUseWebhooks = (
+        isUsingHTTPS(hass) is False and config_entry.data.get(ENABLE_WEBHOOKS) is True
+    )
+    LOGGER.debug("Using HTTPS: " + str(isUsingHTTPS(hass)))
+    LOGGER.debug(
+        "Webhook enabled: " + str(config_entry.data.get(ENABLE_WEBHOOKS) is True)
+    )
+    LOGGER.debug("Using Webhooks: " + str(shouldUseWebhooks))
     if not hass.data[DOMAIN][config_entry.entry_id]["events"].started:
         LOGGER.debug("Setting up events...")
         events = hass.data[DOMAIN][config_entry.entry_id]["events"]
@@ -742,8 +750,6 @@ async def setupEvents(hass, config_entry):
             "WSPullPointSupport"
         )
         LOGGER.debug("WSPullPointSupport: %s", pull_point_support)
-        shouldUseWebhooks = isUsingHTTPS(hass) is False
-        # Setting Webhooks to False specifically as they seem broken on Tapo
         if await events.async_start(pull_point_support is not False, shouldUseWebhooks):
             LOGGER.debug("Events started.")
             if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
