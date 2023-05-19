@@ -168,6 +168,29 @@ If you had success with some other model, please report it via a new issue.
 
 </details>
 
+
+<details>
+  <summary>What is webhook when referred to on camera?</summary>
+
+Camera uses ONVIF standard to communicate motion events. This communication can work with 2 ways:
+  
+  1. Pullpoint: Client opens connection to the camera and waits until the camera responds. Camera responds only when there is some event to communicate. After camera responds, client reopens the connection and waits again.
+  2. Webhook: Client tells the camera its URL to receive events at. When an event happens, camera communicates this to the URL client defined.
+  
+Webhooks are the preffered method of communication as they are faster and lighter. That being said;
+  
+  - Webhooks require an HTTP only HA setup because Tapo cameras do not support HTTPS webhooks
+  - Webhooks require a proper base_url to be defined in HA, so that the URL communicated is correct (you can check URL sent by enabling debug logs for homeassistant.onvif)
+  
+Points above are automatically determined by this integration and if the HA does not meet the criteria, webhooks are disabled. That being said;
+
+  - There are camera (and/or firmwares) which freeze when both webhooks and pullpoint connection is created, which happens at the start to see if webhooks is supported at all so that communication can fallback back to pullpoint.
+  - There are camera firmwares which have pullpoint broken (1.3.6 C200) and only webhooks work
+  
+For webhooks to work, all the user needs to do is make sure he is using HA on HTTP and that the HA is available on the URL communicated.
+
+</details>
+  
 ## Have a comment or a suggestion?
 
 Please [open a new issue](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new/choose), or discuss on [Home Assistant: Community Forum](https://community.home-assistant.io/t/tapo-cameras-control/231795).
