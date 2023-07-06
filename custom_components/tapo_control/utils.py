@@ -164,6 +164,7 @@ async def getRecording(
     startDate: int,
     endDate: int,
 ) -> str:
+    timeCorrection = await hass.async_add_executor_job(tapo.getTimeCorrection)
     # this NEEDS to happen otherwise camera does not send data!
     await hass.async_add_executor_job(tapo.getRecordings, date)
 
@@ -180,6 +181,7 @@ async def getRecording(
         tapo,
         startDate,
         endDate,
+        timeCorrection,
         coldDirPath,
         0,
         None,
