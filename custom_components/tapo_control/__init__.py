@@ -49,6 +49,10 @@ from .utils import (
     syncTime,
     getLatestFirmwareVersion,
 )
+from pytapo import Tapo
+
+from homeassistant.helpers.event import async_track_time_interval
+from datetime import timedelta
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
@@ -379,6 +383,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         currentTS = dt.as_timestamp(dt.now())
 
         hass.data[DOMAIN][entry.entry_id] = {
+            "runningMediaSync": False,
             "controller": tapoController,
             "usingCloudPassword": cloud_password != "",
             "allControllers": [tapoController],
@@ -483,6 +488,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 await setupOnvif(hass, entry)
             if enableTimeSync:
                 await syncTime(hass, entry.entry_id)
+
+        # Media sync
+
+        async def get_state(time=None):
+            if (
+                entry.entry_id in hass.data[DOMAIN]
+                and "controller" in hass.data[DOMAIN][entry.entry_id]
+                and hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] is False
+            ):
+                hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = True
+                LOGGER.warn("testing")
+                tapoController: Tapo = hass.data[DOMAIN][entry.entry_id]["controller"]
+                recordingsList = await hass.async_add_executor_job(
+                    tapoController.getRecordingsList
+                )
+                LOGGER.warn(recordingsList)
+
+                recordingsDates = []
+                for searchResult in recordingsList:
+                    for key in searchResult:
+                        recordingsDates.append(searchResult[key]["date"])
+            else:
+                LOGGER.warn("Sync currently running")
+
+        LOGGER.warn("Media init")
+        async_track_time_interval(
+            hass,
+            get_state,
+            timedelta(seconds=1),
+        )
 
         async def unsubscribe(event):
             if hass.data[DOMAIN][entry.entry_id]["events"]:
