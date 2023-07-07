@@ -153,7 +153,7 @@ def deleteFilesOlderThan(dirPath, deleteOlderThan):
 
 
 def processDownload(status):
-    LOGGER.debug(status)
+    LOGGER.warn(status)
 
 
 async def getRecording(
@@ -200,6 +200,9 @@ async def getRecording(
     hotFilePath = (
         coldFilePath.replace("/.storage/", "/www/").replace(".mp4", "") + UUID + ".mp4"
     )
+    # fix: what if file is not found? that can be the case, throw unresolvable!
+    if not os.path.exists(coldFilePath):
+        raise Unresolvable("Failed to download recording.")
     shutil.copyfile(coldFilePath, hotFilePath)
 
     fileWebPath = hotFilePath[hotFilePath.index("/www/") + 5 :]  # remove ./www/

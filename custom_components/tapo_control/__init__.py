@@ -54,6 +54,8 @@ from pytapo import Tapo
 from homeassistant.helpers.event import async_track_time_interval
 from datetime import timedelta
 
+from .utils import getRecording
+
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the Tapo: Cameras Control component from YAML."""
@@ -505,10 +507,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 )
                 LOGGER.warn(recordingsList)
 
-                recordingsDates = []
                 for searchResult in recordingsList:
                     for key in searchResult:
-                        recordingsDates.append(searchResult[key]["date"])
+                        recordingsForDay = await hass.async_add_executor_job(
+                            tapoController.getRecordings, searchResult[key]["date"]
+                        )
+                        LOGGER.warn(recordingsForDay)
+                        for recording in recordingsForDay:
+                            for recordingKey in recording:
+                                hass.data[DOMAIN][entry.entry_id][
+                                    "isDownloadingStream"
+                                ] = True
+                                url = await getRecording(
+                                    hass,
+                                    tapoController,
+                                    entry.entry_id,
+                                    searchResult[key]["date"],
+                                    recording[recordingKey]["startTime"],
+                                    recording[recordingKey]["endTime"],
+                                )
+                                hass.data[DOMAIN][entry.entry_id][
+                                    "isDownloadingStream"
+                                ] = False
+                                LOGGER.warn(url)
             else:
                 LOGGER.warn("Sync currently running")
 
