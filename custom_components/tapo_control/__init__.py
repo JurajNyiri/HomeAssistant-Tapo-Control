@@ -14,6 +14,7 @@ from homeassistant.const import (
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt
+from homeassistant.components.media_source.error import Unresolvable
 
 from .const import (
     CONF_RTSP_TRANSPORT,
@@ -518,18 +519,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                 hass.data[DOMAIN][entry.entry_id][
                                     "isDownloadingStream"
                                 ] = True
-                                url = await getRecording(
-                                    hass,
-                                    tapoController,
-                                    entry.entry_id,
-                                    searchResult[key]["date"],
-                                    recording[recordingKey]["startTime"],
-                                    recording[recordingKey]["endTime"],
-                                )
-                                hass.data[DOMAIN][entry.entry_id][
-                                    "isDownloadingStream"
-                                ] = False
-                                LOGGER.warn(url)
+                                try:
+                                    url = await getRecording(
+                                        hass,
+                                        tapoController,
+                                        entry.entry_id,
+                                        searchResult[key]["date"],
+                                        recording[recordingKey]["startTime"],
+                                        recording[recordingKey]["endTime"],
+                                    )
+                                    hass.data[DOMAIN][entry.entry_id][
+                                        "isDownloadingStream"
+                                    ] = False
+                                    LOGGER.warn(url)
+                                except Unresolvable as err:
+                                    LOGGER.warn(err)
+                                except Exception as err:
+                                    LOGGER.error(err)
             else:
                 LOGGER.warn("Sync currently running")
 
