@@ -274,7 +274,7 @@ def deleteFilesNotIncluding(dirPath, includingString):
 
 
 def processDownloadStatus(status):
-    LOGGER.debug(status)
+    LOGGER.warn(status)
 
 
 def getFileName(startDate: int, endDate: int, encrypted=False):

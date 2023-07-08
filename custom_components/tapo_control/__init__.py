@@ -228,7 +228,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             return allEntities
 
         async def async_update_data():
-            LOGGER.debug("async_update_data - entry")
+            LOGGER.warn("async_update_data - entry")
             host = entry.data.get(CONF_IP_ADDRESS)
             username = entry.data.get(CONF_USERNAME)
             password = entry.data.get(CONF_PASSWORD)
@@ -385,6 +385,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 > MEDIA_CLEANUP_PERIOD
             ):
                 mediaCleanup(hass, entry.entry_id)
+
+            if hass.data[DOMAIN][entry.entry_id]["initialMediaScanDone"] is not False:
+                """
+                async_track_time_interval(
+                    hass,
+                    get_state,
+                    timedelta(seconds=1),
+                )
+                """
 
         tapoCoordinator = DataUpdateCoordinator(
             hass,
@@ -547,6 +556,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                     LOGGER.warn(err)
                                 except Exception as err:
                                     LOGGER.error(err)
+                hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = False
 
         LOGGER.warn("Media init")
         """
@@ -569,28 +579,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         _thread = threading.Thread(target=between_callback)
         _thread.start()
         """
-
-        def recordingSync():
-            loop = asyncio.new_event_loop()
-            hass.data[DOMAIN][entry.entry_id][
-                "downloadStreamsThread"
-            ] = loop.create_task(recordingSyncRepeat())
-            try:
-                loop.run_until_complete(
-                    hass.data[DOMAIN][entry.entry_id]["downloadStreamsThread"]
-                )
-            except asyncio.CancelledError:
-                pass
-
-        async def recordingSyncRepeat():
-            while True:
-                await get_state()
-                await asyncio.sleep(10)  # todo adjust time via variable
-
-        _thread = threading.Thread(target=recordingSync)
-        _thread.start()
-
-        LOGGER.warn("TEST MAIN")
 
         hass.async_create_task(findMedia(hass, entry.entry_id))
 
