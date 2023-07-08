@@ -1,6 +1,11 @@
 import datetime
 import os
 import shutil
+import asyncio
+from threading import Thread
+import time
+from concurrent.futures import ProcessPoolExecutor
+import threading
 
 from homeassistant.core import HomeAssistant
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
@@ -538,12 +543,48 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         LOGGER.warn("Media init")
         """
-        async_track_time_interval(
-            hass,
-            get_state,
-            timedelta(seconds=1),
-        )
+
+        async def some_callback():
+            LOGGER.warn("TEST 123")
+            async_track_time_interval(
+                hass,
+                get_state,
+                timedelta(seconds=1),
+            )
+
+        def between_callback():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            loop.run_until_complete(some_callback())
+            loop.close()
+
+        _thread = threading.Thread(target=between_callback)
+        _thread.start()
         """
+
+        def between_callback():
+            def stop():
+                task.cancel()
+
+            loop = asyncio.new_event_loop()
+            loop.call_later(5, stop)
+            task = loop.create_task(periodic())
+            try:
+                loop.run_until_complete(task)
+            except asyncio.CancelledError:
+                pass
+
+        async def periodic():
+            while True:
+                LOGGER.warn("periodic")
+                await asyncio.sleep(1)
+
+        _thread = threading.Thread(target=between_callback)
+        _thread.start()
+
+        LOGGER.warn("TEST MAIN")
+
         hass.async_create_task(findMedia(hass, entry.entry_id))
 
         async def unsubscribe(event):
