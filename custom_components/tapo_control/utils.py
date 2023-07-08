@@ -129,16 +129,8 @@ async def findMedia(hass, entry_id):
                         recording[recordingKey]["endTime"],
                         "videos",
                     )
-                    filePath = getFileName(
-                        recording[recordingKey]["startTime"],
-                        recording[recordingKey]["endTime"],
-                        False,
-                    )
                     if os.path.exists(filePathVideo):
-                        hass.data[DOMAIN][entry_id]["downloadedStreams"].append(
-                            filePath
-                        )
-                        await generateThumb(
+                        await processDownload(
                             hass,
                             entry_id,
                             recording[recordingKey]["startTime"],
@@ -146,6 +138,33 @@ async def findMedia(hass, entry_id):
                         )
 
     hass.data[DOMAIN][entry_id]["initialMediaScanDone"] = True
+
+
+async def processDownload(hass, entry_id: int, startDate: int, endDate: int):
+    filePath = getFileName(
+        startDate,
+        endDate,
+        False,
+    )
+
+    coldFilePath = getColdFile(
+        entry_id,
+        startDate,
+        endDate,
+        "videos",
+    )
+
+    if not os.path.exists(coldFilePath):
+        raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
+
+    if filePath not in hass.data[DOMAIN][entry_id]["downloadedStreams"]:
+        hass.data[DOMAIN][entry_id]["downloadedStreams"].append(filePath)
+    await generateThumb(
+        hass,
+        entry_id,
+        startDate,
+        endDate,
+    )
 
 
 async def generateThumb(hass, entry_id, startDate: int, endDate: int):
@@ -189,6 +208,12 @@ def mediaCleanup(hass, entry_id):
     )
     deleteFilesNotIncluding(hotDirPath + "/videos/", UUID)
     deleteFilesNotIncluding(hotDirPath + "/thumbs/", UUID)
+
+    # todo: dynamic hot storage deletion
+    # todo: dynamic cold storage deletion
+    # todo: delete files no longer in camera
+    # todo: ...?
+    # todo:
 
     # Delete everything other than COLD_DIR_DELETE_TIME seconds from cold storage
     # todo: rewrite to work with the new folder structure, syncing and also if the user
@@ -245,7 +270,7 @@ def deleteFilesNotIncluding(dirPath, includingString):
                 os.remove(filePath)
 
 
-def processDownload(status):
+def processDownloadStatus(status):
     LOGGER.debug(status)
 
 
@@ -275,7 +300,6 @@ def getHotFile(entry_id: str, startDate: int, endDate: int, folder: str):
     if not os.path.exists(coldFilePath):
         raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
     extension = pathlib.Path(coldFilePath).suffix
-    LOGGER.warn(coldFilePath)
     hotFilePath = (
         coldFilePath.replace("/.storage/", "/www/")
         .replace(extension, "")
@@ -286,7 +310,6 @@ def getHotFile(entry_id: str, startDate: int, endDate: int, folder: str):
         + UUID
         + extension
     )
-    LOGGER.warn(hotFilePath)
     if not os.path.exists(hotFilePath):
         shutil.copyfile(coldFilePath, hotFilePath)
     return hotFilePath
@@ -329,13 +352,17 @@ async def getRecording(
         )
 
         hass.data[DOMAIN][entry_id]["isDownloadingStream"] = True
-        downloadedFile = await downloader.downloadFile(processDownload)
+        downloadedFile = await downloader.downloadFile(processDownloadStatus)
         hass.data[DOMAIN][entry_id]["isDownloadingStream"] = False
         if downloadedFile["currentAction"] == "Recording in progress":
             raise Unresolvable("Recording is currently in progress.")
 
-    if downloadUID not in hass.data[DOMAIN][entry_id]["downloadedStreams"]:
-        hass.data[DOMAIN][entry_id]["downloadedStreams"].append(downloadUID)
+    await processDownload(
+        hass,
+        entry_id,
+        startDate,
+        endDate,
+    )
 
     return getWebFile(entry_id, startDate, endDate, "videos")
 
