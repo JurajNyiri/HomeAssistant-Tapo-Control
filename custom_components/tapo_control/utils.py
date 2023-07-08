@@ -273,14 +273,23 @@ def deleteFilesNotIncluding(dirPath, includingString):
                 os.remove(filePath)
 
 
-def processDownloadStatus(hass, entry_id):
+def processDownloadStatus(
+    hass, entry_id, date: str, allRecordingsCount: int, recordingCount: int = False
+):
     def processUpdate(status):
-        LOGGER.warn(status)
+        # LOGGER.warn(status)
         if isinstance(status, str):
             hass.data[DOMAIN][entry_id]["downloadProgress"] = status
         else:
             hass.data[DOMAIN][entry_id]["downloadProgress"] = (
                 status["currentAction"]
+                + " "
+                + date
+                + (
+                    f" ({recordingCount} / {allRecordingsCount})"
+                    if recordingCount is not False
+                    else ""
+                )
                 + ": "
                 + str(round(status["progress"]))
                 + " / "
@@ -345,6 +354,7 @@ async def getRecording(
     date: str,
     startDate: int,
     endDate: int,
+    recordingCount: int = False,
 ) -> str:
     timeCorrection = await hass.async_add_executor_job(tapo.getTimeCorrection)
 
@@ -354,7 +364,7 @@ async def getRecording(
     coldFilePath = getColdFile(entry_id, startDate, endDate, "videos")
     if not os.path.exists(coldFilePath):
         # this NEEDS to happen otherwise camera does not send data!
-        await hass.async_add_executor_job(tapo.getRecordings, date)
+        allRecordings = await hass.async_add_executor_job(tapo.getRecordings, date)
         downloader = Downloader(
             tapo,
             startDate,
@@ -369,7 +379,13 @@ async def getRecording(
 
         hass.data[DOMAIN][entry_id]["isDownloadingStream"] = True
         downloadedFile = await downloader.downloadFile(
-            processDownloadStatus(hass, entry_id)
+            processDownloadStatus(
+                hass,
+                entry_id,
+                date,
+                len(allRecordings),
+                recordingCount if recordingCount is not False else False,
+            )
         )
         hass.data[DOMAIN][entry_id]["isDownloadingStream"] = False
         if downloadedFile["currentAction"] == "Recording in progress":

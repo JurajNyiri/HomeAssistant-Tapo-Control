@@ -538,9 +538,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             tapoController.getRecordings, searchResult[key]["date"]
                         )
                         LOGGER.warn(recordingsForDay)
+                        recordingCount = 0
                         for recording in recordingsForDay:
                             for recordingKey in recording:
-                                LOGGER.warn(recordingKey)
+                                recordingCount += 1
                                 try:
                                     url = await getRecording(
                                         hass,
@@ -549,6 +550,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                         searchResult[key]["date"],
                                         recording[recordingKey]["startTime"],
                                         recording[recordingKey]["endTime"],
+                                        recordingCount,
                                     )
                                     LOGGER.warn(url)
                                 except Unresolvable as err:
