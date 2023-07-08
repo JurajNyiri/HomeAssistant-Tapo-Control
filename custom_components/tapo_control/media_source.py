@@ -23,7 +23,7 @@ from homeassistant.util import dt
 
 from .const import DOMAIN, LOGGER
 
-from .utils import getRecording
+from .utils import getRecording, getFileName
 
 from pytapo import Tapo
 from datetime import datetime, timezone
@@ -55,14 +55,18 @@ class TapoMediaSource(MediaSource):
         if len(path) == 5:
             try:
                 entry = path[1]
-                if self.hass.data[DOMAIN][entry]["isDownloadingStream"]:
+                date = path[2]
+                startDate = int(path[3])
+                endDate = int(path[4])
+                if (
+                    self.hass.data[DOMAIN][entry]["isDownloadingStream"]
+                    and getFileName(startDate, endDate)
+                    not in self.hass.data[DOMAIN][entry]["downloadedStreams"]
+                ):
                     raise Unresolvable(
                         "Already downloading a recording, please try again later."
                     )
-                date = path[2]
                 tapoController: Tapo = self.hass.data[DOMAIN][entry]["controller"]
-                startDate = int(path[3])
-                endDate = int(path[4])
 
                 LOGGER.debug(startDate)
                 LOGGER.debug(endDate)
@@ -166,6 +170,14 @@ class TapoMediaSource(MediaSource):
                         startDate = dt.as_local(dt.utc_from_timestamp(startTS))
                         endDate = dt.as_local(dt.utc_from_timestamp(endTS))
                         videoName = f"{startDate.strftime('%H:%M:%S')} - {endDate.strftime('%H:%M:%S')}"
+                        if (
+                            getFileName(
+                                searchResult[key]["startTime"],
+                                searchResult[key]["endTime"],
+                            )
+                            in self.hass.data[DOMAIN][entry]["downloadedStreams"]
+                        ):
+                            videoName = "✓ " + videoName
                         videoNames.append(
                             {
                                 "name": videoName,

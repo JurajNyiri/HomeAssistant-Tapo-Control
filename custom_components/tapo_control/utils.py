@@ -153,7 +153,11 @@ def deleteFilesOlderThan(dirPath, deleteOlderThan):
 
 
 def processDownload(status):
-    LOGGER.warn(status)
+    LOGGER.debug(status)
+
+
+def getFileName(startDate: int, endDate: int):
+    return hashlib.md5((str(startDate) + str(endDate)).encode()).hexdigest()
 
 
 async def getRecording(
@@ -165,8 +169,6 @@ async def getRecording(
     endDate: int,
 ) -> str:
     timeCorrection = await hass.async_add_executor_job(tapo.getTimeCorrection)
-    # this NEEDS to happen otherwise camera does not send data!
-    await hass.async_add_executor_job(tapo.getRecordings, date)
 
     mediaCleanup(hass, entry_id)
 
@@ -176,27 +178,35 @@ async def getRecording(
     pathlib.Path(coldDirPath).mkdir(parents=True, exist_ok=True)
     pathlib.Path(hotDirPath).mkdir(parents=True, exist_ok=True)
 
-    downloadUID = hashlib.md5((str(startDate) + str(endDate)).encode()).hexdigest()
-    downloader = Downloader(
-        tapo,
-        startDate,
-        endDate,
-        timeCorrection,
-        coldDirPath,
-        0,
-        None,
-        None,
-        downloadUID + ".mp4",
-    )
-    # todo: automatic deletion of recordings longer than X in hot storage
+    downloadUID = getFileName(startDate, endDate)
 
-    hass.data[DOMAIN][entry_id]["isDownloadingStream"] = True
-    downloadedFile = await downloader.downloadFile(processDownload)
-    hass.data[DOMAIN][entry_id]["isDownloadingStream"] = False
-    if downloadedFile["currentAction"] == "Recording in progress":
-        raise Unresolvable("Recording is currently in progress.")
+    LOGGER.warn(coldDirPath + downloadUID + ".mp4")
+    if not os.path.exists(coldDirPath + downloadUID + ".mp4"):
+        # this NEEDS to happen otherwise camera does not send data!
+        await hass.async_add_executor_job(tapo.getRecordings, date)
+        downloader = Downloader(
+            tapo,
+            startDate,
+            endDate,
+            timeCorrection,
+            coldDirPath,
+            0,
+            None,
+            None,
+            downloadUID + ".mp4",
+        )
 
-    coldFilePath = downloadedFile["fileName"]
+        hass.data[DOMAIN][entry_id]["isDownloadingStream"] = True
+        downloadedFile = await downloader.downloadFile(processDownload)
+        hass.data[DOMAIN][entry_id]["isDownloadingStream"] = False
+        if downloadedFile["currentAction"] == "Recording in progress":
+            raise Unresolvable("Recording is currently in progress.")
+
+        coldFilePath = downloadedFile["fileName"]
+    else:
+        LOGGER.warn("File exists")
+        hass.data[DOMAIN][entry_id]["downloadedStreams"].append(downloadUID)
+        coldFilePath = coldDirPath + downloadUID + ".mp4"
     hotFilePath = (
         coldFilePath.replace("/.storage/", "/www/").replace(".mp4", "") + UUID + ".mp4"
     )

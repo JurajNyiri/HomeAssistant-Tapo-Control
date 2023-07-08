@@ -410,6 +410,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "isChild": False,
             "isParent": False,
             "isDownloadingStream": False,
+            "downloadedStreams": [],
             "timezoneOffset": cameraTS - currentTS,
         }
 
@@ -516,6 +517,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         LOGGER.warn(recordingsForDay)
                         for recording in recordingsForDay:
                             for recordingKey in recording:
+                                LOGGER.warn(recordingKey)
                                 hass.data[DOMAIN][entry.entry_id][
                                     "isDownloadingStream"
                                 ] = True
@@ -536,8 +538,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                     LOGGER.warn(err)
                                 except Exception as err:
                                     LOGGER.error(err)
-            else:
-                LOGGER.warn("Sync currently running")
 
         LOGGER.warn("Media init")
         async_track_time_interval(
