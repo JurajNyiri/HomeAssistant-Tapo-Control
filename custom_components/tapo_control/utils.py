@@ -273,8 +273,21 @@ def deleteFilesNotIncluding(dirPath, includingString):
                 os.remove(filePath)
 
 
-def processDownloadStatus(status):
-    LOGGER.warn(status)
+def processDownloadStatus(hass, entry_id):
+    def processUpdate(status):
+        LOGGER.warn(status)
+        if isinstance(status, str):
+            hass.data[DOMAIN][entry_id]["downloadProgress"] = status
+        else:
+            hass.data[DOMAIN][entry_id]["downloadProgress"] = (
+                status["currentAction"]
+                + ": "
+                + str(round(status["progress"]))
+                + " / "
+                + str(status["total"])
+            )
+
+    return processUpdate
 
 
 def getFileName(startDate: int, endDate: int, encrypted=False):
@@ -355,7 +368,9 @@ async def getRecording(
         )
 
         hass.data[DOMAIN][entry_id]["isDownloadingStream"] = True
-        downloadedFile = await downloader.downloadFile(processDownloadStatus)
+        downloadedFile = await downloader.downloadFile(
+            processDownloadStatus(hass, entry_id)
+        )
         hass.data[DOMAIN][entry_id]["isDownloadingStream"] = False
         if downloadedFile["currentAction"] == "Recording in progress":
             raise Unresolvable("Recording is currently in progress.")

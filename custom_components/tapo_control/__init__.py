@@ -168,8 +168,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if hass.data[DOMAIN][entry.entry_id]["events"]:
         await hass.data[DOMAIN][entry.entry_id]["events"].async_stop()
 
-    if hass.data[DOMAIN][entry.entry_id]["downloadStreamsThread"] is not False:
-        hass.data[DOMAIN][entry.entry_id]["downloadStreamsThread"].cancel()
     return True
 
 
@@ -186,9 +184,6 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     # Delete all media stored in hot storage for entity
     LOGGER.debug("Deleting hot storage files for entity " + entry_id + "...")
     deleteDir(hotDirPath)
-
-    if hass.data[DOMAIN][entry.entry_id]["downloadStreamsThread"] is not False:
-        hass.data[DOMAIN][entry.entry_id]["downloadStreamsThread"].cancel()
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
@@ -387,13 +382,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 mediaCleanup(hass, entry.entry_id)
 
             if hass.data[DOMAIN][entry.entry_id]["initialMediaScanDone"] is not False:
-                """
                 async_track_time_interval(
                     hass,
                     get_state,
                     timedelta(seconds=1),
                 )
-                """
 
         tapoCoordinator = DataUpdateCoordinator(
             hass,
@@ -433,7 +426,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "isParent": False,
             "isDownloadingStream": False,
             "downloadedStreams": {},
-            "downloadStreamsThread": False,
+            "downloadProgress": False,
             "initialMediaScanDone": False,
             "timezoneOffset": cameraTS - currentTS,
         }
@@ -558,29 +551,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                     LOGGER.error(err)
                 hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = False
 
-        LOGGER.warn("Media init")
-        """
-
-        async def some_callback():
-            LOGGER.warn("TEST 123")
-            async_track_time_interval(
-                hass,
-                get_state,
-                timedelta(seconds=1),
-            )
-
-        def between_callback():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-            loop.run_until_complete(some_callback())
-            loop.close()
-
-        _thread = threading.Thread(target=between_callback)
-        _thread.start()
-        """
-
-        hass.async_create_task(findMedia(hass, entry.entry_id))
+        hass.async_create_background_task(findMedia(hass, entry.entry_id), "findMedia")
 
         async def unsubscribe(event):
             if hass.data[DOMAIN][entry.entry_id]["events"]:
