@@ -167,6 +167,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if hass.data[DOMAIN][entry.entry_id]["events"]:
         await hass.data[DOMAIN][entry.entry_id]["events"].async_stop()
+
+    if hass.data[DOMAIN][entry.entry_id]["downloadStreamsThread"] is not False:
+        hass.data[DOMAIN][entry.entry_id]["downloadStreamsThread"].cancel()
     return True
 
 
@@ -183,6 +186,9 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     # Delete all media stored in hot storage for entity
     LOGGER.debug("Deleting hot storage files for entity " + entry_id + "...")
     deleteDir(hotDirPath)
+
+    if hass.data[DOMAIN][entry.entry_id]["downloadStreamsThread"] is not False:
+        hass.data[DOMAIN][entry.entry_id]["downloadStreamsThread"].cancel()
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
@@ -418,6 +424,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "isParent": False,
             "isDownloadingStream": False,
             "downloadedStreams": {},
+            "downloadStreamsThread": False,
             "initialMediaScanDone": False,
             "timezoneOffset": cameraTS - currentTS,
         }
@@ -563,24 +570,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         _thread.start()
         """
 
-        def between_callback():
-            def stop():
-                task.cancel()
-
+        def recordingSync():
             loop = asyncio.new_event_loop()
-            loop.call_later(5, stop)
-            task = loop.create_task(periodic())
+            hass.data[DOMAIN][entry.entry_id][
+                "downloadStreamsThread"
+            ] = loop.create_task(recordingSyncRepeat())
             try:
-                loop.run_until_complete(task)
+                loop.run_until_complete(
+                    hass.data[DOMAIN][entry.entry_id]["downloadStreamsThread"]
+                )
             except asyncio.CancelledError:
                 pass
 
-        async def periodic():
+        async def recordingSyncRepeat():
             while True:
-                LOGGER.warn("periodic")
-                await asyncio.sleep(1)
+                await get_state()
+                await asyncio.sleep(10)  # todo adjust time via variable
 
-        _thread = threading.Thread(target=between_callback)
+        _thread = threading.Thread(target=recordingSync)
         _thread.start()
 
         LOGGER.warn("TEST MAIN")
