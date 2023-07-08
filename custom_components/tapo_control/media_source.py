@@ -71,7 +71,6 @@ class TapoMediaSource(MediaSource):
                 LOGGER.debug(startDate)
                 LOGGER.debug(endDate)
 
-                self.hass.data[DOMAIN][entry]["isDownloadingStream"] = True
                 url = await getRecording(
                     self.hass, tapoController, entry, date, startDate, endDate
                 )
@@ -115,6 +114,11 @@ class TapoMediaSource(MediaSource):
             path = item.identifier.split("/")
             if len(path) == 2:
                 entry = path[1]
+                if self.hass.data[DOMAIN][entry]["initialMediaScanDone"] is False:
+                    raise Unresolvable(
+                        "Initial local media scan still running, please try again later."
+                    )
+
                 if self.hass.data[DOMAIN][entry]["usingCloudPassword"] is False:
                     raise Unresolvable(
                         "Cloud password is required in order to play recordings.\nSet cloud password inside Settings > Devices & Services > Tapo: Cameras Control > Configure."
@@ -151,6 +155,10 @@ class TapoMediaSource(MediaSource):
                 )
             elif len(path) == 3:
                 entry = path[1]
+                if self.hass.data[DOMAIN][entry]["initialMediaScanDone"] is False:
+                    raise Unresolvable(
+                        "Initial local media scan still running, please try again later."
+                    )
                 date = path[2]
                 tapoController: Tapo = self.hass.data[DOMAIN][entry]["controller"]
                 recordingsForDay = await self.hass.async_add_executor_job(

@@ -49,6 +49,7 @@ from .utils import (
     initOnvifEvents,
     syncTime,
     getLatestFirmwareVersion,
+    findMedia,
 )
 from pytapo import Tapo
 
@@ -411,6 +412,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "isParent": False,
             "isDownloadingStream": False,
             "downloadedStreams": [],
+            "initialMediaScanDone": False,
             "timezoneOffset": cameraTS - currentTS,
         }
 
@@ -518,9 +520,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         for recording in recordingsForDay:
                             for recordingKey in recording:
                                 LOGGER.warn(recordingKey)
-                                hass.data[DOMAIN][entry.entry_id][
-                                    "isDownloadingStream"
-                                ] = True
                                 try:
                                     url = await getRecording(
                                         hass,
@@ -530,9 +529,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                         recording[recordingKey]["startTime"],
                                         recording[recordingKey]["endTime"],
                                     )
-                                    hass.data[DOMAIN][entry.entry_id][
-                                        "isDownloadingStream"
-                                    ] = False
                                     LOGGER.warn(url)
                                 except Unresolvable as err:
                                     LOGGER.warn(err)
@@ -540,11 +536,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                     LOGGER.error(err)
 
         LOGGER.warn("Media init")
+        """
         async_track_time_interval(
             hass,
             get_state,
             timedelta(seconds=1),
         )
+        """
+        hass.async_create_task(findMedia(hass, entry.entry_id))
 
         async def unsubscribe(event):
             if hass.data[DOMAIN][entry.entry_id]["events"]:

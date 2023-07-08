@@ -102,6 +102,37 @@ def getHotDirPathForEntry(entry_id):
     return os.path.join(getDataPath(), f"www/{DOMAIN}/{entry_id}/")
 
 
+async def findMedia(hass, entry_id):
+    LOGGER.warn("Finding media...")
+    hass.data[DOMAIN][entry_id]["initialMediaScanDone"] = False
+    tapoController: Tapo = hass.data[DOMAIN][entry_id]["controller"]
+    recordingsList = await hass.async_add_executor_job(tapoController.getRecordingsList)
+
+    coldDirPath = getColdDirPathForEntry(entry_id)
+    hotDirPath = getHotDirPathForEntry(entry_id)
+
+    pathlib.Path(coldDirPath).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(hotDirPath).mkdir(parents=True, exist_ok=True)
+
+    for searchResult in recordingsList:
+        for key in searchResult:
+            recordingsForDay = await hass.async_add_executor_job(
+                tapoController.getRecordings, searchResult[key]["date"]
+            )
+            LOGGER.warn(f"Getting media for day {searchResult[key]['date']}...")
+            for recording in recordingsForDay:
+                for recordingKey in recording:
+                    recordingName = getFileName(
+                        recording[recordingKey]["startTime"],
+                        recording[recordingKey]["endTime"],
+                    )
+                    if os.path.exists(coldDirPath + recordingName + ".mp4"):
+                        hass.data[DOMAIN][entry_id]["downloadedStreams"].append(
+                            recordingName
+                        )
+    hass.data[DOMAIN][entry_id]["initialMediaScanDone"] = True
+
+
 def mediaCleanup(hass, entry_id):
     LOGGER.debug("Initiating media cleanup for entity " + entry_id + "...")
     hass.data[DOMAIN][entry_id][
@@ -111,6 +142,9 @@ def mediaCleanup(hass, entry_id):
     hotDirPath = getHotDirPathForEntry(entry_id)
 
     # Delete everything other than COLD_DIR_DELETE_TIME seconds from cold storage
+    # todo: rewrite to work with the new folder structure, syncing and also if the user
+    # downloads older video, keep it for COLD_DIR_DELETE_TIME at least
+    """
     LOGGER.debug(
         "Deleting cold storage files older than "
         + str(COLD_DIR_DELETE_TIME)
@@ -119,6 +153,7 @@ def mediaCleanup(hass, entry_id):
         + "..."
     )
     deleteFilesOlderThan(coldDirPath, COLD_DIR_DELETE_TIME)
+    """
 
     # Delete everything other than HOT_DIR_DELETE_TIME seconds from hot storage
     LOGGER.debug(
@@ -204,9 +239,11 @@ async def getRecording(
 
         coldFilePath = downloadedFile["fileName"]
     else:
-        LOGGER.warn("File exists")
-        hass.data[DOMAIN][entry_id]["downloadedStreams"].append(downloadUID)
         coldFilePath = coldDirPath + downloadUID + ".mp4"
+
+    if downloadUID not in hass.data[DOMAIN][entry_id]["downloadedStreams"]:
+        hass.data[DOMAIN][entry_id]["downloadedStreams"].append(downloadUID)
+
     hotFilePath = (
         coldFilePath.replace("/.storage/", "/www/").replace(".mp4", "") + UUID + ".mp4"
     )
