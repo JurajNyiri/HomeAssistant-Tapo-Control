@@ -159,6 +159,13 @@ def mediaCleanup(hass, entry_id):
     coldDirPath = getColdDirPathForEntry(entry_id)
     hotDirPath = getHotDirPathForEntry(entry_id)
 
+    # clean cache files from old HA instance
+    LOGGER.debug(
+        "Removing cache files from old HA instances for entity " + entry_id + "..."
+    )
+    deleteFilesNotIncluding(hotDirPath + "/videos/", UUID)
+    deleteFilesNotIncluding(hotDirPath + "/thumbs/", UUID)
+
     # Delete everything other than COLD_DIR_DELETE_TIME seconds from cold storage
     # todo: rewrite to work with the new folder structure, syncing and also if the user
     # downloads older video, keep it for COLD_DIR_DELETE_TIME at least
@@ -182,6 +189,7 @@ def mediaCleanup(hass, entry_id):
         + "..."
     )
     deleteFilesOlderThan(hotDirPath + "/videos/", HOT_DIR_DELETE_TIME)
+    deleteFilesOlderThan(hotDirPath + "/thumbs/", HOT_DIR_DELETE_TIME)
 
 
 def deleteDir(dirPath):
@@ -202,6 +210,14 @@ def deleteFilesOlderThan(dirPath, deleteOlderThan):
             filePath = os.path.join(dirPath, f)
             last_modified = os.stat(filePath).st_mtime
             if now - last_modified > deleteOlderThan:
+                os.remove(filePath)
+
+
+def deleteFilesNotIncluding(dirPath, includingString):
+    if os.path.exists(dirPath):
+        for f in os.listdir(dirPath):
+            filePath = os.path.join(dirPath, f)
+            if includingString not in filePath:
                 os.remove(filePath)
 
 
@@ -258,8 +274,6 @@ async def getRecording(
     endDate: int,
 ) -> str:
     timeCorrection = await hass.async_add_executor_job(tapo.getTimeCorrection)
-
-    mediaCleanup(hass, entry_id)
 
     coldDirPath = getColdDirPathForEntry(entry_id)
     downloadUID = getFileName(startDate, endDate)

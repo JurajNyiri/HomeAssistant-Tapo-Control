@@ -223,6 +223,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             password = entry.data.get(CONF_PASSWORD)
             motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
             enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
+            ts = datetime.datetime.utcnow().timestamp()
 
             # motion detection retries
             if motionSensor or enableTimeSync:
@@ -273,7 +274,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         "Not updating motion sensor because device is child or parent."
                     )
 
-                ts = datetime.datetime.utcnow().timestamp()
                 if (
                     hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
                     and enableTimeSync
@@ -283,11 +283,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         > TIME_SYNC_PERIOD
                     ):
                         await syncTime(hass, entry.entry_id)
-                if (
-                    ts - hass.data[DOMAIN][entry.entry_id]["lastMediaCleanup"]
-                    > MEDIA_CLEANUP_PERIOD
-                ):
-                    mediaCleanup(hass, entry.entry_id)
                 ts = datetime.datetime.utcnow().timestamp()
                 if (
                     ts - hass.data[DOMAIN][entry.entry_id]["lastFirmwareCheck"]
@@ -373,6 +368,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     hass.data[DOMAIN][entry.entry_id][
                         "updateEntity"
                     ].async_schedule_update_ha_state(True)
+
+            if (
+                ts - hass.data[DOMAIN][entry.entry_id]["lastMediaCleanup"]
+                > MEDIA_CLEANUP_PERIOD
+            )
+                mediaCleanup(hass, entry.entry_id)
 
         tapoCoordinator = DataUpdateCoordinator(
             hass,
