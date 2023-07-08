@@ -372,7 +372,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             if (
                 ts - hass.data[DOMAIN][entry.entry_id]["lastMediaCleanup"]
                 > MEDIA_CLEANUP_PERIOD
-            )
+            ):
                 mediaCleanup(hass, entry.entry_id)
 
         tapoCoordinator = DataUpdateCoordinator(
