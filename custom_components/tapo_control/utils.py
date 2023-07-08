@@ -230,7 +230,7 @@ def getHotFile(entry_id: str, startDate: int, endDate: int, folder: str):
     coldFilePath = getColdFile(entry_id, startDate, endDate, folder)
     getHotDirPathForEntry(entry_id)  # ensure creation of folder structure
     if not os.path.exists(coldFilePath):
-        raise Unresolvable("Failed to download recording.")
+        raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
     extension = pathlib.Path(coldFilePath).suffix
     hotFilePath = (
         coldFilePath.replace("/.storage/", "/www/").replace(extension, "")
@@ -244,7 +244,6 @@ def getHotFile(entry_id: str, startDate: int, endDate: int, folder: str):
 
 def getWebFile(entry_id: str, startDate: int, endDate: int, folder: str):
     hotFilePath = getHotFile(entry_id, startDate, endDate, folder)
-    LOGGER.warn(hotFilePath)
     fileWebPath = hotFilePath[hotFilePath.index("/www/") + 5 :]  # remove ./www/
 
     return f"/local/{fileWebPath}"

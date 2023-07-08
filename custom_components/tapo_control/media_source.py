@@ -22,17 +22,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt
 
 from .const import DOMAIN, LOGGER
-import shutil
 
 from .utils import (
     getRecording,
     getFileName,
-    getColdDirPathForEntry,
-    getHotDirPathForEntry,
+    getWebFile,
 )
 
 from pytapo import Tapo
-from datetime import datetime, timezone
 
 
 async def async_get_media_source(hass: HomeAssistant) -> TapoMediaSource:
@@ -184,14 +181,6 @@ class TapoMediaSource(MediaSource):
                         startDate = dt.as_local(dt.utc_from_timestamp(startTS))
                         endDate = dt.as_local(dt.utc_from_timestamp(endTS))
                         videoName = f"{startDate.strftime('%H:%M:%S')} - {endDate.strftime('%H:%M:%S')}"
-                        if (
-                            getFileName(
-                                searchResult[key]["startTime"],
-                                searchResult[key]["endTime"],
-                            )
-                            in self.hass.data[DOMAIN][entry]["downloadedStreams"]
-                        ):
-                            videoName = "✓ " + videoName
                         videoNames.append(
                             {
                                 "name": videoName,
@@ -201,27 +190,12 @@ class TapoMediaSource(MediaSource):
                         )
 
                 dateChildren = []
-                coldDirPath = getColdDirPathForEntry(entry)
-                hotDirPath = getHotDirPathForEntry(entry)
                 for data in videoNames:
                     fileName = getFileName(data["startDate"], data["endDate"])
                     if fileName in self.hass.data[DOMAIN][entry]["downloadedStreams"]:
-                        coldFilePath = coldDirPath + "/thumbs/" + fileName + ".jpg"
-
-                        # todo move this to function in utils
-                        hotFilePath = (
-                            coldFilePath.replace("/.storage/", "/www/").replace(
-                                ".jpg", ""
-                            )
-                            + ".jpg"
+                        thumbLink = getWebFile(
+                            entry, data["startDate"], data["endDate"], "thumbs"
                         )
-                        shutil.copyfile(coldFilePath, hotFilePath)
-
-                        fileWebPath = hotFilePath[
-                            hotFilePath.index("/www/") + 5 :
-                        ]  # remove ./www/
-
-                        thumbLink = f"/local/{fileWebPath}"
 
                         dateChildren.append(
                             BrowseMediaSource(
