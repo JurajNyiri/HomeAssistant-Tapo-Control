@@ -158,7 +158,10 @@ async def processDownload(hass, entry_id: int, startDate: int, endDate: int):
         raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
 
     if filePath not in hass.data[DOMAIN][entry_id]["downloadedStreams"]:
-        hass.data[DOMAIN][entry_id]["downloadedStreams"].append(filePath)
+        hass.data[DOMAIN][entry_id]["downloadedStreams"][filePath] = {
+            startDate: startDate,
+            endDate: endDate,
+        }
     await generateThumb(
         hass,
         entry_id,

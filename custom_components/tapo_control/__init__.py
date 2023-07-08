@@ -412,7 +412,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "isChild": False,
             "isParent": False,
             "isDownloadingStream": False,
-            "downloadedStreams": [],
+            "downloadedStreams": {},
             "initialMediaScanDone": False,
             "timezoneOffset": cameraTS - currentTS,
         }
