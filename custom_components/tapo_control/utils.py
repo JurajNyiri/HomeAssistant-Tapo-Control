@@ -9,6 +9,7 @@ import socket
 import time
 import urllib.parse
 import uuid
+import pathlib
 from homeassistant.core import HomeAssistant
 from pytapo.media_stream.downloader import Downloader
 from homeassistant.components.media_source.error import Unresolvable
@@ -212,6 +213,43 @@ def getFileName(startDate: int, endDate: int):
     return hashlib.md5((str(startDate) + str(endDate)).encode()).hexdigest()
 
 
+def getColdFile(entry_id: str, startDate: int, endDate: int, folder: str):
+    coldDirPath = getColdDirPathForEntry(entry_id)
+    fileName = getFileName(startDate, endDate)
+
+    if folder == "videos":
+        extension = ".mp4"
+    elif folder == "thumbs":
+        extension = ".jpg"
+    else:
+        raise Unresolvable("Incorrect folder specified: " + folder)
+    return coldDirPath + "/" + folder + "/" + fileName + extension
+
+
+def getHotFile(entry_id: str, startDate: int, endDate: int, folder: str):
+    coldFilePath = getColdFile(entry_id, startDate, endDate, folder)
+    getHotDirPathForEntry(entry_id)  # ensure creation of folder structure
+    if not os.path.exists(coldFilePath):
+        raise Unresolvable("Failed to download recording.")
+    extension = pathlib.Path(coldFilePath).suffix
+    hotFilePath = (
+        coldFilePath.replace("/.storage/", "/www/").replace(extension, "")
+        + UUID
+        + extension
+    )
+    if not os.path.exists(hotFilePath):
+        shutil.copyfile(coldFilePath, hotFilePath)
+    return hotFilePath
+
+
+def getWebFile(entry_id: str, startDate: int, endDate: int, folder: str):
+    hotFilePath = getHotFile(entry_id, startDate, endDate, folder)
+    LOGGER.warn(hotFilePath)
+    fileWebPath = hotFilePath[hotFilePath.index("/www/") + 5 :]  # remove ./www/
+
+    return f"/local/{fileWebPath}"
+
+
 async def getRecording(
     hass: HomeAssistant,
     tapo: Tapo,
@@ -225,11 +263,10 @@ async def getRecording(
     mediaCleanup(hass, entry_id)
 
     coldDirPath = getColdDirPathForEntry(entry_id)
-    hotDirPath = getHotDirPathForEntry(entry_id)
-
     downloadUID = getFileName(startDate, endDate)
 
-    if not os.path.exists(coldDirPath + "/videos/" + downloadUID + ".mp4"):
+    coldFilePath = getColdFile(entry_id, startDate, endDate, "videos")
+    if not os.path.exists(coldFilePath):
         # this NEEDS to happen otherwise camera does not send data!
         await hass.async_add_executor_job(tapo.getRecordings, date)
         downloader = Downloader(
@@ -250,27 +287,10 @@ async def getRecording(
         if downloadedFile["currentAction"] == "Recording in progress":
             raise Unresolvable("Recording is currently in progress.")
 
-        coldFilePath = downloadedFile["fileName"]
-    else:
-        coldFilePath = coldDirPath + "/videos/" + downloadUID + ".mp4"
-
     if downloadUID not in hass.data[DOMAIN][entry_id]["downloadedStreams"]:
         hass.data[DOMAIN][entry_id]["downloadedStreams"].append(downloadUID)
 
-    hotFilePath = (
-        coldFilePath.replace("/.storage/", "/www/").replace(".mp4", "") + UUID + ".mp4"
-    )
-    LOGGER.warn("Copying")
-    LOGGER.warn(coldFilePath)
-    LOGGER.warn(hotFilePath)
-    # fix: what if file is not found? that can be the case, throw unresolvable!
-    if not os.path.exists(coldFilePath):
-        raise Unresolvable("Failed to download recording.")
-    shutil.copyfile(coldFilePath, hotFilePath)
-
-    fileWebPath = hotFilePath[hotFilePath.index("/www/") + 5 :]  # remove ./www/
-
-    return f"/local/{fileWebPath}"
+    return getWebFile(entry_id, startDate, endDate, "videos")
 
 
 def areCameraPortsOpened(host):
