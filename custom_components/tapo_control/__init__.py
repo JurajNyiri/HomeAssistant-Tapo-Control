@@ -387,6 +387,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     get_state,
                     timedelta(seconds=1),
                 )
+            elif hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"] is False:
+                hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"] = True
+                hass.async_create_background_task(
+                    findMedia(hass, entry.entry_id), "findMedia"
+                )
 
         tapoCoordinator = DataUpdateCoordinator(
             hass,
@@ -428,6 +433,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "downloadedStreams": {},
             "downloadProgress": False,
             "initialMediaScanDone": False,
+            "initialMediaScanRunning": False,
             "timezoneOffset": cameraTS - currentTS,
         }
 
@@ -550,8 +556,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                 except Exception as err:
                                     LOGGER.error(err)
                 hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = False
-
-        hass.async_create_background_task(findMedia(hass, entry.entry_id), "findMedia")
 
         async def unsubscribe(event):
             if hass.data[DOMAIN][entry.entry_id]["events"]:
