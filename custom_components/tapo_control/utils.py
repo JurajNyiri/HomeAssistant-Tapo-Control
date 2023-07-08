@@ -132,6 +132,7 @@ async def findMedia(hass, entry_id):
                     filePath = getFileName(
                         recording[recordingKey]["startTime"],
                         recording[recordingKey]["endTime"],
+                        False,
                     )
                     if os.path.exists(filePathVideo):
                         hass.data[DOMAIN][entry_id]["downloadedStreams"].append(
@@ -248,13 +249,16 @@ def processDownload(status):
     LOGGER.debug(status)
 
 
-def getFileName(startDate: int, endDate: int):
-    return hashlib.md5((str(startDate) + str(endDate)).encode()).hexdigest()
+def getFileName(startDate: int, endDate: int, encrypted=False):
+    if encrypted:
+        return hashlib.md5((str(startDate) + str(endDate)).encode()).hexdigest()
+    else:
+        return str(startDate) + "-" + str(endDate)
 
 
 def getColdFile(entry_id: str, startDate: int, endDate: int, folder: str):
     coldDirPath = getColdDirPathForEntry(entry_id)
-    fileName = getFileName(startDate, endDate)
+    fileName = getFileName(startDate, endDate, False)
 
     if folder == "videos":
         extension = ".mp4"
@@ -271,11 +275,18 @@ def getHotFile(entry_id: str, startDate: int, endDate: int, folder: str):
     if not os.path.exists(coldFilePath):
         raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
     extension = pathlib.Path(coldFilePath).suffix
+    LOGGER.warn(coldFilePath)
     hotFilePath = (
-        coldFilePath.replace("/.storage/", "/www/").replace(extension, "")
+        coldFilePath.replace("/.storage/", "/www/")
+        .replace(extension, "")
+        .replace(
+            getFileName(startDate, endDate, False),
+            getFileName(startDate, endDate, True),
+        )
         + UUID
         + extension
     )
+    LOGGER.warn(hotFilePath)
     if not os.path.exists(hotFilePath):
         shutil.copyfile(coldFilePath, hotFilePath)
     return hotFilePath
@@ -299,7 +310,7 @@ async def getRecording(
     timeCorrection = await hass.async_add_executor_job(tapo.getTimeCorrection)
 
     coldDirPath = getColdDirPathForEntry(entry_id)
-    downloadUID = getFileName(startDate, endDate)
+    downloadUID = getFileName(startDate, endDate, False)
 
     coldFilePath = getColdFile(entry_id, startDate, endDate, "videos")
     if not os.path.exists(coldFilePath):

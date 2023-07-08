@@ -63,7 +63,7 @@ class TapoMediaSource(MediaSource):
                 endDate = int(path[4])
                 if (
                     self.hass.data[DOMAIN][entry]["isDownloadingStream"]
-                    and getFileName(startDate, endDate)
+                    and getFileName(startDate, endDate, False)
                     not in self.hass.data[DOMAIN][entry]["downloadedStreams"]
                 ):
                     raise Unresolvable(
@@ -191,7 +191,7 @@ class TapoMediaSource(MediaSource):
 
                 dateChildren = []
                 for data in videoNames:
-                    fileName = getFileName(data["startDate"], data["endDate"])
+                    fileName = getFileName(data["startDate"], data["endDate"], False)
                     if fileName in self.hass.data[DOMAIN][entry]["downloadedStreams"]:
                         thumbLink = getWebFile(
                             entry, data["startDate"], data["endDate"], "thumbs"
