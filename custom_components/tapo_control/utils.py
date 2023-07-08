@@ -129,9 +129,13 @@ async def findMedia(hass, entry_id):
                         recording[recordingKey]["endTime"],
                         "videos",
                     )
+                    filePath = getFileName(
+                        recording[recordingKey]["startTime"],
+                        recording[recordingKey]["endTime"],
+                    )
                     if os.path.exists(filePathVideo):
                         hass.data[DOMAIN][entry_id]["downloadedStreams"].append(
-                            filePathVideo
+                            filePath
                         )
                         await generateThumb(
                             hass,
