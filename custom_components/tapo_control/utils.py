@@ -95,11 +95,17 @@ def getDataPath():
 
 
 def getColdDirPathForEntry(entry_id):
-    return os.path.join(getDataPath(), f".storage/{DOMAIN}/{entry_id}/")
+    coldDirPath = os.path.join(getDataPath(), f".storage/{DOMAIN}/{entry_id}/")
+    pathlib.Path(coldDirPath + "/videos").mkdir(parents=True, exist_ok=True)
+    pathlib.Path(coldDirPath + "/thumbs").mkdir(parents=True, exist_ok=True)
+    return coldDirPath
 
 
 def getHotDirPathForEntry(entry_id):
-    return os.path.join(getDataPath(), f"www/{DOMAIN}/{entry_id}/")
+    hotDirPath = os.path.join(getDataPath(), f"www/{DOMAIN}/{entry_id}/")
+    pathlib.Path(hotDirPath + "/videos").mkdir(parents=True, exist_ok=True)
+    pathlib.Path(hotDirPath + "/thumbs").mkdir(parents=True, exist_ok=True)
+    return hotDirPath
 
 
 async def findMedia(hass, entry_id):
@@ -110,9 +116,6 @@ async def findMedia(hass, entry_id):
 
     coldDirPath = getColdDirPathForEntry(entry_id)
     hotDirPath = getHotDirPathForEntry(entry_id)
-
-    pathlib.Path(coldDirPath).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(hotDirPath).mkdir(parents=True, exist_ok=True)
 
     for searchResult in recordingsList:
         for key in searchResult:
@@ -126,10 +129,24 @@ async def findMedia(hass, entry_id):
                         recording[recordingKey]["startTime"],
                         recording[recordingKey]["endTime"],
                     )
-                    if os.path.exists(coldDirPath + recordingName + ".mp4"):
+                    filePathVideo = coldDirPath + "/videos/" + recordingName
+                    filePathThumb = coldDirPath + "/thumbs/" + recordingName
+                    if os.path.exists(filePathVideo + ".mp4"):
                         hass.data[DOMAIN][entry_id]["downloadedStreams"].append(
                             recordingName
                         )
+                        if not os.path.exists(filePathThumb + ".jpg"):
+                            _ffmpeg = hass.data[DATA_FFMPEG]
+                            ffmpeg = ImageFrame(_ffmpeg.binary)
+                            image = await asyncio.shield(
+                                ffmpeg.get_image(
+                                    filePathVideo + ".mp4",
+                                    output_format=IMAGE_JPEG,
+                                )
+                            )
+                            with open(filePathThumb + ".jpg", "wb") as binary_file:
+                                binary_file.write(image)
+
     hass.data[DOMAIN][entry_id]["initialMediaScanDone"] = True
 
 
@@ -163,7 +180,7 @@ def mediaCleanup(hass, entry_id):
         + entry_id
         + "..."
     )
-    deleteFilesOlderThan(hotDirPath, HOT_DIR_DELETE_TIME)
+    deleteFilesOlderThan(hotDirPath + "/videos/", HOT_DIR_DELETE_TIME)
 
 
 def deleteDir(dirPath):
@@ -210,13 +227,9 @@ async def getRecording(
     coldDirPath = getColdDirPathForEntry(entry_id)
     hotDirPath = getHotDirPathForEntry(entry_id)
 
-    pathlib.Path(coldDirPath).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(hotDirPath).mkdir(parents=True, exist_ok=True)
-
     downloadUID = getFileName(startDate, endDate)
 
-    LOGGER.warn(coldDirPath + downloadUID + ".mp4")
-    if not os.path.exists(coldDirPath + downloadUID + ".mp4"):
+    if not os.path.exists(coldDirPath + "/videos/" + downloadUID + ".mp4"):
         # this NEEDS to happen otherwise camera does not send data!
         await hass.async_add_executor_job(tapo.getRecordings, date)
         downloader = Downloader(
@@ -224,7 +237,7 @@ async def getRecording(
             startDate,
             endDate,
             timeCorrection,
-            coldDirPath,
+            coldDirPath + "/videos/",
             0,
             None,
             None,
@@ -239,7 +252,7 @@ async def getRecording(
 
         coldFilePath = downloadedFile["fileName"]
     else:
-        coldFilePath = coldDirPath + downloadUID + ".mp4"
+        coldFilePath = coldDirPath + "/videos/" + downloadUID + ".mp4"
 
     if downloadUID not in hass.data[DOMAIN][entry_id]["downloadedStreams"]:
         hass.data[DOMAIN][entry_id]["downloadedStreams"].append(downloadUID)
@@ -247,6 +260,9 @@ async def getRecording(
     hotFilePath = (
         coldFilePath.replace("/.storage/", "/www/").replace(".mp4", "") + UUID + ".mp4"
     )
+    LOGGER.warn("Copying")
+    LOGGER.warn(coldFilePath)
+    LOGGER.warn(hotFilePath)
     # fix: what if file is not found? that can be the case, throw unresolvable!
     if not os.path.exists(coldFilePath):
         raise Unresolvable("Failed to download recording.")

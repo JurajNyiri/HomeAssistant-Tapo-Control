@@ -22,8 +22,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt
 
 from .const import DOMAIN, LOGGER
+import shutil
 
-from .utils import getRecording, getFileName
+from .utils import (
+    getRecording,
+    getFileName,
+    getColdDirPathForEntry,
+    getHotDirPathForEntry,
+)
 
 from pytapo import Tapo
 from datetime import datetime, timezone
@@ -194,6 +200,54 @@ class TapoMediaSource(MediaSource):
                             }
                         )
 
+                dateChildren = []
+                coldDirPath = getColdDirPathForEntry(entry)
+                hotDirPath = getHotDirPathForEntry(entry)
+                for data in videoNames:
+                    fileName = getFileName(data["startDate"], data["endDate"])
+                    if fileName in self.hass.data[DOMAIN][entry]["downloadedStreams"]:
+                        coldFilePath = coldDirPath + "/thumbs/" + fileName + ".jpg"
+
+                        # todo move this to function in utils
+                        hotFilePath = (
+                            coldFilePath.replace("/.storage/", "/www/").replace(
+                                ".jpg", ""
+                            )
+                            + ".jpg"
+                        )
+                        shutil.copyfile(coldFilePath, hotFilePath)
+
+                        fileWebPath = hotFilePath[
+                            hotFilePath.index("/www/") + 5 :
+                        ]  # remove ./www/
+
+                        thumbLink = f"/local/{fileWebPath}"
+
+                        dateChildren.append(
+                            BrowseMediaSource(
+                                domain=DOMAIN,
+                                identifier=f"tapo/{entry}/{date}/{data['startDate']}/{data['endDate']}",
+                                media_class=MediaClass.VIDEO,
+                                media_content_type=MediaType.VIDEO,
+                                thumbnail=thumbLink,
+                                title=data["name"],
+                                can_play=True,
+                                can_expand=False,
+                            )
+                        )
+                    else:
+                        dateChildren.append(
+                            BrowseMediaSource(
+                                domain=DOMAIN,
+                                identifier=f"tapo/{entry}/{date}/{data['startDate']}/{data['endDate']}",
+                                media_class=MediaClass.VIDEO,
+                                media_content_type=MediaType.VIDEO,
+                                title=data["name"],
+                                can_play=True,
+                                can_expand=False,
+                            )
+                        )
+
                 return BrowseMediaSource(
                     domain=DOMAIN,
                     identifier=f"tapo/{entry}/",
@@ -203,18 +257,7 @@ class TapoMediaSource(MediaSource):
                     can_play=False,
                     can_expand=True,
                     children_media_class=MediaClass.DIRECTORY,
-                    children=[
-                        BrowseMediaSource(
-                            domain=DOMAIN,
-                            identifier=f"tapo/{entry}/{date}/{data['startDate']}/{data['endDate']}",
-                            media_class=MediaClass.VIDEO,
-                            media_content_type=MediaType.VIDEO,
-                            title=data["name"],
-                            can_play=True,
-                            can_expand=False,
-                        )
-                        for data in videoNames
-                    ],
+                    children=dateChildren,
                 )
 
             else:
