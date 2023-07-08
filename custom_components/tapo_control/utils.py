@@ -115,9 +115,6 @@ async def findMedia(hass, entry_id):
     tapoController: Tapo = hass.data[DOMAIN][entry_id]["controller"]
     recordingsList = await hass.async_add_executor_job(tapoController.getRecordingsList)
 
-    coldDirPath = getColdDirPathForEntry(entry_id)
-    hotDirPath = getHotDirPathForEntry(entry_id)
-
     for searchResult in recordingsList:
         for key in searchResult:
             recordingsForDay = await hass.async_add_executor_job(
@@ -126,29 +123,51 @@ async def findMedia(hass, entry_id):
             LOGGER.warn(f"Getting media for day {searchResult[key]['date']}...")
             for recording in recordingsForDay:
                 for recordingKey in recording:
-                    recordingName = getFileName(
+                    filePathVideo = getColdFile(
+                        entry_id,
                         recording[recordingKey]["startTime"],
                         recording[recordingKey]["endTime"],
+                        "videos",
                     )
-                    filePathVideo = coldDirPath + "/videos/" + recordingName
-                    filePathThumb = coldDirPath + "/thumbs/" + recordingName
-                    if os.path.exists(filePathVideo + ".mp4"):
+                    if os.path.exists(filePathVideo):
                         hass.data[DOMAIN][entry_id]["downloadedStreams"].append(
-                            recordingName
+                            filePathVideo
                         )
-                        if not os.path.exists(filePathThumb + ".jpg"):
-                            _ffmpeg = hass.data[DATA_FFMPEG]
-                            ffmpeg = ImageFrame(_ffmpeg.binary)
-                            image = await asyncio.shield(
-                                ffmpeg.get_image(
-                                    filePathVideo + ".mp4",
-                                    output_format=IMAGE_JPEG,
-                                )
-                            )
-                            with open(filePathThumb + ".jpg", "wb") as binary_file:
-                                binary_file.write(image)
+                        await generateThumb(
+                            hass,
+                            entry_id,
+                            recording[recordingKey]["startTime"],
+                            recording[recordingKey]["endTime"],
+                        )
 
     hass.data[DOMAIN][entry_id]["initialMediaScanDone"] = True
+
+
+async def generateThumb(hass, entry_id, startDate: int, endDate: int):
+    filePathThumb = getColdFile(
+        entry_id,
+        startDate,
+        endDate,
+        "thumbs",
+    )
+    if not os.path.exists(filePathThumb):
+        filePathVideo = getColdFile(
+            entry_id,
+            startDate,
+            endDate,
+            "videos",
+        )
+        _ffmpeg = hass.data[DATA_FFMPEG]
+        ffmpeg = ImageFrame(_ffmpeg.binary)
+        image = await asyncio.shield(
+            ffmpeg.get_image(
+                filePathVideo,
+                output_format=IMAGE_JPEG,
+            )
+        )
+        with open(filePathThumb, "wb") as binary_file:
+            binary_file.write(image)
+    return filePathThumb
 
 
 def mediaCleanup(hass, entry_id):
