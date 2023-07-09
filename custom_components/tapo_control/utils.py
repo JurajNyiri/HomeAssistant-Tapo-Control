@@ -236,7 +236,13 @@ def deleteFilesNoLongerPresentInCamera(hass, entry_id, extension, folder):
                 fileName = f.replace(extension, "")
                 filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
                 if fileName not in hass.data[DOMAIN][entry_id]["mediaScanResult"]:
-                    LOGGER.warn("Removing " + filePath + " (" + fileName + ")...")
+                    LOGGER.warn(
+                        "[deleteFilesNoLongerPresentInCamera] Removing "
+                        + filePath
+                        + " ("
+                        + fileName
+                        + ")..."
+                    )
                     hass.data[DOMAIN][entry_id]["downloadedStreams"].pop(
                         fileName,
                         None,
@@ -266,7 +272,13 @@ async def deleteColdFilesOlderThanMaxSyncTime(hass, entry, extension, folder):
                 if (endTS < (int(ts) - (int(mediaSyncTime) + timeCorrection))) and (
                     ts - last_modified > int(mediaSyncTime)
                 ):
-                    LOGGER.warn("Removing " + filePath + " (" + fileName + ")...")
+                    LOGGER.warn(
+                        "[deleteColdFilesOlderThanMaxSyncTime] Removing "
+                        + filePath
+                        + " ("
+                        + fileName
+                        + ")..."
+                    )
                     hass.data[DOMAIN][entry_id]["downloadedStreams"].pop(
                         fileName,
                         None,
@@ -349,6 +361,7 @@ def deleteFilesOlderThan(dirPath, deleteOlderThan):
             filePath = os.path.join(dirPath, f)
             last_modified = os.stat(filePath).st_mtime
             if now - last_modified > deleteOlderThan:
+                LOGGER.warn("[deleteFilesOlderThan] Removing " + filePath + "...")
                 os.remove(filePath)
 
 
@@ -357,6 +370,7 @@ def deleteFilesNotIncluding(dirPath, includingString):
         for f in os.listdir(dirPath):
             filePath = os.path.join(dirPath, f)
             if includingString not in filePath:
+                LOGGER.warn("[deleteFilesOlderThan] Removing " + filePath + "...")
                 os.remove(filePath)
 
 
