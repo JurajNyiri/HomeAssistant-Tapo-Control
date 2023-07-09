@@ -434,6 +434,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "downloadProgress": False,
             "initialMediaScanDone": False,
             "initialMediaScanRunning": False,
+            "mediaScanResult": {},
             "timezoneOffset": cameraTS - currentTS,
         }
 
@@ -525,19 +526,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 and hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] is False
             ):
                 hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = True
-                LOGGER.warn("testing")
                 tapoController: Tapo = hass.data[DOMAIN][entry.entry_id]["controller"]
                 recordingsList = await hass.async_add_executor_job(
                     tapoController.getRecordingsList
                 )
-                LOGGER.warn(recordingsList)
 
                 for searchResult in recordingsList:
                     for key in searchResult:
                         recordingsForDay = await hass.async_add_executor_job(
                             tapoController.getRecordings, searchResult[key]["date"]
                         )
-                        LOGGER.warn(recordingsForDay)
                         recordingCount = 0
                         for recording in recordingsForDay:
                             for recordingKey in recording:
@@ -552,7 +550,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                         recording[recordingKey]["endTime"],
                                         recordingCount,
                                     )
-                                    LOGGER.warn(url)
                                 except Unresolvable as err:
                                     LOGGER.warn(err)
                                 except Exception as err:

@@ -109,12 +109,14 @@ def getHotDirPathForEntry(entry_id):
     return hotDirPath
 
 
+# todo: findMedia needs to run periodically
 async def findMedia(hass, entry_id):
     LOGGER.warn("Finding media...")
     hass.data[DOMAIN][entry_id]["initialMediaScanDone"] = False
     tapoController: Tapo = hass.data[DOMAIN][entry_id]["controller"]
     recordingsList = await hass.async_add_executor_job(tapoController.getRecordingsList)
 
+    mediaScanResult = {}
     for searchResult in recordingsList:
         for key in searchResult:
             recordingsForDay = await hass.async_add_executor_job(
@@ -129,6 +131,11 @@ async def findMedia(hass, entry_id):
                         recording[recordingKey]["endTime"],
                         "videos",
                     )
+                    mediaScanResult[
+                        str(recording[recordingKey]["startTime"])
+                        + "-"
+                        + str(recording[recordingKey]["endTime"])
+                    ] = True
                     if os.path.exists(filePathVideo):
                         await processDownload(
                             hass,
@@ -136,8 +143,9 @@ async def findMedia(hass, entry_id):
                             recording[recordingKey]["startTime"],
                             recording[recordingKey]["endTime"],
                         )
-
+    hass.data[DOMAIN][entry_id]["mediaScanResult"] = mediaScanResult
     hass.data[DOMAIN][entry_id]["initialMediaScanDone"] = True
+    mediaCleanup(hass, entry_id)
 
 
 async def processDownload(hass, entry_id: int, startDate: int, endDate: int):
@@ -162,6 +170,10 @@ async def processDownload(hass, entry_id: int, startDate: int, endDate: int):
             startDate: startDate,
             endDate: endDate,
         }
+    mediaScanName = str(startDate) + "-" + str(endDate)
+    if mediaScanName not in hass.data[DOMAIN][entry_id]["mediaScanResult"]:
+        hass.data[DOMAIN][entry_id]["mediaScanResult"][mediaScanName] = True
+
     await generateThumb(
         hass,
         entry_id,
@@ -197,8 +209,19 @@ async def generateThumb(hass, entry_id, startDate: int, endDate: int):
     return filePathThumb
 
 
+def deleteFilesNoLongerPresentInCamera(hass, entry_id, extension, folder):
+    if hass.data[DOMAIN][entry_id]["initialMediaScanDone"] is True:
+        coldDirPath = getColdDirPathForEntry(entry_id)
+        if os.path.exists(coldDirPath + "/" + folder + "/"):
+            for f in os.listdir(coldDirPath + "/" + folder + "/"):
+                fileName = f.replace(extension, "")
+                filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
+                if fileName not in hass.data[DOMAIN][entry_id]["mediaScanResult"]:
+                    os.remove(filePath)
+
+
 def mediaCleanup(hass, entry_id):
-    LOGGER.debug("Initiating media cleanup for entity " + entry_id + "...")
+    LOGGER.warn("Initiating media cleanup for entity " + entry_id + "...")
     hass.data[DOMAIN][entry_id][
         "lastMediaCleanup"
     ] = datetime.datetime.utcnow().timestamp()
@@ -206,11 +229,16 @@ def mediaCleanup(hass, entry_id):
     hotDirPath = getHotDirPathForEntry(entry_id)
 
     # clean cache files from old HA instance
-    LOGGER.debug(
+    LOGGER.warn(
         "Removing cache files from old HA instances for entity " + entry_id + "..."
     )
     deleteFilesNotIncluding(hotDirPath + "/videos/", UUID)
     deleteFilesNotIncluding(hotDirPath + "/thumbs/", UUID)
+
+    deleteFilesNoLongerPresentInCamera(hass, entry_id, ".mp4", "videos")
+    deleteFilesNoLongerPresentInCamera(hass, entry_id, ".jpg", "thumbs")
+    # for mediaName in hass.data[DOMAIN][entry_id]["mediaScanResult"]:
+    #    LOGGER.warn(mediaName)
 
     # todo: dynamic hot storage deletion
     # todo: dynamic cold storage deletion
