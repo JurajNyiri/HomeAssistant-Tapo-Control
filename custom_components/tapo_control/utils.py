@@ -290,10 +290,11 @@ def processDownloadStatus(
                     if recordingCount is not False
                     else ""
                 )
-                + ": "
-                + str(round(status["progress"]))
-                + " / "
-                + str(status["total"])
+                + (
+                    ": " + str(round(status["progress"])) + " / " + str(status["total"])
+                    if status["total"] > 0
+                    else ""
+                )
             )
 
     return processUpdate
