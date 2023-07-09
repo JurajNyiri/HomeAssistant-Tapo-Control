@@ -23,6 +23,7 @@ from homeassistant.components.media_source.error import Unresolvable
 
 from .const import (
     CONF_RTSP_TRANSPORT,
+    ENABLE_MEDIA_SYNC,
     ENABLE_SOUND_DETECTION,
     CONF_CUSTOM_STREAM,
     ENABLE_WEBHOOKS,
@@ -150,7 +151,15 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
         config_entry.version = 10
 
-    LOGGER.info("Migration to version %s successful", config_entry.version)
+    if config_entry.version == 10:
+        new = {**config_entry.data}
+        new[ENABLE_MEDIA_SYNC] = False
+
+        config_entry.data = {**new}
+
+        config_entry.version = 11
+
+    LOGGER.warn("Migration to version %s successful", config_entry.version)
 
     return True
 
@@ -197,6 +206,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
     cloud_password = entry.data.get(CLOUD_PASSWORD)
     enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
+    enableMediaSync = entry.data.get(ENABLE_MEDIA_SYNC)
 
     if isUsingHTTPS(hass):
         LOGGER.warn(
@@ -382,10 +392,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             ):
                 mediaCleanup(hass, entry.entry_id)
 
-            if hass.data[DOMAIN][entry.entry_id]["initialMediaScanDone"] is not False:
+            if (
+                hass.data[DOMAIN][entry.entry_id]["initialMediaScanDone"] is True
+                and enableMediaSync
+            ):
                 async_track_time_interval(
                     hass,
-                    get_state,
+                    mediaSync,
                     timedelta(seconds=1),
                 )
             elif hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"] is False:
@@ -520,11 +533,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         # Media sync
 
-        async def get_state(time=None):
+        async def mediaSync(time=None):
+            enableMediaSync = entry.data.get(ENABLE_MEDIA_SYNC)
             if (
                 entry.entry_id in hass.data[DOMAIN]
                 and "controller" in hass.data[DOMAIN][entry.entry_id]
                 and hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] is False
+                and enableMediaSync
             ):
                 hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = True
                 tapoController: Tapo = hass.data[DOMAIN][entry.entry_id]["controller"]

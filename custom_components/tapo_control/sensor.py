@@ -109,7 +109,7 @@ class TapoSyncSensor(TapoSensorEntity):
         if not self._hass.data[DOMAIN][self._config_entry.entry_id][
             "initialMediaScanDone"
         ]:
-            self._attr_state = "Starting"
+            self._attr_state = "Not Ready"
         elif self._hass.data[DOMAIN][self._config_entry.entry_id]["downloadProgress"]:
             self._attr_state = self._hass.data[DOMAIN][self._config_entry.entry_id][
                 "downloadProgress"

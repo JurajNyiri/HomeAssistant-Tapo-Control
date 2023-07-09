@@ -27,6 +27,7 @@ SCAN_INTERVAL = timedelta(seconds=5)
 CONF_CUSTOM_STREAM = "custom_stream"
 
 ENABLE_MOTION_SENSOR = "enable_motion_sensor"
+ENABLE_MEDIA_SYNC = "enable_media_sync"
 
 TOGGLE_STATES = ["on", "off"]
 

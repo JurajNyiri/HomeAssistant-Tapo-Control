@@ -16,6 +16,7 @@ from .utils import (
 )
 from .const import (
     DOMAIN,
+    ENABLE_MEDIA_SYNC,
     ENABLE_MOTION_SENSOR,
     ENABLE_STREAM,
     ENABLE_SOUND_DETECTION,
@@ -36,7 +37,7 @@ from .const import (
 class FlowHandler(ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 10
+    VERSION = 11
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -551,6 +552,8 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 nextAction = user_input["tapo_config_action"]
                 if nextAction == "Configure device":
                     return await self.async_step_auth()
+                elif nextAction == "Configure media synchronization":
+                    return await self.async_step_media()
                 elif nextAction == "Help me debug motion sensor":
                     # TODO
                     """
@@ -569,6 +572,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     "select": {
                         "options": [
                             "Configure device",
+                            "Configure media synchronization"
                             # "Help me debug motion sensor",
                             # "incorrect",
                         ],
@@ -579,6 +583,60 @@ class TapoOptionsFlowHandler(OptionsFlow):
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(data_schema),
+            errors=errors,
+        )
+
+    async def async_step_media(self, user_input=None):
+        """Manage the Tapo options."""
+        LOGGER.debug(
+            "[%s] Opened Tapo options - media.", self.config_entry.data[CONF_IP_ADDRESS]
+        )
+        errors = {}
+        enable_media_sync = self.config_entry.data[ENABLE_MEDIA_SYNC]
+        ip_address = self.config_entry.data[CONF_IP_ADDRESS]
+
+        allConfigData = {**self.config_entry.data}
+        if user_input is not None:
+            try:
+                if ENABLE_MEDIA_SYNC in user_input:
+                    enable_media_sync = user_input[ENABLE_MEDIA_SYNC]
+                else:
+                    enable_media_sync = False
+
+                allConfigData[ENABLE_MEDIA_SYNC] = enable_media_sync
+                # todo also initial setup to add the default values!
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry,
+                    title=ip_address,
+                    data=allConfigData,
+                )
+                return self.async_create_entry(title="", data=None)
+            except Exception as e:
+                if "Failed to establish a new connection" in str(e):
+                    errors["base"] = "connection_failed"
+                    LOGGER.error(e)
+                elif str(e) == "Invalid authentication data":
+                    errors["base"] = "invalid_auth"
+                elif str(e) == "Incorrect cloud password":
+                    errors["base"] = "invalid_auth_cloud"
+                elif str(e) == "Camera requires cloud password":
+                    errors["base"] = "camera_requires_admin"
+                elif str(e) == "Incorrect sound detection peak value.":
+                    errors["base"] = "incorrect_peak_value"
+                else:
+                    errors["base"] = "unknown"
+                    LOGGER.error(e)
+
+        return self.async_show_form(
+            step_id="media",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        ENABLE_MEDIA_SYNC,
+                        description={"suggested_value": enable_media_sync},
+                    ): bool,
+                }
+            ),
             errors=errors,
         )
 
@@ -802,26 +860,27 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     "[%s] Updating entry.",
                     ip_address,
                 )
+
+                allConfigData = {**self.config_entry.data}
+                allConfigData[ENABLE_STREAM] = enable_stream
+                allConfigData[ENABLE_MOTION_SENSOR] = enable_motion_sensor
+                allConfigData[ENABLE_WEBHOOKS] = enable_webhooks
+                allConfigData[ENABLE_SOUND_DETECTION] = enable_sound_detection
+                allConfigData[CONF_IP_ADDRESS] = ip_address
+                allConfigData[CONF_USERNAME] = username
+                allConfigData[CONF_PASSWORD] = password
+                allConfigData[CLOUD_PASSWORD] = cloud_password
+                allConfigData[ENABLE_TIME_SYNC] = enable_time_sync
+                allConfigData[SOUND_DETECTION_PEAK] = sound_detection_peak
+                allConfigData[SOUND_DETECTION_DURATION] = sound_detection_duration
+                allConfigData[SOUND_DETECTION_RESET] = sound_detection_reset
+                allConfigData[CONF_EXTRA_ARGUMENTS] = extra_arguments
+                allConfigData[CONF_CUSTOM_STREAM] = custom_stream
+                allConfigData[CONF_RTSP_TRANSPORT] = rtsp_transport
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
                     title=ip_address,
-                    data={
-                        ENABLE_STREAM: enable_stream,
-                        ENABLE_MOTION_SENSOR: enable_motion_sensor,
-                        ENABLE_WEBHOOKS: enable_webhooks,
-                        ENABLE_SOUND_DETECTION: enable_sound_detection,
-                        CONF_IP_ADDRESS: ip_address,
-                        CONF_USERNAME: username,
-                        CONF_PASSWORD: password,
-                        CLOUD_PASSWORD: cloud_password,
-                        ENABLE_TIME_SYNC: enable_time_sync,
-                        SOUND_DETECTION_PEAK: sound_detection_peak,
-                        SOUND_DETECTION_DURATION: sound_detection_duration,
-                        SOUND_DETECTION_RESET: sound_detection_reset,
-                        CONF_EXTRA_ARGUMENTS: extra_arguments,
-                        CONF_CUSTOM_STREAM: custom_stream,
-                        CONF_RTSP_TRANSPORT: rtsp_transport,
-                    },
+                    data=allConfigData,
                 )
                 if ipChanged:
                     LOGGER.debug(
