@@ -109,6 +109,21 @@ def getHotDirPathForEntry(entry_id):
     return hotDirPath
 
 
+async def getRecordings(hass, entry_id, date):
+    tapoController: Tapo = hass.data[DOMAIN][entry_id]["controller"]
+    recordingsForDay = await hass.async_add_executor_job(
+        tapoController.getRecordings, date
+    )
+    for recording in recordingsForDay:
+        for recordingKey in recording:
+            hass.data[DOMAIN][entry_id]["mediaScanResult"][
+                str(recording[recordingKey]["startTime"])
+                + "-"
+                + str(recording[recordingKey]["endTime"])
+            ] = True
+    return recordingsForDay
+
+
 # todo: findMedia needs to run periodically
 async def findMedia(hass, entry_id):
     LOGGER.warn("Finding media...")
@@ -119,8 +134,8 @@ async def findMedia(hass, entry_id):
     mediaScanResult = {}
     for searchResult in recordingsList:
         for key in searchResult:
-            recordingsForDay = await hass.async_add_executor_job(
-                tapoController.getRecordings, searchResult[key]["date"]
+            recordingsForDay = await getRecordings(
+                hass, entry_id, searchResult[key]["date"]
             )
             LOGGER.warn(f"Getting media for day {searchResult[key]['date']}...")
             for recording in recordingsForDay:

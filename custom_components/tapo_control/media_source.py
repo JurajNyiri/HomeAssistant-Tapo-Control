@@ -26,6 +26,7 @@ from .const import DOMAIN, LOGGER
 from .utils import (
     getRecording,
     getFileName,
+    getRecordings,
     getWebFile,
 )
 
@@ -164,9 +165,7 @@ class TapoMediaSource(MediaSource):
                     )
                 date = path[2]
                 tapoController: Tapo = self.hass.data[DOMAIN][entry]["controller"]
-                recordingsForDay = await self.hass.async_add_executor_job(
-                    tapoController.getRecordings, date
-                )
+                recordingsForDay = await getRecordings(self.hass, entry, date)
                 videoNames = []
                 for searchResult in recordingsForDay:
                     for key in searchResult:

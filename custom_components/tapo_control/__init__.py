@@ -55,6 +55,7 @@ from .utils import (
     syncTime,
     getLatestFirmwareVersion,
     findMedia,
+    getRecordings,
 )
 from pytapo import Tapo
 
@@ -533,8 +534,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
                 for searchResult in recordingsList:
                     for key in searchResult:
-                        recordingsForDay = await hass.async_add_executor_job(
-                            tapoController.getRecordings, searchResult[key]["date"]
+                        recordingsForDay = await getRecordings(
+                            hass, entry.entry_id, searchResult[key]["date"]
                         )
                         recordingCount = 0
                         for recording in recordingsForDay:
