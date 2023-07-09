@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import os
 import shutil
 import asyncio
@@ -235,6 +236,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         async def async_update_data():
             LOGGER.warn("async_update_data - entry")
+            tapoController = hass.data[DOMAIN][entry.entry_id]["controller"]
             host = entry.data.get(CONF_IP_ADDRESS)
             username = entry.data.get(CONF_USERNAME)
             password = entry.data.get(CONF_PASSWORD)
@@ -442,6 +444,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "name": camData["basic_info"]["device_alias"],
             "childDevices": [],
             "isChild": False,
+            "uuid": hashlib.md5(
+                (
+                    str(host) + str(username) + str(password) + str(cloud_password)
+                ).encode()
+            ).hexdigest(),
             "isParent": False,
             "isDownloadingStream": False,
             "downloadedStreams": {},

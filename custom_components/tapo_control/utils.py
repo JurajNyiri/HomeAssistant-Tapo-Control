@@ -876,16 +876,32 @@ async def update_listener(hass, entry):
     enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
     cloud_password = entry.data.get(CLOUD_PASSWORD)
     try:
-        if cloud_password != "":
-            tapoController = await hass.async_add_executor_job(
-                registerController, host, "admin", cloud_password
+        newUUID = hashlib.md5(
+            (str(host) + str(username) + str(password) + str(cloud_password)).encode()
+        ).hexdigest()
+        # only update controller if auth data changed
+        if newUUID != hass.data[DOMAIN][entry.entry_id]["uuid"]:
+            hass.data[DOMAIN][entry.entry_id]["uuid"] = newUUID
+            if (
+                hass.data[DOMAIN][entry.entry_id]["controller"]
+                in hass.data[DOMAIN][entry.entry_id]["allControllers"]
+            ):
+                hass.data[DOMAIN][entry.entry_id]["allControllers"].remove(
+                    hass.data[DOMAIN][entry.entry_id]["controller"]
+                )
+            if cloud_password != "":
+                tapoController = await hass.async_add_executor_job(
+                    registerController, host, "admin", cloud_password
+                )
+            else:
+                tapoController = await hass.async_add_executor_job(
+                    registerController, host, username, password
+                )
+            hass.data[DOMAIN][entry.entry_id]["usingCloudPassword"] = (
+                cloud_password != ""
             )
-        else:
-            tapoController = await hass.async_add_executor_job(
-                registerController, host, username, password
-            )
-        hass.data[DOMAIN][entry.entry_id]["usingCloudPassword"] = cloud_password != ""
-        hass.data[DOMAIN][entry.entry_id]["controller"] = tapoController
+            hass.data[DOMAIN][entry.entry_id]["controller"] = tapoController
+            hass.data[DOMAIN][entry.entry_id]["allControllers"].append(tapoController)
     except Exception:
         LOGGER.error(
             "Authentication to Tapo camera failed."
@@ -893,9 +909,12 @@ async def update_listener(hass, entry):
         )
 
     for entity in hass.data[DOMAIN][entry.entry_id]["entities"]:
-        entity._host = host
-        entity._username = username
-        entity._password = password
+        if "_host" in entity:
+            entity._host = host
+        if "_username" in entity:
+            entity._username = username
+        if "_password" in entity:
+            entity._password = password
     if hass.data[DOMAIN][entry.entry_id]["events"]:
         await hass.data[DOMAIN][entry.entry_id]["events"].async_stop()
     if hass.data[DOMAIN][entry.entry_id]["motionSensorCreated"]:
