@@ -496,6 +496,16 @@ async def getRecording(
         if downloadedFile["currentAction"] == "Recording in progress":
             raise Unresolvable("Recording is currently in progress.")
 
+        hass.bus.fire(
+            "tapo_control_media_downloaded",
+            {
+                "entry_id": entry_id,
+                "startDate": startDate,
+                "endDate": endDate,
+                "filePath": coldFilePath,
+            },
+        )
+
     await processDownload(
         hass,
         entry_id,
