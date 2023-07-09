@@ -456,11 +456,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             ).hexdigest(),
             "isParent": False,
             "isDownloadingStream": False,
-            "downloadedStreams": {},
+            "downloadedStreams": {},  # keeps track of all videos downloaded
             "downloadProgress": False,
             "initialMediaScanDone": False,
             "initialMediaScanRunning": False,
-            "mediaScanResult": {},
+            "mediaScanResult": {},  # keeps track of all videos currently on camera
             "timezoneOffset": cameraTS - currentTS,
         }
 

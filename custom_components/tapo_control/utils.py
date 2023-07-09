@@ -236,6 +236,11 @@ def deleteFilesNoLongerPresentInCamera(hass, entry_id, extension, folder):
                 fileName = f.replace(extension, "")
                 filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
                 if fileName not in hass.data[DOMAIN][entry_id]["mediaScanResult"]:
+                    LOGGER.warn("Removing " + filePath + " (" + fileName + ")...")
+                    hass.data[DOMAIN][entry_id]["downloadedStreams"].pop(
+                        fileName,
+                        None,
+                    )
                     os.remove(filePath)
 
 
@@ -261,6 +266,11 @@ async def deleteColdFilesOlderThanMaxSyncTime(hass, entry, extension, folder):
                 if (endTS < (int(ts) - (int(mediaSyncTime) + timeCorrection))) and (
                     ts - last_modified > int(mediaSyncTime)
                 ):
+                    LOGGER.warn("Removing " + filePath + " (" + fileName + ")...")
+                    hass.data[DOMAIN][entry_id]["downloadedStreams"].pop(
+                        fileName,
+                        None,
+                    )
                     os.remove(filePath)
 
 
