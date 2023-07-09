@@ -402,7 +402,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 ts - hass.data[DOMAIN][entry.entry_id]["lastMediaCleanup"]
                 > MEDIA_CLEANUP_PERIOD
             ):
-                mediaCleanup(hass, entry.entry_id)
+                await mediaCleanup(hass, entry)
 
             if hass.data[DOMAIN][entry.entry_id]["initialMediaScanDone"] is True:
                 async_track_time_interval(
@@ -561,6 +561,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 and entry.entry_id in hass.data[DOMAIN]
                 and "controller" in hass.data[DOMAIN][entry.entry_id]
                 and hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] is False
+                and hass.data[DOMAIN][entry.entry_id]["isDownloadingStream"]
+                is False  # prevent breaking user manual upload
             ):
                 hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = True
                 tapoController: Tapo = hass.data[DOMAIN][entry.entry_id]["controller"]
@@ -568,12 +570,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     tapoController.getRecordingsList
                 )
 
-                # todo:do not grab more than necessary depending on media_sync_hours
                 ts = datetime.datetime.utcnow().timestamp()
-
                 for searchResult in recordingsList:
                     for key in searchResult:
-                        LOGGER.warn(searchResult[key]["date"])
                         if (mediaSyncTime is False) or (
                             (
                                 mediaSyncTime is not False
@@ -599,11 +598,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                     if recording[recordingKey]["endTime"] > (
                                         int(ts) - (int(mediaSyncTime))
                                     ):
-                                        LOGGER.warn(int(ts) - (int(mediaSyncTime)))
-                                        LOGGER.warn(recording[recordingKey]["endTime"])
                                         recordingCount += 1
                                         try:
-                                            # todo: add optional parameter to specify length, and calculate correct length above respecting the sync time setting
                                             await getRecording(
                                                 hass,
                                                 tapoController,

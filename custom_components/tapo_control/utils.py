@@ -164,7 +164,7 @@ async def findMedia(hass, entry):
                         )
     hass.data[DOMAIN][entry_id]["mediaScanResult"] = mediaScanResult
     hass.data[DOMAIN][entry_id]["initialMediaScanDone"] = True
-    mediaCleanup(hass, entry_id)
+    await mediaCleanup(hass, entry)
 
 
 async def processDownload(hass, entry_id: int, startDate: int, endDate: int):
@@ -239,11 +239,37 @@ def deleteFilesNoLongerPresentInCamera(hass, entry_id, extension, folder):
                     os.remove(filePath)
 
 
-def mediaCleanup(hass, entry_id):
+async def deleteColdFilesOlderThanMaxSyncTime(hass, entry, extension, folder):
+    entry_id = entry.entry_id
+    mediaSyncHours = entry.data.get(MEDIA_SYNC_HOURS)
+
+    if mediaSyncHours != "":
+        coldDirPath = getColdDirPathForEntry(entry_id)
+        tapoController: Tapo = hass.data[DOMAIN][entry_id]["controller"]
+        timeCorrection = await hass.async_add_executor_job(
+            tapoController.getTimeCorrection
+        )
+        mediaSyncTime = int(mediaSyncHours) * 60 * 60
+        entry_id = entry.entry_id
+        ts = datetime.datetime.utcnow().timestamp()
+        if os.path.exists(coldDirPath + "/" + folder + "/"):
+            for f in os.listdir(coldDirPath + "/" + folder + "/"):
+                fileName = f.replace(extension, "")
+                filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
+                endTS = int(fileName.split("-")[1])
+                last_modified = os.stat(filePath).st_mtime
+                if (endTS < (int(ts) - (int(mediaSyncTime) + timeCorrection))) and (
+                    ts - last_modified > int(mediaSyncTime)
+                ):
+                    os.remove(filePath)
+
+
+async def mediaCleanup(hass, entry):
+    entry_id = entry.entry_id
     LOGGER.warn("Initiating media cleanup for entity " + entry_id + "...")
-    hass.data[DOMAIN][entry_id][
-        "lastMediaCleanup"
-    ] = datetime.datetime.utcnow().timestamp()
+
+    ts = datetime.datetime.utcnow().timestamp()
+    hass.data[DOMAIN][entry_id]["lastMediaCleanup"] = ts
     coldDirPath = getColdDirPathForEntry(entry_id)
     hotDirPath = getHotDirPathForEntry(entry_id)
 
@@ -256,6 +282,10 @@ def mediaCleanup(hass, entry_id):
 
     deleteFilesNoLongerPresentInCamera(hass, entry_id, ".mp4", "videos")
     deleteFilesNoLongerPresentInCamera(hass, entry_id, ".jpg", "thumbs")
+
+    await deleteColdFilesOlderThanMaxSyncTime(hass, entry, ".mp4", "videos")
+    await deleteColdFilesOlderThanMaxSyncTime(hass, entry, ".jpg", "thumbs")
+
     # for mediaName in hass.data[DOMAIN][entry_id]["mediaScanResult"]:
     #    LOGGER.warn(mediaName)
 
