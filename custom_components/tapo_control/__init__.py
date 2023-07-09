@@ -394,10 +394,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             ):
                 mediaCleanup(hass, entry.entry_id)
 
-            if (
-                hass.data[DOMAIN][entry.entry_id]["initialMediaScanDone"] is True
-                and enableMediaSync
-            ):
+            if hass.data[DOMAIN][entry.entry_id]["initialMediaScanDone"] is True:
                 async_track_time_interval(
                     hass,
                     mediaSync,
@@ -543,10 +540,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         async def mediaSync(time=None):
             enableMediaSync = entry.data.get(ENABLE_MEDIA_SYNC)
             if (
-                entry.entry_id in hass.data[DOMAIN]
+                enableMediaSync
+                and entry.entry_id in hass.data[DOMAIN]
                 and "controller" in hass.data[DOMAIN][entry.entry_id]
                 and hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] is False
-                and enableMediaSync
             ):
                 hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = True
                 tapoController: Tapo = hass.data[DOMAIN][entry.entry_id]["controller"]
