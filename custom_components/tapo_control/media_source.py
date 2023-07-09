@@ -75,9 +75,10 @@ class TapoMediaSource(MediaSource):
                 LOGGER.debug(startDate)
                 LOGGER.debug(endDate)
 
-                url = await getRecording(
+                await getRecording(
                     self.hass, tapoController, entry, date, startDate, endDate
                 )
+                url = getWebFile(entry, startDate, endDate, "videos")
                 LOGGER.debug(url)
             except Exception as e:
                 LOGGER.error(e)

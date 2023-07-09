@@ -479,7 +479,7 @@ async def getRecording(
         endDate,
     )
 
-    return getWebFile(entry_id, startDate, endDate, "videos")
+    return coldFilePath
 
 
 def areCameraPortsOpened(host):
