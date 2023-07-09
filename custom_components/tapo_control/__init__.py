@@ -35,6 +35,7 @@ from .const import (
     ENABLE_STREAM,
     ENABLE_TIME_SYNC,
     MEDIA_CLEANUP_PERIOD,
+    MEDIA_SYNC_HOURS,
     RTSP_TRANS_PROTOCOLS,
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
@@ -43,6 +44,7 @@ from .const import (
     UPDATE_CHECK_PERIOD,
 )
 from .utils import (
+    convert_to_timestamp,
     deleteDir,
     getColdDirPathForEntry,
     getHotDirPathForEntry,
@@ -159,6 +161,14 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         config_entry.data = {**new}
 
         config_entry.version = 11
+
+    if config_entry.version == 11:
+        new = {**config_entry.data}
+        new[MEDIA_SYNC_HOURS] = ""
+
+        config_entry.data = {**new}
+
+        config_entry.version = 12
 
     LOGGER.warn("Migration to version %s successful", config_entry.version)
 
@@ -402,9 +412,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 )
             elif hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"] is False:
                 hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"] = True
-                hass.async_create_background_task(
-                    findMedia(hass, entry.entry_id), "findMedia"
-                )
+                hass.async_create_background_task(findMedia(hass, entry), "findMedia")
 
         tapoCoordinator = DataUpdateCoordinator(
             hass,
@@ -537,8 +545,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         # Media sync
 
+        timeCorrection = await hass.async_add_executor_job(
+            tapoController.getTimeCorrection
+        )
+
         async def mediaSync(time=None):
             enableMediaSync = entry.data.get(ENABLE_MEDIA_SYNC)
+            mediaSyncHours = entry.data.get(MEDIA_SYNC_HOURS)
+            if mediaSyncHours == "":
+                mediaSyncTime = False
+            else:
+                mediaSyncTime = (int(mediaSyncHours) * 60 * 60) + timeCorrection
             if (
                 enableMediaSync
                 and entry.entry_id in hass.data[DOMAIN]
@@ -551,29 +568,56 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     tapoController.getRecordingsList
                 )
 
+                # todo:do not grab more than necessary depending on media_sync_hours
+                ts = datetime.datetime.utcnow().timestamp()
+
                 for searchResult in recordingsList:
                     for key in searchResult:
-                        recordingsForDay = await getRecordings(
-                            hass, entry.entry_id, searchResult[key]["date"]
-                        )
-                        recordingCount = 0
-                        for recording in recordingsForDay:
-                            for recordingKey in recording:
-                                recordingCount += 1
-                                try:
-                                    url = await getRecording(
-                                        hass,
-                                        tapoController,
-                                        entry.entry_id,
-                                        searchResult[key]["date"],
-                                        recording[recordingKey]["startTime"],
-                                        recording[recordingKey]["endTime"],
-                                        recordingCount,
-                                    )
-                                except Unresolvable as err:
-                                    LOGGER.warn(err)
-                                except Exception as err:
-                                    LOGGER.error(err)
+                        LOGGER.warn(searchResult[key]["date"])
+                        if (mediaSyncTime is False) or (
+                            (
+                                mediaSyncTime is not False
+                                and (
+                                    (int(ts) - (int(mediaSyncTime) + 86400))
+                                    < convert_to_timestamp(searchResult[key]["date"])
+                                )
+                            )
+                        ):
+                            recordingsForDay = await getRecordings(
+                                hass, entry.entry_id, searchResult[key]["date"]
+                            )
+                            totalRecordingsToDownload = 0
+                            for recording in recordingsForDay:
+                                for recordingKey in recording:
+                                    if recording[recordingKey]["endTime"] > int(ts) - (
+                                        int(mediaSyncTime)
+                                    ):
+                                        totalRecordingsToDownload += 1
+                            recordingCount = 0
+                            for recording in recordingsForDay:
+                                for recordingKey in recording:
+                                    if recording[recordingKey]["endTime"] > (
+                                        int(ts) - (int(mediaSyncTime))
+                                    ):
+                                        LOGGER.warn(int(ts) - (int(mediaSyncTime)))
+                                        LOGGER.warn(recording[recordingKey]["endTime"])
+                                        recordingCount += 1
+                                        try:
+                                            # todo: add optional parameter to specify length, and calculate correct length above respecting the sync time setting
+                                            await getRecording(
+                                                hass,
+                                                tapoController,
+                                                entry.entry_id,
+                                                searchResult[key]["date"],
+                                                recording[recordingKey]["startTime"],
+                                                recording[recordingKey]["endTime"],
+                                                recordingCount,
+                                                totalRecordingsToDownload,
+                                            )
+                                        except Unresolvable as err:
+                                            LOGGER.warn(err)
+                                        except Exception as err:
+                                            LOGGER.error(err)
                 hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = False
 
         async def unsubscribe(event):

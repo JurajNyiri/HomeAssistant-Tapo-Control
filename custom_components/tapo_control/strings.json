@@ -71,7 +71,8 @@
       },
       "media": {
         "data": {
-          "enable_media_sync": "Enable media synchronization"
+          "enable_media_sync": "Enable media synchronization",
+          "media_sync_hours": "Number of hours to keep synchronized"
         },
         "description": "Modify settings of recordings media synchronization"
       },

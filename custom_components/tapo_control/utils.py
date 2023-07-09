@@ -37,6 +37,7 @@ from .const import (
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
     CONF_CUSTOM_STREAM,
+    MEDIA_SYNC_HOURS,
 )
 
 UUID = uuid.uuid4().hex
@@ -125,12 +126,15 @@ async def getRecordings(hass, entry_id, date):
 
 
 # todo: findMedia needs to run periodically
-async def findMedia(hass, entry_id):
+async def findMedia(hass, entry):
+    entry_id = entry.entry_id
     LOGGER.warn("Finding media...")
     hass.data[DOMAIN][entry_id]["initialMediaScanDone"] = False
     tapoController: Tapo = hass.data[DOMAIN][entry_id]["controller"]
-    recordingsList = await hass.async_add_executor_job(tapoController.getRecordingsList)
+    mediaSyncHours = entry.data.get(MEDIA_SYNC_HOURS)
+    mediaSyncTime = mediaSyncHours * 60 * 60
 
+    recordingsList = await hass.async_add_executor_job(tapoController.getRecordingsList)
     mediaScanResult = {}
     for searchResult in recordingsList:
         for key in searchResult:
@@ -399,6 +403,7 @@ async def getRecording(
     startDate: int,
     endDate: int,
     recordingCount: int = False,
+    totalRecordingCount: int = False,
 ) -> str:
     timeCorrection = await hass.async_add_executor_job(tapo.getTimeCorrection)
 
@@ -427,7 +432,9 @@ async def getRecording(
                 hass,
                 entry_id,
                 date,
-                len(allRecordings),
+                len(allRecordings)
+                if totalRecordingCount is False
+                else totalRecordingCount,
                 recordingCount if recordingCount is not False else False,
             )
         )
@@ -865,6 +872,18 @@ async def getCamData(hass, controller):
     LOGGER.debug("Processed update data:")
     LOGGER.debug(camData)
     return camData
+
+
+def convert_to_timestamp(date_string):
+    date_format = "%Y%m%d"
+    try:
+        date = datetime.datetime.strptime(date_string, date_format)
+        timestamp = datetime.datetime.timestamp(date)
+        return int(timestamp)
+    except ValueError:
+        raise Exception(
+            "Invalid date format. Please provide a date in the format 'YYYYMMDD'."
+        )
 
 
 async def update_listener(hass, entry):
