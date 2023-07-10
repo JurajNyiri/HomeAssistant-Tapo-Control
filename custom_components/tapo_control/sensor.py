@@ -111,8 +111,14 @@ class TapoSyncSensor(TapoSensorEntity):
         ]:
             self._attr_state = "Not Ready"
         elif self._hass.data[DOMAIN][self._config_entry.entry_id]["downloadProgress"]:
-            self._attr_state = self._hass.data[DOMAIN][self._config_entry.entry_id][
-                "downloadProgress"
-            ]
+            if (
+                self._hass.data[DOMAIN][self._config_entry.entry_id]["downloadProgress"]
+                == "Finished download"
+            ):
+                self._attr_state = "Idle"
+            else:
+                self._attr_state = self._hass.data[DOMAIN][self._config_entry.entry_id][
+                    "downloadProgress"
+                ]
         else:
             self._attr_state = "Idle"
