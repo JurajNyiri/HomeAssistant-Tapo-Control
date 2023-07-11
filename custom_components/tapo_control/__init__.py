@@ -582,8 +582,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 and hass.data[DOMAIN][entry.entry_id]["isDownloadingStream"]
                 is False  # prevent breaking user manual upload
             ):
+                hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = True
                 try:
-                    hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = True
                     tapoController: Tapo = hass.data[DOMAIN][entry.entry_id][
                         "controller"
                     ]
