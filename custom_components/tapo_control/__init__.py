@@ -568,8 +568,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 + ","
                 + str(hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] is False)
                 + ","
-                + str(hass.data[DOMAIN][entry.entry_id]["isDownloadingStream"])
-                + ","
                 + str(hass.data[DOMAIN][entry.entry_id]["isDownloadingStream"] is False)
             )
             if mediaSyncHours == "":
@@ -584,63 +582,71 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 and hass.data[DOMAIN][entry.entry_id]["isDownloadingStream"]
                 is False  # prevent breaking user manual upload
             ):
-                hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = True
-                tapoController: Tapo = hass.data[DOMAIN][entry.entry_id]["controller"]
-                LOGGER.warn("getRecordingsList -1")
-                recordingsList = await hass.async_add_executor_job(
-                    tapoController.getRecordingsList
-                )
-                LOGGER.warn("getRecordingsList -2")
+                try:
+                    hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = True
+                    tapoController: Tapo = hass.data[DOMAIN][entry.entry_id][
+                        "controller"
+                    ]
+                    LOGGER.warn("getRecordingsList -1")
+                    recordingsList = await hass.async_add_executor_job(
+                        tapoController.getRecordingsList
+                    )
+                    LOGGER.warn("getRecordingsList -2")
 
-                ts = datetime.datetime.utcnow().timestamp()
-                for searchResult in recordingsList:
-                    for key in searchResult:
-                        if (mediaSyncTime is False) or (
-                            (
-                                mediaSyncTime is not False
-                                and (
-                                    (int(ts) - (int(mediaSyncTime) + 86400))
-                                    < convert_to_timestamp(searchResult[key]["date"])
+                    ts = datetime.datetime.utcnow().timestamp()
+                    for searchResult in recordingsList:
+                        for key in searchResult:
+                            if (mediaSyncTime is False) or (
+                                (
+                                    mediaSyncTime is not False
+                                    and (
+                                        (int(ts) - (int(mediaSyncTime) + 86400))
+                                        < convert_to_timestamp(
+                                            searchResult[key]["date"]
+                                        )
+                                    )
                                 )
-                            )
-                        ):
-                            LOGGER.warn("getRecordings -1")
-                            recordingsForDay = await getRecordings(
-                                hass, entry.entry_id, searchResult[key]["date"]
-                            )
-                            LOGGER.warn("getRecordings -2")
-                            totalRecordingsToDownload = 0
-                            for recording in recordingsForDay:
-                                for recordingKey in recording:
-                                    if recording[recordingKey]["endTime"] > int(ts) - (
-                                        int(mediaSyncTime)
-                                    ):
-                                        totalRecordingsToDownload += 1
-                            recordingCount = 0
-                            for recording in recordingsForDay:
-                                for recordingKey in recording:
-                                    if recording[recordingKey]["endTime"] > (
-                                        int(ts) - (int(mediaSyncTime))
-                                    ):
-                                        recordingCount += 1
-                                        try:
-                                            LOGGER.warn("getRecording -1")
-                                            await getRecording(
-                                                hass,
-                                                tapoController,
-                                                entry.entry_id,
-                                                searchResult[key]["date"],
-                                                recording[recordingKey]["startTime"],
-                                                recording[recordingKey]["endTime"],
-                                                recordingCount,
-                                                totalRecordingsToDownload,
-                                            )
-                                            LOGGER.warn("getRecording -2")
-                                        except Unresolvable as err:
-                                            LOGGER.warn(err)
-                                        except Exception as err:
-                                            LOGGER.error(err)
-
+                            ):
+                                LOGGER.warn("getRecordings -1")
+                                recordingsForDay = await getRecordings(
+                                    hass, entry.entry_id, searchResult[key]["date"]
+                                )
+                                LOGGER.warn("getRecordings -2")
+                                totalRecordingsToDownload = 0
+                                for recording in recordingsForDay:
+                                    for recordingKey in recording:
+                                        if recording[recordingKey]["endTime"] > int(
+                                            ts
+                                        ) - (int(mediaSyncTime)):
+                                            totalRecordingsToDownload += 1
+                                recordingCount = 0
+                                for recording in recordingsForDay:
+                                    for recordingKey in recording:
+                                        if recording[recordingKey]["endTime"] > (
+                                            int(ts) - (int(mediaSyncTime))
+                                        ):
+                                            recordingCount += 1
+                                            try:
+                                                LOGGER.warn("getRecording -1")
+                                                await getRecording(
+                                                    hass,
+                                                    tapoController,
+                                                    entry.entry_id,
+                                                    searchResult[key]["date"],
+                                                    recording[recordingKey][
+                                                        "startTime"
+                                                    ],
+                                                    recording[recordingKey]["endTime"],
+                                                    recordingCount,
+                                                    totalRecordingsToDownload,
+                                                )
+                                                LOGGER.warn("getRecording -2")
+                                            except Unresolvable as err:
+                                                LOGGER.warn(err)
+                                            except Exception as err:
+                                                LOGGER.error(err)
+                except Exception as err:
+                    LOGGER.error(err)
                 LOGGER.warn("runningMediaSync -false")
                 hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = False
 
