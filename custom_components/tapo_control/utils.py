@@ -11,6 +11,7 @@ import urllib.parse
 import uuid
 import pathlib
 from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
 from pytapo.media_stream.downloader import Downloader
 from homeassistant.components.media_source.error import Unresolvable
 
@@ -37,6 +38,7 @@ from .const import (
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
     CONF_CUSTOM_STREAM,
+    MEDIA_SYNC_COLD_STORAGE_PATH,
     MEDIA_SYNC_HOURS,
 )
 
@@ -96,8 +98,18 @@ def getDataPath():
     )
 
 
-def getColdDirPathForEntry(entry_id):
-    coldDirPath = os.path.join(getDataPath(), f".storage/{DOMAIN}/{entry_id}/")
+def getColdDirPathForEntry(hass: HomeAssistant, entry_id: str):
+    entry: ConfigEntry = hass.data[DOMAIN][entry_id]["entry"]
+    media_sync_cold_storage_path = entry.data.get(MEDIA_SYNC_COLD_STORAGE_PATH)
+    LOGGER.warn("path")
+    LOGGER.warn(media_sync_cold_storage_path)
+    if media_sync_cold_storage_path == "":
+        coldDirPath = os.path.join(getDataPath(), f".storage/{DOMAIN}/{entry_id}/")
+        media_sync_cold_storage_path = f".storage/{DOMAIN}/{entry_id}/"
+    else:
+        coldDirPath = os.path.join(
+            getDataPath(), f"{media_sync_cold_storage_path}/{entry_id}/"
+        )
     pathlib.Path(coldDirPath + "/videos").mkdir(parents=True, exist_ok=True)
     pathlib.Path(coldDirPath + "/thumbs").mkdir(parents=True, exist_ok=True)
     return coldDirPath
@@ -145,6 +157,7 @@ async def findMedia(hass, entry):
             for recording in recordingsForDay:
                 for recordingKey in recording:
                     filePathVideo = getColdFile(
+                        hass,
                         entry_id,
                         recording[recordingKey]["startTime"],
                         recording[recordingKey]["endTime"],
@@ -175,6 +188,7 @@ async def processDownload(hass, entry_id: int, startDate: int, endDate: int):
     )
 
     coldFilePath = getColdFile(
+        hass,
         entry_id,
         startDate,
         endDate,
@@ -203,6 +217,7 @@ async def processDownload(hass, entry_id: int, startDate: int, endDate: int):
 
 async def generateThumb(hass, entry_id, startDate: int, endDate: int):
     filePathThumb = getColdFile(
+        hass,
         entry_id,
         startDate,
         endDate,
@@ -210,6 +225,7 @@ async def generateThumb(hass, entry_id, startDate: int, endDate: int):
     )
     if not os.path.exists(filePathThumb):
         filePathVideo = getColdFile(
+            hass,
             entry_id,
             startDate,
             endDate,
@@ -230,7 +246,7 @@ async def generateThumb(hass, entry_id, startDate: int, endDate: int):
 
 def deleteFilesNoLongerPresentInCamera(hass, entry_id, extension, folder):
     if hass.data[DOMAIN][entry_id]["initialMediaScanDone"] is True:
-        coldDirPath = getColdDirPathForEntry(entry_id)
+        coldDirPath = getColdDirPathForEntry(hass, entry_id)
         if os.path.exists(coldDirPath + "/" + folder + "/"):
             for f in os.listdir(coldDirPath + "/" + folder + "/"):
                 fileName = f.replace(extension, "")
@@ -255,7 +271,7 @@ async def deleteColdFilesOlderThanMaxSyncTime(hass, entry, extension, folder):
     mediaSyncHours = entry.data.get(MEDIA_SYNC_HOURS)
 
     if mediaSyncHours != "":
-        coldDirPath = getColdDirPathForEntry(entry_id)
+        coldDirPath = getColdDirPathForEntry(hass, entry_id)
         tapoController: Tapo = hass.data[DOMAIN][entry_id]["controller"]
         timeCorrection = await hass.async_add_executor_job(
             tapoController.getTimeCorrection
@@ -292,7 +308,7 @@ async def mediaCleanup(hass, entry):
 
     ts = datetime.datetime.utcnow().timestamp()
     hass.data[DOMAIN][entry_id]["lastMediaCleanup"] = ts
-    coldDirPath = getColdDirPathForEntry(entry_id)
+    coldDirPath = getColdDirPathForEntry(hass, entry_id)
     hotDirPath = getHotDirPathForEntry(entry_id)
 
     # clean cache files from old HA instance
@@ -408,8 +424,10 @@ def getFileName(startDate: int, endDate: int, encrypted=False):
         return str(startDate) + "-" + str(endDate)
 
 
-def getColdFile(entry_id: str, startDate: int, endDate: int, folder: str):
-    coldDirPath = getColdDirPathForEntry(entry_id)
+def getColdFile(
+    hass: HomeAssistant, entry_id: str, startDate: int, endDate: int, folder: str
+):
+    coldDirPath = getColdDirPathForEntry(hass, entry_id)
     fileName = getFileName(startDate, endDate, False)
 
     if folder == "videos":
@@ -421,8 +439,10 @@ def getColdFile(entry_id: str, startDate: int, endDate: int, folder: str):
     return coldDirPath + "/" + folder + "/" + fileName + extension
 
 
-def getHotFile(entry_id: str, startDate: int, endDate: int, folder: str):
-    coldFilePath = getColdFile(entry_id, startDate, endDate, folder)
+def getHotFile(
+    hass: HomeAssistant, entry_id: str, startDate: int, endDate: int, folder: str
+):
+    coldFilePath = getColdFile(hass, entry_id, startDate, endDate, folder)
     getHotDirPathForEntry(entry_id)  # ensure creation of folder structure
     if not os.path.exists(coldFilePath):
         raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
@@ -442,8 +462,10 @@ def getHotFile(entry_id: str, startDate: int, endDate: int, folder: str):
     return hotFilePath
 
 
-def getWebFile(entry_id: str, startDate: int, endDate: int, folder: str):
-    hotFilePath = getHotFile(entry_id, startDate, endDate, folder)
+def getWebFile(
+    hass: HomeAssistant, entry_id: str, startDate: int, endDate: int, folder: str
+):
+    hotFilePath = getHotFile(hass, entry_id, startDate, endDate, folder)
     fileWebPath = hotFilePath[hotFilePath.index("/www/") + 5 :]  # remove ./www/
 
     return f"/local/{fileWebPath}"
@@ -461,10 +483,10 @@ async def getRecording(
 ) -> str:
     timeCorrection = await hass.async_add_executor_job(tapo.getTimeCorrection)
 
-    coldDirPath = getColdDirPathForEntry(entry_id)
+    coldDirPath = getColdDirPathForEntry(hass, entry_id)
     downloadUID = getFileName(startDate, endDate, False)
 
-    coldFilePath = getColdFile(entry_id, startDate, endDate, "videos")
+    coldFilePath = getColdFile(hass, entry_id, startDate, endDate, "videos")
     if not os.path.exists(coldFilePath):
         # this NEEDS to happen otherwise camera does not send data!
         allRecordings = await hass.async_add_executor_job(tapo.getRecordings, date)
