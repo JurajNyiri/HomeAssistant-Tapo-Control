@@ -158,6 +158,9 @@ class FlowHandler(ConfigFlow):
             return self.async_create_entry(
                 title=host,
                 data={
+                    ENABLE_MEDIA_SYNC: False,
+                    MEDIA_SYNC_HOURS: "48",
+                    MEDIA_SYNC_COLD_STORAGE_PATH: "",
                     ENABLE_MOTION_SENSOR: enable_motion_sensor,
                     ENABLE_WEBHOOKS: enable_webhooks,
                     ENABLE_STREAM: enable_stream,
