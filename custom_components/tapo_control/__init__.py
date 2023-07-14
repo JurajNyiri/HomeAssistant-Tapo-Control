@@ -444,6 +444,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "lastMediaCleanup": 0,
             "lastFirmwareCheck": 0,
             "latestFirmwareVersion": False,
+            "mediaSyncColdDir": False,
+            "mediaSyncHotDir": False,
             "motionSensorCreated": False,
             "eventsDevice": False,
             "onvifManagement": False,

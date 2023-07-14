@@ -99,22 +99,31 @@ def getDataPath():
 
 
 def getColdDirPathForEntry(hass: HomeAssistant, entry_id: str):
-    entry: ConfigEntry = hass.data[DOMAIN][entry_id]["entry"]
+    if hass.data[DOMAIN][entry_id]["mediaSyncColdDir"] is False:
+        entry: ConfigEntry = hass.data[DOMAIN][entry_id]["entry"]
+        media_sync_cold_storage_path = entry.data.get(MEDIA_SYNC_COLD_STORAGE_PATH)
+        if media_sync_cold_storage_path == "":
+            coldDirPath = os.path.join(getDataPath(), f".storage/{DOMAIN}/{entry_id}/")
+        else:
+            coldDirPath = os.path.join(
+                getDataPath(), f"{media_sync_cold_storage_path}/"
+            )
+        pathlib.Path(coldDirPath + "/videos").mkdir(parents=True, exist_ok=True)
+        pathlib.Path(coldDirPath + "/thumbs").mkdir(parents=True, exist_ok=True)
+        hass.data[DOMAIN][entry_id]["mediaSyncColdDir"] = coldDirPath
 
-    media_sync_cold_storage_path = entry.data.get(MEDIA_SYNC_COLD_STORAGE_PATH)
-    if media_sync_cold_storage_path == "":
-        coldDirPath = os.path.join(getDataPath(), f".storage/{DOMAIN}/{entry_id}/")
-    else:
-        coldDirPath = os.path.join(getDataPath(), f"{media_sync_cold_storage_path}/")
-    pathlib.Path(coldDirPath + "/videos").mkdir(parents=True, exist_ok=True)
-    pathlib.Path(coldDirPath + "/thumbs").mkdir(parents=True, exist_ok=True)
+    coldDirPath = hass.data[DOMAIN][entry_id]["mediaSyncColdDir"]
     return coldDirPath
 
 
-def getHotDirPathForEntry(entry_id):
-    hotDirPath = os.path.join(getDataPath(), f"www/{DOMAIN}/{entry_id}/")
-    pathlib.Path(hotDirPath + "/videos").mkdir(parents=True, exist_ok=True)
-    pathlib.Path(hotDirPath + "/thumbs").mkdir(parents=True, exist_ok=True)
+def getHotDirPathForEntry(hass: HomeAssistant, entry_id: str):
+    if hass.data[DOMAIN][entry_id]["mediaSyncHotDir"] is False:
+        hotDirPath = os.path.join(getDataPath(), f"www/{DOMAIN}/{entry_id}/")
+        pathlib.Path(hotDirPath + "/videos").mkdir(parents=True, exist_ok=True)
+        pathlib.Path(hotDirPath + "/thumbs").mkdir(parents=True, exist_ok=True)
+        hass.data[DOMAIN][entry_id]["mediaSyncHotDir"] = hotDirPath
+
+    hotDirPath = hass.data[DOMAIN][entry_id]["mediaSyncHotDir"]
     return hotDirPath
 
 
@@ -303,7 +312,7 @@ async def mediaCleanup(hass, entry):
     ts = datetime.datetime.utcnow().timestamp()
     hass.data[DOMAIN][entry_id]["lastMediaCleanup"] = ts
     coldDirPath = getColdDirPathForEntry(hass, entry_id)
-    hotDirPath = getHotDirPathForEntry(entry_id)
+    hotDirPath = getHotDirPathForEntry(hass, entry_id)
 
     # clean cache files from old HA instance
     LOGGER.debug(
@@ -413,7 +422,7 @@ def getHotFile(
     hass: HomeAssistant, entry_id: str, startDate: int, endDate: int, folder: str
 ):
     coldFilePath = getColdFile(hass, entry_id, startDate, endDate, folder)
-    getHotDirPathForEntry(entry_id)  # ensure creation of folder structure
+    getHotDirPathForEntry(hass, entry_id)  # ensure creation of folder structure
     extension = pathlib.Path(coldFilePath).suffix
     hotFilePath = (
         coldFilePath.replace("/.storage/", "/www/")
