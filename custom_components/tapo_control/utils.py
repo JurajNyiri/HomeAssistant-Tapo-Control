@@ -105,9 +105,8 @@ def getColdDirPathForEntry(hass: HomeAssistant, entry_id: str):
         if media_sync_cold_storage_path == "":
             coldDirPath = os.path.join(getDataPath(), f".storage/{DOMAIN}/{entry_id}/")
         else:
-            coldDirPath = os.path.join(
-                getDataPath(), f"{media_sync_cold_storage_path}/"
-            )
+            coldDirPath = f"{media_sync_cold_storage_path}/"
+
         pathlib.Path(coldDirPath + "/videos").mkdir(parents=True, exist_ok=True)
         pathlib.Path(coldDirPath + "/thumbs").mkdir(parents=True, exist_ok=True)
         hass.data[DOMAIN][entry_id]["mediaSyncColdDir"] = coldDirPath
