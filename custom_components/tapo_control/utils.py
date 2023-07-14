@@ -246,6 +246,7 @@ async def generateThumb(hass, entry_id, startDate: int, endDate: int):
     return filePathThumb
 
 
+# todo: findMedia needs to run periodically because of this function!!!
 def deleteFilesNoLongerPresentInCamera(hass, entry_id, extension, folder):
     if hass.data[DOMAIN][entry_id]["initialMediaScanDone"] is True:
         coldDirPath = getColdDirPathForEntry(hass, entry_id)
@@ -285,23 +286,33 @@ async def deleteColdFilesOlderThanMaxSyncTime(hass, entry, extension, folder):
             for f in os.listdir(coldDirPath + "/" + folder + "/"):
                 fileName = f.replace(extension, "")
                 filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
-                endTS = int(fileName.split("-")[1])
-                last_modified = os.stat(filePath).st_mtime
-                if (endTS < (int(ts) - (int(mediaSyncTime) + timeCorrection))) and (
-                    ts - last_modified > int(mediaSyncTime)
-                ):
-                    LOGGER.debug(
-                        "[deleteColdFilesOlderThanMaxSyncTime] Removing "
+                splitFileName = fileName.split("-")
+                if len(splitFileName) == 2:
+                    endTS = int(fileName.split("-")[1])
+                    last_modified = os.stat(filePath).st_mtime
+                    if (endTS < (int(ts) - (int(mediaSyncTime) + timeCorrection))) and (
+                        ts - last_modified > int(mediaSyncTime)
+                    ):
+                        LOGGER.debug(
+                            "[deleteColdFilesOlderThanMaxSyncTime] Removing "
+                            + filePath
+                            + " ("
+                            + fileName
+                            + ")..."
+                        )
+                        hass.data[DOMAIN][entry_id]["downloadedStreams"].pop(
+                            fileName,
+                            None,
+                        )
+                        os.remove(filePath)
+                else:
+                    LOGGER.warn(
+                        "[deleteColdFilesOlderThanMaxSyncTime] Ignoring "
                         + filePath
                         + " ("
                         + fileName
-                        + ")..."
+                        + ") because of incorrect file name format..."
                     )
-                    hass.data[DOMAIN][entry_id]["downloadedStreams"].pop(
-                        fileName,
-                        None,
-                    )
-                    os.remove(filePath)
 
 
 async def mediaCleanup(hass, entry):
@@ -421,18 +432,15 @@ def getHotFile(
     hass: HomeAssistant, entry_id: str, startDate: int, endDate: int, folder: str
 ):
     coldFilePath = getColdFile(hass, entry_id, startDate, endDate, folder)
-    getHotDirPathForEntry(hass, entry_id)  # ensure creation of folder structure
+    hotDirPath = getHotDirPathForEntry(hass, entry_id)
     extension = pathlib.Path(coldFilePath).suffix
-    hotFilePath = (
-        coldFilePath.replace("/.storage/", "/www/")
-        .replace(extension, "")
-        .replace(
-            getFileName(startDate, endDate, False),
-            getFileName(startDate, endDate, True),
-        )
-        + UUID
-        + extension
+    fileNameEncrypted = getFileName(
+        startDate,
+        endDate,
+        True,
     )
+    hotFilePath = f"{hotDirPath}/{folder}/{fileNameEncrypted}{UUID}{extension}"
+
     if not os.path.exists(hotFilePath):
         if not os.path.exists(coldFilePath):
             raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
