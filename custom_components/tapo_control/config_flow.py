@@ -24,6 +24,7 @@ from .const import (
     LOGGER,
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
+    MEDIA_SYNC_COLD_STORAGE_PATH,
     MEDIA_SYNC_HOURS,
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
@@ -38,7 +39,7 @@ from .const import (
 class FlowHandler(ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 12
+    VERSION = 13
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -595,6 +596,9 @@ class TapoOptionsFlowHandler(OptionsFlow):
         errors = {}
         enable_media_sync = self.config_entry.data[ENABLE_MEDIA_SYNC]
         media_sync_hours = self.config_entry.data[MEDIA_SYNC_HOURS]
+        media_sync_cold_storage_path = self.config_entry.data[
+            MEDIA_SYNC_COLD_STORAGE_PATH
+        ]
         ip_address = self.config_entry.data[CONF_IP_ADDRESS]
 
         allConfigData = {**self.config_entry.data}
@@ -610,8 +614,18 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 else:
                     media_sync_hours = ""
 
+                if MEDIA_SYNC_COLD_STORAGE_PATH in user_input:
+                    media_sync_cold_storage_path = user_input[
+                        MEDIA_SYNC_COLD_STORAGE_PATH
+                    ]
+                else:
+                    media_sync_cold_storage_path = ""
+
                 allConfigData[ENABLE_MEDIA_SYNC] = enable_media_sync
                 allConfigData[MEDIA_SYNC_HOURS] = media_sync_hours
+                allConfigData[
+                    MEDIA_SYNC_COLD_STORAGE_PATH
+                ] = media_sync_cold_storage_path
                 # todo also initial setup to add the default values!
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
@@ -647,6 +661,10 @@ class TapoOptionsFlowHandler(OptionsFlow):
                         MEDIA_SYNC_HOURS,
                         description={"suggested_value": media_sync_hours},
                     ): int,
+                    vol.Optional(
+                        MEDIA_SYNC_COLD_STORAGE_PATH,
+                        description={"suggested_value": media_sync_cold_storage_path},
+                    ): str,
                 }
             ),
             errors=errors,

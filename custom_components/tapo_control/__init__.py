@@ -35,6 +35,7 @@ from .const import (
     ENABLE_STREAM,
     ENABLE_TIME_SYNC,
     MEDIA_CLEANUP_PERIOD,
+    MEDIA_SYNC_COLD_STORAGE_PATH,
     MEDIA_SYNC_HOURS,
     RTSP_TRANS_PROTOCOLS,
     SOUND_DETECTION_DURATION,
@@ -169,6 +170,14 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         config_entry.data = {**new}
 
         config_entry.version = 12
+
+    if config_entry.version == 12:
+        new = {**config_entry.data}
+        new[MEDIA_SYNC_COLD_STORAGE_PATH] = ""
+
+        config_entry.data = {**new}
+
+        config_entry.version = 13
 
     LOGGER.warn("Migration to version %s successful", config_entry.version)
 
