@@ -101,8 +101,6 @@ def getDataPath():
 def getColdDirPathForEntry(hass: HomeAssistant, entry_id: str):
     entry: ConfigEntry = hass.data[DOMAIN][entry_id]["entry"]
     media_sync_cold_storage_path = entry.data.get(MEDIA_SYNC_COLD_STORAGE_PATH)
-    LOGGER.warn("path")
-    LOGGER.warn(media_sync_cold_storage_path)
     if media_sync_cold_storage_path == "":
         coldDirPath = os.path.join(getDataPath(), f".storage/{DOMAIN}/{entry_id}/")
         media_sync_cold_storage_path = f".storage/{DOMAIN}/{entry_id}/"
@@ -140,11 +138,9 @@ async def getRecordings(hass, entry_id, date):
 # todo: findMedia needs to run periodically
 async def findMedia(hass, entry):
     entry_id = entry.entry_id
-    LOGGER.warn("Finding media...")
+    LOGGER.debug("Finding media...")
     hass.data[DOMAIN][entry_id]["initialMediaScanDone"] = False
     tapoController: Tapo = hass.data[DOMAIN][entry_id]["controller"]
-    mediaSyncHours = entry.data.get(MEDIA_SYNC_HOURS)
-    mediaSyncTime = mediaSyncHours * 60 * 60
 
     recordingsList = await hass.async_add_executor_job(tapoController.getRecordingsList)
     mediaScanResult = {}
@@ -153,7 +149,7 @@ async def findMedia(hass, entry):
             recordingsForDay = await getRecordings(
                 hass, entry_id, searchResult[key]["date"]
             )
-            LOGGER.warn(f"Getting media for day {searchResult[key]['date']}...")
+            LOGGER.debug(f"Getting media for day {searchResult[key]['date']}...")
             for recording in recordingsForDay:
                 for recordingKey in recording:
                     filePathVideo = getColdFile(
@@ -252,7 +248,7 @@ def deleteFilesNoLongerPresentInCamera(hass, entry_id, extension, folder):
                 fileName = f.replace(extension, "")
                 filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
                 if fileName not in hass.data[DOMAIN][entry_id]["mediaScanResult"]:
-                    LOGGER.warn(
+                    LOGGER.debug(
                         "[deleteFilesNoLongerPresentInCamera] Removing "
                         + filePath
                         + " ("
@@ -288,7 +284,7 @@ async def deleteColdFilesOlderThanMaxSyncTime(hass, entry, extension, folder):
                 if (endTS < (int(ts) - (int(mediaSyncTime) + timeCorrection))) and (
                     ts - last_modified > int(mediaSyncTime)
                 ):
-                    LOGGER.warn(
+                    LOGGER.debug(
                         "[deleteColdFilesOlderThanMaxSyncTime] Removing "
                         + filePath
                         + " ("
@@ -304,7 +300,7 @@ async def deleteColdFilesOlderThanMaxSyncTime(hass, entry, extension, folder):
 
 async def mediaCleanup(hass, entry):
     entry_id = entry.entry_id
-    LOGGER.warn("Initiating media cleanup for entity " + entry_id + "...")
+    LOGGER.debug("Initiating media cleanup for entity " + entry_id + "...")
 
     ts = datetime.datetime.utcnow().timestamp()
     hass.data[DOMAIN][entry_id]["lastMediaCleanup"] = ts
@@ -312,7 +308,7 @@ async def mediaCleanup(hass, entry):
     hotDirPath = getHotDirPathForEntry(entry_id)
 
     # clean cache files from old HA instance
-    LOGGER.warn(
+    LOGGER.debug(
         "Removing cache files from old HA instances for entity " + entry_id + "..."
     )
     deleteFilesNotIncluding(hotDirPath + "/videos/", UUID)
@@ -323,29 +319,6 @@ async def mediaCleanup(hass, entry):
 
     await deleteColdFilesOlderThanMaxSyncTime(hass, entry, ".mp4", "videos")
     await deleteColdFilesOlderThanMaxSyncTime(hass, entry, ".jpg", "thumbs")
-
-    # for mediaName in hass.data[DOMAIN][entry_id]["mediaScanResult"]:
-    #    LOGGER.warn(mediaName)
-
-    # todo: dynamic hot storage deletion
-    # todo: dynamic cold storage deletion
-    # todo: delete files no longer in camera
-    # todo: ...?
-    # todo:
-
-    # Delete everything other than COLD_DIR_DELETE_TIME seconds from cold storage
-    # todo: rewrite to work with the new folder structure, syncing and also if the user
-    # downloads older video, keep it for COLD_DIR_DELETE_TIME at least
-    """
-    LOGGER.debug(
-        "Deleting cold storage files older than "
-        + str(COLD_DIR_DELETE_TIME)
-        + " seconds for entity "
-        + entry_id
-        + "..."
-    )
-    deleteFilesOlderThan(coldDirPath, COLD_DIR_DELETE_TIME)
-    """
 
     # Delete everything other than HOT_DIR_DELETE_TIME seconds from hot storage
     LOGGER.debug(
@@ -377,7 +350,7 @@ def deleteFilesOlderThan(dirPath, deleteOlderThan):
             filePath = os.path.join(dirPath, f)
             last_modified = os.stat(filePath).st_mtime
             if now - last_modified > deleteOlderThan:
-                LOGGER.warn("[deleteFilesOlderThan] Removing " + filePath + "...")
+                LOGGER.debug("[deleteFilesOlderThan] Removing " + filePath + "...")
                 os.remove(filePath)
 
 
@@ -386,7 +359,7 @@ def deleteFilesNotIncluding(dirPath, includingString):
         for f in os.listdir(dirPath):
             filePath = os.path.join(dirPath, f)
             if includingString not in filePath:
-                LOGGER.warn("[deleteFilesOlderThan] Removing " + filePath + "...")
+                LOGGER.debug("[deleteFilesOlderThan] Removing " + filePath + "...")
                 os.remove(filePath)
 
 
@@ -394,7 +367,6 @@ def processDownloadStatus(
     hass, entry_id, date: str, allRecordingsCount: int, recordingCount: int = False
 ):
     def processUpdate(status):
-        # LOGGER.warn(status)
         if isinstance(status, str):
             hass.data[DOMAIN][entry_id]["downloadProgress"] = status
         else:

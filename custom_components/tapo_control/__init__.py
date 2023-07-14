@@ -179,7 +179,7 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
         config_entry.version = 13
 
-    LOGGER.warn("Migration to version %s successful", config_entry.version)
+    LOGGER.info("Migration to version %s successful", config_entry.version)
 
     return True
 
@@ -254,7 +254,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             return allEntities
 
         async def async_update_data():
-            LOGGER.warn("async_update_data - entry")
+            LOGGER.debug("async_update_data - entry")
             tapoController = hass.data[DOMAIN][entry.entry_id]["controller"]
             host = entry.data.get(CONF_IP_ADDRESS)
             username = entry.data.get(CONF_USERNAME)
@@ -565,21 +565,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
 
         async def mediaSync(time=None):
-            LOGGER.warn("mediaSync")
+            LOGGER.debug("mediaSync")
             enableMediaSync = entry.data.get(ENABLE_MEDIA_SYNC)
             mediaSyncHours = entry.data.get(MEDIA_SYNC_HOURS)
 
-            LOGGER.warn(
-                str(enableMediaSync)
-                + ","
-                + str(entry.entry_id in hass.data[DOMAIN])
-                + ","
-                + str("controller" in hass.data[DOMAIN][entry.entry_id])
-                + ","
-                + str(hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] is False)
-                + ","
-                + str(hass.data[DOMAIN][entry.entry_id]["isDownloadingStream"] is False)
-            )
             if mediaSyncHours == "":
                 mediaSyncTime = False
             else:
@@ -597,11 +586,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     tapoController: Tapo = hass.data[DOMAIN][entry.entry_id][
                         "controller"
                     ]
-                    LOGGER.warn("getRecordingsList -1")
+                    LOGGER.debug("getRecordingsList -1")
                     recordingsList = await hass.async_add_executor_job(
                         tapoController.getRecordingsList
                     )
-                    LOGGER.warn("getRecordingsList -2")
+                    LOGGER.debug("getRecordingsList -2")
 
                     ts = datetime.datetime.utcnow().timestamp()
                     for searchResult in recordingsList:
@@ -617,11 +606,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                     )
                                 )
                             ):
-                                LOGGER.warn("getRecordings -1")
+                                LOGGER.debug("getRecordings -1")
                                 recordingsForDay = await getRecordings(
                                     hass, entry.entry_id, searchResult[key]["date"]
                                 )
-                                LOGGER.warn("getRecordings -2")
+                                LOGGER.debug("getRecordings -2")
                                 totalRecordingsToDownload = 0
                                 for recording in recordingsForDay:
                                     for recordingKey in recording:
@@ -637,7 +626,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                         ):
                                             recordingCount += 1
                                             try:
-                                                LOGGER.warn("getRecording -1")
+                                                LOGGER.debug("getRecording -1")
                                                 await getRecording(
                                                     hass,
                                                     tapoController,
@@ -650,14 +639,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                                     recordingCount,
                                                     totalRecordingsToDownload,
                                                 )
-                                                LOGGER.warn("getRecording -2")
+                                                LOGGER.debug("getRecording -2")
                                             except Unresolvable as err:
                                                 LOGGER.warn(err)
                                             except Exception as err:
                                                 LOGGER.error(err)
                 except Exception as err:
                     LOGGER.error(err)
-                LOGGER.warn("runningMediaSync -false")
+                LOGGER.debug("runningMediaSync -false")
                 hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = False
 
         async def unsubscribe(event):
