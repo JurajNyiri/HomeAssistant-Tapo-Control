@@ -1,12 +1,5 @@
 import datetime
 import hashlib
-import os
-import shutil
-import asyncio
-from threading import Thread
-import time
-from concurrent.futures import ProcessPoolExecutor
-import threading
 
 from homeassistant.core import HomeAssistant
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
@@ -226,7 +219,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
     cloud_password = entry.data.get(CLOUD_PASSWORD)
     enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
-    enableMediaSync = entry.data.get(ENABLE_MEDIA_SYNC)
 
     if isUsingHTTPS(hass):
         LOGGER.warn(
