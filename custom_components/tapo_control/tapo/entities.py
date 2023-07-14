@@ -137,6 +137,7 @@ class TapoSensorEntity(SensorEntity, TapoEntity):
         self._hass = hass
         self._attr_icon = icon
         self._attr_device_class = device_class
+        self._config_entry = config_entry
         entry["entities"].append({"entity": self, "entry": entry})
 
         TapoEntity.__init__(self, entry, name_suffix)

@@ -1,6 +1,5 @@
 import datetime
-import os
-import shutil
+import hashlib
 
 from homeassistant.core import HomeAssistant
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
@@ -14,9 +13,11 @@ from homeassistant.const import (
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt
+from homeassistant.components.media_source.error import Unresolvable
 
 from .const import (
     CONF_RTSP_TRANSPORT,
+    ENABLE_MEDIA_SYNC,
     ENABLE_SOUND_DETECTION,
     CONF_CUSTOM_STREAM,
     ENABLE_WEBHOOKS,
@@ -27,6 +28,8 @@ from .const import (
     ENABLE_STREAM,
     ENABLE_TIME_SYNC,
     MEDIA_CLEANUP_PERIOD,
+    MEDIA_SYNC_COLD_STORAGE_PATH,
+    MEDIA_SYNC_HOURS,
     RTSP_TRANS_PROTOCOLS,
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
@@ -35,6 +38,7 @@ from .const import (
     UPDATE_CHECK_PERIOD,
 )
 from .utils import (
+    convert_to_timestamp,
     deleteDir,
     getColdDirPathForEntry,
     getHotDirPathForEntry,
@@ -48,7 +52,15 @@ from .utils import (
     initOnvifEvents,
     syncTime,
     getLatestFirmwareVersion,
+    findMedia,
+    getRecordings,
 )
+from pytapo import Tapo
+
+from homeassistant.helpers.event import async_track_time_interval
+from datetime import timedelta
+
+from .utils import getRecording
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
@@ -136,6 +148,30 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
         config_entry.version = 10
 
+    if config_entry.version == 10:
+        new = {**config_entry.data}
+        new[ENABLE_MEDIA_SYNC] = False
+
+        config_entry.data = {**new}
+
+        config_entry.version = 11
+
+    if config_entry.version == 11:
+        new = {**config_entry.data}
+        new[MEDIA_SYNC_HOURS] = ""
+
+        config_entry.data = {**new}
+
+        config_entry.version = 12
+
+    if config_entry.version == 12:
+        new = {**config_entry.data}
+        new[MEDIA_SYNC_COLD_STORAGE_PATH] = ""
+
+        config_entry.data = {**new}
+
+        config_entry.version = 13
+
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
     return True
@@ -154,6 +190,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if hass.data[DOMAIN][entry.entry_id]["events"]:
         await hass.data[DOMAIN][entry.entry_id]["events"].async_stop()
+
     return True
 
 
@@ -210,11 +247,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         async def async_update_data():
             LOGGER.debug("async_update_data - entry")
+            tapoController = hass.data[DOMAIN][entry.entry_id]["controller"]
             host = entry.data.get(CONF_IP_ADDRESS)
             username = entry.data.get(CONF_USERNAME)
             password = entry.data.get(CONF_PASSWORD)
             motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
             enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
+            ts = datetime.datetime.utcnow().timestamp()
 
             # motion detection retries
             if motionSensor or enableTimeSync:
@@ -265,7 +304,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         "Not updating motion sensor because device is child or parent."
                     )
 
-                ts = datetime.datetime.utcnow().timestamp()
                 if (
                     hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
                     and enableTimeSync
@@ -275,11 +313,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         > TIME_SYNC_PERIOD
                     ):
                         await syncTime(hass, entry.entry_id)
-                if (
-                    ts - hass.data[DOMAIN][entry.entry_id]["lastMediaCleanup"]
-                    > MEDIA_CLEANUP_PERIOD
-                ):
-                    mediaCleanup(hass, entry.entry_id)
                 ts = datetime.datetime.utcnow().timestamp()
                 if (
                     ts - hass.data[DOMAIN][entry.entry_id]["lastFirmwareCheck"]
@@ -366,6 +399,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         "updateEntity"
                     ].async_schedule_update_ha_state(True)
 
+            if (
+                ts - hass.data[DOMAIN][entry.entry_id]["lastMediaCleanup"]
+                > MEDIA_CLEANUP_PERIOD
+            ):
+                await mediaCleanup(hass, entry)
+
+            if (
+                hass.data[DOMAIN][entry.entry_id]["initialMediaScanDone"] is True
+                and hass.data[DOMAIN][entry.entry_id]["mediaSyncScheduled"] is False
+            ):
+                hass.data[DOMAIN][entry.entry_id]["mediaSyncScheduled"] = True
+                async_track_time_interval(
+                    hass,
+                    mediaSync,
+                    timedelta(seconds=1),
+                )
+            elif hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"] is False:
+                hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"] = True
+                hass.async_create_background_task(findMedia(hass, entry), "findMedia")
+
         tapoCoordinator = DataUpdateCoordinator(
             hass,
             LOGGER,
@@ -379,7 +432,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         currentTS = dt.as_timestamp(dt.now())
 
         hass.data[DOMAIN][entry.entry_id] = {
+            "runningMediaSync": False,
             "controller": tapoController,
+            "entry": entry,
             "usingCloudPassword": cloud_password != "",
             "allControllers": [tapoController],
             "update_listener": entry.add_update_listener(update_listener),
@@ -389,6 +444,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "lastMediaCleanup": 0,
             "lastFirmwareCheck": 0,
             "latestFirmwareVersion": False,
+            "mediaSyncColdDir": False,
+            "mediaSyncHotDir": False,
             "motionSensorCreated": False,
             "eventsDevice": False,
             "onvifManagement": False,
@@ -400,8 +457,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "name": camData["basic_info"]["device_alias"],
             "childDevices": [],
             "isChild": False,
+            "uuid": hashlib.md5(
+                (
+                    str(host) + str(username) + str(password) + str(cloud_password)
+                ).encode()
+            ).hexdigest(),
             "isParent": False,
             "isDownloadingStream": False,
+            "downloadedStreams": {},  # keeps track of all videos downloaded
+            "downloadProgress": False,
+            "initialMediaScanDone": False,
+            "mediaSyncScheduled": False,
+            "initialMediaScanRunning": False,
+            "mediaScanResult": {},  # keeps track of all videos currently on camera
             "timezoneOffset": cameraTS - currentTS,
         }
 
@@ -483,6 +551,97 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 await setupOnvif(hass, entry)
             if enableTimeSync:
                 await syncTime(hass, entry.entry_id)
+
+        # Media sync
+
+        timeCorrection = await hass.async_add_executor_job(
+            tapoController.getTimeCorrection
+        )
+
+        async def mediaSync(time=None):
+            LOGGER.debug("mediaSync")
+            enableMediaSync = entry.data.get(ENABLE_MEDIA_SYNC)
+            mediaSyncHours = entry.data.get(MEDIA_SYNC_HOURS)
+
+            if mediaSyncHours == "":
+                mediaSyncTime = False
+            else:
+                mediaSyncTime = (int(mediaSyncHours) * 60 * 60) + timeCorrection
+            if (
+                enableMediaSync
+                and entry.entry_id in hass.data[DOMAIN]
+                and "controller" in hass.data[DOMAIN][entry.entry_id]
+                and hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] is False
+                and hass.data[DOMAIN][entry.entry_id]["isDownloadingStream"]
+                is False  # prevent breaking user manual upload
+            ):
+                hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = True
+                try:
+                    tapoController: Tapo = hass.data[DOMAIN][entry.entry_id][
+                        "controller"
+                    ]
+                    LOGGER.debug("getRecordingsList -1")
+                    recordingsList = await hass.async_add_executor_job(
+                        tapoController.getRecordingsList
+                    )
+                    LOGGER.debug("getRecordingsList -2")
+
+                    ts = datetime.datetime.utcnow().timestamp()
+                    for searchResult in recordingsList:
+                        for key in searchResult:
+                            if (mediaSyncTime is False) or (
+                                (
+                                    mediaSyncTime is not False
+                                    and (
+                                        (int(ts) - (int(mediaSyncTime) + 86400))
+                                        < convert_to_timestamp(
+                                            searchResult[key]["date"]
+                                        )
+                                    )
+                                )
+                            ):
+                                LOGGER.debug("getRecordings -1")
+                                recordingsForDay = await getRecordings(
+                                    hass, entry.entry_id, searchResult[key]["date"]
+                                )
+                                LOGGER.debug("getRecordings -2")
+                                totalRecordingsToDownload = 0
+                                for recording in recordingsForDay:
+                                    for recordingKey in recording:
+                                        if recording[recordingKey]["endTime"] > int(
+                                            ts
+                                        ) - (int(mediaSyncTime)):
+                                            totalRecordingsToDownload += 1
+                                recordingCount = 0
+                                for recording in recordingsForDay:
+                                    for recordingKey in recording:
+                                        if recording[recordingKey]["endTime"] > (
+                                            int(ts) - (int(mediaSyncTime))
+                                        ):
+                                            recordingCount += 1
+                                            try:
+                                                LOGGER.debug("getRecording -1")
+                                                await getRecording(
+                                                    hass,
+                                                    tapoController,
+                                                    entry.entry_id,
+                                                    searchResult[key]["date"],
+                                                    recording[recordingKey][
+                                                        "startTime"
+                                                    ],
+                                                    recording[recordingKey]["endTime"],
+                                                    recordingCount,
+                                                    totalRecordingsToDownload,
+                                                )
+                                                LOGGER.debug("getRecording -2")
+                                            except Unresolvable as err:
+                                                LOGGER.warn(err)
+                                            except Exception as err:
+                                                LOGGER.error(err)
+                except Exception as err:
+                    LOGGER.error(err)
+                LOGGER.debug("runningMediaSync -false")
+                hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = False
 
         async def unsubscribe(event):
             if hass.data[DOMAIN][entry.entry_id]["events"]:

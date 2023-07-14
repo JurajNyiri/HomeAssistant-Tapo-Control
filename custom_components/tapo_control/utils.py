@@ -9,7 +9,9 @@ import socket
 import time
 import urllib.parse
 import uuid
+import pathlib
 from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
 from pytapo.media_stream.downloader import Downloader
 from homeassistant.components.media_source.error import Unresolvable
 
@@ -36,6 +38,8 @@ from .const import (
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
     CONF_CUSTOM_STREAM,
+    MEDIA_SYNC_COLD_STORAGE_PATH,
+    MEDIA_SYNC_HOURS,
 )
 
 UUID = uuid.uuid4().hex
@@ -94,31 +98,233 @@ def getDataPath():
     )
 
 
-def getColdDirPathForEntry(entry_id):
-    return os.path.join(getDataPath(), f".storage/{DOMAIN}/{entry_id}/")
+def getColdDirPathForEntry(hass: HomeAssistant, entry_id: str):
+    if hass.data[DOMAIN][entry_id]["mediaSyncColdDir"] is False:
+        entry: ConfigEntry = hass.data[DOMAIN][entry_id]["entry"]
+        media_sync_cold_storage_path = entry.data.get(MEDIA_SYNC_COLD_STORAGE_PATH)
+        if media_sync_cold_storage_path == "":
+            coldDirPath = os.path.join(getDataPath(), f".storage/{DOMAIN}/{entry_id}/")
+        else:
+            coldDirPath = f"{media_sync_cold_storage_path}/"
+
+        pathlib.Path(coldDirPath + "/videos").mkdir(parents=True, exist_ok=True)
+        pathlib.Path(coldDirPath + "/thumbs").mkdir(parents=True, exist_ok=True)
+        hass.data[DOMAIN][entry_id]["mediaSyncColdDir"] = coldDirPath
+
+    coldDirPath = hass.data[DOMAIN][entry_id]["mediaSyncColdDir"]
+    return coldDirPath
 
 
-def getHotDirPathForEntry(entry_id):
-    return os.path.join(getDataPath(), f"www/{DOMAIN}/{entry_id}/")
+def getHotDirPathForEntry(hass: HomeAssistant, entry_id: str):
+    if hass.data[DOMAIN][entry_id]["mediaSyncHotDir"] is False:
+        hotDirPath = os.path.join(getDataPath(), f"www/{DOMAIN}/{entry_id}/")
+        pathlib.Path(hotDirPath + "/videos").mkdir(parents=True, exist_ok=True)
+        pathlib.Path(hotDirPath + "/thumbs").mkdir(parents=True, exist_ok=True)
+        hass.data[DOMAIN][entry_id]["mediaSyncHotDir"] = hotDirPath
+
+    hotDirPath = hass.data[DOMAIN][entry_id]["mediaSyncHotDir"]
+    return hotDirPath
 
 
-def mediaCleanup(hass, entry_id):
-    LOGGER.debug("Initiating media cleanup for entity " + entry_id + "...")
-    hass.data[DOMAIN][entry_id][
-        "lastMediaCleanup"
-    ] = datetime.datetime.utcnow().timestamp()
-    coldDirPath = getColdDirPathForEntry(entry_id)
-    hotDirPath = getHotDirPathForEntry(entry_id)
-
-    # Delete everything other than COLD_DIR_DELETE_TIME seconds from cold storage
-    LOGGER.debug(
-        "Deleting cold storage files older than "
-        + str(COLD_DIR_DELETE_TIME)
-        + " seconds for entity "
-        + entry_id
-        + "..."
+async def getRecordings(hass, entry_id, date):
+    tapoController: Tapo = hass.data[DOMAIN][entry_id]["controller"]
+    recordingsForDay = await hass.async_add_executor_job(
+        tapoController.getRecordings, date
     )
-    deleteFilesOlderThan(coldDirPath, COLD_DIR_DELETE_TIME)
+    for recording in recordingsForDay:
+        for recordingKey in recording:
+            hass.data[DOMAIN][entry_id]["mediaScanResult"][
+                str(recording[recordingKey]["startTime"])
+                + "-"
+                + str(recording[recordingKey]["endTime"])
+            ] = True
+    return recordingsForDay
+
+
+# todo: findMedia needs to run periodically
+async def findMedia(hass, entry):
+    entry_id = entry.entry_id
+    LOGGER.debug("Finding media...")
+    hass.data[DOMAIN][entry_id]["initialMediaScanDone"] = False
+    tapoController: Tapo = hass.data[DOMAIN][entry_id]["controller"]
+
+    recordingsList = await hass.async_add_executor_job(tapoController.getRecordingsList)
+    mediaScanResult = {}
+    for searchResult in recordingsList:
+        for key in searchResult:
+            recordingsForDay = await getRecordings(
+                hass, entry_id, searchResult[key]["date"]
+            )
+            LOGGER.debug(f"Getting media for day {searchResult[key]['date']}...")
+            for recording in recordingsForDay:
+                for recordingKey in recording:
+                    filePathVideo = getColdFile(
+                        hass,
+                        entry_id,
+                        recording[recordingKey]["startTime"],
+                        recording[recordingKey]["endTime"],
+                        "videos",
+                    )
+                    mediaScanResult[
+                        str(recording[recordingKey]["startTime"])
+                        + "-"
+                        + str(recording[recordingKey]["endTime"])
+                    ] = True
+                    if os.path.exists(filePathVideo):
+                        await processDownload(
+                            hass,
+                            entry_id,
+                            recording[recordingKey]["startTime"],
+                            recording[recordingKey]["endTime"],
+                        )
+    hass.data[DOMAIN][entry_id]["mediaScanResult"] = mediaScanResult
+    hass.data[DOMAIN][entry_id]["initialMediaScanDone"] = True
+    await mediaCleanup(hass, entry)
+
+
+async def processDownload(hass, entry_id: int, startDate: int, endDate: int):
+    filePath = getFileName(
+        startDate,
+        endDate,
+        False,
+    )
+
+    coldFilePath = getColdFile(
+        hass,
+        entry_id,
+        startDate,
+        endDate,
+        "videos",
+    )
+
+    if not os.path.exists(coldFilePath):
+        raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
+
+    if filePath not in hass.data[DOMAIN][entry_id]["downloadedStreams"]:
+        hass.data[DOMAIN][entry_id]["downloadedStreams"][filePath] = {
+            startDate: startDate,
+            endDate: endDate,
+        }
+    mediaScanName = str(startDate) + "-" + str(endDate)
+    if mediaScanName not in hass.data[DOMAIN][entry_id]["mediaScanResult"]:
+        hass.data[DOMAIN][entry_id]["mediaScanResult"][mediaScanName] = True
+
+    await generateThumb(
+        hass,
+        entry_id,
+        startDate,
+        endDate,
+    )
+
+
+async def generateThumb(hass, entry_id, startDate: int, endDate: int):
+    filePathThumb = getColdFile(
+        hass,
+        entry_id,
+        startDate,
+        endDate,
+        "thumbs",
+    )
+    if not os.path.exists(filePathThumb):
+        filePathVideo = getColdFile(
+            hass,
+            entry_id,
+            startDate,
+            endDate,
+            "videos",
+        )
+        _ffmpeg = hass.data[DATA_FFMPEG]
+        ffmpeg = ImageFrame(_ffmpeg.binary)
+        image = await asyncio.shield(
+            ffmpeg.get_image(
+                filePathVideo,
+                output_format=IMAGE_JPEG,
+            )
+        )
+        with open(filePathThumb, "wb") as binary_file:
+            binary_file.write(image)
+    return filePathThumb
+
+
+def deleteFilesNoLongerPresentInCamera(hass, entry_id, extension, folder):
+    if hass.data[DOMAIN][entry_id]["initialMediaScanDone"] is True:
+        coldDirPath = getColdDirPathForEntry(hass, entry_id)
+        if os.path.exists(coldDirPath + "/" + folder + "/"):
+            for f in os.listdir(coldDirPath + "/" + folder + "/"):
+                fileName = f.replace(extension, "")
+                filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
+                if fileName not in hass.data[DOMAIN][entry_id]["mediaScanResult"]:
+                    LOGGER.debug(
+                        "[deleteFilesNoLongerPresentInCamera] Removing "
+                        + filePath
+                        + " ("
+                        + fileName
+                        + ")..."
+                    )
+                    hass.data[DOMAIN][entry_id]["downloadedStreams"].pop(
+                        fileName,
+                        None,
+                    )
+                    os.remove(filePath)
+
+
+async def deleteColdFilesOlderThanMaxSyncTime(hass, entry, extension, folder):
+    entry_id = entry.entry_id
+    mediaSyncHours = entry.data.get(MEDIA_SYNC_HOURS)
+
+    if mediaSyncHours != "":
+        coldDirPath = getColdDirPathForEntry(hass, entry_id)
+        tapoController: Tapo = hass.data[DOMAIN][entry_id]["controller"]
+        timeCorrection = await hass.async_add_executor_job(
+            tapoController.getTimeCorrection
+        )
+        mediaSyncTime = int(mediaSyncHours) * 60 * 60
+        entry_id = entry.entry_id
+        ts = datetime.datetime.utcnow().timestamp()
+        if os.path.exists(coldDirPath + "/" + folder + "/"):
+            for f in os.listdir(coldDirPath + "/" + folder + "/"):
+                fileName = f.replace(extension, "")
+                filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
+                endTS = int(fileName.split("-")[1])
+                last_modified = os.stat(filePath).st_mtime
+                if (endTS < (int(ts) - (int(mediaSyncTime) + timeCorrection))) and (
+                    ts - last_modified > int(mediaSyncTime)
+                ):
+                    LOGGER.debug(
+                        "[deleteColdFilesOlderThanMaxSyncTime] Removing "
+                        + filePath
+                        + " ("
+                        + fileName
+                        + ")..."
+                    )
+                    hass.data[DOMAIN][entry_id]["downloadedStreams"].pop(
+                        fileName,
+                        None,
+                    )
+                    os.remove(filePath)
+
+
+async def mediaCleanup(hass, entry):
+    entry_id = entry.entry_id
+    LOGGER.debug("Initiating media cleanup for entity " + entry_id + "...")
+
+    ts = datetime.datetime.utcnow().timestamp()
+    hass.data[DOMAIN][entry_id]["lastMediaCleanup"] = ts
+    coldDirPath = getColdDirPathForEntry(hass, entry_id)
+    hotDirPath = getHotDirPathForEntry(hass, entry_id)
+
+    # clean cache files from old HA instance
+    LOGGER.debug(
+        "Removing cache files from old HA instances for entity " + entry_id + "..."
+    )
+    deleteFilesNotIncluding(hotDirPath + "/videos/", UUID)
+    deleteFilesNotIncluding(hotDirPath + "/thumbs/", UUID)
+
+    deleteFilesNoLongerPresentInCamera(hass, entry_id, ".mp4", "videos")
+    deleteFilesNoLongerPresentInCamera(hass, entry_id, ".jpg", "thumbs")
+
+    await deleteColdFilesOlderThanMaxSyncTime(hass, entry, ".mp4", "videos")
+    await deleteColdFilesOlderThanMaxSyncTime(hass, entry, ".jpg", "thumbs")
 
     # Delete everything other than HOT_DIR_DELETE_TIME seconds from hot storage
     LOGGER.debug(
@@ -128,7 +334,8 @@ def mediaCleanup(hass, entry_id):
         + entry_id
         + "..."
     )
-    deleteFilesOlderThan(hotDirPath, HOT_DIR_DELETE_TIME)
+    deleteFilesOlderThan(hotDirPath + "/videos/", HOT_DIR_DELETE_TIME)
+    deleteFilesOlderThan(hotDirPath + "/thumbs/", HOT_DIR_DELETE_TIME)
 
 
 def deleteDir(dirPath):
@@ -149,11 +356,97 @@ def deleteFilesOlderThan(dirPath, deleteOlderThan):
             filePath = os.path.join(dirPath, f)
             last_modified = os.stat(filePath).st_mtime
             if now - last_modified > deleteOlderThan:
+                LOGGER.debug("[deleteFilesOlderThan] Removing " + filePath + "...")
                 os.remove(filePath)
 
 
-def processDownload(status):
-    LOGGER.debug(status)
+def deleteFilesNotIncluding(dirPath, includingString):
+    if os.path.exists(dirPath):
+        for f in os.listdir(dirPath):
+            filePath = os.path.join(dirPath, f)
+            if includingString not in filePath:
+                LOGGER.debug("[deleteFilesOlderThan] Removing " + filePath + "...")
+                os.remove(filePath)
+
+
+def processDownloadStatus(
+    hass, entry_id, date: str, allRecordingsCount: int, recordingCount: int = False
+):
+    def processUpdate(status):
+        if isinstance(status, str):
+            hass.data[DOMAIN][entry_id]["downloadProgress"] = status
+        else:
+            hass.data[DOMAIN][entry_id]["downloadProgress"] = (
+                status["currentAction"]
+                + " "
+                + date
+                + (
+                    f" ({recordingCount} / {allRecordingsCount})"
+                    if recordingCount is not False
+                    else ""
+                )
+                + (
+                    ": " + str(round(status["progress"])) + " / " + str(status["total"])
+                    if status["total"] > 0
+                    else ""
+                )
+            )
+
+    return processUpdate
+
+
+def getFileName(startDate: int, endDate: int, encrypted=False):
+    if encrypted:
+        return hashlib.md5((str(startDate) + str(endDate)).encode()).hexdigest()
+    else:
+        return str(startDate) + "-" + str(endDate)
+
+
+def getColdFile(
+    hass: HomeAssistant, entry_id: str, startDate: int, endDate: int, folder: str
+):
+    coldDirPath = getColdDirPathForEntry(hass, entry_id)
+    fileName = getFileName(startDate, endDate, False)
+
+    if folder == "videos":
+        extension = ".mp4"
+    elif folder == "thumbs":
+        extension = ".jpg"
+    else:
+        raise Unresolvable("Incorrect folder specified: " + folder)
+    return coldDirPath + "/" + folder + "/" + fileName + extension
+
+
+def getHotFile(
+    hass: HomeAssistant, entry_id: str, startDate: int, endDate: int, folder: str
+):
+    coldFilePath = getColdFile(hass, entry_id, startDate, endDate, folder)
+    getHotDirPathForEntry(hass, entry_id)  # ensure creation of folder structure
+    extension = pathlib.Path(coldFilePath).suffix
+    hotFilePath = (
+        coldFilePath.replace("/.storage/", "/www/")
+        .replace(extension, "")
+        .replace(
+            getFileName(startDate, endDate, False),
+            getFileName(startDate, endDate, True),
+        )
+        + UUID
+        + extension
+    )
+    if not os.path.exists(hotFilePath):
+        if not os.path.exists(coldFilePath):
+            raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
+        shutil.copyfile(coldFilePath, hotFilePath)
+    return hotFilePath
+
+
+def getWebFile(
+    hass: HomeAssistant, entry_id: str, startDate: int, endDate: int, folder: str
+):
+    hotFilePath = getHotFile(hass, entry_id, startDate, endDate, folder)
+    fileWebPath = hotFilePath[hotFilePath.index("/www/") + 5 :]  # remove ./www/
+
+    return f"/local/{fileWebPath}"
 
 
 async def getRecording(
@@ -163,48 +456,64 @@ async def getRecording(
     date: str,
     startDate: int,
     endDate: int,
+    recordingCount: int = False,
+    totalRecordingCount: int = False,
 ) -> str:
     timeCorrection = await hass.async_add_executor_job(tapo.getTimeCorrection)
-    # this NEEDS to happen otherwise camera does not send data!
-    await hass.async_add_executor_job(tapo.getRecordings, date)
 
-    mediaCleanup(hass, entry_id)
+    coldDirPath = getColdDirPathForEntry(hass, entry_id)
+    downloadUID = getFileName(startDate, endDate, False)
 
-    coldDirPath = getColdDirPathForEntry(entry_id)
-    hotDirPath = getHotDirPathForEntry(entry_id)
+    coldFilePath = getColdFile(hass, entry_id, startDate, endDate, "videos")
+    if not os.path.exists(coldFilePath):
+        # this NEEDS to happen otherwise camera does not send data!
+        allRecordings = await hass.async_add_executor_job(tapo.getRecordings, date)
+        downloader = Downloader(
+            tapo,
+            startDate,
+            endDate,
+            timeCorrection,
+            coldDirPath + "/videos/",
+            0,
+            None,
+            None,
+            downloadUID + ".mp4",
+        )
 
-    pathlib.Path(coldDirPath).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(hotDirPath).mkdir(parents=True, exist_ok=True)
+        hass.data[DOMAIN][entry_id]["isDownloadingStream"] = True
+        downloadedFile = await downloader.downloadFile(
+            processDownloadStatus(
+                hass,
+                entry_id,
+                date,
+                len(allRecordings)
+                if totalRecordingCount is False
+                else totalRecordingCount,
+                recordingCount if recordingCount is not False else False,
+            )
+        )
+        hass.data[DOMAIN][entry_id]["isDownloadingStream"] = False
+        if downloadedFile["currentAction"] == "Recording in progress":
+            raise Unresolvable("Recording is currently in progress.")
 
-    downloadUID = hashlib.md5((str(startDate) + str(endDate)).encode()).hexdigest()
-    downloader = Downloader(
-        tapo,
+        hass.bus.fire(
+            "tapo_control_media_downloaded",
+            {
+                "entry_id": entry_id,
+                "startDate": startDate,
+                "endDate": endDate,
+                "filePath": coldFilePath,
+            },
+        )
+
+    await processDownload(
+        hass,
+        entry_id,
         startDate,
         endDate,
-        timeCorrection,
-        coldDirPath,
-        0,
-        None,
-        None,
-        downloadUID + ".mp4",
     )
-    # todo: automatic deletion of recordings longer than X in hot storage
 
-    hass.data[DOMAIN][entry_id]["isDownloadingStream"] = True
-    downloadedFile = await downloader.downloadFile(processDownload)
-    hass.data[DOMAIN][entry_id]["isDownloadingStream"] = False
-    if downloadedFile["currentAction"] == "Recording in progress":
-        raise Unresolvable("Recording is currently in progress.")
-
-    coldFilePath = downloadedFile["fileName"]
-    hotFilePath = (
-        coldFilePath.replace("/.storage/", "/www/").replace(".mp4", "") + UUID + ".mp4"
-    )
-    shutil.copyfile(coldFilePath, hotFilePath)
-
-    fileWebPath = hotFilePath[hotFilePath.index("/www/") + 5 :]  # remove ./www/
-
-    return f"/local/{fileWebPath}"
+    return coldFilePath
 
 
 def areCameraPortsOpened(host):
@@ -629,6 +938,18 @@ async def getCamData(hass, controller):
     return camData
 
 
+def convert_to_timestamp(date_string):
+    date_format = "%Y%m%d"
+    try:
+        date = datetime.datetime.strptime(date_string, date_format)
+        timestamp = datetime.datetime.timestamp(date)
+        return int(timestamp)
+    except ValueError:
+        raise Exception(
+            "Invalid date format. Please provide a date in the format 'YYYYMMDD'."
+        )
+
+
 async def update_listener(hass, entry):
     """Handle options update."""
     host = entry.data.get(CONF_IP_ADDRESS)
@@ -638,16 +959,32 @@ async def update_listener(hass, entry):
     enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
     cloud_password = entry.data.get(CLOUD_PASSWORD)
     try:
-        if cloud_password != "":
-            tapoController = await hass.async_add_executor_job(
-                registerController, host, "admin", cloud_password
+        newUUID = hashlib.md5(
+            (str(host) + str(username) + str(password) + str(cloud_password)).encode()
+        ).hexdigest()
+        # only update controller if auth data changed
+        if newUUID != hass.data[DOMAIN][entry.entry_id]["uuid"]:
+            hass.data[DOMAIN][entry.entry_id]["uuid"] = newUUID
+            if (
+                hass.data[DOMAIN][entry.entry_id]["controller"]
+                in hass.data[DOMAIN][entry.entry_id]["allControllers"]
+            ):
+                hass.data[DOMAIN][entry.entry_id]["allControllers"].remove(
+                    hass.data[DOMAIN][entry.entry_id]["controller"]
+                )
+            if cloud_password != "":
+                tapoController = await hass.async_add_executor_job(
+                    registerController, host, "admin", cloud_password
+                )
+            else:
+                tapoController = await hass.async_add_executor_job(
+                    registerController, host, username, password
+                )
+            hass.data[DOMAIN][entry.entry_id]["usingCloudPassword"] = (
+                cloud_password != ""
             )
-        else:
-            tapoController = await hass.async_add_executor_job(
-                registerController, host, username, password
-            )
-        hass.data[DOMAIN][entry.entry_id]["usingCloudPassword"] = cloud_password != ""
-        hass.data[DOMAIN][entry.entry_id]["controller"] = tapoController
+            hass.data[DOMAIN][entry.entry_id]["controller"] = tapoController
+            hass.data[DOMAIN][entry.entry_id]["allControllers"].append(tapoController)
     except Exception:
         LOGGER.error(
             "Authentication to Tapo camera failed."
@@ -655,9 +992,12 @@ async def update_listener(hass, entry):
         )
 
     for entity in hass.data[DOMAIN][entry.entry_id]["entities"]:
-        entity._host = host
-        entity._username = username
-        entity._password = password
+        if "_host" in entity:
+            entity._host = host
+        if "_username" in entity:
+            entity._username = username
+        if "_password" in entity:
+            entity._password = password
     if hass.data[DOMAIN][entry.entry_id]["events"]:
         await hass.data[DOMAIN][entry.entry_id]["events"].async_stop()
     if hass.data[DOMAIN][entry.entry_id]["motionSensorCreated"]:

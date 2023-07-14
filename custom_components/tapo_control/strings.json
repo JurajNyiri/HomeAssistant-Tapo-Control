@@ -69,6 +69,14 @@
         },
         "description": "What do you want to do?"
       },
+      "media": {
+        "data": {
+          "enable_media_sync": "Enable media synchronization",
+          "media_sync_hours": "Number of hours to keep synchronized",
+          "media_sync_cold_storage_path": "[Requires restart] Cold storage path"
+        },
+        "description": "Modify settings of recordings media synchronization"
+      },
       "auth": {
         "data": {
           "ip_address": "IP Address",
