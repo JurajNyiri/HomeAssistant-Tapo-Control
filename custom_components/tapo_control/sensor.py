@@ -3,7 +3,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, LOGGER
+from .const import DOMAIN, ENABLE_MEDIA_SYNC, LOGGER
 from .tapo.entities import TapoSensorEntity
 
 from homeassistant.components.sensor import (
@@ -106,19 +106,27 @@ class TapoSyncSensor(TapoSensorEntity):
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
-        if not self._hass.data[DOMAIN][self._config_entry.entry_id][
-            "initialMediaScanDone"
-        ]:
-            self._attr_state = "Not Ready"
-        elif self._hass.data[DOMAIN][self._config_entry.entry_id]["downloadProgress"]:
-            if (
-                self._hass.data[DOMAIN][self._config_entry.entry_id]["downloadProgress"]
-                == "Finished download"
-            ):
-                self._attr_state = "Idle"
+        enableMediaSync = self._config_entry.data.get(ENABLE_MEDIA_SYNC)
+        if enableMediaSync:
+            if not self._hass.data[DOMAIN][self._config_entry.entry_id][
+                "initialMediaScanDone"
+            ]:
+                self._attr_state = "Starting"
+            elif self._hass.data[DOMAIN][self._config_entry.entry_id][
+                "downloadProgress"
+            ]:
+                if (
+                    self._hass.data[DOMAIN][self._config_entry.entry_id][
+                        "downloadProgress"
+                    ]
+                    == "Finished download"
+                ):
+                    self._attr_state = "Idle"
+                else:
+                    self._attr_state = self._hass.data[DOMAIN][
+                        self._config_entry.entry_id
+                    ]["downloadProgress"]
             else:
-                self._attr_state = self._hass.data[DOMAIN][self._config_entry.entry_id][
-                    "downloadProgress"
-                ]
+                self._attr_state = "Idle"
         else:
             self._attr_state = "Idle"

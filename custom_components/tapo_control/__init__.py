@@ -405,19 +405,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             ):
                 await mediaCleanup(hass, entry)
 
-            if (
-                hass.data[DOMAIN][entry.entry_id]["initialMediaScanDone"] is True
-                and hass.data[DOMAIN][entry.entry_id]["mediaSyncScheduled"] is False
-            ):
-                hass.data[DOMAIN][entry.entry_id]["mediaSyncScheduled"] = True
-                async_track_time_interval(
-                    hass,
-                    mediaSync,
-                    timedelta(seconds=1),
-                )
-            elif hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"] is False:
-                hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"] = True
-                hass.async_create_background_task(findMedia(hass, entry), "findMedia")
+            if hass.is_running:
+                if (
+                    hass.data[DOMAIN][entry.entry_id]["initialMediaScanDone"] is True
+                    and hass.data[DOMAIN][entry.entry_id]["mediaSyncScheduled"] is False
+                ):
+                    hass.data[DOMAIN][entry.entry_id]["mediaSyncScheduled"] = True
+                    async_track_time_interval(
+                        hass,
+                        mediaSync,
+                        timedelta(seconds=1),
+                    )
+                elif (
+                    hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"]
+                    is False
+                ):
+                    hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"] = True
+                    hass.async_create_background_task(
+                        findMedia(hass, entry), "findMedia"
+                    )
 
         tapoCoordinator = DataUpdateCoordinator(
             hass,
