@@ -414,8 +414,6 @@ def getHotFile(
 ):
     coldFilePath = getColdFile(hass, entry_id, startDate, endDate, folder)
     getHotDirPathForEntry(entry_id)  # ensure creation of folder structure
-    if not os.path.exists(coldFilePath):
-        raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
     extension = pathlib.Path(coldFilePath).suffix
     hotFilePath = (
         coldFilePath.replace("/.storage/", "/www/")
@@ -428,6 +426,8 @@ def getHotFile(
         + extension
     )
     if not os.path.exists(hotFilePath):
+        if not os.path.exists(coldFilePath):
+            raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
         shutil.copyfile(coldFilePath, hotFilePath)
     return hotFilePath
 
