@@ -45,6 +45,8 @@ This custom component creates:
 - Switch entities for auto track, Flip setting, LED Indicator, Lens Distortion Correction and Privacy mode
 - Select entities for Automatic Alarm, Light Frequency, Motion Detection, Night Vision and Move to Preset
 - Number entity for Movement Angle
+- Media Source for browsing and playing recordings stored on camera
+- Sensor entity that reports monitor media sync status
 - And finally 2 tapo_control.\* services to control a camera
 
 Use these services in following service calls.
@@ -72,6 +74,20 @@ Integration is capable of analysing sound from camera microphone and expose nois
 You need to enable this feature in integration options by checking "Enable sound threshold detection". After enabling it, you can also set any other options starting with [Sound Detection]. You will need to restart Home Asssistant after doing any changes.
 
 For more information and troubleshooting see [Home Assistant ffmpeg documentation](https://www.home-assistant.io/integrations/ffmpeg_noise/) on which this feature is based on.
+
+## Media Sync
+
+Integration is capable of synchronizing recordings for fast playback.
+
+Synchronization is turned off by default, you can browse media stored on camera and request it to be played. However, downloading is rather slow, so it is a good idea to enable media synchronization in background. That way, you will be able to play any synchronized media from camera instantly.
+
+You can enable this setting by navigating to Home Assistant Settings -> Devices and clicking on Configure button next to the Tapo device you wish to turn media synchronization on for.
+
+You need to also define the number of hours to synchronize. Unless it is specified, synchronization does not run.
+
+Finally, you are able to set the storage path where the synchronized recordings will be stored (defaults to /config/.storage/tapo_control).
+
+**Notice:**: Recordings are deleted after the number of hours you have chosen to synchronize passes, once both the actual recording time and the file modified time is older than the number of hours set.
 
 ## Troubleshooting | FAQ
 
