@@ -414,7 +414,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     async_track_time_interval(
                         hass,
                         mediaSync,
-                        timedelta(seconds=1),
+                        timedelta(seconds=60),
                     )
                 elif (
                     hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"]
