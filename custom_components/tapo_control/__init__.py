@@ -324,7 +324,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         hass,
                         entry,
                         hass.data[DOMAIN][entry.entry_id],
-                        hass.data[DOMAIN][entry.entry_id]["controller"],
+                        tapoController,
                     )
                     for childDevice in hass.data[DOMAIN][entry.entry_id][
                         "childDevices"
@@ -405,7 +405,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             ):
                 await mediaCleanup(hass, entry)
 
-            if hass.is_running:
+            if (
+                hass.is_running
+                and hass.data[DOMAIN][entry.entry_id]["mediaSyncAvailable"]
+            ):
                 if (
                     hass.data[DOMAIN][entry.entry_id]["initialMediaScanDone"] is True
                     and hass.data[DOMAIN][entry.entry_id]["mediaSyncScheduled"] is False
@@ -414,16 +417,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     async_track_time_interval(
                         hass,
                         mediaSync,
-                        timedelta(seconds=1),
+                        timedelta(seconds=60),
                     )
                 elif (
                     hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"]
                     is False
                 ):
                     hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"] = True
-                    hass.async_create_background_task(
-                        findMedia(hass, entry), "findMedia"
-                    )
+                    try:
+                        await hass.async_add_executor_job(
+                            tapoController.getRecordingsList
+                        )
+                        hass.async_create_background_task(
+                            findMedia(hass, entry), "findMedia"
+                        )
+                    except Exception as err:
+                        hass.data[DOMAIN][entry.entry_id]["initialMediaScanDone"] = True
+                        hass.data[DOMAIN][entry.entry_id]["mediaSyncAvailable"] = False
+                        enableMediaSync = entry.data.get(ENABLE_MEDIA_SYNC)
+                        errMsg = "Disabling media sync as there was error returned from getRecordingsList. Do you have SD card inserted?"
+                        if enableMediaSync:
+                            LOGGER.warn(errMsg)
+                            LOGGER.warn(err)
+                        else:
+                            LOGGER.info(errMsg)
+                            LOGGER.info(err)
 
         tapoCoordinator = DataUpdateCoordinator(
             hass,
@@ -474,6 +492,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "downloadProgress": False,
             "initialMediaScanDone": False,
             "mediaSyncScheduled": False,
+            "mediaSyncAvailable": True,
             "initialMediaScanRunning": False,
             "mediaScanResult": {},  # keeps track of all videos currently on camera
             "timezoneOffset": cameraTS - currentTS,
