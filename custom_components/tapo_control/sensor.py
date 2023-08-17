@@ -112,6 +112,10 @@ class TapoSyncSensor(TapoSensorEntity):
                 "initialMediaScanDone"
             ]:
                 self._attr_state = "Starting"
+            if not self._hass.data[DOMAIN][self._config_entry.entry_id][
+                "mediaSyncAvailable"
+            ]:
+                self._attr_state = "No Recordings Found"
             elif self._hass.data[DOMAIN][self._config_entry.entry_id][
                 "downloadProgress"
             ]:
