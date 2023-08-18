@@ -63,9 +63,6 @@ from datetime import timedelta
 
 from .utils import getRecording
 
-# Disable all warnings from urllib3
-logging.getLogger("urllib3").setLevel(logging.ERROR)
-
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the Tapo: Cameras Control component from YAML."""
