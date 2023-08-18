@@ -818,6 +818,22 @@ async def getCamData(hass, controller):
     camData["privacy_mode"] = privacy_mode
 
     try:
+        notifications = data["getMsgPushConfig"]["msg_push"]["chn1_msg_push_info"][
+            "notification_enabled"
+        ]
+    except Exception:
+        notifications = None
+    camData["notifications"] = notifications
+
+    try:
+        rich_notifications = data["getMsgPushConfig"]["msg_push"]["chn1_msg_push_info"][
+            "rich_notification_enabled"
+        ]
+    except Exception:
+        rich_notifications = None
+    camData["rich_notifications"] = rich_notifications
+
+    try:
         lens_distrotion_correction = data["getLdc"]["image"]["switch"]["ldc"]
     except Exception:
         lens_distrotion_correction = None
@@ -939,6 +955,22 @@ async def getCamData(hass, controller):
     except Exception:
         childDevices = None
     camData["childDevices"] = childDevices
+
+    try:
+        whitelampConfigForceTime = data["getWhitelampConfig"]["image"]["switch"][
+            "wtl_force_time"
+        ]
+    except Exception:
+        whitelampConfigForceTime = None
+    camData["whitelampConfigForceTime"] = whitelampConfigForceTime
+
+    try:
+        whitelampConfigIntensity = data["getWhitelampConfig"]["image"]["switch"][
+            "wtl_intensity_level"
+        ]
+    except Exception:
+        whitelampConfigIntensity = None
+    camData["whitelampConfigIntensity"] = whitelampConfigIntensity
 
     LOGGER.debug("getCamData - done")
     LOGGER.debug("Processed update data:")
@@ -1136,6 +1168,12 @@ def build_device_info(attributes: dict) -> DeviceInfo:
 def pytapoFunctionMap(pytapoFunctionName):
     if pytapoFunctionName == "getPrivacyMode":
         return ["getLensMaskConfig"]
+    elif pytapoFunctionName == "getNotificationsEnabled":
+        return ["getMsgPushConfig"]
+    elif pytapoFunctionName == "getWhitelampStatus":
+        return ["getWhitelampStatus"]
+    elif pytapoFunctionName == "getWhitelampConfig":
+        return ["getWhitelampConfig"]
     elif pytapoFunctionName == "getBasicInfo":
         return ["getDeviceInfo"]
     elif pytapoFunctionName == "getMotionDetection":

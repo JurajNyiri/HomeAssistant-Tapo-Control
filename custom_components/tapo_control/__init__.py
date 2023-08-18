@@ -1,5 +1,6 @@
 import datetime
 import hashlib
+import logging
 
 from homeassistant.core import HomeAssistant
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
@@ -61,6 +62,9 @@ from homeassistant.helpers.event import async_track_time_interval
 from datetime import timedelta
 
 from .utils import getRecording
+
+# Disable all warnings from urllib3
+logging.getLogger("urllib3").setLevel(logging.ERROR)
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
