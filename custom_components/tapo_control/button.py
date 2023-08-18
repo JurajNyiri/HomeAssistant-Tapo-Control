@@ -137,7 +137,9 @@ class TapoStartManualAlarmButton(TapoButtonEntity):
 
 class TapoReverseWhitelight(TapoButtonEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        TapoButtonEntity.__init__(self, "Toggle Light", entry, hass, "mdi:lightbulb")
+        TapoButtonEntity.__init__(
+            self, "Toggle Spotlight", entry, hass, "mdi:lightbulb"
+        )
 
     async def async_press(self) -> None:
         await self._hass.async_add_executor_job(self._controller.reverseWhitelampStatus)
