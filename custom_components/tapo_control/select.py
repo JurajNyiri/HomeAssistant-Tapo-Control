@@ -125,27 +125,29 @@ async def async_setup_entry(
             LOGGER.debug("Adding TapoPatrolModeSelect...")
             selects.append(tapoPatrolModeSelect)
 
-        tapoWhitelampForceTimeSelect = await check_and_create(
-            entry,
-            hass,
-            TapoWhitelampForceTimeSelect,
-            "getWhitelampConfig",
-            config_entry,
-        )
-        if tapoWhitelampForceTimeSelect:
-            LOGGER.debug("Adding TapoWhitelampForceTimeSelect...")
-            selects.append(tapoWhitelampForceTimeSelect)
+        if entry["camData"]["whitelampConfigForceTime"] is not None:
+            tapoWhitelampForceTimeSelect = await check_and_create(
+                entry,
+                hass,
+                TapoWhitelampForceTimeSelect,
+                "getWhitelampConfig",
+                config_entry,
+            )
+            if tapoWhitelampForceTimeSelect:
+                LOGGER.debug("Adding TapoWhitelampForceTimeSelect...")
+                selects.append(tapoWhitelampForceTimeSelect)
 
-        tapoWhitelampIntensityLevelSelect = await check_and_create(
-            entry,
-            hass,
-            TapoWhitelampIntensityLevelSelect,
-            "getWhitelampConfig",
-            config_entry,
-        )
-        if tapoWhitelampIntensityLevelSelect:
-            LOGGER.debug("Adding TapoWhitelampIntensityLevelSelect...")
-            selects.append(tapoWhitelampIntensityLevelSelect)
+        if entry["camData"]["whitelampConfigIntensity"] is not None:
+            tapoWhitelampIntensityLevelSelect = await check_and_create(
+                entry,
+                hass,
+                TapoWhitelampIntensityLevelSelect,
+                "getWhitelampConfig",
+                config_entry,
+            )
+            if tapoWhitelampIntensityLevelSelect:
+                LOGGER.debug("Adding TapoWhitelampIntensityLevelSelect...")
+                selects.append(tapoWhitelampIntensityLevelSelect)
 
         return selects
 
