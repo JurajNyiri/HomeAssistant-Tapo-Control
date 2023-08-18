@@ -208,10 +208,6 @@ class TapoWhitelampForceTimeSelect(TapoSelectEntity):
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
 
-    @property
-    def entity_category(self):
-        return None
-
 
 class TapoWhitelampIntensityLevelSelect(TapoSelectEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
@@ -244,10 +240,6 @@ class TapoWhitelampIntensityLevelSelect(TapoSelectEntity):
             self._attr_state = option
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
-
-    @property
-    def entity_category(self):
-        return None
 
 
 class TapoPatrolModeSelect(TapoSelectEntity):
