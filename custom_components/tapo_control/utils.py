@@ -940,6 +940,22 @@ async def getCamData(hass, controller):
         childDevices = None
     camData["childDevices"] = childDevices
 
+    try:
+        whitelampConfigForceTime = data["getWhitelampConfig"]["image"]["switch"][
+            "wtl_force_time"
+        ]
+    except Exception:
+        whitelampConfigForceTime = None
+    camData["whitelampConfigForceTime"] = whitelampConfigForceTime
+
+    try:
+        whitelampConfigIntensity = data["getWhitelampConfig"]["image"]["switch"][
+            "wtl_intensity_level"
+        ]
+    except Exception:
+        whitelampConfigIntensity = None
+    camData["whitelampConfigIntensity"] = whitelampConfigIntensity
+
     LOGGER.debug("getCamData - done")
     LOGGER.debug("Processed update data:")
     LOGGER.debug(camData)
