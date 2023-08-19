@@ -35,17 +35,6 @@ async def async_setup_entry(
                 LOGGER.debug("Adding tapoStartManualAlarmButton...")
                 buttons.append(tapoStartManualAlarmButton)
 
-            tapoReverseWhitelight = await check_and_create(
-                entry,
-                hass,
-                TapoReverseWhitelight,
-                "getWhitelampStatus",
-                config_entry,
-            )
-            if tapoReverseWhitelight:
-                LOGGER.debug("Adding tapoReverseWhitelight...")
-                buttons.append(tapoReverseWhitelight)
-
             tapoStopManualAlarmButton = await check_and_create(
                 entry, hass, TapoStopManualAlarmButton, "getAlarm", config_entry
             )
@@ -133,16 +122,6 @@ class TapoStartManualAlarmButton(TapoButtonEntity):
 
     async def async_press(self) -> None:
         await self._hass.async_add_executor_job(self._controller.startManualAlarm)
-
-
-class TapoReverseWhitelight(TapoButtonEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        TapoButtonEntity.__init__(
-            self, "Toggle Spotlight", entry, hass, "mdi:lightbulb"
-        )
-
-    async def async_press(self) -> None:
-        await self._hass.async_add_executor_job(self._controller.reverseWhitelampStatus)
 
 
 class TapoStopManualAlarmButton(TapoButtonEntity):

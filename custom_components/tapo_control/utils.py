@@ -972,6 +972,12 @@ async def getCamData(hass, controller):
         whitelampConfigIntensity = None
     camData["whitelampConfigIntensity"] = whitelampConfigIntensity
 
+    try:
+        whitelampStatus = data["getWhitelampStatus"]["status"]
+    except Exception:
+        whitelampStatus = None
+    camData["whitelampStatus"] = whitelampStatus
+
     LOGGER.debug("getCamData - done")
     LOGGER.debug("Processed update data:")
     LOGGER.debug(camData)
