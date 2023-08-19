@@ -26,6 +26,10 @@ from .const import (
     ENABLE_TIME_SYNC,
     MEDIA_SYNC_COLD_STORAGE_PATH,
     MEDIA_SYNC_HOURS,
+    MEDIA_VIEW_DAYS_ORDER,
+    MEDIA_VIEW_DAYS_ORDER_OPTIONS,
+    MEDIA_VIEW_RECORDINGS_ORDER,
+    MEDIA_VIEW_RECORDINGS_ORDER_OPTIONS,
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
     SOUND_DETECTION_RESET,
@@ -39,7 +43,7 @@ from .const import (
 class FlowHandler(ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 13
+    VERSION = 14
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -557,7 +561,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 nextAction = user_input["tapo_config_action"]
                 if nextAction == "Configure device":
                     return await self.async_step_auth()
-                elif nextAction == "Configure media synchronization":
+                elif nextAction == "Configure media":
                     return await self.async_step_media()
                 elif nextAction == "Help me debug motion sensor":
                     # TODO
@@ -577,7 +581,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     "select": {
                         "options": [
                             "Configure device",
-                            "Configure media synchronization"
+                            "Configure media"
                             # "Help me debug motion sensor",
                             # "incorrect",
                         ],
@@ -598,6 +602,10 @@ class TapoOptionsFlowHandler(OptionsFlow):
         )
         errors = {}
         enable_media_sync = self.config_entry.data[ENABLE_MEDIA_SYNC]
+        media_view_days_order = self.config_entry.data[MEDIA_VIEW_DAYS_ORDER]
+        media_view_recordings_order = self.config_entry.data[
+            MEDIA_VIEW_RECORDINGS_ORDER
+        ]
         media_sync_hours = self.config_entry.data[MEDIA_SYNC_HOURS]
         media_sync_cold_storage_path = self.config_entry.data[
             MEDIA_SYNC_COLD_STORAGE_PATH
@@ -612,6 +620,18 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 else:
                     enable_media_sync = False
 
+                if MEDIA_VIEW_DAYS_ORDER in user_input:
+                    media_view_days_order = user_input[MEDIA_VIEW_DAYS_ORDER]
+                else:
+                    media_view_days_order = "Ascending"
+
+                if MEDIA_VIEW_RECORDINGS_ORDER in user_input:
+                    media_view_recordings_order = user_input[
+                        MEDIA_VIEW_RECORDINGS_ORDER
+                    ]
+                else:
+                    media_view_recordings_order = "Ascending"
+
                 if MEDIA_SYNC_HOURS in user_input:
                     media_sync_hours = user_input[MEDIA_SYNC_HOURS]
                 else:
@@ -625,6 +645,8 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     media_sync_cold_storage_path = ""
 
                 allConfigData[ENABLE_MEDIA_SYNC] = enable_media_sync
+                allConfigData[MEDIA_VIEW_DAYS_ORDER] = media_view_days_order
+                allConfigData[MEDIA_VIEW_RECORDINGS_ORDER] = media_view_recordings_order
                 allConfigData[MEDIA_SYNC_HOURS] = media_sync_hours
                 allConfigData[
                     MEDIA_SYNC_COLD_STORAGE_PATH
@@ -656,6 +678,14 @@ class TapoOptionsFlowHandler(OptionsFlow):
             step_id="media",
             data_schema=vol.Schema(
                 {
+                    vol.Required(
+                        MEDIA_VIEW_DAYS_ORDER,
+                        description={"suggested_value": media_view_days_order},
+                    ): vol.In(MEDIA_VIEW_DAYS_ORDER_OPTIONS),
+                    vol.Required(
+                        MEDIA_VIEW_RECORDINGS_ORDER,
+                        description={"suggested_value": media_view_recordings_order},
+                    ): vol.In(MEDIA_VIEW_RECORDINGS_ORDER_OPTIONS),
                     vol.Optional(
                         ENABLE_MEDIA_SYNC,
                         description={"suggested_value": enable_media_sync},

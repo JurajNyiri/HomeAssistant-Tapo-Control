@@ -21,7 +21,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt
 
-from .const import DOMAIN, LOGGER
+from .const import DOMAIN, LOGGER, MEDIA_VIEW_DAYS_ORDER, MEDIA_VIEW_RECORDINGS_ORDER
 
 from .utils import (
     getRecording,
@@ -119,6 +119,9 @@ class TapoMediaSource(MediaSource):
             path = item.identifier.split("/")
             if len(path) == 2:
                 entry = path[1]
+                media_view_days_order = self.hass.data[DOMAIN][entry]["entry"].data.get(
+                    MEDIA_VIEW_DAYS_ORDER
+                )
                 if self.hass.data[DOMAIN][entry]["initialMediaScanDone"] is False:
                     raise Unresolvable(
                         "Initial local media scan still running, please try again later."
@@ -136,6 +139,10 @@ class TapoMediaSource(MediaSource):
                 for searchResult in recordingsList:
                     for key in searchResult:
                         recordingsDates.append(searchResult[key]["date"])
+
+                recordingsDates.sort(
+                    reverse=True if media_view_days_order == "Descending" else False
+                )
                 return BrowseMediaSource(
                     domain=DOMAIN,
                     identifier=f"tapo/{entry}",
@@ -160,6 +167,10 @@ class TapoMediaSource(MediaSource):
                 )
             elif len(path) == 3:
                 entry = path[1]
+
+                media_view_recordings_order = self.hass.data[DOMAIN][entry][
+                    "entry"
+                ].data.get(MEDIA_VIEW_RECORDINGS_ORDER)
                 if self.hass.data[DOMAIN][entry]["initialMediaScanDone"] is False:
                     raise Unresolvable(
                         "Initial local media scan still running, please try again later."
@@ -188,6 +199,14 @@ class TapoMediaSource(MediaSource):
                                 "endDate": searchResult[key]["endTime"],
                             }
                         )
+
+                videoNames = sorted(
+                    videoNames,
+                    key=lambda x: x["startDate"],
+                    reverse=True
+                    if media_view_recordings_order == "Descending"
+                    else False,
+                )
 
                 dateChildren = []
                 for data in videoNames:

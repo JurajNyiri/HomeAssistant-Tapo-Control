@@ -28,6 +28,8 @@ CONF_CUSTOM_STREAM = "custom_stream"
 
 ENABLE_MOTION_SENSOR = "enable_motion_sensor"
 ENABLE_MEDIA_SYNC = "enable_media_sync"
+MEDIA_VIEW_DAYS_ORDER = "media_view_days_order"
+MEDIA_VIEW_RECORDINGS_ORDER = "media_view_recordings_order"
 MEDIA_SYNC_HOURS = "media_sync_hours"
 MEDIA_SYNC_COLD_STORAGE_PATH = "media_sync_cold_storage_path"
 
@@ -35,6 +37,8 @@ TOGGLE_STATES = ["on", "off"]
 
 CONF_RTSP_TRANSPORT = "rtsp_transport"
 RTSP_TRANS_PROTOCOLS = ["tcp", "udp", "udp_multicast", "http"]
+MEDIA_VIEW_DAYS_ORDER_OPTIONS = ["Ascending", "Descending"]
+MEDIA_VIEW_RECORDINGS_ORDER_OPTIONS = ["Ascending", "Descending"]
 
 ENABLE_WEBHOOKS = "enable_webhooks"
 ENABLE_STREAM = "enable_stream"

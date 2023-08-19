@@ -31,6 +31,8 @@ from .const import (
     MEDIA_CLEANUP_PERIOD,
     MEDIA_SYNC_COLD_STORAGE_PATH,
     MEDIA_SYNC_HOURS,
+    MEDIA_VIEW_DAYS_ORDER,
+    MEDIA_VIEW_RECORDINGS_ORDER,
     RTSP_TRANS_PROTOCOLS,
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
@@ -172,6 +174,15 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         config_entry.data = {**new}
 
         config_entry.version = 13
+
+    if config_entry.version == 13:
+        new = {**config_entry.data}
+        new[MEDIA_VIEW_DAYS_ORDER] = "Ascending"
+        new[MEDIA_VIEW_RECORDINGS_ORDER] = "Ascending"
+
+        config_entry.data = {**new}
+
+        config_entry.version = 14
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 

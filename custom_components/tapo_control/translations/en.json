@@ -71,6 +71,8 @@
       },
       "media": {
         "data": {
+          "media_view_days_order": "Order of days in Media Browser",
+          "media_view_recordings_order": "Order of recordings in Media Browser",
           "enable_media_sync": "Enable media synchronization",
           "media_sync_hours": "Number of hours to keep synchronized",
           "media_sync_cold_storage_path": "[Requires restart] Cold storage path"
