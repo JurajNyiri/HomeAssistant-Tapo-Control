@@ -162,6 +162,8 @@ class FlowHandler(ConfigFlow):
             return self.async_create_entry(
                 title=host,
                 data={
+                    MEDIA_VIEW_DAYS_ORDER: "Ascending",
+                    MEDIA_VIEW_RECORDINGS_ORDER: "Ascending",
                     ENABLE_MEDIA_SYNC: False,
                     MEDIA_SYNC_HOURS: "",
                     MEDIA_SYNC_COLD_STORAGE_PATH: "",

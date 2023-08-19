@@ -128,6 +128,7 @@ def getHotDirPathForEntry(hass: HomeAssistant, entry_id: str):
 
 async def getRecordings(hass, entry_id, date):
     tapoController: Tapo = hass.data[DOMAIN][entry_id]["controller"]
+    LOGGER.debug("Getting recordings for date " + date + "...")
     recordingsForDay = await hass.async_add_executor_job(
         tapoController.getRecordings, date
     )
