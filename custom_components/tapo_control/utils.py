@@ -46,6 +46,9 @@ UUID = uuid.uuid4().hex
 
 
 def isUsingHTTPS(hass):
+    LOGGER.critical("isUsingHTTPS")
+    LOGGER.critical(hass.config.internal_url)
+    LOGGER.critical(hass.config.external_url)
     try:
         base_url = get_url(hass, prefer_external=False)
     except NoURLAvailableError:
