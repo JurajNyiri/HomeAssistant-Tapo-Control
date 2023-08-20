@@ -163,6 +163,8 @@ class TapoButtonEntity(ButtonEntity, TapoEntity):
         self._hass = hass
         self._attr_icon = icon
         self._attr_device_class = device_class
+        entry["entities"].append({"entity": self, "entry": entry})
+        self.updateTapo(entry["camData"])
 
         TapoEntity.__init__(self, entry, name_suffix)
         ButtonEntity.__init__(self)

@@ -74,6 +74,7 @@ class TapoNoiseBinarySensor(TapoBinarySensorEntity):
         self._sound_detection_peak = config_entry.data.get(SOUND_DETECTION_PEAK)
         self._sound_detection_duration = config_entry.data.get(SOUND_DETECTION_DURATION)
         self._sound_detection_reset = config_entry.data.get(SOUND_DETECTION_RESET)
+        self.latestCamData = entry["camData"]
 
         self._noiseSensor = ffmpeg_sensor.SensorNoise(
             self._ffmpeg.binary, self._noiseCallback
@@ -110,8 +111,16 @@ class TapoNoiseBinarySensor(TapoBinarySensorEntity):
     def _noiseCallback(self, noiseDetected):
         LOGGER.debug("_noiseCallback")
         LOGGER.debug(noiseDetected)
-        self._attr_state = "on" if noiseDetected else "off"
+        if not self.latestCamData or self.latestCamData["privacy_mode"] == "on":
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            self._attr_state = "on" if noiseDetected else "off"
         self.async_write_ha_state()
+
+    def updateTapo(self, camData):
+        self.latestCamData = camData
+        if not self.latestCamData or self.latestCamData["privacy_mode"] == "on":
+            self._attr_state = STATE_UNAVAILABLE
 
 
 class EventsListener:

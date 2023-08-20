@@ -595,6 +595,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             tapoController.getTimeCorrection
         )
 
+        # todo move to utils
         async def mediaSync(time=None):
             LOGGER.debug("mediaSync")
             enableMediaSync = entry.data.get(ENABLE_MEDIA_SYNC)
