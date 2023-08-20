@@ -69,6 +69,15 @@
         },
         "description": "What do you want to do?"
       },
+      "sound_sensor": {
+        "data": {
+          "enable_sound_detection": "Enable sound threshold detection (restart required)",
+          "sound_detection_peak": "[Sound Detection] Peak in dB. 0 is very loud and -100 is low.",
+          "sound_detection_duration": "[Sound Detection] How long the noise needs to be over the peak to trigger the state.",
+          "sound_detection_reset": "[Sound Detection] The time to reset the state after no new noise is over the peak."
+        },
+        "description": "Configure noise detection sensor"
+      },
       "media": {
         "data": {
           "media_view_days_order": "Order of days in Media Browser",
@@ -88,11 +97,7 @@
           "enable_webhooks": "Enable webhooks",
           "enable_stream": "Use Stream from Home Assistant (restart required)",
           "enable_time_sync": "Automatically synchronise time",
-          "enable_sound_detection": "Enable sound threshold detection (restart required)",
           "cloud_password": "Cloud Password (Optional)",
-          "sound_detection_peak": "[Sound Detection] Peak in dB. 0 is very loud and -100 is low.",
-          "sound_detection_duration": "[Sound Detection] How long the noise needs to be over the peak to trigger the state.",
-          "sound_detection_reset": "[Sound Detection] The time to reset the state after no new noise is over the peak.",
           "extra_arguments": "Extra arguments for ffmpeg (restart required)",
           "custom_stream": "Custom stream link",
           "rtsp_transport": "RTSP transport mechanism"
