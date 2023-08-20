@@ -624,6 +624,9 @@ async def getCamData(hass, controller):
             "motion_det"
         ]
         motion_detection_enabled = motionDetectionData["enabled"]
+        motion_detection_digital_sensitivity = motionDetectionData[
+            "digital_sensitivity"
+        ]
         if motionDetectionData["digital_sensitivity"] == "20" or (
             "sensitivity" in motionDetectionData
             and motionDetectionData["sensitivity"] == "low"
@@ -646,6 +649,9 @@ async def getCamData(hass, controller):
         motion_detection_sensitivity = None
     camData["motion_detection_enabled"] = motion_detection_enabled
     camData["motion_detection_sensitivity"] = motion_detection_sensitivity
+    camData[
+        "motion_detection_digital_sensitivity"
+    ] = motion_detection_digital_sensitivity
 
     try:
         personDetectionData = data["getPersonDetectionConfig"]["people_detection"][
