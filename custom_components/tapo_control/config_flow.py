@@ -96,7 +96,7 @@ class FlowHandler(ConfigFlow):
         enable_stream = True
         enable_time_sync = False
         enable_sound_detection = False
-        sound_detection_peak = -50
+        sound_detection_peak = -30
         sound_detection_duration = 1
         sound_detection_reset = 10
         extra_arguments = ""
@@ -130,7 +130,7 @@ class FlowHandler(ConfigFlow):
             if SOUND_DETECTION_PEAK in user_input:
                 sound_detection_peak = user_input[SOUND_DETECTION_PEAK]
             else:
-                sound_detection_peak = -50
+                sound_detection_peak = -30
             if CONF_CUSTOM_STREAM in user_input:
                 custom_stream = user_input[CONF_CUSTOM_STREAM]
             else:
@@ -138,11 +138,11 @@ class FlowHandler(ConfigFlow):
             if SOUND_DETECTION_DURATION in user_input:
                 sound_detection_duration = user_input[SOUND_DETECTION_DURATION]
             else:
-                sound_detection_duration = -50
+                sound_detection_duration = -30
             if SOUND_DETECTION_RESET in user_input:
                 sound_detection_reset = user_input[SOUND_DETECTION_RESET]
             else:
-                sound_detection_reset = -50
+                sound_detection_reset = -30
             if CONF_EXTRA_ARGUMENTS in user_input:
                 extra_arguments = user_input[CONF_EXTRA_ARGUMENTS]
             else:
@@ -625,7 +625,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 if SOUND_DETECTION_PEAK in user_input:
                     sound_detection_peak = user_input[SOUND_DETECTION_PEAK]
                 else:
-                    sound_detection_peak = -50
+                    sound_detection_peak = -30
 
                 if SOUND_DETECTION_DURATION in user_input:
                     sound_detection_duration = user_input[SOUND_DETECTION_DURATION]

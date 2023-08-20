@@ -111,7 +111,7 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
     if config_entry.version == 5:
         new = {**config_entry.data}
         new[ENABLE_SOUND_DETECTION] = False
-        new[SOUND_DETECTION_PEAK] = -50
+        new[SOUND_DETECTION_PEAK] = -30
         new[SOUND_DETECTION_DURATION] = 1
         new[SOUND_DETECTION_RESET] = 10
 

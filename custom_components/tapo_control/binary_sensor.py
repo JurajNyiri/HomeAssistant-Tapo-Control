@@ -2,6 +2,7 @@ from typing import Optional
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.components.ffmpeg import DATA_FFMPEG
+from homeassistant.const import STATE_UNAVAILABLE
 
 from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
@@ -83,7 +84,7 @@ class TapoNoiseBinarySensor(TapoBinarySensorEntity):
             peak=int(self._sound_detection_peak),
         )
 
-        self._attr_state = "unavailable"
+        self._attr_state = STATE_UNAVAILABLE
 
         LOGGER.debug("TapoNoiseBinarySensor - init - end")
 
@@ -92,6 +93,14 @@ class TapoNoiseBinarySensor(TapoBinarySensorEntity):
         self._hass.data[DOMAIN][self._config_entry.entry_id][
             "noiseSensorStarted"
         ] = True
+        LOGGER.debug(getStreamSource(self._config_entry, False))
+        LOGGER.debug(
+            str(self._sound_detection_duration)
+            + ","
+            + str(self._sound_detection_reset)
+            + ","
+            + str(self._sound_detection_peak),
+        )
         await self._noiseSensor.open_sensor(
             input_source=getStreamSource(self._config_entry, False),
             extra_cmd="-nostats",
@@ -99,6 +108,8 @@ class TapoNoiseBinarySensor(TapoBinarySensorEntity):
 
     @callback
     def _noiseCallback(self, noiseDetected):
+        LOGGER.debug("_noiseCallback")
+        LOGGER.debug(noiseDetected)
         self._attr_state = "on" if noiseDetected else "off"
         self.async_write_ha_state()
 
