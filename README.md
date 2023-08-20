@@ -44,7 +44,7 @@ This custom component creates:
 - Buttons for Calibrate, Format, Manual Alarm start & stop, Moving the camera, Reboot and syncing time
 - Switch entities for auto track, Flip setting, LED Indicator, Lens Distortion Correction and Privacy mode
 - Select entities for Automatic Alarm, Light Frequency, Motion Detection, Night Vision and Move to Preset
-- Number entity for Movement Angle
+- Number entity for Movement Angle and Motion Detection Digital Sensitivity
 - Media Source for browsing and playing recordings stored on camera
 - Sensor entity that reports monitor media sync status
 - And finally 2 tapo_control.\* services to control a camera
