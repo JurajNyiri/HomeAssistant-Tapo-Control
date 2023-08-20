@@ -262,8 +262,8 @@ class TapoPatrolModeSelect(TapoSelectEntity):
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
-        if not camData:
-            self._attr_state = "unavailable"
+        if not camData or camData["privacy_mode"] == "on":
+            self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_current_option = None
             self._attr_state = self._attr_current_option
@@ -810,7 +810,7 @@ class TapoMoveToPresetSelect(TapoSelectEntity):
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
-        if not camData:
+        if not camData or camData["privacy_mode"] == "on":
             self._attr_state = STATE_UNAVAILABLE
         else:
             self._presets = camData["presets"]
