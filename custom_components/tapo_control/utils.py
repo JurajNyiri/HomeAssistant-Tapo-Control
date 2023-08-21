@@ -647,6 +647,7 @@ async def getCamData(hass, controller):
     except Exception:
         motion_detection_enabled = None
         motion_detection_sensitivity = None
+        motion_detection_digital_sensitivity = None
     camData["motion_detection_enabled"] = motion_detection_enabled
     camData["motion_detection_sensitivity"] = motion_detection_sensitivity
     camData[
