@@ -132,13 +132,16 @@ async def getRecordings(hass, entry_id, date):
     recordingsForDay = await hass.async_add_executor_job(
         tapoController.getRecordings, date
     )
-    for recording in recordingsForDay:
-        for recordingKey in recording:
-            hass.data[DOMAIN][entry_id]["mediaScanResult"][
-                str(recording[recordingKey]["startTime"])
-                + "-"
-                + str(recording[recordingKey]["endTime"])
-            ] = True
+    if recordingsForDay is not None:
+        for recording in recordingsForDay:
+            for recordingKey in recording:
+                hass.data[DOMAIN][entry_id]["mediaScanResult"][
+                    str(recording[recordingKey]["startTime"])
+                    + "-"
+                    + str(recording[recordingKey]["endTime"])
+                ] = True
+    else:
+        recordingsForDay = []
     return recordingsForDay
 
 
@@ -157,35 +160,30 @@ async def findMedia(hass, entry):
             recordingsForDay = await getRecordings(
                 hass, entry_id, searchResult[key]["date"]
             )
-            if recordingsForDay is not None:
-                LOGGER.debug(
-                    f"Looping through recordings for day {searchResult[key]['date']}..."
-                )
-                for recording in recordingsForDay:
-                    for recordingKey in recording:
-                        filePathVideo = getColdFile(
+            LOGGER.debug(
+                f"Looping through recordings for day {searchResult[key]['date']}..."
+            )
+            for recording in recordingsForDay:
+                for recordingKey in recording:
+                    filePathVideo = getColdFile(
+                        hass,
+                        entry_id,
+                        recording[recordingKey]["startTime"],
+                        recording[recordingKey]["endTime"],
+                        "videos",
+                    )
+                    mediaScanResult[
+                        str(recording[recordingKey]["startTime"])
+                        + "-"
+                        + str(recording[recordingKey]["endTime"])
+                    ] = True
+                    if os.path.exists(filePathVideo):
+                        await processDownload(
                             hass,
                             entry_id,
                             recording[recordingKey]["startTime"],
                             recording[recordingKey]["endTime"],
-                            "videos",
                         )
-                        mediaScanResult[
-                            str(recording[recordingKey]["startTime"])
-                            + "-"
-                            + str(recording[recordingKey]["endTime"])
-                        ] = True
-                        if os.path.exists(filePathVideo):
-                            await processDownload(
-                                hass,
-                                entry_id,
-                                recording[recordingKey]["startTime"],
-                                recording[recordingKey]["endTime"],
-                            )
-            else:
-                LOGGER.debug(
-                    f"Found no recordings for day {searchResult[key]['date']}."
-                )
     hass.data[DOMAIN][entry_id]["mediaScanResult"] = mediaScanResult
     hass.data[DOMAIN][entry_id]["initialMediaScanDone"] = True
     await mediaCleanup(hass, entry)
