@@ -186,8 +186,6 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         config_entry.version = 14
 
     if config_entry.version == 14:
-        LOGGER.warn("TEST")
-
         host = config_entry.data.get(CONF_IP_ADDRESS)
         username = config_entry.data.get(CONF_USERNAME)
         password = config_entry.data.get(CONF_PASSWORD)
