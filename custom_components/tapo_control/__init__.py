@@ -2,7 +2,7 @@ import datetime
 import hashlib
 import logging
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -15,6 +15,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt
 from homeassistant.components.media_source.error import Unresolvable
+import homeassistant.helpers.entity_registry
 
 from .const import (
     CONF_RTSP_TRANSPORT,
@@ -183,6 +184,45 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         config_entry.data = {**new}
 
         config_entry.version = 14
+
+    if config_entry.version == 14:
+        LOGGER.warn("TEST")
+
+        host = config_entry.data.get(CONF_IP_ADDRESS)
+        username = config_entry.data.get(CONF_USERNAME)
+        password = config_entry.data.get(CONF_PASSWORD)
+        cloud_password = config_entry.data.get(CLOUD_PASSWORD)
+
+        try:
+            if cloud_password != "":
+                tapoController = await hass.async_add_executor_job(
+                    registerController, host, "admin", cloud_password, cloud_password
+                )
+            else:
+                tapoController = await hass.async_add_executor_job(
+                    registerController, host, username, password
+                )
+            camData = await getCamData(hass, tapoController)
+            macAddress = camData["basic_info"]["mac"]
+
+            @callback
+            def update_unique_id(entity_entry):
+                return {
+                    "new_unique_id": "{}-{}".format(
+                        macAddress, entity_entry.unique_id
+                    ).lower()
+                }
+
+            await homeassistant.helpers.entity_registry.async_migrate_entries(
+                hass, config_entry.entry_id, update_unique_id
+            )
+        except Exception as e:
+            LOGGER.error(
+                "Unable to connect to Tapo: Cameras Control controller: %s", str(e)
+            )
+            raise ConfigEntryNotReady
+
+        # config_entry.version = 15
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 

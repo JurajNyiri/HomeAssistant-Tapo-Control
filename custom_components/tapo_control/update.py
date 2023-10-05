@@ -47,9 +47,6 @@ class TapoCamUpdate(UpdateEntity):
     @property
     def unique_id(self) -> str:
         id_suffix = "".join(self._name_suffix.split())
-        LOGGER.warn(
-            "{}-{}-{}".format(self._attributes["mac"], self._name, id_suffix).lower()
-        )
         return "{}-{}-{}".format(self._attributes["mac"], self._name, id_suffix).lower()
 
     def updateTapo(self, camData):

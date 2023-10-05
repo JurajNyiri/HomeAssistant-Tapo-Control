@@ -43,7 +43,7 @@ from .const import (
 class FlowHandler(ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 14
+    VERSION = 15
 
     @staticmethod
     def async_get_options_flow(config_entry):
