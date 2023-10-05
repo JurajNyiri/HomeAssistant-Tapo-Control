@@ -10,6 +10,7 @@ from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.components.number import NumberEntity
 from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.helpers.entity import EntityCategory
+from homeassistant.util import slugify
 
 from ..const import BRAND, LOGGER, DOMAIN
 from ..utils import build_device_info
@@ -41,8 +42,7 @@ class TapoEntity(Entity):
     @property
     def unique_id(self) -> str:
         id_suffix = "".join(self._name_suffix.split())
-
-        return "{}-{}".format(self._name, id_suffix).lower()
+        return "{}-{}-{}".format(self._attributes["mac"], self._name, id_suffix).lower()
 
     @property
     def model(self):
