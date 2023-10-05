@@ -203,15 +203,19 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
                     registerController, host, username, password
                 )
             camData = await getCamData(hass, tapoController)
-            macAddress = camData["basic_info"]["mac"]
+            macAddress = camData["basic_info"]["mac"].lower()
 
             @callback
             def update_unique_id(entity_entry):
-                return {
-                    "new_unique_id": "{}-{}".format(
-                        macAddress, entity_entry.unique_id
-                    ).lower()
-                }
+                if (
+                    macAddress not in entity_entry.unique_id
+                    and macAddress.replace("-", "_") not in entity_entry.unique_id
+                ):
+                    return {
+                        "new_unique_id": "{}-{}".format(
+                            macAddress, entity_entry.unique_id
+                        ).lower()
+                    }
 
             await homeassistant.helpers.entity_registry.async_migrate_entries(
                 hass, config_entry.entry_id, update_unique_id
@@ -222,7 +226,7 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
             )
             raise ConfigEntryNotReady
 
-        # config_entry.version = 15
+        config_entry.version = 15
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
