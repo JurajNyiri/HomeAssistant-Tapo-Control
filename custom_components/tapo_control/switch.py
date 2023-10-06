@@ -1,4 +1,5 @@
 from homeassistant.core import HomeAssistant
+from homeassistant.const import STATE_UNAVAILABLE
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -85,6 +86,17 @@ async def async_setup_entry(
             LOGGER.debug("Adding tapoRichNotificationsSwitch...")
             switches.append(tapoRichNotificationsSwitch)
 
+        tapoRecordingPlanSwitch = await check_and_create(
+            entry,
+            hass,
+            TapoRecordingPlanSwitch,
+            "getRecordPlan",
+            config_entry,
+        )
+        if tapoRecordingPlanSwitch:
+            LOGGER.debug("Adding tapoRecordingPlanSwitch...")
+            switches.append(tapoRecordingPlanSwitch)
+
         return switches
 
     switches = await setupEntities(entry)
@@ -97,6 +109,48 @@ async def async_setup_entry(
         async_add_entities(switches)
     else:
         LOGGER.debug("No switch entities available.")
+
+
+class TapoRecordingPlanSwitch(TapoSwitchEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        TapoSwitchEntity.__init__(
+            self,
+            "Record to SD Card",
+            entry,
+            hass,
+            config_entry,
+            "mdi:record-rec",
+        )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_on(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setRecordPlan,
+            True,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "on"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_off(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setRecordPlan,
+            False,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "off"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if not camData or "enabled" not in camData["recordPlan"]:
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            self._attr_is_on = camData["recordPlan"]["enabled"] == "on"
+            self._attr_state = "on" if self._attr_is_on else "off"
 
 
 class TapoNotificationsSwitch(TapoSwitchEntity):
@@ -135,7 +189,7 @@ class TapoNotificationsSwitch(TapoSwitchEntity):
 
     def updateTapo(self, camData):
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_is_on = camData["notifications"] == "on"
             self._attr_state = "on" if self._attr_is_on else "off"
@@ -179,7 +233,7 @@ class TapoRichNotificationsSwitch(TapoSwitchEntity):
 
     def updateTapo(self, camData):
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_is_on = camData["rich_notifications"] == "on"
             self._attr_state = "on" if self._attr_is_on else "off"
@@ -221,7 +275,7 @@ class TapoLensDistortionCorrectionSwitch(TapoSwitchEntity):
 
     def updateTapo(self, camData):
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_is_on = camData["lens_distrotion_correction"] == "on"
             self._attr_state = "on" if self._attr_is_on else "off"
@@ -256,7 +310,7 @@ class TapoPrivacySwitch(TapoSwitchEntity):
 
     def updateTapo(self, camData):
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_is_on = camData["privacy_mode"] == "on"
             self._attr_state = "on" if self._attr_is_on else "off"
@@ -305,7 +359,7 @@ class TapoIndicatorLedSwitch(TapoSwitchEntity):
 
     def updateTapo(self, camData):
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_is_on = camData["led"] == "on"
             self._attr_state = "on" if self._attr_is_on else "off"
@@ -342,7 +396,7 @@ class TapoFlipSwitch(TapoSwitchEntity):
 
     def updateTapo(self, camData):
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_is_on = camData["flip"] == "on"
             self._attr_state = "on" if self._attr_is_on else "off"
@@ -379,7 +433,7 @@ class TapoAutoTrackSwitch(TapoSwitchEntity):
 
     def updateTapo(self, camData):
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_is_on = camData["auto_track"] == "on"
             self._attr_state = "on" if self._attr_is_on else "off"

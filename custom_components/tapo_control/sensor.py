@@ -114,7 +114,7 @@ class TapoHDDSensor(TapoSensorEntity):
             entry,
             hass,
             config_entry,
-            None,
+            "mdi:sd",
             None,
         )
 
