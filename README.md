@@ -47,6 +47,7 @@ This custom component creates:
 - Number entity for Movement Angle and Motion Detection Digital Sensitivity
 - Media Source for browsing and playing recordings stored on camera
 - Sensor entity that reports monitor media sync status
+- Sensor entities for Storage diagnostics
 - And finally 2 tapo_control.\* services to control a camera
 
 Use these services in following service calls.
