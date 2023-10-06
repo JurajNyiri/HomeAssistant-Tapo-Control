@@ -37,6 +37,22 @@ async def async_setup_entry(
             LOGGER.debug("Adding tapoBatterySensor...")
             sensors.append(TapoBatterySensor(entry, hass, entry))
 
+        if (
+            "camData" in entry
+            and "sdCardData" in entry["camData"]
+            and len(entry["camData"]["sdCardData"]) > 0
+        ):
+            for hdd in entry["camData"]["sdCardData"]:
+                for sensorProperty in hdd:
+                    LOGGER.debug(
+                        f"Adding TapoHDDSensor for disk {hdd['disk_name']} and property {sensorProperty}..."
+                    )
+                    sensors.append(
+                        TapoHDDSensor(
+                            entry, hass, entry, hdd["disk_name"], sensorProperty
+                        )
+                    )
+
         sensors.append(TapoSyncSensor(entry, hass, config_entry))
 
         return sensors
@@ -78,6 +94,44 @@ class TapoBatterySensor(TapoSensorEntity):
             self._attr_state = "unavailable"
         else:
             self._attr_state = camData["basic_info"]["battery_percent"]
+
+
+class TapoHDDSensor(TapoSensorEntity):
+    _attr_device_class: SensorDeviceClass = None
+    _attr_state_class: SensorStateClass = None
+    _attr_native_unit_of_measurement = None
+
+    def __init__(
+        self, entry: dict, hass: HomeAssistant, config_entry, sensorName, sensorProperty
+    ):
+        self._attr_options = None
+        self._attr_current_option = None
+        self._sensor_name = sensorName
+        self._sensor_property = sensorProperty
+        TapoSensorEntity.__init__(
+            self,
+            f"Disk {sensorName} {sensorProperty}",
+            entry,
+            hass,
+            config_entry,
+            None,
+            None,
+        )
+
+    @property
+    def entity_category(self):
+        return EntityCategory.DIAGNOSTIC
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        state = STATE_UNAVAILABLE
+        if len(camData["sdCardData"]) > 0:
+            for hdd in camData["sdCardData"]:
+                if hdd["disk_name"] == self._sensor_name:
+                    state = hdd[self._sensor_property]
+        self._attr_state = state
 
 
 class TapoSyncSensor(TapoSensorEntity):

@@ -992,6 +992,14 @@ async def getCamData(hass, controller):
         whitelampStatus = None
     camData["whitelampStatus"] = whitelampStatus
 
+    try:
+        sdCardData = []
+        for hdd in data["getSdCardStatus"]["harddisk_manage"]["hd_info"]:
+            sdCardData.append(hdd["hd_info_1"])
+    except Exception:
+        sdCardData = []
+    camData["sdCardData"] = sdCardData
+
     LOGGER.debug("getCamData - done")
     LOGGER.debug("Processed update data:")
     LOGGER.debug(camData)
