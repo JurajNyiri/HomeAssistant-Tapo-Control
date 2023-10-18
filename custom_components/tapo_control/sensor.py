@@ -127,7 +127,7 @@ class TapoHDDSensor(TapoSensorEntity):
 
     def updateTapo(self, camData):
         state = STATE_UNAVAILABLE
-        if len(camData["sdCardData"]) > 0:
+        if camData and "sdCardData" in camData and len(camData["sdCardData"]) > 0:
             for hdd in camData["sdCardData"]:
                 if hdd["disk_name"] == self._sensor_name:
                     state = hdd[self._sensor_property]
