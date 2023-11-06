@@ -1006,6 +1006,34 @@ async def getCamData(hass, controller):
         recordPlan = None
     camData["recordPlan"] = recordPlan
 
+    try:
+        microphoneVolume = data["getAudioConfig"]["audio_config"]["microphone"][
+            "volume"
+        ]
+    except Exception:
+        microphoneVolume = None
+    camData["microphoneVolume"] = microphoneVolume
+
+    try:
+        microphoneMute = data["getAudioConfig"]["audio_config"]["microphone"]["mute"]
+    except Exception:
+        microphoneMute = None
+    camData["microphoneMute"] = microphoneMute
+
+    try:
+        microphoneNoiseCancelling = data["getAudioConfig"]["audio_config"][
+            "microphone"
+        ]["noise_cancelling"]
+    except Exception:
+        microphoneNoiseCancelling = None
+    camData["microphoneNoiseCancelling"] = microphoneNoiseCancelling
+
+    try:
+        speakerVolume = data["getAudioConfig"]["audio_config"]["speaker"]["volume"]
+    except Exception:
+        speakerVolume = None
+    camData["speakerVolume"] = speakerVolume
+
     LOGGER.debug("getCamData - done")
     LOGGER.debug("Processed update data:")
     LOGGER.debug(camData)
@@ -1258,6 +1286,8 @@ def pytapoFunctionMap(pytapoFunctionName):
         return ["getRotationStatus", "getLdc"]
     elif pytapoFunctionName == "getLensDistortionCorrection":
         return ["getLdc"]
+    elif pytapoFunctionName == "getAudioConfig":
+        return ["getAudioConfig"]
     return []
 
 
