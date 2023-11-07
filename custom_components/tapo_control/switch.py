@@ -112,6 +112,21 @@ async def async_setup_entry(
                 LOGGER.debug("Adding tapoMicrophoneMuteSwitch...")
                 switches.append(tapoMicrophoneMuteSwitch)
 
+        if (
+            "microphoneNoiseCancelling" in entry["camData"]
+            and entry["camData"]["microphoneNoiseCancelling"] is not None
+        ):
+            tapoMicrophoneNoiseCancellationSwitch = await check_and_create(
+                entry,
+                hass,
+                TapoMicrophoneNoiseCancellationSwitch,
+                "getAudioConfig",
+                config_entry,
+            )
+            if tapoMicrophoneNoiseCancellationSwitch:
+                LOGGER.debug("Adding tapoMicrophoneNoiseCancellationSwitch...")
+                switches.append(tapoMicrophoneNoiseCancellationSwitch)
+
         return switches
 
     switches = await setupEntities(entry)
@@ -209,6 +224,49 @@ class TapoMicrophoneMuteSwitch(TapoSwitchEntity):
             self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_is_on = camData["microphoneMute"] == "on"
+            self._attr_state = "on" if self._attr_is_on else "off"
+
+
+class TapoMicrophoneNoiseCancellationSwitch(TapoSwitchEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        TapoSwitchEntity.__init__(
+            self,
+            "Microphone - Noise Cancellation",
+            entry,
+            hass,
+            config_entry,
+            "mdi:microphone-settings",
+        )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_on(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setMicrophone, None, None, True
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "on"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_off(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setMicrophone,
+            None,
+            None,
+            False,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "off"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if not camData or "microphoneNoiseCancelling" not in camData:
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            self._attr_is_on = camData["microphoneNoiseCancelling"] == "on"
             self._attr_state = "on" if self._attr_is_on else "off"
 
 
