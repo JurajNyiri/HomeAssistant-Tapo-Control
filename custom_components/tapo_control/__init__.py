@@ -396,17 +396,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         )
 
             # cameras state
-            LOGGER.debug("async_update_data - before someCameraEnabled check")
-            someCameraEnabled = False
+            LOGGER.debug("async_update_data - before someEntityEnabled check")
+            someEntityEnabled = False
             allEntities = getAllEntities(hass.data[DOMAIN][entry.entry_id])
             for entity in allEntities:
                 LOGGER.debug(entity["entity"])
                 if entity["entity"]._enabled:
-                    LOGGER.debug("async_update_data - enabling someCameraEnabled check")
-                    someCameraEnabled = True
+                    LOGGER.debug("async_update_data - enabling someEntityEnabled check")
+                    someEntityEnabled = True
                     break
 
-            if someCameraEnabled:
+            if (
+                someEntityEnabled
+                and hass.data[DOMAIN][entry.entry_id]["refreshEnabled"]
+            ):
                 # Update data for all controllers
                 updateDataForAllControllers = {}
                 for controller in hass.data[DOMAIN][entry.entry_id]["allControllers"]:
@@ -416,6 +419,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         )
                     except Exception as e:
                         updateDataForAllControllers[controller] = False
+                        if str(e) == "Invalid authentication data":
+                            hass.data[DOMAIN][entry.entry_id]["refreshEnabled"] = False
+                            raise ConfigEntryAuthFailed(e)
                         LOGGER.error(e)
 
                 hass.data[DOMAIN][entry.entry_id][
@@ -553,6 +559,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "initialMediaScanRunning": False,
             "mediaScanResult": {},  # keeps track of all videos currently on camera
             "timezoneOffset": cameraTS - currentTS,
+            "refreshEnabled": True,
         }
 
         if camData["childDevices"] is False or camData["childDevices"] is None:
