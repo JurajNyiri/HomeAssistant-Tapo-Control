@@ -51,6 +51,15 @@ body:
     validations:
       required: true
 
+  - type: input
+    attributes:
+      label: Integration Version
+      description: |
+        Specify your version of integration.
+      placeholder: "5.0.1"
+    validations:
+      required: true
+
   - type: dropdown
     attributes:
       label: Using stream component
