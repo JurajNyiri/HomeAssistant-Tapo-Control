@@ -50,6 +50,125 @@ class FlowHandler(ConfigFlow):
         """Get the options flow for this handler."""
         return TapoOptionsFlowHandler(config_entry)
 
+    async def async_step_reauth(self, user_input=None):
+        """Perform reauth upon an API authentication error."""
+        self.reauth_entry = self.hass.config_entries.async_get_entry(
+            self.context["entry_id"]
+        )
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(self, user_input=None):
+        """Dialog that informs the user that reauth is required."""
+        errors = {}
+        username = self.reauth_entry.data[CONF_USERNAME]
+        password = self.reauth_entry.data[CONF_PASSWORD]
+        cloud_password = self.reauth_entry.data[CLOUD_PASSWORD]
+        tapoHost = self.reauth_entry.data[CONF_IP_ADDRESS]
+        custom_stream = self.reauth_entry.data[CONF_CUSTOM_STREAM]
+        if user_input is not None:
+            username = user_input[CONF_USERNAME]
+            password = user_input[CONF_PASSWORD]
+            cloud_password = user_input[CLOUD_PASSWORD]
+            try:
+                LOGGER.debug(
+                    "[REAUTH][%s] Verifying cloud password.",
+                    tapoHost,
+                )
+                cloud_password = user_input[CLOUD_PASSWORD]
+                await self.hass.async_add_executor_job(
+                    registerController, tapoHost, "admin", cloud_password
+                )
+                LOGGER.debug(
+                    "[REAUTH][%s] Cloud password works for control.",
+                    tapoHost,
+                )
+
+                LOGGER.debug(
+                    "[REAUTH][%s] Testing RTSP stream.",
+                    tapoHost,
+                )
+                rtspStreamWorks = await isRtspStreamWorking(
+                    self.hass, tapoHost, username, password, custom_stream
+                )
+                if not rtspStreamWorks:
+                    LOGGER.debug(
+                        "[REAUTH][%s] RTSP stream returned invalid authentication data error.",
+                        tapoHost,
+                    )
+                    raise Exception("Invalid stream authentication data")
+                else:
+                    LOGGER.debug(
+                        "[REAUTH][%s] RTSP stream works.",
+                        tapoHost,
+                    )
+
+                    allConfigData = {**self.reauth_entry.data}
+                    allConfigData[CONF_USERNAME] = username
+                    allConfigData[CONF_PASSWORD] = password
+                    allConfigData[CLOUD_PASSWORD] = cloud_password
+                    self.hass.config_entries.async_update_entry(
+                        self.reauth_entry,
+                        title=tapoHost,
+                        data=allConfigData,
+                    )
+                    await self.hass.config_entries.async_reload(
+                        self.reauth_entry.entry_id
+                    )
+                    return self.async_abort(reason="reauth_successful")
+
+            except Exception as e:
+                if "Failed to establish a new connection" in str(e):
+                    LOGGER.debug(
+                        "[REAUTH][%s] Connection failed.",
+                        tapoHost,
+                    )
+                    errors["base"] = "connection_failed"
+                    LOGGER.error(e)
+                elif str(e) == "Invalid authentication data":
+                    LOGGER.debug(
+                        "[REAUTH][%s] Invalid cloud password provided.",
+                        tapoHost,
+                    )
+                    errors["base"] = "invalid_auth_cloud"
+                elif str(e) == "Invalid stream authentication data":
+                    LOGGER.debug(
+                        "[REAUTH][%s] Invalid 3rd party account password provided.",
+                        tapoHost,
+                    )
+                    errors["base"] = "invalid_stream_auth"
+                elif "Temporary Suspension" in str(e):
+                    LOGGER.debug(
+                        "[REAUTH][%s] Temporary suspension.",
+                        tapoHost,
+                    )
+                    errors["base"] = str(e)
+                else:
+                    errors["base"] = "unknown"
+                    LOGGER.error(e)
+        LOGGER.debug(
+            "[REAUTH][%s] Showing config flow for reauth.",
+            tapoHost,
+        )
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_USERNAME, description={"suggested_value": username}
+                    ): str,
+                    vol.Required(
+                        CONF_PASSWORD, description={"suggested_value": password}
+                    ): str,
+                    vol.Required(
+                        CLOUD_PASSWORD,
+                        description={"suggested_value": cloud_password},
+                    ): str,
+                }
+            ),
+            errors=errors,
+            last_step=True,
+        )
+
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
         LOGGER.debug("[ADD DEVICE] Setup process for tapo initiated by user.")
@@ -277,6 +396,12 @@ class FlowHandler(ConfigFlow):
                         self.tapoHost,
                     )
                     errors["base"] = "invalid_auth_cloud"
+                elif "Temporary Suspension" in str(e):
+                    LOGGER.debug(
+                        "[ADD DEVICE][%s] Temporary suspension.",
+                        self.tapoHost,
+                    )
+                    errors["base"] = str(e)
                 else:
                     errors["base"] = "unknown"
                     LOGGER.error(e)
@@ -342,6 +467,12 @@ class FlowHandler(ConfigFlow):
                                 )
                                 self.tapoHost = host
                                 return await self.async_step_auth()
+                        elif "Temporary Suspension" in str(e):
+                            LOGGER.debug(
+                                "[ADD DEVICE][%s] Temporary suspension.",
+                                self.tapoHost,
+                            )
+                            raise Exception("temporary_suspension")
                         else:
                             LOGGER.debug(
                                 "[ADD DEVICE][%s] Camera control is not available, IP is not a Tapo device. Error: %s",
@@ -365,6 +496,8 @@ class FlowHandler(ConfigFlow):
                     errors["base"] = "not_tapo_device"
                 elif "ports_closed" in str(e):
                     errors["base"] = "ports_closed"
+                elif "temporary_suspension" in str(e):
+                    errors["base"] = str(e)
                 else:
                     errors["base"] = "unknown"
                     LOGGER.error(e)
@@ -417,6 +550,12 @@ class FlowHandler(ConfigFlow):
                             self.tapoHost,
                         )
                         errors["base"] = "invalid_auth_cloud"
+                    elif "Temporary Suspension" in str(e):
+                        LOGGER.debug(
+                            "[ADD DEVICE][%s] Temporary suspension.",
+                            self.tapoHost,
+                        )
+                        errors["base"] = str(e)
                     else:
                         errors["base"] = "unknown"
                         LOGGER.error(e)
@@ -511,6 +650,12 @@ class FlowHandler(ConfigFlow):
                             host,
                         )
                         return await self.async_step_auth_cloud_password()
+                    elif "Temporary Suspension" in str(e):
+                        LOGGER.debug(
+                            "[ADD DEVICE][%s] Temporary suspension.",
+                            self.tapoHost,
+                        )
+                        raise Exception("temporary_suspension")
                     else:
                         LOGGER.error(e)
                         raise Exception(e)
@@ -525,6 +670,8 @@ class FlowHandler(ConfigFlow):
                     errors["base"] = "ports_closed"
                 elif str(e) == "Invalid authentication data":
                     errors["base"] = "invalid_auth"
+                elif str(e) == "temporary_suspension":
+                    errors["base"] = str(e)
                 else:
                     errors["base"] = "unknown"
                     LOGGER.error(e)
@@ -658,16 +805,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 )
                 return self.async_create_entry(title="", data=None)
             except Exception as e:
-                if "Failed to establish a new connection" in str(e):
-                    errors["base"] = "connection_failed"
-                    LOGGER.error(e)
-                elif str(e) == "Invalid authentication data":
-                    errors["base"] = "invalid_auth"
-                elif str(e) == "Incorrect cloud password":
-                    errors["base"] = "invalid_auth_cloud"
-                elif str(e) == "Camera requires cloud password":
-                    errors["base"] = "camera_requires_admin"
-                elif str(e) == "Incorrect sound detection peak value.":
+                if str(e) == "Incorrect sound detection peak value.":
                     errors["base"] = "incorrect_peak_value"
                 else:
                     errors["base"] = "unknown"
@@ -762,20 +900,8 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 )
                 return self.async_create_entry(title="", data=None)
             except Exception as e:
-                if "Failed to establish a new connection" in str(e):
-                    errors["base"] = "connection_failed"
-                    LOGGER.error(e)
-                elif str(e) == "Invalid authentication data":
-                    errors["base"] = "invalid_auth"
-                elif str(e) == "Incorrect cloud password":
-                    errors["base"] = "invalid_auth_cloud"
-                elif str(e) == "Camera requires cloud password":
-                    errors["base"] = "camera_requires_admin"
-                elif str(e) == "Incorrect sound detection peak value.":
-                    errors["base"] = "incorrect_peak_value"
-                else:
-                    errors["base"] = "unknown"
-                    LOGGER.error(e)
+                errors["base"] = "unknown"
+                LOGGER.error(e)
 
         return self.async_show_form(
             step_id="media",
@@ -853,11 +979,14 @@ class TapoOptionsFlowHandler(OptionsFlow):
                             )
                         except Exception as e:
                             LOGGER.debug(
-                                "[%s] Provided cloud password for control is invalid.",
+                                "[%s] Camera did not accept password.",
                                 ip_address,
                             )
                             LOGGER.error(e)
-                            raise Exception("Incorrect cloud password")
+                            if str(e) == "Invalid authentication data":
+                                raise Exception("Incorrect cloud password")
+                            else:
+                                raise e
                     else:
                         LOGGER.debug(
                             "[%s] Skipping test of cloud password for control as it was not updated.",
@@ -948,7 +1077,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                             ip_address,
                         )
                         try:
-                            tapoController = await self.hass.async_add_executor_job(
+                            await self.hass.async_add_executor_job(
                                 registerController, ip_address, username, password
                             )
                             LOGGER.debug(
@@ -1031,6 +1160,8 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     LOGGER.error(e)
                 elif str(e) == "Invalid authentication data":
                     errors["base"] = "invalid_auth"
+                elif "Temporary Suspension" in str(e):
+                    errors["base"] = "account_suspended"
                 elif str(e) == "Incorrect cloud password":
                     errors["base"] = "invalid_auth_cloud"
                 elif str(e) == "Camera requires cloud password":
@@ -1040,7 +1171,6 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 else:
                     errors["base"] = "unknown"
                     LOGGER.error(e)
-
         return self.async_show_form(
             step_id="auth",
             data_schema=vol.Schema(

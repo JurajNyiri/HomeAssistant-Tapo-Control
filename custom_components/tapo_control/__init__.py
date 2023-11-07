@@ -1,6 +1,7 @@
 import datetime
 import hashlib
 import logging
+import asyncio
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
@@ -11,7 +12,10 @@ from homeassistant.const import (
     CONF_PASSWORD,
     EVENT_HOMEASSISTANT_STOP,
 )
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.exceptions import (
+    ConfigEntryNotReady,
+    ConfigEntryAuthFailed,
+)
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt
 from homeassistant.components.media_source.error import Unresolvable
@@ -232,7 +236,9 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    LOGGER.debug("Unloading tapo_control...")
     await hass.config_entries.async_forward_entry_unload(entry, "binary_sensor")
+    await hass.config_entries.async_forward_entry_unload(entry, "sensor")
     await hass.config_entries.async_forward_entry_unload(entry, "button")
     await hass.config_entries.async_forward_entry_unload(entry, "camera")
     await hass.config_entries.async_forward_entry_unload(entry, "light")
@@ -243,7 +249,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_unload(entry, "update")
 
     if hass.data[DOMAIN][entry.entry_id]["events"]:
-        await hass.data[DOMAIN][entry.entry_id]["events"].async_stop()
+        LOGGER.debug("Stopping events...")
+        try:
+            async with asyncio.timeout(3):
+                await hass.data[DOMAIN][entry.entry_id]["events"].async_stop()
+        except TimeoutError:
+            LOGGER.warn("Timed out waiting for onvif connection to close, proceeding.")
+        LOGGER.debug("Events stopped.")
 
     return True
 
@@ -251,8 +263,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     LOGGER.debug("async_remove_entry")
     entry_id = entry.entry_id
-    coldDirPath = getColdDirPathForEntry(entry_id)
-    hotDirPath = getHotDirPathForEntry(entry_id)
+    coldDirPath = getColdDirPathForEntry(hass, entry_id)
+    hotDirPath = getHotDirPathForEntry(hass, entry_id)
 
     # Delete all media stored in cold storage for entity
     LOGGER.debug("Deleting cold storage files for entity " + entry_id + "...")
@@ -393,17 +405,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         )
 
             # cameras state
-            LOGGER.debug("async_update_data - before someCameraEnabled check")
-            someCameraEnabled = False
+            LOGGER.debug("async_update_data - before someEntityEnabled check")
+            someEntityEnabled = False
             allEntities = getAllEntities(hass.data[DOMAIN][entry.entry_id])
             for entity in allEntities:
                 LOGGER.debug(entity["entity"])
                 if entity["entity"]._enabled:
-                    LOGGER.debug("async_update_data - enabling someCameraEnabled check")
-                    someCameraEnabled = True
+                    LOGGER.debug("async_update_data - enabling someEntityEnabled check")
+                    someEntityEnabled = True
                     break
 
-            if someCameraEnabled:
+            if (
+                someEntityEnabled
+                and hass.data[DOMAIN][entry.entry_id]["refreshEnabled"]
+            ):
                 # Update data for all controllers
                 updateDataForAllControllers = {}
                 for controller in hass.data[DOMAIN][entry.entry_id]["allControllers"]:
@@ -413,6 +428,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         )
                     except Exception as e:
                         updateDataForAllControllers[controller] = False
+                        if str(e) == "Invalid authentication data":
+                            hass.data[DOMAIN][entry.entry_id]["refreshEnabled"] = False
+                            raise ConfigEntryAuthFailed(e)
                         LOGGER.error(e)
 
                 hass.data[DOMAIN][entry.entry_id][
@@ -550,6 +568,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "initialMediaScanRunning": False,
             "mediaScanResult": {},  # keeps track of all videos currently on camera
             "timezoneOffset": cameraTS - currentTS,
+            "refreshEnabled": True,
         }
 
         if camData["childDevices"] is False or camData["childDevices"] is None:
@@ -733,6 +752,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         LOGGER.error(
             "Unable to connect to Tapo: Cameras Control controller: %s", str(e)
         )
+        if "Invalid authentication data" in str(e):
+            raise ConfigEntryAuthFailed(e)
+        elif "Temporary Suspension:" in str(
+            e
+        ):  # keep retrying to authenticate eventually, or throw
+            # ConfigEntryAuthFailed on invalid auth eventually
+            raise ConfigEntryNotReady
+        # Retry for anything else
         raise ConfigEntryNotReady
 
     return True
