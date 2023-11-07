@@ -1,6 +1,7 @@
 import datetime
 import hashlib
 import logging
+import asyncio
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
@@ -235,7 +236,9 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    LOGGER.debug("Unloading tapo_control...")
     await hass.config_entries.async_forward_entry_unload(entry, "binary_sensor")
+    await hass.config_entries.async_forward_entry_unload(entry, "sensor")
     await hass.config_entries.async_forward_entry_unload(entry, "button")
     await hass.config_entries.async_forward_entry_unload(entry, "camera")
     await hass.config_entries.async_forward_entry_unload(entry, "light")
@@ -246,7 +249,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_unload(entry, "update")
 
     if hass.data[DOMAIN][entry.entry_id]["events"]:
-        await hass.data[DOMAIN][entry.entry_id]["events"].async_stop()
+        LOGGER.debug("Stopping events...")
+        try:
+            async with asyncio.timeout(3):
+                await hass.data[DOMAIN][entry.entry_id]["events"].async_stop()
+        except TimeoutError:
+            LOGGER.warn("Timed out waiting for onvif connection to close, proceeding.")
+        LOGGER.debug("Events stopped.")
 
     return True
 
