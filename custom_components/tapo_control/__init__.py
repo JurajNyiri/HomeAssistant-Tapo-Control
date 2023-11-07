@@ -11,7 +11,10 @@ from homeassistant.const import (
     CONF_PASSWORD,
     EVENT_HOMEASSISTANT_STOP,
 )
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.exceptions import (
+    ConfigEntryNotReady,
+    ConfigEntryAuthFailed,
+)
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt
 from homeassistant.components.media_source.error import Unresolvable
@@ -251,8 +254,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     LOGGER.debug("async_remove_entry")
     entry_id = entry.entry_id
-    coldDirPath = getColdDirPathForEntry(entry_id)
-    hotDirPath = getHotDirPathForEntry(entry_id)
+    coldDirPath = getColdDirPathForEntry(hass, entry_id)
+    hotDirPath = getHotDirPathForEntry(hass, entry_id)
 
     # Delete all media stored in cold storage for entity
     LOGGER.debug("Deleting cold storage files for entity " + entry_id + "...")
@@ -733,6 +736,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         LOGGER.error(
             "Unable to connect to Tapo: Cameras Control controller: %s", str(e)
         )
+        if "Invalid authentication data" in str(e):
+            raise ConfigEntryAuthFailed(e)
+        elif "Temporary Suspension:" in str(
+            e
+        ):  # keep retrying to authenticate eventually, or throw
+            # ConfigEntryAuthFailed on invalid auth eventually
+            raise ConfigEntryNotReady
+        # Retry for anything else
         raise ConfigEntryNotReady
 
     return True
