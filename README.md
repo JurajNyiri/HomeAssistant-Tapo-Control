@@ -42,9 +42,9 @@ This custom component creates:
 - Binary sensor for motion after the motion is detected for the first time
 - Light entity, if the camera supports a floodlight switch
 - Buttons for Calibrate, Format, Manual Alarm start & stop, Moving the camera, Reboot and syncing time
-- Switch entities for Auto track, Flip setting, LED Indicator, Lens Distortion Correction, (Rich) Notifications, Recording and Privacy mode
+- Switch entities for Auto track, Flip setting, LED Indicator, Lens Distortion Correction, (Rich) Notifications, Recording, Microphone Mute, Microphone Noise Cancelling and Privacy mode
 - Select entities for Automatic Alarm, Light Frequency, Motion Detection, Night Vision and Move to Preset
-- Number entity for Movement Angle and Motion Detection Digital Sensitivity
+- Number entity for Movement Angle, Speaker Volume, Microphone Volume and Motion Detection Digital Sensitivity
 - Media Source for browsing and playing recordings stored on camera
 - Sensor entity that reports monitor media sync status
 - Sensor entities for Storage diagnostics
