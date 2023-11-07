@@ -156,7 +156,7 @@ class TapoMicrophoneVolume(TapoNumberEntity):
 
         TapoNumberEntity.__init__(
             self,
-            "Microphone Volume",
+            "Microphone - Volume",
             entry,
             hass,
             config_entry,
