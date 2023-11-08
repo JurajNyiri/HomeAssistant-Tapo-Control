@@ -1034,6 +1034,14 @@ async def getCamData(hass, controller):
         speakerVolume = None
     camData["speakerVolume"] = speakerVolume
 
+    try:
+        autoUpgradeEnabled = data["getFirmwareAutoUpgradeConfig"]["auto_upgrade"][
+            "common"
+        ]["enabled"]
+    except Exception:
+        autoUpgradeEnabled = None
+    camData["autoUpgradeEnabled"] = autoUpgradeEnabled
+
     LOGGER.debug("getCamData - done")
     LOGGER.debug("Processed update data:")
     LOGGER.debug(camData)
@@ -1288,6 +1296,8 @@ def pytapoFunctionMap(pytapoFunctionName):
         return ["getLdc"]
     elif pytapoFunctionName == "getAudioConfig":
         return ["getAudioConfig"]
+    elif pytapoFunctionName == "getFirmwareAutoUpgradeConfig":
+        return ["getFirmwareAutoUpgradeConfig"]
     return []
 
 
