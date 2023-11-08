@@ -814,9 +814,13 @@ class TapoMoveToPresetSelect(TapoSelectEntity):
             self._attr_state = STATE_UNAVAILABLE
         else:
             self._presets = camData["presets"]
-            self._attr_options = list(camData["presets"].values())
-            self._attr_current_option = None
-            self._attr_state = self._attr_current_option
+            presetsConvertedToList = list(camData["presets"].values())
+            if presetsConvertedToList:
+                self._attr_options = list(camData["presets"].values())
+                self._attr_current_option = None
+                self._attr_state = self._attr_current_option
+            else:
+                self._attr_state = STATE_UNAVAILABLE
 
     async def async_select_option(self, option: str) -> None:
         foundKey = False
