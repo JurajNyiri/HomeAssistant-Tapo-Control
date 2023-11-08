@@ -126,7 +126,7 @@ class FlowHandler(ConfigFlow):
                                 "[REAUTH][%s] Temporary suspension.",
                                 tapoHost,
                             )
-                            raise Exception("temporary_suspension")  # todo test this
+                            raise Exception("temporary_suspension")
                         else:
                             LOGGER.error(e)
                             raise Exception(e)
