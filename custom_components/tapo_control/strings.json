@@ -3,13 +3,18 @@
   "config": {
     "flow_title": "Tapo: Cameras Control {name}",
     "step": {
-      "reauth_confirm": {
+      "reauth_confirm_stream": {
         "data": {
           "username": "Camera Account - Username",
-          "password": "Camera Account - Password",
+          "password": "Camera Account - Password"
+        },
+        "description": "Your password(s) changed. Please enter up to date passwords.\n\nCamera account is created via Tapo app at:\nCamera Settings > Advanced Settings > Camera Account.\n\nYou can test if these credentials work via rtsp stream, for example VLC using link\nrtsp://username:password@IP Address:554/stream1"
+      },
+      "reauth_confirm_cloud": {
+        "data": {
           "cloud_password": "Cloud Password"
         },
-        "description": "Your password(s) changed. Please enter up to date passwords."
+        "description": "Camera requires your cloud password for control.\nThis is the password you used for your Tapo Cloud account with your email.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
       },
       "ip": {
         "data": {

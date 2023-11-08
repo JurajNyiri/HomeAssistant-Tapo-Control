@@ -55,34 +55,20 @@ class FlowHandler(ConfigFlow):
         self.reauth_entry = self.hass.config_entries.async_get_entry(
             self.context["entry_id"]
         )
-        return await self.async_step_reauth_confirm()
+        return await self.async_step_reauth_confirm_stream()
 
-    async def async_step_reauth_confirm(self, user_input=None):
+    async def async_step_reauth_confirm_stream(self, user_input=None):
         """Dialog that informs the user that reauth is required."""
         errors = {}
-        username = self.reauth_entry.data[CONF_USERNAME]
-        password = self.reauth_entry.data[CONF_PASSWORD]
-        cloud_password = self.reauth_entry.data[CLOUD_PASSWORD]
         tapoHost = self.reauth_entry.data[CONF_IP_ADDRESS]
         custom_stream = self.reauth_entry.data[CONF_CUSTOM_STREAM]
+        cloud_password = self.reauth_entry.data[CLOUD_PASSWORD]
+        username = self.reauth_entry.data[CONF_USERNAME]
+        password = self.reauth_entry.data[CONF_PASSWORD]
         if user_input is not None:
             username = user_input[CONF_USERNAME]
             password = user_input[CONF_PASSWORD]
-            cloud_password = user_input[CLOUD_PASSWORD]
             try:
-                LOGGER.debug(
-                    "[REAUTH][%s] Verifying cloud password.",
-                    tapoHost,
-                )
-                cloud_password = user_input[CLOUD_PASSWORD]
-                await self.hass.async_add_executor_job(
-                    registerController, tapoHost, "admin", cloud_password
-                )
-                LOGGER.debug(
-                    "[REAUTH][%s] Cloud password works for control.",
-                    tapoHost,
-                )
-
                 LOGGER.debug(
                     "[REAUTH][%s] Testing RTSP stream.",
                     tapoHost,
@@ -105,12 +91,46 @@ class FlowHandler(ConfigFlow):
                     allConfigData = {**self.reauth_entry.data}
                     allConfigData[CONF_USERNAME] = username
                     allConfigData[CONF_PASSWORD] = password
-                    allConfigData[CLOUD_PASSWORD] = cloud_password
                     self.hass.config_entries.async_update_entry(
                         self.reauth_entry,
                         title=tapoHost,
                         data=allConfigData,
                     )
+                    try:
+                        LOGGER.debug(
+                            "[REAUTH][%s] Testing control of camera using Camera Account.",
+                            tapoHost,
+                        )
+                        await self.hass.async_add_executor_job(
+                            registerController, tapoHost, username, password
+                        )
+                        LOGGER.debug(
+                            "[REAUTH][%s] Camera Account works for control.",
+                            tapoHost,
+                        )
+                        if cloud_password != "":
+                            LOGGER.debug(
+                                "[REAUTH][%s] Cloud password is not empty, requesting validation.",
+                                tapoHost,
+                            )
+                            return await self.async_step_reauth_confirm_cloud()
+                    except Exception as e:
+                        if str(e) == "Invalid authentication data":
+                            LOGGER.debug(
+                                "[REAUTH][%s] Camera Account does not work for control, requesting cloud password.",
+                                tapoHost,
+                            )
+                            return await self.async_step_reauth_confirm_cloud()
+                        elif "Temporary Suspension" in str(e):
+                            LOGGER.debug(
+                                "[REAUTH][%s] Temporary suspension.",
+                                tapoHost,
+                            )
+                            raise Exception("temporary_suspension")
+                        else:
+                            LOGGER.error(e)
+                            raise Exception(e)
+
                     await self.hass.config_entries.async_reload(
                         self.reauth_entry.entry_id
                     )
@@ -136,7 +156,10 @@ class FlowHandler(ConfigFlow):
                         tapoHost,
                     )
                     errors["base"] = "invalid_stream_auth"
-                elif "Temporary Suspension" in str(e):
+                elif (
+                    "Temporary Suspension" in str(e)
+                    or str(e) == "temporary_suspension"  # todo: test this
+                ):
                     LOGGER.debug(
                         "[REAUTH][%s] Temporary suspension.",
                         tapoHost,
@@ -146,11 +169,11 @@ class FlowHandler(ConfigFlow):
                     errors["base"] = "unknown"
                     LOGGER.error(e)
         LOGGER.debug(
-            "[REAUTH][%s] Showing config flow for reauth.",
+            "[REAUTH][%s] Showing config flow for reauth - stream.",
             tapoHost,
         )
         return self.async_show_form(
-            step_id="reauth_confirm",
+            step_id="reauth_confirm_stream",
             data_schema=vol.Schema(
                 {
                     vol.Required(
@@ -159,9 +182,79 @@ class FlowHandler(ConfigFlow):
                     vol.Required(
                         CONF_PASSWORD, description={"suggested_value": password}
                     ): str,
+                }
+            ),
+            errors=errors,
+            last_step=True,
+        )
+
+    async def async_step_reauth_confirm_cloud(self, user_input=None):
+        errors = {}
+        tapoHost = self.reauth_entry.data[CONF_IP_ADDRESS]
+        cloudPassword = self.reauth_entry.data[CLOUD_PASSWORD]
+        if user_input is not None:
+            cloudPassword = user_input[CLOUD_PASSWORD]
+            try:
+                LOGGER.debug(
+                    "[REAUTH][%s] Testing control of camera using Cloud Account.",
+                    tapoHost,
+                )
+                await self.hass.async_add_executor_job(
+                    registerController, tapoHost, "admin", cloudPassword
+                )
+                LOGGER.debug(
+                    "[REAUTH][%s] Cloud Account works for control.",
+                    tapoHost,
+                )
+                allConfigData = {**self.reauth_entry.data}
+                allConfigData[CLOUD_PASSWORD] = cloudPassword
+                self.hass.config_entries.async_update_entry(
+                    self.reauth_entry,
+                    title=tapoHost,
+                    data=allConfigData,
+                )
+                await self.hass.config_entries.async_reload(self.reauth_entry.entry_id)
+                return self.async_abort(reason="reauth_successful")
+
+            except Exception as e:
+                if "Failed to establish a new connection" in str(e):
+                    LOGGER.debug(
+                        "[REAUTH][%s] Connection failed.",
+                        tapoHost,
+                    )
+                    errors["base"] = "connection_failed"
+                    LOGGER.error(e)
+                elif str(e) == "Invalid authentication data":
+                    LOGGER.debug(
+                        "[REAUTH][%s] Invalid cloud password provided.",
+                        tapoHost,
+                    )
+                    errors["base"] = "invalid_auth_cloud"
+                elif str(e) == "Invalid stream authentication data":
+                    LOGGER.debug(
+                        "[REAUTH][%s] Invalid 3rd party account password provided.",
+                        tapoHost,
+                    )
+                    errors["base"] = "invalid_stream_auth"
+                elif "Temporary Suspension" in str(e):  # tested
+                    LOGGER.debug(
+                        "[REAUTH][%s] Temporary suspension.",
+                        tapoHost,
+                    )
+                    errors["base"] = str(e)
+                else:
+                    errors["base"] = "unknown"
+                    LOGGER.error(e)
+        LOGGER.debug(
+            "[REAUTH][%s] Showing config flow for reauth - cloud.",
+            tapoHost,
+        )
+        return self.async_show_form(
+            step_id="reauth_confirm_cloud",
+            data_schema=vol.Schema(
+                {
                     vol.Required(
-                        CLOUD_PASSWORD,
-                        description={"suggested_value": cloud_password},
+                        CLOUD_PASSWORD, description={"suggested_value": cloudPassword}
                     ): str,
                 }
             ),

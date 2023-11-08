@@ -226,6 +226,14 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
             LOGGER.error(
                 "Unable to connect to Tapo: Cameras Control controller: %s", str(e)
             )
+            if "Invalid authentication data" in str(e):
+                raise ConfigEntryAuthFailed(e)
+            elif "Temporary Suspension:" in str(
+                e
+            ):  # keep retrying to authenticate eventually, or throw
+                # ConfigEntryAuthFailed on invalid auth eventually
+                raise ConfigEntryNotReady
+            # Retry for anything else
             raise ConfigEntryNotReady
 
         config_entry.version = 15
