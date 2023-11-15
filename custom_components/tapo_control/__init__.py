@@ -15,6 +15,7 @@ from homeassistant.const import (
 from homeassistant.exceptions import (
     ConfigEntryNotReady,
     ConfigEntryAuthFailed,
+    DependencyError,
 )
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt
@@ -44,6 +45,7 @@ from .const import (
     SOUND_DETECTION_RESET,
     TIME_SYNC_PERIOD,
     UPDATE_CHECK_PERIOD,
+    PYTAPO_REQUIRED_VERSION,
 )
 from .utils import (
     convert_to_timestamp,
@@ -64,6 +66,7 @@ from .utils import (
     getRecordings,
 )
 from pytapo import Tapo
+from pytapo.version import PYTAPO_VERSION
 
 from homeassistant.helpers.event import async_track_time_interval
 from datetime import timedelta
@@ -284,6 +287,13 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+    if PYTAPO_REQUIRED_VERSION != PYTAPO_VERSION:
+        raise DependencyError(
+            [
+                f"Incorrect pytapo version installed: {PYTAPO_VERSION}. Required: {PYTAPO_REQUIRED_VERSION}."
+            ]
+        )
+
     """Set up the Tapo: Cameras Control component from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
