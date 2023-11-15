@@ -75,10 +75,23 @@ def getStreamSource(entry, hdStream):
     return streamURL
 
 
+def pytapoLog(msg):
+    LOGGER.debug(f"[pytapo] {msg}")
+
+
 def registerController(
     host, username, password, password_cloud="", super_secret_key="", device_id=None
 ):
-    return Tapo(host, username, password, password_cloud, super_secret_key, device_id)
+    return Tapo(
+        host,
+        username,
+        password,
+        password_cloud,
+        super_secret_key,
+        device_id,
+        reuseSession=False,
+        printDebugInformation=pytapoLog,
+    )
 
 
 def isOpen(ip, port):
