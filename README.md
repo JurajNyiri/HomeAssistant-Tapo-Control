@@ -173,6 +173,16 @@ See [official Tapo documentation](https://www.tp-link.com/cz/support/faq/2742/)
 > 
 > Each camera also supports up to 2 simultaneous video streams. You could use up to 2 devices to view the live feed of the camera simultaneously using the Tapo App or via RTSP. You may also only view the playback of a camera using one Tapo app at a time.
 
+As well as:
+
+> **Q4**: Why can’t I use Tapo Care, SD card, and NVR at the same time?
+>
+> **A**: Due to the limited hardware performance of the camera itself, Tapo Care works best with one of the NVR or SD card recordings.
+>
+> If you are using an SD card and Tapo Care at the same time, the NVR(RTSP/ONVIF) will be disabled.
+> 
+> To restart the recording on the NVR, please remove the SD card from the camera.
+
 </details>
 
 
