@@ -161,6 +161,20 @@ entity: camera.bedroom_hd
 </details>
 
 <details>
+  <summary>I see error `Invalid authentication data. Make sure you have created your 3rd party account via Tapo app. You can also test if these credentials work via rtsp stream, for example VLC using link rtsp://username:password@IP Address:554/stream1`</summary>
+
+See [official Tapo documentation](https://www.tp-link.com/cz/support/faq/2742/)
+
+**Q3**: Can multiple accounts/devices view the Tapo camera at the same time?
+
+**A**: Currently, each camera can be controlled or managed by only one account on the Tapo App. You can share it with 5 different accounts at most, and these two accounts can only access live view and playback features of the camera.
+
+Each camera also supports up to 2 simultaneous video streams. You could use up to 2 devices to view the live feed of the camera simultaneously using the Tapo App or via RTSP. You may also only view the playba
+
+</details>
+
+
+<details>
   <summary>Supported models</summary>
 
 Users reported full functionality with following Tapo Cameras:
@@ -188,7 +202,6 @@ Battery cameras controlled via HUB are working only for control:
 If you had success with some other model, please report it via a new issue.
 
 </details>
-
 
 <details>
   <summary>What is webhook when referred to on camera?</summary>
