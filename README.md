@@ -161,7 +161,9 @@ entity: camera.bedroom_hd
 </details>
 
 <details>
-  <summary>I see error `Invalid authentication data. Make sure you have created your 3rd party account via Tapo app. You can also test if these credentials work via rtsp stream, for example VLC using link rtsp://username:password@IP Address:554/stream1`</summary>
+  <summary>I see error `Invalid authentication data. Make sure you have created your 3rd party account via Tapo app. You can also test if these credentials work via rtsp stream, for example VLC using link rtsp://username:password@IP Address:554/stream1` when I enter correct password</summary>
+
+You might be entering incorrect password or are encountering a camera limitation.
 
 See [official Tapo documentation](https://www.tp-link.com/cz/support/faq/2742/)
 
