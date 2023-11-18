@@ -171,7 +171,7 @@ See [official Tapo documentation](https://www.tp-link.com/cz/support/faq/2742/)
 
 **A**: Currently, each camera can be controlled or managed by only one account on the Tapo App. You can share it with 5 different accounts at most, and these two accounts can only access live view and playback features of the camera.
 
-Each camera also supports up to 2 simultaneous video streams. You could use up to 2 devices to view the live feed of the camera simultaneously using the Tapo App or via RTSP. You may also only view the playba
+Each camera also supports up to 2 simultaneous video streams. You could use up to 2 devices to view the live feed of the camera simultaneously using the Tapo App or via RTSP. You may also only view the playback of a camera using one Tapo app at a time.
 
 </details>
 
