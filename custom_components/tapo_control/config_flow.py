@@ -55,7 +55,23 @@ class FlowHandler(ConfigFlow):
         self.reauth_entry = self.hass.config_entries.async_get_entry(
             self.context["entry_id"]
         )
-        return await self.async_step_reauth_confirm_stream()
+        host = self.reauth_entry.data[CONF_IP_ADDRESS]
+        if not areCameraPortsOpened(host):
+            LOGGER.debug(
+                "[REAUTH][%s] Some of the required ports are closed.",
+                host,
+            )
+            self.tapoHost = host
+            self.tapoUsername = ""
+            self.tapoPassword = ""
+            return await self.async_step_reauth_confirm_cloud()
+        else:
+            LOGGER.debug(
+                "[REAUTH][%s] All camera ports are opened, proceeding to requesting Camera Account.",
+                host,
+            )
+            self.tapoHost = host
+            return await self.async_step_reauth_confirm_stream()
 
     async def async_step_reauth_confirm_stream(self, user_input=None):
         """Dialog that informs the user that reauth is required."""
