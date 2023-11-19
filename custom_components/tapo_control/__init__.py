@@ -449,11 +449,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         updateDataForAllControllers[controller] = await getCamData(
                             hass, controller
                         )
+                        hass.data[DOMAIN][entry.entry_id]["reauth_retries"] = 0
                     except Exception as e:
                         updateDataForAllControllers[controller] = False
                         if str(e) == "Invalid authentication data":
-                            hass.data[DOMAIN][entry.entry_id]["refreshEnabled"] = False
-                            raise ConfigEntryAuthFailed(e)
+                            if hass.data[DOMAIN][entry.entry_id]["reauth_retries"] < 3:
+                                hass.data[DOMAIN][entry.entry_id]["reauth_retries"] += 1
+                                raise e
+                            else:
+                                hass.data[DOMAIN][entry.entry_id][
+                                    "refreshEnabled"
+                                ] = False
+                                raise ConfigEntryAuthFailed(e)
                         LOGGER.error(e)
 
                 hass.data[DOMAIN][entry.entry_id][
@@ -552,6 +559,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         hass.data[DOMAIN][entry.entry_id] = {
             "setup_retries": 0,
+            "reauth_retries": 0,
             "runningMediaSync": False,
             "controller": tapoController,
             "entry": entry,
