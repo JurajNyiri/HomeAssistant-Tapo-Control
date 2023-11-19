@@ -551,6 +551,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         currentTS = dt.as_timestamp(dt.now())
 
         hass.data[DOMAIN][entry.entry_id] = {
+            "setup_retries": 0,
             "runningMediaSync": False,
             "controller": tapoController,
             "entry": entry,
