@@ -304,6 +304,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     cloud_password = entry.data.get(CLOUD_PASSWORD)
     enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
 
+    if entry.entry_id not in hass.data[DOMAIN]:
+        hass.data[DOMAIN][entry.entry_id] = {}
+        if "setup_retries" not in hass.data[DOMAIN][entry.entry_id]:
+            hass.data[DOMAIN][entry.entry_id]["setup_retries"] = 0
+
     if isUsingHTTPS(hass):
         LOGGER.warn(
             "Home Assistant is running on HTTPS or it was not able to detect base_url schema. Disabling webhooks."
@@ -767,17 +772,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, unsubscribe)
 
     except Exception as e:
-        LOGGER.error(
-            "Unable to connect to Tapo: Cameras Control controller: %s", str(e)
-        )
         if "Invalid authentication data" in str(e):
+            if hass.data[DOMAIN][entry.entry_id]["setup_retries"] < 3:
+                hass.data[DOMAIN][entry.entry_id]["setup_retries"] += 1
+                raise ConfigEntryNotReady(e)
             raise ConfigEntryAuthFailed(e)
-        elif "Temporary Suspension:" in str(
-            e
-        ):  # keep retrying to authenticate eventually, or throw
-            # ConfigEntryAuthFailed on invalid auth eventually
-            raise ConfigEntryNotReady
-        # Retry for anything else
-        raise ConfigEntryNotReady
+        else:
+            if "Temporary Suspension:" in str(
+                e
+            ):  # keep retrying to authenticate eventually, or throw
+                # ConfigEntryAuthFailed on invalid auth eventually
+                raise ConfigEntryNotReady(e)
+            # Retry for anything else
+            LOGGER.error(
+                "Unable to connect to Tapo: Cameras Control controller: %s", str(e)
+            )
+            raise ConfigEntryNotReady(e)
 
     return True
