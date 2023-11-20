@@ -6,9 +6,9 @@
   "codeowners": [
     "@JurajNyiri"
   ],
-  "version": "5.4.9",
+  "version": "5.4.11",
   "requirements": [
-    "pytapo==3.3.17"
+    "pytapo==3.3.18"
   ],
   "dependencies": [
     "ffmpeg",

@@ -552,7 +552,7 @@ class FlowHandler(ConfigFlow):
                     )
                     try:
                         await self.hass.async_add_executor_job(
-                            registerController, host, "invalid", ""
+                            registerController, host, "invalid", "", "", "", None, False
                         )
                     except Exception as e:
                         if str(e) == "Invalid authentication data":
