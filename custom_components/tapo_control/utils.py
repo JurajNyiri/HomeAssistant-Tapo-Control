@@ -80,13 +80,7 @@ def pytapoLog(msg):
 
 
 def registerController(
-    host,
-    username,
-    password,
-    password_cloud="",
-    super_secret_key="",
-    device_id=None,
-    retryStok=True,
+    host, username, password, password_cloud="", super_secret_key="", device_id=None
 ):
     return Tapo(
         host,
@@ -97,7 +91,7 @@ def registerController(
         device_id,
         reuseSession=False,
         printDebugInformation=pytapoLog,
-        retryStok=retryStok,
+        retryStok=False,
     )
 
 
