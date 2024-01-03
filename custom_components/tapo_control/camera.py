@@ -7,8 +7,7 @@ from typing import Callable
 from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from homeassistant.components.camera import (
-    SUPPORT_ON_OFF,
-    SUPPORT_STREAM,
+    CameraEntityFeature,
     Camera,
 )
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS, DATA_FFMPEG
@@ -102,9 +101,9 @@ class TapoCamEntity(Camera):
     @property
     def supported_features(self):
         if self._enable_stream:
-            return SUPPORT_STREAM | SUPPORT_ON_OFF
+            return CameraEntityFeature.STREAM | CameraEntityFeature.ON_OFF
         else:
-            return SUPPORT_ON_OFF
+            return CameraEntityFeature.ON_OFF
 
     @property
     def name(self) -> str:
