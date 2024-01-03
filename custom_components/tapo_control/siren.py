@@ -1,10 +1,6 @@
 import asyncio
 
 from homeassistant.components.siren import (
-    SUPPORT_TONES,
-    SUPPORT_TURN_OFF,
-    SUPPORT_TURN_ON,
-    SUPPORT_DURATION,
     SirenEntity,
     SirenEntityFeature
 )
