@@ -1,4 +1,4 @@
 {
-    "name": "Tapo: Cameras Control",
-    "homeassistant": "2023.5.2"
+  "name": "Tapo: Cameras Control",
+  "homeassistant": "2024.1.0"
 }

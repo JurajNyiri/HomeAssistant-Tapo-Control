@@ -1,11 +1,8 @@
 import asyncio
 
 from homeassistant.components.siren import (
-    SUPPORT_TONES,
-    SUPPORT_TURN_OFF,
-    SUPPORT_TURN_ON,
-    SUPPORT_DURATION,
     SirenEntity,
+    SirenEntityFeature
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -61,15 +58,8 @@ class TapoSirenEntity(SirenEntity, TapoEntity):
 
         self._attr_is_on = False
         self._attr_supported_features = (
-            SUPPORT_TURN_ON | SUPPORT_TURN_OFF | SUPPORT_DURATION
+            SirenEntityFeature.TURN_ON | SirenEntityFeature.TURN_OFF | SirenEntityFeature.DURATION
         )
-
-        # self._attr_supported_features = self._attr_supported_features | SUPPORT_TONES
-        # self._attr_available_tones = {
-        #     "LIGHT_AND_SOUND": "Light and sound",
-        #     "LIGHT_ONLY": "Light only",
-        #     "SOUND_ONLY": "Sound only",
-        # }
 
         TapoEntity.__init__(self, entry, name_suffix)
         SirenEntity.__init__(self)
