@@ -236,6 +236,13 @@ Points above are automatically determined by this integration and if the HA does
 For webhooks to work, all the user needs to do is make sure he is using HA on HTTP and that the HA is available on the URL communicated.
 
 </details>
+
+<details>
+  <summary>Is this integration free?</summary>
+
+Yes, the integration is free and does not require any paid subscriptions. It is also fully local requiring no internet access from the camera or this integration.
+
+</details>
   
 ## Have a comment or a suggestion?
 
