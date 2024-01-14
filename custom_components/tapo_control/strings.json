@@ -14,7 +14,7 @@
         "data": {
           "cloud_password": "Cloud Password"
         },
-        "description": "Camera requires your cloud password for control.\nThis is the password you used for your Tapo Cloud account with your email.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
+        "description": "Camera requires your cloud password for control.\nThis is the password which you used with your email when signing into the Tapo app.\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
       },
       "ip": {
         "data": {
@@ -33,13 +33,13 @@
         "data": {
           "cloud_password": "Cloud Password"
         },
-        "description": "Camera requires your cloud password for control.\nThis is the password you used for your Tapo Cloud account with your email.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
+        "description": "Camera requires your cloud password for control.\nThis is the password which you used with your email when signing into the Tapo app.\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
       },
       "auth_optional_cloud": {
         "data": {
           "cloud_password": "Cloud Password"
         },
-        "description": "Camera requires your cloud password for recordings.\nThis is the password you used for your Tapo Cloud account with your email.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local.\n\nYou can skip this step by leaving password empty and enter password later if you do not need recordings viewing functionality."
+        "description": "Camera requires your cloud password for recordings.\nThis is the password which you used with your email when signing into the Tapo app.\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local.\n\nYou can skip this step by leaving password empty and enter password later if you do not need recordings viewing functionality."
       },
       "other_options": {
         "data": {
