@@ -1056,6 +1056,12 @@ async def getCamData(hass, controller):
         autoUpgradeEnabled = None
     camData["autoUpgradeEnabled"] = autoUpgradeEnabled
 
+    try:
+        connectionInformation = data["getConnectionType"]
+    except Exception:
+        connectionInformation = None
+    camData["connectionInformation"] = connectionInformation
+
     LOGGER.debug("getCamData - done")
     LOGGER.debug("Processed update data:")
     LOGGER.debug(camData)

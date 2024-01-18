@@ -11,7 +11,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.helpers.entity import EntityCategory
-from homeassistant.const import PERCENTAGE
+from homeassistant.const import PERCENTAGE, SIGNAL_STRENGTH_DECIBELS_MILLIWATT
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -36,6 +36,30 @@ async def async_setup_entry(
         ):
             LOGGER.debug("Adding tapoBatterySensor...")
             sensors.append(TapoBatterySensor(entry, hass, entry))
+
+        if (
+            "camData" in entry
+            and "connectionInformation" in entry["camData"]
+            and "ssid" in entry["camData"]["connectionInformation"]
+        ):
+            LOGGER.debug("Adding TapoSSIDSensor...")
+            sensors.append(TapoSSIDSensor(entry, hass, entry))
+
+        if (
+            "camData" in entry
+            and "connectionInformation" in entry["camData"]
+            and "link_type" in entry["camData"]["connectionInformation"]
+        ):
+            LOGGER.debug("Adding TapoLinkTypeSensor...")
+            sensors.append(TapoLinkTypeSensor(entry, hass, entry))
+
+        if (
+            "camData" in entry
+            and "connectionInformation" in entry["camData"]
+            and "rssiValue" in entry["camData"]["connectionInformation"]
+        ):
+            LOGGER.debug("Adding TapoRSSISensor...")
+            sensors.append(TapoRSSISensor(entry, hass, entry))
 
         if (
             "camData" in entry
@@ -64,13 +88,107 @@ async def async_setup_entry(
     async_add_entities(sensors)
 
 
+class TapoRSSISensor(TapoSensorEntity):
+    _attr_device_class: SensorDeviceClass = SensorDeviceClass.SIGNAL_STRENGTH
+    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = SIGNAL_STRENGTH_DECIBELS_MILLIWATT
+
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._attr_options = None
+        self._attr_current_option = None
+        TapoSensorEntity.__init__(
+            self,
+            "RSSI",
+            entry,
+            hass,
+            config_entry,
+            "mdi:signal-variant",
+            None,
+        )
+
+    @property
+    def entity_category(self):
+        return EntityCategory.DIAGNOSTIC
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = "unavailable"
+        else:
+            self._attr_state = camData["connectionInformation"]["rssiValue"]
+
+
+class TapoLinkTypeSensor(TapoSensorEntity):
+    _attr_device_class: SensorDeviceClass = None
+    _attr_state_class: SensorStateClass = None
+    _attr_native_unit_of_measurement = None
+
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._attr_options = None
+        self._attr_current_option = None
+        TapoSensorEntity.__init__(
+            self,
+            "Link Type",
+            entry,
+            hass,
+            config_entry,
+            "mdi:connection",
+            None,
+        )
+
+    @property
+    def entity_category(self):
+        return EntityCategory.DIAGNOSTIC
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = "unavailable"
+        else:
+            self._attr_state = camData["connectionInformation"]["link_type"]
+
+
+class TapoSSIDSensor(TapoSensorEntity):
+    _attr_device_class: SensorDeviceClass = None
+    _attr_state_class: SensorStateClass = None
+    _attr_native_unit_of_measurement = None
+
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._attr_current_option = None
+        TapoSensorEntity.__init__(
+            self,
+            "Network SSID",
+            entry,
+            hass,
+            config_entry,
+            "mdi:wifi",
+            None,
+        )
+
+    @property
+    def entity_category(self):
+        return EntityCategory.DIAGNOSTIC
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = "unavailable"
+        else:
+            self._attr_state = camData["connectionInformation"]["ssid"]
+
+
 class TapoBatterySensor(TapoSensorEntity):
     _attr_device_class: SensorDeviceClass = SensorDeviceClass.BATTERY
     _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = PERCENTAGE
 
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        self._attr_options = ["auto", "on", "off"]
         self._attr_current_option = None
         TapoSensorEntity.__init__(
             self,
@@ -79,7 +197,7 @@ class TapoBatterySensor(TapoSensorEntity):
             hass,
             config_entry,
             None,
-            "battery",
+            "mdi:battery",
         )
 
     @property
