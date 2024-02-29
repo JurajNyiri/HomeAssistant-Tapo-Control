@@ -314,9 +314,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "Home Assistant is running on HTTPS or it was not able to detect base_url schema. Disabling webhooks."
         )
 
-    # todo: figure out where to set officially?
-    entry.unique_id = DOMAIN + host
-
     try:
         if cloud_password != "":
             tapoController = await hass.async_add_executor_job(
@@ -362,12 +359,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         )
                         if onvifDevice:
                             LOGGER.debug(onvifDevice)
-                            hass.data[DOMAIN][entry.entry_id][
-                                "eventsDevice"
-                            ] = onvifDevice["device"]
-                            hass.data[DOMAIN][entry.entry_id][
-                                "onvifManagement"
-                            ] = onvifDevice["device_mgmt"]
+                            hass.data[DOMAIN][entry.entry_id]["eventsDevice"] = (
+                                onvifDevice["device"]
+                            )
+                            hass.data[DOMAIN][entry.entry_id]["onvifManagement"] = (
+                                onvifDevice["device_mgmt"]
+                            )
                             if motionSensor:
                                 await setupOnvif(hass, entry)
                     elif (
@@ -379,9 +376,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         )
                         # retry if subscription to events failed
                         try:
-                            hass.data[DOMAIN][entry.entry_id][
-                                "eventsSetup"
-                            ] = await setupEvents(hass, entry)
+                            hass.data[DOMAIN][entry.entry_id]["eventsSetup"] = (
+                                await setupEvents(hass, entry)
+                            )
                         except AssertionError as e:
                             if str(e) != "PullPoint manager already started":
                                 raise AssertionError(e)
@@ -407,24 +404,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     ts - hass.data[DOMAIN][entry.entry_id]["lastFirmwareCheck"]
                     > UPDATE_CHECK_PERIOD
                 ):
-                    hass.data[DOMAIN][entry.entry_id][
-                        "latestFirmwareVersion"
-                    ] = await getLatestFirmwareVersion(
-                        hass,
-                        entry,
-                        hass.data[DOMAIN][entry.entry_id],
-                        tapoController,
+                    hass.data[DOMAIN][entry.entry_id]["latestFirmwareVersion"] = (
+                        await getLatestFirmwareVersion(
+                            hass,
+                            entry,
+                            hass.data[DOMAIN][entry.entry_id],
+                            tapoController,
+                        )
                     )
                     for childDevice in hass.data[DOMAIN][entry.entry_id][
                         "childDevices"
                     ]:
-                        childDevice[
-                            "latestFirmwareVersion"
-                        ] = await getLatestFirmwareVersion(
-                            hass,
-                            entry,
-                            hass.data[DOMAIN][entry.entry_id],
-                            childDevice["controller"],
+                        childDevice["latestFirmwareVersion"] = (
+                            await getLatestFirmwareVersion(
+                                hass,
+                                entry,
+                                hass.data[DOMAIN][entry.entry_id],
+                                childDevice["controller"],
+                            )
                         )
 
             # cameras state
@@ -463,9 +460,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                 raise ConfigEntryAuthFailed(e)
                         LOGGER.error(e)
 
-                hass.data[DOMAIN][entry.entry_id][
-                    "camData"
-                ] = updateDataForAllControllers[tapoController]
+                hass.data[DOMAIN][entry.entry_id]["camData"] = (
+                    updateDataForAllControllers[tapoController]
+                )
 
                 LOGGER.debug("Updating entities...")
 

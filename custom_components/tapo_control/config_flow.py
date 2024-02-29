@@ -111,6 +111,7 @@ class FlowHandler(ConfigFlow):
                         self.reauth_entry,
                         title=tapoHost,
                         data=allConfigData,
+                        unique_id=DOMAIN + tapoHost,
                     )
                     try:
                         LOGGER.debug(
@@ -228,6 +229,7 @@ class FlowHandler(ConfigFlow):
                     self.reauth_entry,
                     title=tapoHost,
                     data=allConfigData,
+                    unique_id=DOMAIN + tapoHost,
                 )
                 await self.hass.config_entries.async_reload(self.reauth_entry.entry_id)
                 return self.async_abort(reason="reauth_successful")
@@ -387,6 +389,7 @@ class FlowHandler(ConfigFlow):
                 "[ADD DEVICE][%s] Saving entry.",
                 self.tapoHost,
             )
+            await self.async_set_unique_id(DOMAIN + host)
             return self.async_create_entry(
                 title=host,
                 data={
@@ -842,7 +845,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                         "options": [
                             "Configure device",
                             "Configure sound sensor",
-                            "Configure media"
+                            "Configure media",
                             # "Help me debug motion sensor",
                             # "incorrect",
                         ],
@@ -911,6 +914,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     self.config_entry,
                     title=ip_address,
                     data=allConfigData,
+                    unique_id=DOMAIN + ip_address,
                 )
                 return self.async_create_entry(title="", data=None)
             except Exception as e:
@@ -998,14 +1002,15 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 allConfigData[MEDIA_VIEW_DAYS_ORDER] = media_view_days_order
                 allConfigData[MEDIA_VIEW_RECORDINGS_ORDER] = media_view_recordings_order
                 allConfigData[MEDIA_SYNC_HOURS] = media_sync_hours
-                allConfigData[
-                    MEDIA_SYNC_COLD_STORAGE_PATH
-                ] = media_sync_cold_storage_path
+                allConfigData[MEDIA_SYNC_COLD_STORAGE_PATH] = (
+                    media_sync_cold_storage_path
+                )
                 # todo also initial setup to add the default values!
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
                     title=ip_address,
                     data=allConfigData,
+                    unique_id=DOMAIN + ip_address,
                 )
                 return self.async_create_entry(title="", data=None)
             except Exception as e:
@@ -1248,6 +1253,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     self.config_entry,
                     title=ip_address,
                     data=allConfigData,
+                    unique_id=DOMAIN + ip_address,
                 )
                 if ipChanged:
                     LOGGER.debug(
