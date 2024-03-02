@@ -244,6 +244,17 @@ For webhooks to work, all the user needs to do is make sure he is using HA on HT
 Yes, the integration is free and does not require any paid subscriptions. It is also fully local requiring no internet access from the camera or this integration.
 
 </details>
+
+<details>
+  <summary>I receive Exception: Invalid authentication data when executing an automation / script</summary>
+
+Firmwares of cameras expect messages in sequential order. Sending them in parallel can lead to 401 code from camera which shows us with this exception.
+
+You will need to send the automation actions in sequence instead, possibly with delay as well if needed.
+
+See https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/488 for more information.
+
+</details>
   
 ## Have a comment or a suggestion?
 
