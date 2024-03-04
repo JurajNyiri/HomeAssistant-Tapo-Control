@@ -114,7 +114,11 @@ class TapoRSSISensor(TapoSensorEntity):
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
-        if not camData:
+        if (
+            not camData
+            or camData["connectionInformation"] is False
+            or "rssiValue" not in camData["connectionInformation"]
+        ):
             self._attr_state = "unavailable"
         else:
             self._attr_state = camData["connectionInformation"]["rssiValue"]
@@ -146,7 +150,11 @@ class TapoLinkTypeSensor(TapoSensorEntity):
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
-        if not camData:
+        if (
+            not camData
+            or camData["connectionInformation"] is False
+            or "link_type" not in camData["connectionInformation"]
+        ):
             self._attr_state = "unavailable"
         else:
             self._attr_state = camData["connectionInformation"]["link_type"]
@@ -177,7 +185,11 @@ class TapoSSIDSensor(TapoSensorEntity):
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
-        if not camData:
+        if (
+            not camData
+            or camData["connectionInformation"] is False
+            or "ssid" not in camData["connectionInformation"]
+        ):
             self._attr_state = "unavailable"
         else:
             self._attr_state = camData["connectionInformation"]["ssid"]
