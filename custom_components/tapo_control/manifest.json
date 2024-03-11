@@ -5,7 +5,7 @@
   "issue_tracker": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues",
   "codeowners": ["@JurajNyiri"],
   "version": "5.4.13",
-  "requirements": ["pytapo==3.3.18"],
+  "requirements": ["pytapo==3.3.19"],
   "dependencies": ["ffmpeg", "onvif"],
   "config_flow": true,
   "homeassistant": "2024.1.0",
