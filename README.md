@@ -185,6 +185,18 @@ As well as:
 
 </details>
 
+<details>
+  <summary>I see error `Invalid cloud password. Invalid cloud password. Make sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same). You need to enter password which you used with your email when signing into the Tapo app.` when I enter correct password</summary>
+
+  Try those troubleshooting options:
+
+  1. Make sure that "Two-Step Verification" for login is disabled. Go in the Tapo app > Me > View Account > Login Security > Turn off the "Two-Step Verification".
+  2. Reset your password.
+  3. Make sure your camera can access the internet.
+  4. Reboot your camera a few times.
+  5. Reset the camera. Remove it from your account, do a factory reset, add it back with internet access, add it back to the integration.
+
+</details>
 
 <details>
   <summary>Supported models</summary>
