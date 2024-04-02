@@ -239,7 +239,7 @@ For webhooks to work, all the user needs to do is make sure he is using HA on HT
 </details>
 
 <details>
-  <summary>Is this integration free?</summary>
+  <summary>Is this integration free and fully local?</summary>
 
 Yes, the integration is free and does not require any paid subscriptions. It is also fully local requiring no internet access from the camera or this integration.
 
