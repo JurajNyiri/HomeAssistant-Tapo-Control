@@ -1,5 +1,6 @@
 from homeassistant.core import HomeAssistant
 
+from homeassistant.components.light import ColorMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -54,6 +55,8 @@ class TapoWhitelight(TapoLightEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         LOGGER.debug("TapoWhitelight - init - start")
         self._attr_is_on = False
+        self._attr_color_mode = ColorMode.ONOFF
+        self._attr_supported_color_modes = set([ColorMode.ONOFF])
         self._hass = hass
 
         TapoLightEntity.__init__(
@@ -116,6 +119,8 @@ class TapoFloodlight(TapoLightEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         LOGGER.debug("TapoFloodlight - init - start")
         self._attr_is_on = False
+        self._attr_color_mode = ColorMode.ONOFF
+        self._attr_supported_color_modes = set([ColorMode.ONOFF])
         self._hass = hass
 
         TapoLightEntity.__init__(
