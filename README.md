@@ -2,6 +2,15 @@
 
 Custom component - Tapo: Cameras Control - to add Tapo cameras into Home Assistant
 
+# PSA - Firmware 1.3.9 and newer might cause integration not to work
+
+There has been numerous reports of integration stopping to work on firmwares 1.3.9 and newer. If you wish to continue using this integration, until this issue is resolved, you will need to either:
+
+1. Block internet access of camera if you are using firmware 1.3.9 and newer
+2. Use older firmware than 1.3.9.
+
+Learn more and discuss at https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/551 .
+
 ## Installation
 
 Copy contents of custom_components/tapo_control/ to custom_components/tapo_control/ in your Home Assistant config folder.
