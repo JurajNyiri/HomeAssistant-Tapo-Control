@@ -35,6 +35,13 @@ async def async_setup_entry(
             LOGGER.debug("Adding TapoSirenEntity...")
             sirens.append(tapoSiren)
 
+        tapoHubSiren = await check_and_create(
+            entry, hass, TapoHubSiren, "getHubSirenConfig", config_entry
+        )
+        if tapoHubSiren:
+            LOGGER.debug("Adding TapoHubSirenEntity...")
+            sirens.append(tapoHubSiren)
+
         return sirens
 
     sirens = await setupEntities(entry)
@@ -93,6 +100,7 @@ class TapoSiren(TapoSirenEntity):
 
         if result_has_error(result):
             self._attr_available = False
+            LOGGER.debug(f"startManualAlarm error")
 
         else:
             self._is_on = True
@@ -126,6 +134,64 @@ class TapoSiren(TapoSirenEntity):
             self._attr_available = True
             self._is_on = camData["alarm"] == "on"
 
+class TapoHubSiren(TapoSirenEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        TapoSirenEntity.__init__(self, "Siren", entry, hass, config_entry)
+        self._turn_off_task = None
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_on(self, duration: int | None = None, **kwargs) -> None:
+        for kw in kwargs:
+            LOGGER.error(f"async_turn_on: Parameter '{kw}' not supported")
+
+        async def _turn_off_after(seconds: int) -> None:
+            await asyncio.sleep(seconds)
+            await self.async_turn_off()
+
+        if self._turn_off_task:
+            self._turn_off_task.cancel()
+            self._turn_off_task = None
+
+        result = await self._hass.async_add_executor_job(
+            self._controller.setHubSirenStatus,True
+        )
+
+        if result_has_error(result):
+            self._attr_available = False
+
+        else:
+            self._is_on = True
+            if duration:
+                self._turn_off_task = self.hass.async_create_task(
+                    _turn_off_after(duration)
+                )
+
+        self._attr_is_on = True
+
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_off(self, **kwargs) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setHubSirenStatus,False
+        )
+
+        if result_has_error(result):
+            self._attr_available = False
+        else:
+            self._attr_is_on = False
+
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_available = False
+        else:
+            self._attr_available = True
+            self._is_on = camData["hubSiren"]["status"] == "on"
 
 def result_has_error(result):
     if "error_code" not in result or result["error_code"] == 0:
