@@ -99,15 +99,20 @@ class TapoSiren(TapoSirenEntity):
         )
 
         if result_has_error(result):
-            self._attr_available = False
-            LOGGER.debug(f"startManualAlarm error")
-
-        else:
-            self._is_on = True
-            if duration:
-                self._turn_off_task = self.hass.async_create_task(
-                    _turn_off_after(duration)
-                )
+            result = await self._hass.async_add_executor_job(
+                self._controller.executeFunction,"setSirenStatus",{"msg_alarm":{"status":"on"}}
+            )
+            if result_has_error(result):
+                self._attr_available = False
+                self.async_write_ha_state()
+                await self._coordinator.async_request_refresh()
+                return
+        
+        self._is_on = True
+        if duration:
+            self._turn_off_task = self.hass.async_create_task(
+                _turn_off_after(duration)
+            )
 
         self._attr_is_on = True
 
@@ -120,8 +125,14 @@ class TapoSiren(TapoSirenEntity):
         )
 
         if result_has_error(result):
-            self._attr_available = False
-        else:
+            result = await self._hass.async_add_executor_job(
+                self._controller.executeFunction,"setSirenStatus",{"msg_alarm":{"status":"off"}}
+            )
+            if result_has_error(result):
+                self._attr_available = False
+                self.async_write_ha_state()
+                await self._coordinator.async_request_refresh()
+                return
             self._attr_is_on = False
 
         self.async_write_ha_state()
@@ -136,7 +147,7 @@ class TapoSiren(TapoSirenEntity):
 
 class TapoHubSiren(TapoSirenEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        TapoSirenEntity.__init__(self, "Siren", entry, hass, config_entry)
+        TapoSirenEntity.__init__(self, "Hub Siren", entry, hass, config_entry)
         self._turn_off_task = None
 
     async def async_update(self) -> None:
@@ -166,6 +177,10 @@ class TapoHubSiren(TapoSirenEntity):
             if duration:
                 self._turn_off_task = self.hass.async_create_task(
                     _turn_off_after(duration)
+                )
+            elif "time_left" in result and result["time_left"]:
+                self._turn_off_task = self.hass.async_create_task(
+                    _turn_off_after(result["time_left"])
                 )
 
         self._attr_is_on = True
