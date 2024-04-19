@@ -966,6 +966,14 @@ async def getCamData(hass, controller):
     camData["alarm_mode"] = alarm_mode
 
     try:
+        hubSiren = await hass.async_add_executor_job(controller.getHubSirenStatus)
+        camData["raw"]["getHubSirenStatus"] = hubSiren
+    except Exception:
+        hubSiren = None
+
+    camData["hubSiren"] = hubSiren
+    
+    try:
         led = data["getLedStatus"][0]["led"]["config"]["enabled"]
     except Exception:
         led = None
@@ -1331,8 +1339,13 @@ def pytapoFunctionMap(pytapoFunctionName):
         return ["getAudioConfig"]
     elif pytapoFunctionName == "getFirmwareAutoUpgradeConfig":
         return ["getFirmwareAutoUpgradeConfig"]
+<<<<<<< HEAD
     elif pytapoFunctionName == "getSirenTypeList":
         return ["getSirenTypeList"]
+=======
+    elif pytapoFunctionName == "getHubSirenStatus":
+        return ["getHubSirenStatus"]
+>>>>>>> 73c2d53 (changes)
     return []
 
 

@@ -44,6 +44,13 @@ async def async_setup_entry(
             LOGGER.debug("Adding tapoAutomaticAlarmModeSelect...")
             selects.append(tapoAutomaticAlarmModeSelect)
 
+        tapoHubSirenTypeSelect = await check_and_create(
+            entry, hass, TapoHubSirenTypeSelect, "getHubSirenConfig", config_entry
+        )
+        if tapoHubSirenTypeSelect:
+            LOGGER.debug("Adding tapoHubSirenTypeSelect...")
+            selects.append(tapoHubSirenTypeSelect)
+
         tapoMotionDetectionSelect = await check_and_create(
             entry, hass, TapoMotionDetectionSelect, "getMotionDetection", config_entry
         )
@@ -837,3 +844,37 @@ class TapoMoveToPresetSelect(TapoSelectEntity):
     @property
     def entity_category(self):
         return None
+
+class TapoHubSirenTypeSelect(TapoSelectEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._attr_options = ['Doorbell Ring 1', 'Doorbell Ring 2', 'Doorbell Ring 3', 'Doorbell Ring 4', 'Doorbell Ring 5', 'Doorbell Ring 6', 'Doorbell Ring 7', 'Doorbell Ring 8', 'Doorbell Ring 9', 'Doorbell Ring 10', 'Phone Ring', 'Alarm 1', 'Alarm 2', 'Alarm 3', 'Alarm 4', 'Dripping Tap', 'Alarm 5', 'Connection 1', 'Connection 2']
+        self._attr_current_option = entry["camData"]["hubSiren"]["siren_type"]
+        TapoSelectEntity.__init__(
+            self,
+            "Hub Siren Type",
+            entry,
+            hass,
+            config_entry,
+            "mdi:home-sound-in-outline",
+        )
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            if "siren_type" in camData["hubSiren"]:
+                self._attr_current_option = camData["hubSiren"]["siren_type"]
+            else:
+                self._attr_state = STATE_UNAVAILABLE
+
+            self._attr_state = self._attr_current_option
+        LOGGER.debug("Updating TapoHubSirenTypeSelect to: " + str(self._attr_state))
+
+    async def async_select_option(self, option: str) -> None:
+        result = await self.hass.async_add_executor_job(
+            self._controller.setHubSirenConfig,None,option
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = option
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()

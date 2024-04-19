@@ -73,6 +73,20 @@ async def async_setup_entry(
             if tapoSpeakerVolume:
                 LOGGER.debug("Adding tapoSpeakerVolume...")
                 numbers.append(tapoSpeakerVolume)
+        
+        tapoHubSirenVolume = await check_and_create(
+            entry, hass, TapoHubSirenVolume, "getHubSirenConfig", config_entry
+        )
+        if tapoHubSirenVolume:
+            LOGGER.debug("Adding TapoHubSirenVolume...")
+            numbers.append(tapoHubSirenVolume)
+        
+        tapoHubSirenDuration = await check_and_create(
+            entry, hass, TapoHubSirenDuration, "getHubSirenConfig", config_entry
+        )
+        if tapoHubSirenDuration:
+            LOGGER.debug("Adding TapoHubSirenDuration...")
+            numbers.append(tapoHubSirenDuration)
 
         return numbers
 
@@ -241,3 +255,90 @@ class TapoSpeakerVolume(TapoNumberEntity):
             self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_state = camData["speakerVolume"]
+
+class TapoHubSirenVolume(RestoreNumber, TapoEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        LOGGER.debug("TapoHubSirenVolume - init - start")
+        self._attr_min_value = 1
+        self._attr_max_value = 10
+        self._attr_native_min_value = 1
+        self._attr_native_max_value = 10
+        self._attr_native_value = entry["camData"]["hubSiren"]["volume"]
+        self._attr_step = 1
+        self._hass = hass
+
+        TapoNumberEntity.__init__(
+            self,
+            "Hub Siren volume",
+            entry,
+            hass,
+            config_entry,
+            "mdi:volume-high",
+        )
+        LOGGER.debug("TapoHubSirenVolume - init - end")
+
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    @property
+    def entity_category(self):
+        return EntityCategory.CONFIG
+
+    async def async_set_native_value(self, value: float) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setHubSirenConfig, None, None,str(int(value))
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = value
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            self._attr_state = camData["hubSiren"]["volume"]
+
+class TapoHubSirenDuration(RestoreNumber, TapoEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        LOGGER.debug("TapoHubSirenDuration - init - start")
+        self._attr_min_value = 1
+        self._attr_max_value = 599
+        self._attr_native_min_value = 1
+        self._attr_native_max_value = 599
+        self._attr_step = 1
+        self._attr_native_value = entry["camData"]["hubSiren"]["duration"]
+        self._hass = hass
+
+        TapoNumberEntity.__init__(
+            self,
+            "Hub Siren duration",
+            entry,
+            hass,
+            config_entry,
+            "mdi:clock-end",
+        )
+        LOGGER.debug("TapoHubSirenDuration - init - end")
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    @property
+    def entity_category(self):
+        return EntityCategory.CONFIG
+
+    async def async_set_native_value(self, value: float) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setHubSirenConfig,int(value)
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = value
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            self._attr_state = camData["hubSiren"]["duration"]
