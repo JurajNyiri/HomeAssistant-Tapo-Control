@@ -796,5 +796,3 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             raise ConfigEntryNotReady(e)
 
     return True
-
-print(PYTAPO_REQUIRED_VERSION)
