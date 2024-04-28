@@ -4,7 +4,7 @@ Custom component - Tapo: Cameras Control - to add Tapo cameras into Home Assista
 
 # Firmware 1.3.8 (or build 230921) and newer might cause integration not to work
 
-There has been reports of users on firmwares 1.3.8, and newer, or on some cameras other firmwares with build 230921 and newer of integration stopping to work. If you wish to continue using this integration, until this issue is resolved, you will need to either:
+There have been reports of users on firmwares 1.3.8, and newer, or on some cameras other firmwares with build 230921 and newer of integration stopping to work. If you wish to continue using this integration, until this issue is resolved, you will need to either:
 
 1. If your camera still works with integration: Block internet access of camera and stop using the official phone app temporarily if you are using firmware 1.3.8 (or build 230921 and higher)
 2. If your camera no longer works with integration: [Use older firmware](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/551#issuecomment-2061039421) than 1.3.8 (or build 230921) and factory reset camera
