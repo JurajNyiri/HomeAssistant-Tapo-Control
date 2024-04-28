@@ -2,7 +2,7 @@
 
 Custom component - Tapo: Cameras Control - to add Tapo cameras into Home Assistant
 
-# PSA - Firmware 1.3.8 (or build 230921) and newer might cause integration not to work
+# Firmware 1.3.8 (or build 230921) and newer might cause integration not to work
 
 There has been reports of users on firmwares 1.3.8, and newer, or on some cameras other firmwares with build 230921 and newer of integration stopping to work. If you wish to continue using this integration, until this issue is resolved, you will need to either:
 
