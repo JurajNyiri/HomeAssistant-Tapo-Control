@@ -967,7 +967,7 @@ async def getCamData(hass, controller):
 
     try:
         hubSiren = await hass.async_add_executor_job(controller.getHubSirenConfig)
-        camData["raw"]["getHubSirenConfig"] = hubSiren
+        data["getHubSirenConfig"][0] = hubSiren
     except Exception:
         hubSiren = None
 
