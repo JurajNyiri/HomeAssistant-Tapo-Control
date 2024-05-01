@@ -256,7 +256,7 @@ class TapoSpeakerVolume(TapoNumberEntity):
         else:
             self._attr_state = camData["speakerVolume"]
 
-
+#TODO on hub siren is from 1 to 10 but on cameras is low normal high, maybe we could handle it as number and convert it to enum just for cameras, being [1-3] low, [4-6] normal and [7-10] high?
 class TapoSirenVolume(RestoreNumber, TapoEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         LOGGER.debug("TapoSirenVolume - init - start")
@@ -300,7 +300,7 @@ class TapoSirenVolume(RestoreNumber, TapoEntity):
         else:
             self._attr_state = camData["hubSiren"]["volume"]
 
-
+#TODO max value for c420 is 300 while on hub is 599, to validate on other cameras
 class TapoSirenDuration(RestoreNumber, TapoEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         LOGGER.debug("TapoSirenDuration - init - start")
