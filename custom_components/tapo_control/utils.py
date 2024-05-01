@@ -946,32 +946,49 @@ async def getCamData(hass, controller):
             flip = None
     camData["flip"] = flip
 
+    
+    #TODO validate: getLastAlarmInfo returns last alarm config that is not necessarily last config seted, sound like little bug, but cant test on c420 or hub because they dont support getLastAlarmInfo
+
+    
     try:
-        alarmData = data["getLastAlarmInfo"][0]["msg_alarm"]["chn1_msg_alarm_info"]
+        alarmData = data["getAlarmConfig"][0]
         alarm = alarmData["enabled"]
         alarm_mode = alarmData["alarm_mode"]
+        alarm_siren_type = alarmData["siren_type"]
     except Exception:
         alarm = None
         alarm_mode = None
+        alarm_siren_type = None
 
-    if alarm is None or alarm_mode is None:
+    if alarm is None:
         try:
-            alarmData = data["getAlarmConfig"][0]
-            alarm = alarmData["enabled"]
-            alarm_mode = alarmData["alarm_mode"]
+            alarm = data["getSirenStatus"][0]["status"]
         except Exception:
             alarm = None
-            alarm_mode = None
+
+    if alarm_siren_type is None:
+        try:
+            alarm_siren_type = data["getSirenConfig"][0]["siren_type"]
+        except Exception:
+            alarm_siren_type = None
+#TODO get full siren config from getSirenConfig or getAlarmConfig
     camData["alarm"] = alarm
     camData["alarm_mode"] = alarm_mode
+    camData["alarm_siren_type"] = alarm_siren_type
 
     try:
-        hubSiren = await hass.async_add_executor_job(controller.getHubSirenConfig)
-        data["getHubSirenConfig"][0] = hubSiren
+        hubSiren = data["getSirenConfig"][0] != False
     except Exception:
-        hubSiren = None
+        hubSiren = False
 
-    camData["hubSiren"] = hubSiren
+    camData["alarm_is_hubSiren"] = hubSiren
+
+    try:
+        sirenTypeList = data["getSirenTypeList"][0]
+    except Exception:
+        sirenTypeList = []
+
+    camData["alarm_siren_type_list"] = sirenTypeList
     
     try:
         led = data["getLedStatus"][0]["led"]["config"]["enabled"]
@@ -1345,6 +1362,7 @@ def pytapoFunctionMap(pytapoFunctionName):
         return ["getHubSirenStatus"]
     elif pytapoFunctionName == "getHubSirenConfig":
         return ["getHubSirenConfig"]
+    #TODO other check-and-create methods used?
     return []
 
 

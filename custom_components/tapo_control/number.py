@@ -73,20 +73,20 @@ async def async_setup_entry(
             if tapoSpeakerVolume:
                 LOGGER.debug("Adding tapoSpeakerVolume...")
                 numbers.append(tapoSpeakerVolume)
-        
-        tapoHubSirenVolume = await check_and_create(
-            entry, hass, TapoHubSirenVolume, "getHubSirenConfig", config_entry
+
+        tapoSirenVolume = await check_and_create(
+            entry, hass, TapoSirenVolume, "getSirenTypeList", config_entry
         )
-        if tapoHubSirenVolume:
-            LOGGER.debug("Adding TapoHubSirenVolume...")
-            numbers.append(tapoHubSirenVolume)
-        
-        tapoHubSirenDuration = await check_and_create(
-            entry, hass, TapoHubSirenDuration, "getHubSirenConfig", config_entry
+        if tapoSirenVolume:
+            LOGGER.debug("Adding TapoSirenVolume...")
+            numbers.append(tapoSirenVolume)
+
+        tapoSirenDuration = await check_and_create(
+            entry, hass, TapoSirenDuration, "getSirenTypeList", config_entry
         )
-        if tapoHubSirenDuration:
-            LOGGER.debug("Adding TapoHubSirenDuration...")
-            numbers.append(tapoHubSirenDuration)
+        if tapoSirenDuration:
+            LOGGER.debug("Adding TapoSirenDuration...")
+            numbers.append(tapoSirenDuration)
 
         return numbers
 
@@ -256,9 +256,10 @@ class TapoSpeakerVolume(TapoNumberEntity):
         else:
             self._attr_state = camData["speakerVolume"]
 
-class TapoHubSirenVolume(RestoreNumber, TapoEntity):
+
+class TapoSirenVolume(RestoreNumber, TapoEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        LOGGER.debug("TapoHubSirenVolume - init - start")
+        LOGGER.debug("TapoSirenVolume - init - start")
         self._attr_min_value = 1
         self._attr_max_value = 10
         self._attr_native_min_value = 1
@@ -269,14 +270,13 @@ class TapoHubSirenVolume(RestoreNumber, TapoEntity):
 
         TapoNumberEntity.__init__(
             self,
-            "Hub Siren volume",
+            "Siren volume",
             entry,
             hass,
             config_entry,
             "mdi:volume-high",
         )
-        LOGGER.debug("TapoHubSirenVolume - init - end")
-
+        LOGGER.debug("TapoSirenVolume - init - end")
 
     async def async_update(self) -> None:
         await self._coordinator.async_request_refresh()
@@ -287,7 +287,7 @@ class TapoHubSirenVolume(RestoreNumber, TapoEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         result = await self._hass.async_add_executor_job(
-            self._controller.setHubSirenConfig, None, None,str(int(value))
+            self._controller.setHubSirenConfig, None, None, str(int(value))
         )
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = value
@@ -300,9 +300,10 @@ class TapoHubSirenVolume(RestoreNumber, TapoEntity):
         else:
             self._attr_state = camData["hubSiren"]["volume"]
 
-class TapoHubSirenDuration(RestoreNumber, TapoEntity):
+
+class TapoSirenDuration(RestoreNumber, TapoEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        LOGGER.debug("TapoHubSirenDuration - init - start")
+        LOGGER.debug("TapoSirenDuration - init - start")
         self._attr_min_value = 1
         self._attr_max_value = 599
         self._attr_native_min_value = 1
@@ -313,13 +314,13 @@ class TapoHubSirenDuration(RestoreNumber, TapoEntity):
 
         TapoNumberEntity.__init__(
             self,
-            "Hub Siren duration",
+            "Siren duration",
             entry,
             hass,
             config_entry,
             "mdi:clock-end",
         )
-        LOGGER.debug("TapoHubSirenDuration - init - end")
+        LOGGER.debug("TapoSirenDuration - init - end")
 
     async def async_update(self) -> None:
         await self._coordinator.async_request_refresh()
@@ -330,7 +331,7 @@ class TapoHubSirenDuration(RestoreNumber, TapoEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         result = await self._hass.async_add_executor_job(
-            self._controller.setHubSirenConfig,int(value)
+            self._controller.setHubSirenConfig, int(value)
         )
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = value
