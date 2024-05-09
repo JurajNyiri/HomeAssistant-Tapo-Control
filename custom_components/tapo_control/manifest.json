@@ -3,10 +3,17 @@
   "name": "Tapo: Cameras Control",
   "documentation": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control",
   "issue_tracker": "https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues",
-  "codeowners": ["@JurajNyiri"],
+  "codeowners": [
+    "@JurajNyiri"
+  ],
   "version": "5.4.13",
-  "requirements": ["pytapo==3.3.19"],
-  "dependencies": ["ffmpeg", "onvif"],
+  "requirements": [
+    "pytapo==3.3.21"
+  ],
+  "dependencies": [
+    "ffmpeg",
+    "onvif"
+  ],
   "config_flow": true,
   "homeassistant": "2024.1.0",
   "dhcp": [
