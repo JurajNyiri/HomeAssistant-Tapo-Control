@@ -40,6 +40,7 @@ async def async_setup_entry(
         if (
             "camData" in entry
             and "connectionInformation" in entry["camData"]
+            and entry["camData"]["connectionInformation"] is not False
             and "ssid" in entry["camData"]["connectionInformation"]
         ):
             LOGGER.debug("Adding TapoSSIDSensor...")
@@ -48,6 +49,7 @@ async def async_setup_entry(
         if (
             "camData" in entry
             and "connectionInformation" in entry["camData"]
+            and entry["camData"]["connectionInformation"] is not False
             and "link_type" in entry["camData"]["connectionInformation"]
         ):
             LOGGER.debug("Adding TapoLinkTypeSensor...")
@@ -56,6 +58,7 @@ async def async_setup_entry(
         if (
             "camData" in entry
             and "connectionInformation" in entry["camData"]
+            and entry["camData"]["connectionInformation"] is not False
             and "rssiValue" in entry["camData"]["connectionInformation"]
         ):
             LOGGER.debug("Adding TapoRSSISensor...")
