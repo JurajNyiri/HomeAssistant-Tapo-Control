@@ -10,3 +10,13 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           issue-close-message: "@${issue.user.login} this issue was automatically closed because it did not follow the [Bug Report](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new?assignees=&labels=bug&template=bug_report.yml) or [Feature Request](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new?assignees=JurajNyiri&labels=enhancement&template=feature_request.md&title=Feature+Request%3A) template."
           issue-pattern: ".*Camera has all attributes filled out in developer tools.*|.*Is your feature request related to a problem.*"
+  autoclose-cloud-token:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Autoclose issues related to invalid cloud token
+        uses: roots/issue-closer@v1.1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-close-message: "@${issue.user.login} this issue was automatically closed because it is a duplicate.\n\nThe issue you are searching for:\n- Is pinned under issues\n- Has a section in main readme file with big title right at the top\n- Has 3 red exclamations marks in the title\n- Contains a workaround both for accounts still working and the ones affected.\n\nAnd a warning was sent a month ago as an update via HACS."
+          issue-pattern: "^(?! Invalid cloud password$).*"
+      
