@@ -26,4 +26,12 @@ jobs:
         uses: peter-evans/close-issue@v3
         with:
           comment: |
-            Test
+            this issue was automatically closed because it is a duplicate.
+            
+            The issue you are searching for:
+            - Is pinned under issues
+            - Has a section in main readme file with big title right at the top
+            - Has 3 red exclamations marks in the title
+            - Contains a workaround both for accounts still working and the ones affected.
+            
+            And a warning was sent a month ago as an update via HACS.
