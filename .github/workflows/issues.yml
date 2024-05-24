@@ -13,10 +13,17 @@ jobs:
   autoclose-cloud-token:
     runs-on: ubuntu-latest
     steps:
-      - name: Autoclose issues related to invalid cloud token
+      - name: Check issue description for invalid string
+        id: check_body
+        run: |
+          if [[ "${{ github.event.issue.body }}" == *"Invalid cloud password"* ]]; then
+            echo "contains_invalid_string=true" >> $GITHUB_ENV
+          else
+            echo "contains_invalid_string=false" >> $GITHUB_ENV
+          fi
+      - name: Close Issue if invalid string found
+        if: env.contains_invalid_string == 'true'
         uses: roots/issue-closer@v1.1
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          issue-close-message: "@${issue.user.login} this issue was automatically closed because it is a duplicate.\n\nThe issue you are searching for:\n- Is pinned under issues\n- Has a section in main readme file with big title right at the top\n- Has 3 red exclamations marks in the title\n- Contains a workaround both for accounts still working and the ones affected.\n\nAnd a warning was sent a month ago as an update via HACS."
-          issue-pattern: "^(?!.*Invalid cloud password).*"
-      
+          issue-close-message: "@${issue.user.login} Test."
