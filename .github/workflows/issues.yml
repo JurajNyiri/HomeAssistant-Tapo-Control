@@ -16,7 +16,7 @@ jobs:
       - name: Check issue description for invalid string
         id: check_body
         run: |
-          if [[ "${{ github.event.issue.body }}" == *"Invalid cloud password"* ]]; then
+          if [[ "${{ github.event.issue.body }}" == *"cloud password"* ]]; then
             echo "contains_invalid_string=true" >> $GITHUB_ENV
           else
             echo "contains_invalid_string=false" >> $GITHUB_ENV
