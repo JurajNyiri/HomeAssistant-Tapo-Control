@@ -26,4 +26,4 @@ jobs:
         uses: peter-evans/close-issue@v3
         with:
           comment: |
-            @${issue.user.login} Test
+            Test
