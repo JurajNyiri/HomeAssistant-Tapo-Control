@@ -39,9 +39,5 @@ jobs:
             You can find it at https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/551.
 
             Please do not post me too comments or any other comment that does not provide any value to the discussion as everyone monitoring it gets notified. If the comments with no value continue maintainer will be forced to lock the issue to contributors only.
-      - name: Close Issue - label
-        if: env.contains_invalid_string == 'true'
-        uses: peter-evans/close-issue@v3
-        with:
           labels: |
             Duplicate
