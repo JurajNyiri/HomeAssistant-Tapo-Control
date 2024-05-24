@@ -26,7 +26,7 @@ jobs:
         uses: peter-evans/close-issue@v3
         with:
           comment: |
-            this issue was automatically closed because it is a duplicate.
+            This issue was automatically closed because it is a duplicate.
             
             The issue you are searching for:
             - Is pinned under issues
