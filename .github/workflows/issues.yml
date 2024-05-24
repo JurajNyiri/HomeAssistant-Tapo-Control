@@ -21,9 +21,9 @@ jobs:
           else
             echo "contains_invalid_string=false" >> $GITHUB_ENV
           fi
-      - name: Close Issue if invalid string found
+      - name: Close Issue
         if: env.contains_invalid_string == 'true'
-        uses: roots/issue-closer@v1.1
+        uses: peter-evans/close-issue@v3
         with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          issue-close-message: "@${issue.user.login} Test."
+          comment: |
+            @${issue.user.login} Test
