@@ -4,7 +4,7 @@ Custom component - Tapo: Cameras Control - to add Tapo cameras into Home Assista
 
 # Integration will / does not work temporarily on firmware build 230921 and higher
 
-TP-Link is currently working on a new API solution that can be used by this integration. 
+TP-Link is currently working on a new API solution that can be used by this integration in order to receive the new cloud issued token for the camera. 
 
 If you wish to continue using this integration, until this issue is resolved, you will need to either:
 
