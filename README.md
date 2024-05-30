@@ -199,7 +199,9 @@ As well as:
 <details>
   <summary>I see error `Invalid cloud password. Invalid cloud password. Make sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same). You need to enter password which you used with your email when signing into the Tapo app.` when I enter correct password</summary>
 
-  Try those troubleshooting options:
+  If you are using firmware build 230921 and higher, check issue https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/551.
+
+  Otherwise, try those troubleshooting options:
 
   1. Make sure that "Two-Step Verification" for login is disabled. Go in the Tapo app > Me > View Account > Login Security > Turn off the "Two-Step Verification".
   2. Reset your password.
