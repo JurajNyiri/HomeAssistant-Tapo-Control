@@ -2,7 +2,7 @@
 
 Custom component - Tapo: Cameras Control - to add Tapo cameras into Home Assistant
 
-# Integration will / does not work on firmware build 230921 and higher
+# Integration will / does not work temporarily on firmware build 230921 and higher
 
 TP-Link is currently working on a solution for this integration. 
 
