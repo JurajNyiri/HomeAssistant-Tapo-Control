@@ -948,46 +948,86 @@ async def getCamData(hass, controller):
 
     
     #TODO validate: getLastAlarmInfo returns last alarm config that is not necessarily last config seted, sound like little bug, but cant test on c420 or hub because they dont support getLastAlarmInfo
+    hubSiren = False
+    alarmConfig = None
+    alarmStatus = None
+    alarmSirenTypeList = []
+    try:
+        if data["getSirenConfig"][0] != False:
+            hubSiren = True
+            sirenData = data["getSirenConfig"][0]
+            alarmConfig = {
+                "siren_type":sirenData["siren_type"],
+                "siren_volume":sirenData["volume"],
+                "siren_duration":sirenData["duration"],
+            }
+    except Exception as err:
+        LOGGER.error(f"getSirenConfig unexpected error {err=}, {type(err)=}")  
 
+    try:
+        if not hubSiren and data["getAlarmConfig"][0] != False:
+            alarmData = data["getAlarmConfig"][0]
+            alarmConfig = {
+                "mode":alarmData["alarm_mode"],
+                "automatic":alarmData["enabled"]
+            }
+            if "light_type" in alarmData:
+                alarmConfig["light_type"]= alarmData["light_type"]
+            if "siren_type" in alarmData:
+                alarmConfig["siren_type"]= alarmData["siren_type"]
+            if "siren_duration" in alarmData:
+                alarmConfig["siren_duration"]= alarmData["siren_duration"]
+            if "alarm_duration" in alarmData:
+                alarmConfig["alarm_duration"]= alarmData["alarm_duration"]
+            if "siren_volume" in alarmData:
+                alarmConfig["siren_volume"]= alarmData["siren_volume"]
+            if "alarm_volume" in alarmData:
+                alarmConfig["alarm_volume"]= alarmData["alarm_volume"]
+            
+    except Exception as err:
+        LOGGER.error(f"getAlarmConfig unexpected error {err=}, {type(err)=}")
+
+    try:
+        if (
+            alarmConfig == None 
+            and "msg_alarm" in data["getLastAlarmInfo"][0]
+            and "chn1_msg_alarm_info" in data["getLastAlarmInfo"][0]["msg_alarm"]
+            and data["getLastAlarmInfo"][0]["msg_alarm"]["chn1_msg_alarm_info"] != False
+            ):
+            alarmData = data["getLastAlarmInfo"]["msg_alarm"]["chn1_msg_alarm_info"]
+            alarmConfig = {
+                "mode":alarmData["alarm_mode"],
+                "automatic":alarmData["enabled"]
+            }
+            if "light_type" in alarmData:
+                alarmConfig["light_type"]= alarmData["light_type"]
+            if "siren_type" in alarmData:
+                alarmConfig["siren_type"]= alarmData["siren_type"]
+            if "siren_duration" in alarmData:
+                alarmConfig["siren_duration"]= alarmData["siren_duration"]
+            if "alarm_duration" in alarmData:
+                alarmConfig["alarm_duration"]= alarmData["alarm_duration"]
+            if "siren_volume" in alarmData:
+                alarmConfig["siren_volume"]= alarmData["siren_volume"]
+            if "alarm_volume" in alarmData:
+                alarmConfig["alarm_volume"]= alarmData["alarm_volume"]
+    except Exception as err:
+        LOGGER.error(f"getLastAlarmInfo unexpected error {err=}, {type(err)=}")
+
+    try:
+        alarmStatus = data["getSirenStatus"][0]["status"]
+    except Exception as err:
+        LOGGER.error(f"getSirenStatus unexpected error {err=}, {type(err)=}")
+
+    if alarmConfig != None:
+        try:
+            sirenTypeList = data["getSirenTypeList"][0]
+        except Exception:
+            LOGGER.error(f"getSirenTypeList unexpected error {err=}, {type(err)=}")
     
-    try:
-        alarmData = data["getAlarmConfig"][0]
-        alarm = alarmData["enabled"]
-        alarm_mode = alarmData["alarm_mode"]
-        alarm_siren_type = alarmData["siren_type"]
-    except Exception:
-        alarm = None
-        alarm_mode = None
-        alarm_siren_type = None
-
-    if alarm is None:
-        try:
-            alarm = data["getSirenStatus"][0]["status"]
-        except Exception:
-            alarm = None
-
-    if alarm_siren_type is None:
-        try:
-            alarm_siren_type = data["getSirenConfig"][0]["siren_type"]
-        except Exception:
-            alarm_siren_type = None
-#TODO get full siren config from getSirenConfig or getAlarmConfig
-    camData["alarm"] = alarm
-    camData["alarm_mode"] = alarm_mode
-    camData["alarm_siren_type"] = alarm_siren_type
-
-    try:
-        hubSiren = data["getSirenConfig"][0] != False
-    except Exception:
-        hubSiren = False
-
+    camData["alarm_config"] = alarmConfig
+    camData["alarm_status"] = alarmStatus
     camData["alarm_is_hubSiren"] = hubSiren
-
-    try:
-        sirenTypeList = data["getSirenTypeList"][0]
-    except Exception:
-        sirenTypeList = []
-
     camData["alarm_siren_type_list"] = sirenTypeList
     
     try:

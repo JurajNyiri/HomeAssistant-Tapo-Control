@@ -378,11 +378,11 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
-            if camData["alarm"] == "off":
+            if camData["alarm_config"]["automatic"] == "off":
                 self._attr_current_option = "off"
             else:
-                light = "light" in camData["alarm_mode"]
-                sound = "sound" in camData["alarm_mode"]
+                light = "light" in camData["alarm_config"]["mode"]
+                sound = "sound" in camData["alarm_config"]["mode"]
                 if light and sound:
                     self._attr_current_option = "both"
                 elif light and not sound:

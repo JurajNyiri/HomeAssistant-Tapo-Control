@@ -177,7 +177,7 @@ class TapoSiren(TapoSirenEntity):
             self._attr_available = False
         else:
             self._attr_available = True
-            self._is_on = camData["alarm"] == "on"
+            self._is_on = camData["alarm_status"] == "on"
 
 
 def result_has_error(result):
