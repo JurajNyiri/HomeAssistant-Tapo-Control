@@ -1021,14 +1021,14 @@ async def getCamData(hass, controller):
 
     if alarmConfig != None:
         try:
-            sirenTypeList = data["getSirenTypeList"][0]
+            alarmSirenTypeList = data["getSirenTypeList"][0]
         except Exception:
             LOGGER.error(f"getSirenTypeList unexpected error {err=}, {type(err)=}")
     
     camData["alarm_config"] = alarmConfig
     camData["alarm_status"] = alarmStatus
     camData["alarm_is_hubSiren"] = hubSiren
-    camData["alarm_siren_type_list"] = sirenTypeList
+    camData["alarm_siren_type_list"] = alarmSirenTypeList
     
     try:
         led = data["getLedStatus"][0]["led"]["config"]["enabled"]
