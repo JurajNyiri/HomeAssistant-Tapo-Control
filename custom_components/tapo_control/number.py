@@ -73,21 +73,20 @@ async def async_setup_entry(
             if tapoSpeakerVolume:
                 LOGGER.debug("Adding tapoSpeakerVolume...")
                 numbers.append(tapoSpeakerVolume)
-
-        tapoSirenVolume = await check_and_create(
-            entry, hass, TapoSirenVolume, "getSirenTypeList", config_entry
-        )
-        if tapoSirenVolume:
-            LOGGER.debug("Adding TapoSirenVolume...")
-            numbers.append(tapoSirenVolume)
+        if (
+            "alarm_config" in entry["camData"] 
+            and ("siren_volume" in entry["camData"]["alarm_config"] or "alarm_volume" in entry["camData"]["alarm_config"])
+        ):
+            tapoSirenVolume = await TapoSirenVolume(entry,hass,config_entry)
+            if tapoSirenVolume:
+                LOGGER.debug("Adding TapoSirenVolume...")
+                numbers.append(tapoSirenVolume)
 
         if (
             "alarm_config" in entry["camData"] 
-            and "siren_duration" in entry["camData"]["alarm_config"]
+            and ("siren_duration" in entry["camData"]["alarm_config"] or "alarm_duration" in entry["camData"]["alarm_config"])
         ):
-            tapoSirenDuration = await check_and_create(
-                entry, hass, TapoSirenDuration, "getSirenTypeList", config_entry
-            )
+            tapoSirenDuration = await TapoSirenDuration(entry,hass,config_entry)
             if tapoSirenDuration:
                 LOGGER.debug("Adding TapoSirenDuration...")
                 numbers.append(tapoSirenDuration)
@@ -268,11 +267,16 @@ class TapoSirenVolume(RestoreNumber, TapoEntity):
         self._attr_max_value = 10
         self._attr_native_min_value = 1
         self._attr_native_max_value = 10
-        self._attr_native_value = entry["camData"]["hubSiren"]["volume"]
         self._attr_step = 1
         self._hass = hass
         self.is_hub = entry["camData"]["alarm_is_hubSiren"]
-
+        if "siren_volume" in entry["camData"]["alarm_config"]:
+            self.value_key = "siren_volume"
+        else:
+            self.value_key = "alarm_volume"
+            
+        self._attr_native_value = entry["camData"]["alarm_config"][self.value_key]
+    
         TapoNumberEntity.__init__(
             self,
             "Siren volume",
@@ -302,7 +306,7 @@ class TapoSirenVolume(RestoreNumber, TapoEntity):
             if value>7:
                 strval = "high"
             result = await self._hass.async_add_executor_job(
-                self._controller.executeFunction, "setAlarmConfig", {"msg_alarm": {"siren_volume": strval}}
+                self._controller.executeFunction, "setAlarmConfig", {"msg_alarm": {self.value_key: strval}}
             )
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = value
@@ -313,7 +317,7 @@ class TapoSirenVolume(RestoreNumber, TapoEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
-            self._attr_state = camData["hubSiren"]["volume"]
+            self._attr_state = camData["alarm_config"][self.value_key]
 
 class TapoSirenDuration(RestoreNumber, TapoEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
@@ -322,15 +326,18 @@ class TapoSirenDuration(RestoreNumber, TapoEntity):
         self._attr_native_min_value = 1
         self._attr_max_value = 300
         self._attr_native_max_value = 300
-        if entry["camData"]["alarm_is_hubSiren"]:
+        self.is_hub = entry["camData"]["alarm_is_hubSiren"]
+        if self.is_hub:
             self._attr_max_value = 599
             self._attr_native_max_value = 599
         self._attr_step = 1
         self._attr_native_unit_of_measurement:  UnitOfTime.SECONDS
-        self._attr_native_value = entry["camData"]["alarm_config"]["siren_duration"]
         self._hass = hass
-        self.is_hub = entry["camData"]["alarm_is_hubSiren"]
-
+        if "siren_duration" in entry["camData"]["alarm_config"]:
+            self.value_key = "siren_duration"
+        else:
+            self.value_key = "alarm_duration"
+        self._attr_native_value = entry["camData"]["alarm_config"][self.value_key]
 
         TapoNumberEntity.__init__(
             self,
@@ -350,11 +357,14 @@ class TapoSirenDuration(RestoreNumber, TapoEntity):
         return EntityCategory.CONFIG
 
     async def async_set_native_value(self, value: float) -> None:
-        if self.is_hub
-        result = await self._hass.async_add_executor_job(
-            self._controller.setHubSirenConfig, int(value)
-        )
-
+        if self.is_hub:
+            result = await self._hass.async_add_executor_job(
+                self._controller.setHubSirenConfig, int(value)
+            )
+        else:
+            result = await self._hass.async_add_executor_job(
+                self._controller.executeFunction, "setAlarmConfig", {"msg_alarm": {self.value_key: int(value)}}
+            )
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = value
         self.async_write_ha_state()
@@ -364,4 +374,4 @@ class TapoSirenDuration(RestoreNumber, TapoEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
-            self._attr_state = camData["hubSiren"]["duration"]
+            self._attr_state = camData["alarm_config"][self.value_key]
