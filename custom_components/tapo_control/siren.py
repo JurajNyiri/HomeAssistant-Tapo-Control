@@ -70,13 +70,11 @@ class TapoSiren(TapoSirenEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         TapoSirenEntity.__init__(self, "Siren", entry, hass, config_entry)
         self._turn_off_task = None
-        self.hub = entry["camData"]["alarm_is_hubSiren"]
+        self.is_hub = entry["camData"]["alarm_is_hubSiren"]
 
     async def async_update(self) -> None:
         await self._coordinator.async_request_refresh()
 
-    # TODO acording to doc, siren entity could receive sirenType, duration and volume on same service call,would be nice to add it, should be a previous command and not a multiCommand I think, because if execution order of multiCommand is not guaranteed would not be trustable
-    # currently the shortest between configured siren duration and this service call duration is the one that will have impact, also ensuring the duration with siren config would allow to aboid the async off with the sleep
     async def async_turn_on(self, duration: int | None = None, **kwargs) -> None:
         for kw in kwargs:
             LOGGER.debug(f"async_turn_on: Parameter '{kw}' not supported")
@@ -89,7 +87,7 @@ class TapoSiren(TapoSirenEntity):
             self._turn_off_task.cancel()
             self._turn_off_task = None
 
-        if self.hub:
+        if self.is_hub:
             result = await self._hass.async_add_executor_job(
                 self._controller.setHubSirenStatus, True
             )
@@ -125,7 +123,6 @@ class TapoSiren(TapoSirenEntity):
                 self._turn_off_task = self.hass.async_create_task(
                     _turn_off_after(duration, True)
                 )
-            # TODO check on multiplerequest time_left
             elif "time_left" in result and result["time_left"]:
                 self._turn_off_task = self.hass.async_create_task(
                     _turn_off_after(result["time_left"], False)
@@ -138,7 +135,7 @@ class TapoSiren(TapoSirenEntity):
 
     async def async_turn_off(self, send: bool | None = None, **kwargs) -> None:
         if send:
-            if self.hub:
+            if self.is_hub:
                 result = await self._hass.async_add_executor_job(
                     self._controller.setHubSirenStatus, False
                 )
@@ -163,7 +160,6 @@ class TapoSiren(TapoSirenEntity):
                         ]
                     },
                 )
-        # TODO check on multiple request error
         if result_has_error(result):
             self._attr_available = False
 
@@ -181,7 +177,12 @@ class TapoSiren(TapoSirenEntity):
 
 
 def result_has_error(result):
-    # TODO check if is multipleRequest method check for a success inside
+    if (
+        "result" in result
+        and "responses" in result["result"]
+        and any(map(lambda x: "error_code" not in x or x["error_code"] == 0,result["result"]["responses"]))
+    ):
+        return False
     if "error_code" not in result or result["error_code"] == 0:
         return False
     else:
