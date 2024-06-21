@@ -356,7 +356,6 @@ class TapoLightFrequencySelect(TapoSelectEntity):
         await self._coordinator.async_request_refresh()
 
 
-# TODO c420 alarm_mode has alarm_mode siren, check compatibility of method
 class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         self._attr_options = ["both", "light", "sound", "off"]
@@ -880,7 +879,6 @@ class TapoSirenTypeSelect(TapoSelectEntity):
             )
         else:
             result = await self.hass.async_add_executor_job(
-                # TODO validate: difference between execute function and performRequet
                 self._controller.executeFunction,
                 "setAlarmConfig",
                 {

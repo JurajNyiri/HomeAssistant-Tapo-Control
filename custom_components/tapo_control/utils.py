@@ -947,7 +947,6 @@ async def getCamData(hass, controller):
     camData["flip"] = flip
 
     
-    #TODO validate: getLastAlarmInfo returns last alarm config that is not necessarily last config seted, sound like little bug, but cant test on c420 or hub because they dont support getLastAlarmInfo
     hubSiren = False
     alarmConfig = None
     alarmStatus = None
