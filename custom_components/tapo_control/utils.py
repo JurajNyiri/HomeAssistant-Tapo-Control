@@ -1398,11 +1398,6 @@ def pytapoFunctionMap(pytapoFunctionName):
         return ["getFirmwareAutoUpgradeConfig"]
     elif pytapoFunctionName == "getSirenTypeList":
         return ["getSirenTypeList"]
-    elif pytapoFunctionName == "getHubSirenStatus":
-        return ["getHubSirenStatus"]
-    elif pytapoFunctionName == "getHubSirenConfig":
-        return ["getHubSirenConfig"]
-    #TODO other check-and-create methods used?
     return []
 
 
