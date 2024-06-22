@@ -809,7 +809,6 @@ class TapoMoveToPresetSelect(TapoSelectEntity):
         self._presets = {}
         self._attr_options = []
         self._attr_current_option = None
-        LOGGER.debug(f"Setting TapoMoveToPresetSelect with: {self._presets}-{self._attr_options}-{self._attr_current_option} ")
         TapoSelectEntity.__init__(
             self, "Move to Preset", entry, hass, config_entry, "mdi:arrow-decision"
         )
@@ -852,7 +851,6 @@ class TapoSirenTypeSelect(TapoSelectEntity):
         self._attr_options = entry["camData"]["alarm_siren_type_list"]
         self._attr_current_option = entry["camData"]["alarm_config"]["siren_type"]
         self.hub = entry["camData"]["alarm_is_hubSiren"]
-        LOGGER.debug(f"Setting TapoHubSirenTypeSelect with: {self._attr_options}-{self._attr_current_option}-{self.hub} ")
         TapoSelectEntity.__init__(
             self,
             "Siren Type",
