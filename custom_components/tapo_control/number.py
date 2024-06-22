@@ -77,7 +77,7 @@ async def async_setup_entry(
             "alarm_config" in entry["camData"] 
             and ("siren_volume" in entry["camData"]["alarm_config"] or "alarm_volume" in entry["camData"]["alarm_config"])
         ):
-            tapoSirenVolume = await TapoSirenVolume(entry,hass,config_entry)
+            tapoSirenVolume = TapoSirenVolume(entry,hass,config_entry)
             if tapoSirenVolume:
                 LOGGER.debug("Adding TapoSirenVolume...")
                 numbers.append(tapoSirenVolume)
@@ -86,7 +86,7 @@ async def async_setup_entry(
             "alarm_config" in entry["camData"] 
             and ("siren_duration" in entry["camData"]["alarm_config"] or "alarm_duration" in entry["camData"]["alarm_config"])
         ):
-            tapoSirenDuration = await TapoSirenDuration(entry,hass,config_entry)
+            tapoSirenDuration = TapoSirenDuration(entry,hass,config_entry)
             if tapoSirenDuration:
                 LOGGER.debug("Adding TapoSirenDuration...")
                 numbers.append(tapoSirenDuration)
@@ -259,8 +259,7 @@ class TapoSpeakerVolume(TapoNumberEntity):
         else:
             self._attr_state = camData["speakerVolume"]
 
-#TODO add optional volume to setAlarm method on pytapo, or new method to set volume
-class TapoSirenVolume(RestoreNumber, TapoEntity):
+class TapoSirenVolume(TapoNumberEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         LOGGER.debug("TapoSirenVolume - init - start")
         self._attr_min_value = 1
@@ -319,7 +318,7 @@ class TapoSirenVolume(RestoreNumber, TapoEntity):
         else:
             self._attr_state = camData["alarm_config"][self.value_key]
 
-class TapoSirenDuration(RestoreNumber, TapoEntity):
+class TapoSirenDuration(TapoNumberEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         LOGGER.debug("TapoSirenDuration - init - start")
         self._attr_min_value = 1
