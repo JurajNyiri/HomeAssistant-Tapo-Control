@@ -285,6 +285,8 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     LOGGER.debug("Deleting hot storage files for entity " + entry_id + "...")
     deleteDir(hotDirPath)
 
+    # Remove the entry data
+    hass.data[DOMAIN].pop(entry_id, None)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     if PYTAPO_REQUIRED_VERSION != PYTAPO_VERSION:
@@ -513,10 +515,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     and hass.data[DOMAIN][entry.entry_id]["mediaSyncScheduled"] is False
                 ):
                     hass.data[DOMAIN][entry.entry_id]["mediaSyncScheduled"] = True
-                    async_track_time_interval(
-                        hass,
-                        mediaSync,
-                        timedelta(seconds=60),
+                    entry.async_on_unload(
+                        async_track_time_interval(
+                            hass,
+                            mediaSync,
+                            timedelta(seconds=60),
+                        )
                     )
                 elif (
                     hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"]
