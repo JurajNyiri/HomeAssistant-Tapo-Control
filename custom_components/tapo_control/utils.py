@@ -1384,9 +1384,6 @@ def pytapoFunctionMap(pytapoFunctionName):
 
 def isCacheSupported(check_function, rawData):
     rawFunctions = pytapoFunctionMap(check_function)
-    LOGGER.debug(
-            f"Searching cached capability rawFunctions:{rawFunctions}, in rawData: {rawData}"
-        )
     for function in rawFunctions:
         if function in rawData and rawData[function][0]:
             if check_function == "getForceWhitelampState":
