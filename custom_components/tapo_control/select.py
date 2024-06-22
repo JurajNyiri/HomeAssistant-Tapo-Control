@@ -45,7 +45,7 @@ async def async_setup_entry(
             selects.append(tapoAutomaticAlarmModeSelect)
 
         tapoSirenTypeSelect = await check_and_create(
-            entry, hass, TapoSirenTypeSelect, "getSirenTypeList ", config_entry
+            entry, hass, TapoSirenTypeSelect, "getSirenTypeList", config_entry
         )
         if tapoSirenTypeSelect:
             LOGGER.debug("Adding tapoSirenTypeSelect...")
@@ -809,6 +809,7 @@ class TapoMoveToPresetSelect(TapoSelectEntity):
         self._presets = {}
         self._attr_options = []
         self._attr_current_option = None
+        LOGGER.debug(f"Setting TapoMoveToPresetSelect with: {self._presets}-{self._attr_options}-{self._attr_current_option} ")
         TapoSelectEntity.__init__(
             self, "Move to Preset", entry, hass, config_entry, "mdi:arrow-decision"
         )
@@ -849,8 +850,9 @@ class TapoMoveToPresetSelect(TapoSelectEntity):
 class TapoSirenTypeSelect(TapoSelectEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         self._attr_options = entry["camData"]["alarm_siren_type_list"]
-        self._attr_current_option = entry["camData"]["alarm_siren_type"]
+        self._attr_current_option = entry["camData"]["alarm_config"]["siren_type"]
         self.hub = entry["camData"]["alarm_is_hubSiren"]
+        LOGGER.debug(f"Setting TapoHubSirenTypeSelect with: {self._attr_options}-{self._attr_current_option}-{self.hub} ")
         TapoSelectEntity.__init__(
             self,
             "Siren Type",
@@ -864,8 +866,8 @@ class TapoSirenTypeSelect(TapoSelectEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
-            if "siren_type" in camData["alarm_siren_type"]:
-                self._attr_current_option = camData["alarm_siren_type"]
+            if "siren_type" in camData["alarm_config"]:
+                self._attr_current_option = camData["alarm_config"]["siren_type"]
             else:
                 self._attr_state = STATE_UNAVAILABLE
 

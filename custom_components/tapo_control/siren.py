@@ -160,8 +160,8 @@ class TapoSiren(TapoSirenEntity):
                         ]
                     },
                 )
-        if result_has_error(result):
-            self._attr_available = False
+            if result_has_error(result):
+                self._attr_available = False
 
         self._attr_is_on = False
 
