@@ -96,6 +96,10 @@ class TapoSiren(TapoSirenEntity):
                 self._controller.setHubSirenStatus, True
             )
         else:
+            result2 = await self._hass.async_add_executor_job(
+                self._controller.startManualAlarm,
+            )
+            # TODO: OPTIMIZE THIS TO USE SETSIRENSTATUS FROM PYTAPO?
             result = await self._hass.async_add_executor_job(
                 self._controller.startManualAlarm,
             )
