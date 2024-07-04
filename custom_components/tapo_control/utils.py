@@ -461,7 +461,7 @@ def getColdFile(
     return coldDirPath + "/" + folder + "/" + fileName + extension
 
 
-def getHotFile(
+async def getHotFile(
     hass: HomeAssistant, entry_id: str, startDate: int, endDate: int, folder: str
 ):
     coldFilePath = getColdFile(hass, entry_id, startDate, endDate, folder)
@@ -477,14 +477,14 @@ def getHotFile(
     if not os.path.exists(hotFilePath):
         if not os.path.exists(coldFilePath):
             raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
-        shutil.copyfile(coldFilePath, hotFilePath)
+        await hass.async_add_executor_job(shutil.copyfile, coldFilePath, hotFilePath)
     return hotFilePath
 
 
-def getWebFile(
+async def getWebFile(
     hass: HomeAssistant, entry_id: str, startDate: int, endDate: int, folder: str
 ):
-    hotFilePath = getHotFile(hass, entry_id, startDate, endDate, folder)
+    hotFilePath = await getHotFile(hass, entry_id, startDate, endDate, folder)
     fileWebPath = hotFilePath[hotFilePath.index("/www/") + 5 :]  # remove ./www/
 
     return f"/local/{fileWebPath}"
