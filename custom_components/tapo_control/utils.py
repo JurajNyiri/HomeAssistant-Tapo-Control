@@ -9,7 +9,7 @@ import socket
 import time
 import urllib.parse
 import uuid
-import pathlib
+
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from pytapo.media_stream.downloader import Downloader
@@ -126,6 +126,7 @@ def getColdDirPathForEntry(hass: HomeAssistant, entry_id: str):
         hass.data[DOMAIN][entry_id]["mediaSyncColdDir"] = coldDirPath
 
     coldDirPath = hass.data[DOMAIN][entry_id]["mediaSyncColdDir"]
+    coldDirPath = coldDirPath.rstrip("/")
     return coldDirPath
 
 
@@ -137,6 +138,7 @@ def getHotDirPathForEntry(hass: HomeAssistant, entry_id: str):
         hass.data[DOMAIN][entry_id]["mediaSyncHotDir"] = hotDirPath
 
     hotDirPath = hass.data[DOMAIN][entry_id]["mediaSyncHotDir"]
+    hotDirPath = hotDirPath.rstrip("/")
     return hotDirPath
 
 
@@ -262,17 +264,21 @@ async def generateThumb(hass, entry_id, startDate: int, endDate: int):
                 output_format=IMAGE_JPEG,
             )
         )
-        with open(filePathThumb, "wb") as binary_file:
+        openHandler = await hass.async_add_executor_job(open, filePathThumb, "wb")
+        with openHandler as binary_file:
             binary_file.write(image)
     return filePathThumb
 
 
 # todo: findMedia needs to run periodically because of this function!!!
-def deleteFilesNoLongerPresentInCamera(hass, entry_id, extension, folder):
+async def deleteFilesNoLongerPresentInCamera(hass, entry_id, extension, folder):
     if hass.data[DOMAIN][entry_id]["initialMediaScanDone"] is True:
         coldDirPath = getColdDirPathForEntry(hass, entry_id)
         if os.path.exists(coldDirPath + "/" + folder + "/"):
-            for f in os.listdir(coldDirPath + "/" + folder + "/"):
+            listDirFiles = await hass.async_add_executor_job(
+                os.listdir, coldDirPath + "/" + folder + "/"
+            )
+            for f in listDirFiles:
                 fileName = f.replace(extension, "")
                 filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
                 if fileName not in hass.data[DOMAIN][entry_id]["mediaScanResult"]:
@@ -304,7 +310,10 @@ async def deleteColdFilesOlderThanMaxSyncTime(hass, entry, extension, folder):
         entry_id = entry.entry_id
         ts = datetime.datetime.utcnow().timestamp()
         if os.path.exists(coldDirPath + "/" + folder + "/"):
-            for f in os.listdir(coldDirPath + "/" + folder + "/"):
+            listDirFiles = await hass.async_add_executor_job(
+                os.listdir, coldDirPath + "/" + folder + "/"
+            )
+            for f in listDirFiles:
                 fileName = f.replace(extension, "")
                 filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
                 splitFileName = fileName.split("-")
@@ -349,11 +358,11 @@ async def mediaCleanup(hass, entry):
     LOGGER.debug(
         "Removing cache files from old HA instances for entity " + entry_id + "..."
     )
-    deleteFilesNotIncluding(hotDirPath + "/videos/", UUID)
-    deleteFilesNotIncluding(hotDirPath + "/thumbs/", UUID)
+    await deleteFilesNotIncluding(hass, hotDirPath + "/videos/", UUID)
+    await deleteFilesNotIncluding(hass, hotDirPath + "/thumbs/", UUID)
 
-    deleteFilesNoLongerPresentInCamera(hass, entry_id, ".mp4", "videos")
-    deleteFilesNoLongerPresentInCamera(hass, entry_id, ".jpg", "thumbs")
+    await deleteFilesNoLongerPresentInCamera(hass, entry_id, ".mp4", "videos")
+    await deleteFilesNoLongerPresentInCamera(hass, entry_id, ".jpg", "thumbs")
 
     await deleteColdFilesOlderThanMaxSyncTime(hass, entry, ".mp4", "videos")
     await deleteColdFilesOlderThanMaxSyncTime(hass, entry, ".jpg", "thumbs")
@@ -366,8 +375,8 @@ async def mediaCleanup(hass, entry):
         + entry_id
         + "..."
     )
-    deleteFilesOlderThan(hotDirPath + "/videos/", HOT_DIR_DELETE_TIME)
-    deleteFilesOlderThan(hotDirPath + "/thumbs/", HOT_DIR_DELETE_TIME)
+    await deleteFilesOlderThan(hass, hotDirPath + "/videos/", HOT_DIR_DELETE_TIME)
+    await deleteFilesOlderThan(hass, hotDirPath + "/thumbs/", HOT_DIR_DELETE_TIME)
 
 
 def deleteDir(dirPath):
@@ -381,10 +390,12 @@ def deleteDir(dirPath):
         shutil.rmtree(dirPath)
 
 
-def deleteFilesOlderThan(dirPath, deleteOlderThan):
+async def deleteFilesOlderThan(hass: HomeAssistant, dirPath, deleteOlderThan):
     now = datetime.datetime.utcnow().timestamp()
     if os.path.exists(dirPath):
-        for f in os.listdir(dirPath):
+
+        listDirFiles = await hass.async_add_executor_job(os.listdir, dirPath)
+        for f in listDirFiles:
             filePath = os.path.join(dirPath, f)
             last_modified = os.stat(filePath).st_mtime
             if now - last_modified > deleteOlderThan:
@@ -392,9 +403,10 @@ def deleteFilesOlderThan(dirPath, deleteOlderThan):
                 os.remove(filePath)
 
 
-def deleteFilesNotIncluding(dirPath, includingString):
+async def deleteFilesNotIncluding(hass: HomeAssistant, dirPath, includingString):
     if os.path.exists(dirPath):
-        for f in os.listdir(dirPath):
+        listDirFiles = await hass.async_add_executor_job(os.listdir, dirPath)
+        for f in listDirFiles:
             filePath = os.path.join(dirPath, f)
             if includingString not in filePath:
                 LOGGER.debug("[deleteFilesOlderThan] Removing " + filePath + "...")
