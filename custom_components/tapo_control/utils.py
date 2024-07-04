@@ -1087,6 +1087,18 @@ async def getCamData(hass, controller):
         connectionInformation = None
     camData["connectionInformation"] = connectionInformation
 
+    try:
+        videoCapability = data["getVideoCapability"][0]
+    except Exception:
+        videoCapability = None
+    camData["videoCapability"] = videoCapability
+
+    try:
+        videoQualities = data["getVideoQualities"][0]
+    except Exception:
+        videoQualities = None
+    camData["videoQualities"] = videoQualities
+
     LOGGER.debug("getCamData - done")
     LOGGER.debug("Processed update data:")
     LOGGER.debug(camData)
@@ -1348,6 +1360,10 @@ def pytapoFunctionMap(pytapoFunctionName):
         return ["getFirmwareAutoUpgradeConfig"]
     elif pytapoFunctionName == "getSirenTypeList":
         return ["getSirenTypeList"]
+    elif pytapoFunctionName == "getVideoQualities":
+        return ["getVideoQualities"]
+    elif pytapoFunctionName == "getVideoCapability":
+        return ["getVideoCapability"]
     return []
 
 
