@@ -39,7 +39,7 @@ from .const import (
     MEDIA_SYNC_HOURS,
     MEDIA_VIEW_DAYS_ORDER,
     MEDIA_VIEW_RECORDINGS_ORDER,
-    MIN_UPDATE_INTERVAL_CHILD,
+    MIN_UPDATE_INTERVAL_BATTERY,
     MIN_UPDATE_INTERVAL_MAIN,
     RTSP_TRANS_PROTOCOLS,
     SOUND_DETECTION_DURATION,
@@ -455,12 +455,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 for controller in hass.data[DOMAIN][entry.entry_id]["allControllers"]:
                     controllerData = getDataForController(hass, entry, controller)
                     if (
-                        controllerData["isChild"] is False
+                        controllerData["isBatteryDevice"] is False
                         and ts - controllerData["lastUpdate"] > MIN_UPDATE_INTERVAL_MAIN
                     ) or (
-                        controllerData["isChild"] is True
+                        controllerData["isBatteryDevice"] is True
                         and ts - controllerData["lastUpdate"]
-                        > MIN_UPDATE_INTERVAL_CHILD
+                        > MIN_UPDATE_INTERVAL_BATTERY
                     ):
                         timeForAnUpdate = True
                         LOGGER.warn(f"Updating {controllerData['name']}...")
@@ -620,6 +620,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "noiseSensorStarted": False,
             "name": camData["basic_info"]["device_alias"],
             "childDevices": [],
+            "isBatteryDevice": (
+                True
+                if (
+                    "basic_info" in camData
+                    and "battery_percent" in camData["basic_info"]
+                )
+                else False
+            ),
             "isChild": False,
             "uuid": hashlib.md5(
                 (
@@ -676,6 +684,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         "name": camData["basic_info"]["device_alias"],
                         "childDevices": [],
                         "isChild": True,
+                        "isBatteryDevice": (
+                            True
+                            if (
+                                "basic_info" in camData
+                                and "battery_percent" in camData["basic_info"]
+                            )
+                            else False
+                        ),
                         "isParent": False,
                     }
                 )
