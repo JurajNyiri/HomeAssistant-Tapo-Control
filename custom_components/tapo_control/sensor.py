@@ -211,8 +211,8 @@ class TapoBatterySensor(TapoSensorEntity):
             entry,
             hass,
             config_entry,
-            None,
             "mdi:battery",
+            SensorDeviceClass.BATTERY,
         )
 
     @property
