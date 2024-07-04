@@ -9,6 +9,11 @@ from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
 )
 
+from homeassistant.components.ffmpeg import (
+    FFmpegManager,
+    get_ffmpeg_manager,
+)
+
 from homeassistant.const import STATE_ON, STATE_OFF
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import DeviceInfo
@@ -117,8 +122,10 @@ class TapoNoiseBinarySensor(TapoBinarySensorEntity):
         self._sound_detection_reset = config_entry.data.get(SOUND_DETECTION_RESET)
         self.latestCamData = entry["camData"]
 
+        manager = get_ffmpeg_manager(hass)
+
         self._noiseSensor = ffmpeg_sensor.SensorNoise(
-            self._ffmpeg.binary, self._noiseCallback
+            manager.binary, self._noiseCallback
         )
         self._noiseSensor.set_options(
             time_duration=int(self._sound_detection_duration),
