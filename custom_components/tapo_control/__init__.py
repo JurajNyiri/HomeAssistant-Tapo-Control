@@ -765,7 +765,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                                 )
                                                 LOGGER.debug("getRecording -2")
                                             except Unresolvable as err:
-                                                LOGGER.warn(err)
+                                                if (
+                                                    str(err)
+                                                    == "Recording is currently in progress."
+                                                ):
+                                                    LOGGER.info(err)
+                                                else:
+                                                    LOGGER.warn(err)
                                             except Exception as err:
                                                 LOGGER.error(err)
                 except Exception as err:
