@@ -634,6 +634,19 @@ def tryParseInt(value):
         return None
 
 
+def getDataForController(hass, entry, controller):
+    for controller in hass.data[DOMAIN][entry.entry_id]["allControllers"]:
+        if controller == hass.data[DOMAIN][entry.entry_id]["controller"]:
+            return hass.data[DOMAIN][entry.entry_id]
+        elif (
+            "childDevices" in hass.data[DOMAIN][entry.entry_id]
+            and hass.data[DOMAIN][entry.entry_id]["childDevices"] is not False
+        ):
+            for childDevice in hass.data[DOMAIN][entry.entry_id]["childDevices"]:
+                if controller == childDevice["controller"]:
+                    return childDevice
+
+
 async def getCamData(hass, controller):
     LOGGER.debug("getCamData")
     data = await hass.async_add_executor_job(controller.getMost)
