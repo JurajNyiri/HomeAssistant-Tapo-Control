@@ -454,11 +454,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 updateDataForAllControllers = {}
                 for controller in hass.data[DOMAIN][entry.entry_id]["allControllers"]:
                     controllerData = getDataForController(hass, entry, controller)
+                    LOGGER.warn(
+                        f"{controllerData['name']} running on battery: {controllerData['isRunningOnBattery']}"
+                    )
                     if (
-                        controllerData["isBatteryDevice"] is False
+                        controllerData["isRunningOnBattery"] is False
                         and ts - controllerData["lastUpdate"] > MIN_UPDATE_INTERVAL_MAIN
                     ) or (
-                        controllerData["isBatteryDevice"] is True
+                        controllerData["isRunningOnBattery"] is True
                         and ts - controllerData["lastUpdate"]
                         > MIN_UPDATE_INTERVAL_BATTERY
                     ):
@@ -471,6 +474,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         try:
                             updateDataForAllControllers[controller] = await getCamData(
                                 hass, controller
+                            )
+                            controllerData["isRunningOnBattery"] = (
+                                True
+                                if (
+                                    "basic_info"
+                                    in updateDataForAllControllers[controller]
+                                    and "power"
+                                    in updateDataForAllControllers[controller][
+                                        "basic_info"
+                                    ]
+                                    and updateDataForAllControllers[controller][
+                                        "basic_info"
+                                    ]["power"]
+                                    == "BATTERY"
+                                )
+                                else False
                             )
                             controllerData["lastUpdate"] = (
                                 datetime.datetime.utcnow().timestamp()
@@ -620,11 +639,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "noiseSensorStarted": False,
             "name": camData["basic_info"]["device_alias"],
             "childDevices": [],
-            "isBatteryDevice": (
+            "isRunningOnBattery": (
                 True
                 if (
                     "basic_info" in camData
-                    and "battery_percent" in camData["basic_info"]
+                    and "power" in camData["basic_info"]
+                    and camData["basic_info"]["power"] == "BATTERY"
                 )
                 else False
             ),
@@ -684,11 +704,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         "name": camData["basic_info"]["device_alias"],
                         "childDevices": [],
                         "isChild": True,
-                        "isBatteryDevice": (
+                        "isRunningOnBattery": (
                             True
                             if (
                                 "basic_info" in camData
-                                and "battery_percent" in camData["basic_info"]
+                                and "power" in camData["basic_info"]
+                                and camData["basic_info"]["power"] == "BATTERY"
                             )
                             else False
                         ),
