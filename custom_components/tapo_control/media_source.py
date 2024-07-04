@@ -5,7 +5,6 @@ TODO:
 - Handle weird error that sometimes happens causing downloader to get stuck and never recovers until restart
 """
 
-
 from __future__ import annotations
 
 
@@ -203,9 +202,9 @@ class TapoMediaSource(MediaSource):
                 videoNames = sorted(
                     videoNames,
                     key=lambda x: x["startDate"],
-                    reverse=True
-                    if media_view_recordings_order == "Descending"
-                    else False,
+                    reverse=(
+                        True if media_view_recordings_order == "Descending" else False
+                    ),
                 )
 
                 dateChildren = []

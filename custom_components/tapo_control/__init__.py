@@ -603,6 +603,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "downloadProgress": False,
             "initialMediaScanDone": False,
             "mediaSyncScheduled": False,
+            "mediaSyncRanOnce": False,
             "mediaSyncAvailable": True,
             "initialMediaScanRunning": False,
             "mediaScanResult": {},  # keeps track of all videos currently on camera
@@ -688,6 +689,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         # todo move to utils
         async def mediaSync(time=None):
             LOGGER.debug("mediaSync")
+            hass.data[DOMAIN][entry.entry_id]["mediaSyncRanOnce"] = True
             enableMediaSync = entry.data.get(ENABLE_MEDIA_SYNC)
             mediaSyncHours = entry.data.get(MEDIA_SYNC_HOURS)
 
