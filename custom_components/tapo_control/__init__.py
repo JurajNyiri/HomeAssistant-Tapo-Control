@@ -39,6 +39,8 @@ from .const import (
     MEDIA_SYNC_HOURS,
     MEDIA_VIEW_DAYS_ORDER,
     MEDIA_VIEW_RECORDINGS_ORDER,
+    MIN_UPDATE_INTERVAL_CHILD,
+    MIN_UPDATE_INTERVAL_MAIN,
     RTSP_TRANS_PROTOCOLS,
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
@@ -51,6 +53,7 @@ from .utils import (
     convert_to_timestamp,
     deleteDir,
     getColdDirPathForEntry,
+    getDataForController,
     getHotDirPathForEntry,
     isUsingHTTPS,
     mediaCleanup,
@@ -450,51 +453,76 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 # Update data for all controllers
                 updateDataForAllControllers = {}
                 for controller in hass.data[DOMAIN][entry.entry_id]["allControllers"]:
-                    try:
-                        updateDataForAllControllers[controller] = await getCamData(
-                            hass, controller
-                        )
-                        hass.data[DOMAIN][entry.entry_id]["reauth_retries"] = 0
-                    except Exception as e:
-                        updateDataForAllControllers[controller] = False
-                        if str(e) == "Invalid authentication data":
-                            if hass.data[DOMAIN][entry.entry_id]["reauth_retries"] < 3:
-                                hass.data[DOMAIN][entry.entry_id]["reauth_retries"] += 1
-                                raise e
-                            else:
-                                hass.data[DOMAIN][entry.entry_id][
-                                    "refreshEnabled"
-                                ] = False
-                                raise ConfigEntryAuthFailed(e)
-                        LOGGER.error(e)
+                    controllerData = getDataForController(hass, entry, controller)
+                    if (
+                        controllerData["isChild"] is False
+                        and ts - controllerData["lastUpdate"] > MIN_UPDATE_INTERVAL_MAIN
+                    ) or (
+                        controllerData["isChild"] is True
+                        and ts - controllerData["lastUpdate"]
+                        > MIN_UPDATE_INTERVAL_CHILD
+                    ):
+                        timeForAnUpdate = True
+                        LOGGER.warn(f"Updating {controllerData['name']}...")
+                    else:
+                        timeForAnUpdate = False
+                        LOGGER.warn(f"Skipping update for {controllerData['name']}...")
+                    if timeForAnUpdate:
+                        try:
+                            updateDataForAllControllers[controller] = await getCamData(
+                                hass, controller
+                            )
+                            controllerData["lastUpdate"] = (
+                                datetime.datetime.utcnow().timestamp()
+                            )
+                            controllerData["reauth_retries"] = 0
+                        except Exception as e:
+                            updateDataForAllControllers[controller] = False
+                            if str(e) == "Invalid authentication data":
+                                if controllerData["reauth_retries"] < 3:
+                                    controllerData["reauth_retries"] += 1
+                                    raise e
+                                else:
+                                    controllerData["refreshEnabled"] = False
+                                    raise ConfigEntryAuthFailed(e)
+                            LOGGER.error(e)
 
-                hass.data[DOMAIN][entry.entry_id]["camData"] = (
-                    updateDataForAllControllers[tapoController]
-                )
+                if tapoController in updateDataForAllControllers:
+                    hass.data[DOMAIN][entry.entry_id]["camData"] = (
+                        updateDataForAllControllers[tapoController]
+                    )
 
-                LOGGER.debug("Updating entities...")
+                    LOGGER.debug("Updating entities...")
 
-                # Gather all entities, including of children devices
-                allEntities = getAllEntities(hass.data[DOMAIN][entry.entry_id])
+                    # Gather all entities, including of children devices
+                    allEntities = getAllEntities(hass.data[DOMAIN][entry.entry_id])
 
-                for entity in allEntities:
-                    if entity["entity"]._enabled:
-                        LOGGER.debug("Updating entity...")
-                        LOGGER.debug(entity["entity"])
-                        entity["camData"] = updateDataForAllControllers[
-                            entity["entry"]["controller"]
-                        ]
-                        entity["entity"].updateTapo(
-                            updateDataForAllControllers[entity["entry"]["controller"]]
-                        )
-                        entity["entity"].async_schedule_update_ha_state(True)
-                        # start noise detection
+                    for entity in allEntities:
                         if (
-                            not hass.data[DOMAIN][entry.entry_id]["noiseSensorStarted"]
-                            and entity["entity"]._is_noise_sensor
-                            and entity["entity"]._enable_sound_detection
+                            entity["entity"]._enabled
+                            and entity["entry"]["controller"]
+                            in updateDataForAllControllers
                         ):
-                            await entity["entity"].startNoiseDetection()
+                            LOGGER.debug("Updating entity...")
+                            LOGGER.debug(entity["entity"])
+                            entity["camData"] = updateDataForAllControllers[
+                                entity["entry"]["controller"]
+                            ]
+                            entity["entity"].updateTapo(
+                                updateDataForAllControllers[
+                                    entity["entry"]["controller"]
+                                ]
+                            )
+                            entity["entity"].async_schedule_update_ha_state(True)
+                            # start noise detection
+                            if (
+                                not hass.data[DOMAIN][entry.entry_id][
+                                    "noiseSensorStarted"
+                                ]
+                                and entity["entity"]._is_noise_sensor
+                                and entity["entity"]._enable_sound_detection
+                            ):
+                                await entity["entity"].startNoiseDetection()
 
                 if ("updateEntity" in hass.data[DOMAIN][entry.entry_id]) and hass.data[
                     DOMAIN
@@ -577,6 +605,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "camData": camData,
             "lastTimeSync": 0,
             "lastMediaCleanup": 0,
+            "lastUpdate": 0,
             "lastFirmwareCheck": 0,
             "latestFirmwareVersion": False,
             "mediaSyncColdDir": False,
@@ -639,6 +668,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         "camData": childCamData,
                         "lastTimeSync": 0,
                         "lastMediaCleanup": 0,
+                        "lastUpdate": 0,
                         "lastFirmwareCheck": 0,
                         "latestFirmwareVersion": False,
                         "motionSensorCreated": False,
