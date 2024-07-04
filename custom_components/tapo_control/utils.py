@@ -1307,7 +1307,10 @@ async def setupEvents(hass, config_entry):
         "Webhook enabled: " + str(config_entry.data.get(ENABLE_WEBHOOKS) is True)
     )
     LOGGER.debug("Using Webhooks: " + str(shouldUseWebhooks))
-    if not hass.data[DOMAIN][config_entry.entry_id]["events"].started:
+    if (
+        hass.data[DOMAIN][config_entry.entry_id]["events"] is not False
+        and not hass.data[DOMAIN][config_entry.entry_id]["events"].started
+    ):
         LOGGER.debug("Setting up events...")
         events = hass.data[DOMAIN][config_entry.entry_id]["events"]
         onvif_capabilities = await hass.data[DOMAIN][config_entry.entry_id][
