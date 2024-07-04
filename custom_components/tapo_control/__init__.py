@@ -248,16 +248,21 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     LOGGER.debug("Unloading tapo_control...")
-    await hass.config_entries.async_forward_entry_unload(entry, "binary_sensor")
-    await hass.config_entries.async_forward_entry_unload(entry, "sensor")
-    await hass.config_entries.async_forward_entry_unload(entry, "button")
-    await hass.config_entries.async_forward_entry_unload(entry, "camera")
-    await hass.config_entries.async_forward_entry_unload(entry, "light")
-    await hass.config_entries.async_forward_entry_unload(entry, "number")
-    await hass.config_entries.async_forward_entry_unload(entry, "select")
-    await hass.config_entries.async_forward_entry_unload(entry, "siren")
-    await hass.config_entries.async_forward_entry_unload(entry, "switch")
-    await hass.config_entries.async_forward_entry_unload(entry, "update")
+    await hass.config_entries.async_unload_platforms(
+        entry,
+        [
+            "binary_sensor",
+            "sensor",
+            "button",
+            "camera",
+            "light",
+            "number",
+            "select",
+            "siren",
+            "switch",
+            "update",
+        ],
+    )
 
     if hass.data[DOMAIN][entry.entry_id]["events"]:
         LOGGER.debug("Stopping events...")
@@ -287,6 +292,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     # Remove the entry data
     hass.data[DOMAIN].pop(entry_id, None)
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     if PYTAPO_REQUIRED_VERSION != PYTAPO_VERSION:
@@ -605,9 +611,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         }
 
         if camData["childDevices"] is False or camData["childDevices"] is None:
-            hass.async_create_task(
-                hass.config_entries.async_forward_entry_setup(entry, "camera")
+            await hass.async_create_task(
+                hass.config_entries.async_forward_entry_setups(entry, ["camera"])
             )
+
         else:
             hass.data[DOMAIN][entry.entry_id]["isParent"] = True
             for childDevice in camData["childDevices"]["child_device_list"]:
@@ -642,32 +649,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     }
                 )
 
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "switch")
-        )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "button")
-        )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "light")
-        )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "number")
-        )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "select")
-        )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "siren")
-        )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "update")
-        )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "binary_sensor")
-        )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "sensor")
+        await hass.async_create_task(
+            hass.config_entries.async_forward_entry_setups(
+                entry,
+                [
+                    "switch",
+                    "button",
+                    "light",
+                    "number",
+                    "select",
+                    "siren",
+                    "update",
+                    "binary_sensor",
+                    "sensor",
+                ],
+            )
         )
 
         # Needs to execute AFTER binary_sensor creation!
