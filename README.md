@@ -9,7 +9,7 @@ TP-Link is currently working on a new API solution that can be used by this inte
 If you wish to continue using this integration, until this issue is resolved, you will need to either:
 
 1. If your camera still works with integration: Block internet access of camera and stop using the official phone app temporarily if you are using firmware build 230921 and higher
-2. If your camera no longer works with integration: [Use older firmware](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/551#issuecomment-2061039421) (or see [guide](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/623#issue-2407464289)) than build 230921 and optionally factory reset camera
+2. If your camera no longer works with integration: [Use older firmware](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/625) than build 230921 and optionally factory reset camera
 
 Learn more and discuss at https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/551 .
 
