@@ -7,4 +7,4 @@
 5. Create the account credentials for your camera.
 6. Configure it in home assistant and done.
 
-Discovered & Documented by @vitorsemeano, discuss at https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/625#discussioncomment-10076931 .
+Discovered & Documented by [@vitorsemeano](https://github.com/vitorsemeano), discuss at https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/625#discussioncomment-10076931 .
