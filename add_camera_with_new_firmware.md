@@ -6,3 +6,5 @@
 4. When asks to reset it completely, do it, and configure the camera again.
 5. Create the account credentials for your camera.
 6. Configure it in home assistant and done.
+
+Discovered & Documented by @vitorsemeano, discuss at https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/625#discussioncomment-10076931 .
