@@ -499,6 +499,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             updateDataForAllControllers[controller] = await getCamData(
                                 hass, controller
                             )
+                            LOGGER.warn(updateDataForAllControllers[controller])
                             controllerData["isRunningOnBattery"] = (
                                 True
                                 if (
