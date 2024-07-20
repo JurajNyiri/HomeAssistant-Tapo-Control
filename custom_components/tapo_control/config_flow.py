@@ -961,10 +961,54 @@ class TapoOptionsFlowHandler(OptionsFlow):
     async def async_step_update_interval(self, user_input=None):
         """Manage the Tapo options."""
         LOGGER.debug(
-            "[%s] Opened Tapo options - update interval -- TODO.",
+            "[%s] Opened Tapo options - update interval",
             self.config_entry.data[CONF_IP_ADDRESS],
         )
-        return await self.async_step_init()
+        errors = {}
+        updateIntervalMain = self.config_entry.data[UPDATE_INTERVAL_MAIN]
+        updateIntervalBattery = self.config_entry.data[UPDATE_INTERVAL_BATTERY]
+
+        allConfigData = {**self.config_entry.data}
+        if user_input is not None:
+            try:
+                if UPDATE_INTERVAL_MAIN in user_input:
+                    updateIntervalMain = user_input[UPDATE_INTERVAL_MAIN]
+                else:
+                    updateIntervalMain = UPDATE_INTERVAL_MAIN_DEFAULT
+
+                if UPDATE_INTERVAL_BATTERY in user_input:
+                    updateIntervalBattery = user_input[UPDATE_INTERVAL_BATTERY]
+                else:
+                    updateIntervalBattery = UPDATE_INTERVAL_BATTERY_DEFAULT
+
+                allConfigData[UPDATE_INTERVAL_MAIN] = updateIntervalMain
+                allConfigData[UPDATE_INTERVAL_BATTERY] = updateIntervalBattery
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry,
+                    data=allConfigData,
+                )
+                await self.hass.config_entries.async_reload(self.config_entry.entry_id)
+                return self.async_create_entry(title="", data=None)
+            except Exception as e:
+                errors["base"] = "unknown"
+                LOGGER.error(e)
+
+        return self.async_show_form(
+            step_id="update_interval",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        UPDATE_INTERVAL_MAIN,
+                        description={"suggested_value": updateIntervalMain},
+                    ): int,
+                    vol.Required(
+                        UPDATE_INTERVAL_BATTERY,
+                        description={"suggested_value": updateIntervalBattery},
+                    ): int,
+                }
+            ),
+            errors=errors,
+        )
 
     async def async_step_media(self, user_input=None):
         """Manage the Tapo options."""
