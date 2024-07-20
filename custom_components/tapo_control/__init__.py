@@ -295,12 +295,26 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     hotDirPath = getHotDirPathForEntry(hass, entry_id)
 
     # Delete all media stored in cold storage for entity
-    LOGGER.debug("Deleting cold storage files for entity " + entry_id + "...")
-    deleteDir(coldDirPath)
+    if coldDirPath:
+        LOGGER.debug("Deleting cold storage files for entity " + entry_id + "...")
+        await deleteDir(hass, coldDirPath)
+    else:
+        LOGGER.warn(
+            "No cold storage path found for entity"
+            + entry_id
+            + ". Not deleting anything."
+        )
 
     # Delete all media stored in hot storage for entity
-    LOGGER.debug("Deleting hot storage files for entity " + entry_id + "...")
-    deleteDir(hotDirPath)
+    if hotDirPath:
+        LOGGER.debug("Deleting hot storage files for entity " + entry_id + "...")
+        await deleteDir(hass, hotDirPath)
+    else:
+        LOGGER.warn(
+            "No hot storage path found for entity"
+            + entry_id
+            + ". Not deleting anything."
+        )
 
     # Remove the entry data
     hass.data[DOMAIN].pop(entry_id, None)
