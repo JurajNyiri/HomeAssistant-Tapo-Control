@@ -24,29 +24,29 @@ async def async_setup_entry(
     LOGGER.debug("Setting up sensors")
     entry = hass.data[DOMAIN][config_entry.entry_id]
 
-    async def setup_entities(entry: dict) -> list:
+    async def setupEntities(entry: dict) -> list:
         """Setup the entities."""
         sensors = []
 
         if "camData" in entry:
-            cam_data: dict = entry["camData"]
-            if "basic_info" in cam_data and "battery_percent" in cam_data["basic_info"]:
+            camData: dict = entry["camData"]
+            if "basic_info" in camData and "battery_percent" in camData["basic_info"]:
                 LOGGER.debug("Adding tapoBatterySensor...")
                 sensors.append(TapoBatterySensor(entry, hass, config_entry))
 
-            if cam_data.get("connectionInformation", False) is not False:
-                if "ssid" in cam_data["connectionInformation"]:
+            if camData.get("connectionInformation", False) is not False:
+                if "ssid" in camData["connectionInformation"]:
                     LOGGER.debug("Adding TapoSSIDSensor...")
                     sensors.append(TapoSSIDSensor(entry, hass, config_entry))
-                if "link_type" in cam_data["connectionInformation"]:
+                if "link_type" in camData["connectionInformation"]:
                     LOGGER.debug("Adding TapoLinkTypeSensor...")
                     sensors.append(TapoLinkTypeSensor(entry, hass, config_entry))
-                if "rssiValue" in cam_data["connectionInformation"]:
+                if "rssiValue" in camData["connectionInformation"]:
                     LOGGER.debug("Adding TapoRSSISensor...")
                     sensors.append(TapoRSSISensor(entry, hass, config_entry))
 
-            if "sdCardData" in cam_data and len(cam_data["sdCardData"]) > 0:
-                for hdd in cam_data["sdCardData"]:
+            if "sdCardData" in camData and len(camData["sdCardData"]) > 0:
+                for hdd in camData["sdCardData"]:
                     for field in hdd:
                         LOGGER.debug(
                             "Adding TapoHDDSensor for disk %s and property %s...",
@@ -63,9 +63,9 @@ async def async_setup_entry(
 
         return sensors
 
-    sensors = await setup_entities(entry)
-    for child_device in entry["childDevices"]:
-        sensors.extend(await setup_entities(child_device))
+    sensors = await setupEntities(entry)
+    for childDevice in entry["childDevices"]:
+        sensors.extend(await setupEntities(childDevice))
 
     async_add_entities(sensors)
 
@@ -93,7 +93,6 @@ class TapoRSSISensor(TapoSensorEntity):
         )
 
     async def async_update(self) -> None:
-        """Update the entity."""
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData: dict | None) -> None:
