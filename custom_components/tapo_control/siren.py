@@ -179,7 +179,7 @@ def result_has_error(result):
                 result["result"]["responses"],
             )
         )
-    ) or result is False:
+    ):
         return False
     if "error_code" not in result or result["error_code"] == 0:
         return False
