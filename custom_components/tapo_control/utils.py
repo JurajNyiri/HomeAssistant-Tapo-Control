@@ -984,24 +984,95 @@ async def getCamData(hass, controller):
             flip = None
     camData["flip"] = flip
 
+    hubSiren = False
+    alarmConfig = None
+    alarmStatus = False
+    alarmSirenTypeList = []
     try:
-        alarmData = data["getLastAlarmInfo"][0]["msg_alarm"]["chn1_msg_alarm_info"]
-        alarm = alarmData["enabled"]
-        alarm_mode = alarmData["alarm_mode"]
-    except Exception:
-        alarm = None
-        alarm_mode = None
+        if data["getSirenConfig"][0] != False:
+            hubSiren = True
+            sirenData = data["getSirenConfig"][0]
+            alarmConfig = {
+                "siren_type": sirenData["siren_type"],
+                "siren_volume": sirenData["volume"],
+                "siren_duration": sirenData["duration"],
+            }
+    except Exception as err:
+        LOGGER.error(f"getSirenConfig unexpected error {err=}, {type(err)=}")
 
-    if alarm is None or alarm_mode is None:
-        try:
+    try:
+        if not hubSiren and data["getAlarmConfig"][0] != False:
             alarmData = data["getAlarmConfig"][0]
-            alarm = alarmData["enabled"]
-            alarm_mode = alarmData["alarm_mode"]
-        except Exception:
-            alarm = None
-            alarm_mode = None
-    camData["alarm"] = alarm
-    camData["alarm_mode"] = alarm_mode
+            alarmConfig = {
+                "mode": alarmData["alarm_mode"],
+                "automatic": alarmData["enabled"],
+            }
+            if "light_type" in alarmData:
+                alarmConfig["light_type"] = alarmData["light_type"]
+            if "siren_type" in alarmData:
+                alarmConfig["siren_type"] = alarmData["siren_type"]
+            if "siren_duration" in alarmData:
+                alarmConfig["siren_duration"] = alarmData["siren_duration"]
+            if "alarm_duration" in alarmData:
+                alarmConfig["alarm_duration"] = alarmData["alarm_duration"]
+            if "siren_volume" in alarmData:
+                alarmConfig["siren_volume"] = alarmData["siren_volume"]
+            if "alarm_volume" in alarmData:
+                alarmConfig["alarm_volume"] = alarmData["alarm_volume"]
+
+    except Exception as err:
+        LOGGER.error(f"getAlarmConfig unexpected error {err=}, {type(err)=}")
+
+    try:
+        if (
+            alarmConfig is None
+            and "msg_alarm" in data["getLastAlarmInfo"][0]
+            and "chn1_msg_alarm_info" in data["getLastAlarmInfo"][0]["msg_alarm"]
+            and data["getLastAlarmInfo"][0]["msg_alarm"]["chn1_msg_alarm_info"] != False
+        ):
+            alarmData = data["getLastAlarmInfo"][0]["msg_alarm"]["chn1_msg_alarm_info"]
+            alarmConfig = {
+                "mode": alarmData["alarm_mode"],
+                "automatic": alarmData["enabled"],
+            }
+            if "light_type" in alarmData:
+                alarmConfig["light_type"] = alarmData["light_type"]
+            if "siren_type" in alarmData:
+                alarmConfig["siren_type"] = alarmData["siren_type"]
+            if "siren_duration" in alarmData:
+                alarmConfig["siren_duration"] = alarmData["siren_duration"]
+            if "alarm_duration" in alarmData:
+                alarmConfig["alarm_duration"] = alarmData["alarm_duration"]
+            if "siren_volume" in alarmData:
+                alarmConfig["siren_volume"] = alarmData["siren_volume"]
+            if "alarm_volume" in alarmData:
+                alarmConfig["alarm_volume"] = alarmData["alarm_volume"]
+    except Exception as err:
+        LOGGER.error(f"getLastAlarmInfo unexpected error {err=}, {type(err)=}")
+
+    try:
+        if (
+            data["getSirenStatus"][0] is not False
+            and "status" in data["getSirenStatus"][0]
+        ):
+            alarmStatus = data["getSirenStatus"][0]["status"]
+    except Exception as err:
+        LOGGER.error(f"getSirenStatus unexpected error {err=}, {type(err)=}")
+
+    if alarmConfig is not None:
+        try:
+            if (
+                data["getSirenTypeList"][0] is not False
+                and "siren_type_list" in data["getSirenTypeList"][0]
+            ):
+                alarmSirenTypeList = data["getSirenTypeList"][0]["siren_type_list"]
+        except Exception as err:
+            LOGGER.error(f"getSirenTypeList unexpected error {err=}, {type(err)=}")
+
+    camData["alarm_config"] = alarmConfig
+    camData["alarm_status"] = alarmStatus
+    camData["alarm_is_hubSiren"] = hubSiren
+    camData["alarm_siren_type_list"] = alarmSirenTypeList
 
     try:
         led = data["getLedStatus"][0]["led"]["config"]["enabled"]
@@ -1327,12 +1398,6 @@ def pytapoFunctionMap(pytapoFunctionName):
         return ["getLensMaskConfig"]
     elif pytapoFunctionName == "getNotificationsEnabled":
         return ["getMsgPushConfig"]
-    elif pytapoFunctionName == "getWhitelampStatus":
-        return ["getWhitelampStatus"]
-    elif pytapoFunctionName == "getRecordPlan":
-        return ["getRecordPlan"]
-    elif pytapoFunctionName == "getWhitelampConfig":
-        return ["getWhitelampConfig"]
     elif pytapoFunctionName == "getBasicInfo":
         return ["getDeviceInfo"]
     elif pytapoFunctionName == "getMotionDetection":
@@ -1363,16 +1428,10 @@ def pytapoFunctionMap(pytapoFunctionName):
         return ["getTargetTrackConfig"]
     elif pytapoFunctionName == "getPresets":
         return ["getPresetConfig"]
-    elif pytapoFunctionName == "getFirmwareUpdateStatus":
-        return ["getFirmwareUpdateStatus"]
-    elif pytapoFunctionName == "getMediaEncrypt":
-        return ["getMediaEncrypt"]
     elif pytapoFunctionName == "getLightFrequencyMode":
         return ["getLightFrequencyInfo", "getLightFrequencyCapability"]
     elif pytapoFunctionName == "getChildDevices":
         return ["getChildDeviceList"]
-    elif pytapoFunctionName == "getRotationStatus":
-        return ["getRotationStatus"]
     elif pytapoFunctionName == "getForceWhitelampState":
         return ["getLdc"]
     elif pytapoFunctionName == "getDayNightMode":
@@ -1381,17 +1440,7 @@ def pytapoFunctionMap(pytapoFunctionName):
         return ["getRotationStatus", "getLdc"]
     elif pytapoFunctionName == "getLensDistortionCorrection":
         return ["getLdc"]
-    elif pytapoFunctionName == "getAudioConfig":
-        return ["getAudioConfig"]
-    elif pytapoFunctionName == "getFirmwareAutoUpgradeConfig":
-        return ["getFirmwareAutoUpgradeConfig"]
-    elif pytapoFunctionName == "getSirenTypeList":
-        return ["getSirenTypeList"]
-    elif pytapoFunctionName == "getVideoQualities":
-        return ["getVideoQualities"]
-    elif pytapoFunctionName == "getVideoCapability":
-        return ["getVideoCapability"]
-    return []
+    return [pytapoFunctionName]
 
 
 def isCacheSupported(check_function, rawData):
