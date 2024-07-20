@@ -759,7 +759,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         "latestFirmwareVersion": False,
                         "motionSensorCreated": False,
                         "entities": [],
-                        "name": camData["basic_info"]["device_alias"],
+                        "name": childCamData["basic_info"]["device_alias"],
                         "childDevices": [],
                         "isChild": True,
                         "isRunningOnBattery": (
