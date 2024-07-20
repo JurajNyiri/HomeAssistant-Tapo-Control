@@ -480,14 +480,48 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                 if (
                                     "basic_info"
                                     in updateDataForAllControllers[controller]
-                                    and "power"
-                                    in updateDataForAllControllers[controller][
-                                        "basic_info"
-                                    ]
-                                    and updateDataForAllControllers[controller][
-                                        "basic_info"
-                                    ]["power"]
-                                    == "BATTERY"
+                                    and (
+                                        (
+                                            "power"
+                                            in updateDataForAllControllers[controller][
+                                                "basic_info"
+                                            ]
+                                            and (
+                                                (
+                                                    updateDataForAllControllers[
+                                                        controller
+                                                    ]["basic_info"]["power"]
+                                                    == "BATTERY"
+                                                )
+                                                or (
+                                                    updateDataForAllControllers[
+                                                        controller
+                                                    ]["basic_info"]["power"]
+                                                    == "SOLAR"
+                                                )
+                                            )
+                                        )
+                                        or (
+                                            "power_mode"
+                                            in updateDataForAllControllers[controller][
+                                                "basic_info"
+                                            ]
+                                            and (
+                                                (
+                                                    updateDataForAllControllers[
+                                                        controller
+                                                    ]["basic_info"]["power_mode"]
+                                                    == "BATTERY"
+                                                )
+                                                or (
+                                                    updateDataForAllControllers[
+                                                        controller
+                                                    ]["basic_info"]["power_mode"]
+                                                    == "SOLAR"
+                                                )
+                                            )
+                                        )
+                                    )
                                 )
                                 else False
                             )
