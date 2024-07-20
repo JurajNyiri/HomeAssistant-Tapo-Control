@@ -1398,12 +1398,6 @@ def pytapoFunctionMap(pytapoFunctionName):
         return ["getLensMaskConfig"]
     elif pytapoFunctionName == "getNotificationsEnabled":
         return ["getMsgPushConfig"]
-    elif pytapoFunctionName == "getWhitelampStatus":
-        return ["getWhitelampStatus"]
-    elif pytapoFunctionName == "getRecordPlan":
-        return ["getRecordPlan"]
-    elif pytapoFunctionName == "getWhitelampConfig":
-        return ["getWhitelampConfig"]
     elif pytapoFunctionName == "getBasicInfo":
         return ["getDeviceInfo"]
     elif pytapoFunctionName == "getMotionDetection":
@@ -1434,16 +1428,10 @@ def pytapoFunctionMap(pytapoFunctionName):
         return ["getTargetTrackConfig"]
     elif pytapoFunctionName == "getPresets":
         return ["getPresetConfig"]
-    elif pytapoFunctionName == "getFirmwareUpdateStatus":
-        return ["getFirmwareUpdateStatus"]
-    elif pytapoFunctionName == "getMediaEncrypt":
-        return ["getMediaEncrypt"]
     elif pytapoFunctionName == "getLightFrequencyMode":
         return ["getLightFrequencyInfo", "getLightFrequencyCapability"]
     elif pytapoFunctionName == "getChildDevices":
         return ["getChildDeviceList"]
-    elif pytapoFunctionName == "getRotationStatus":
-        return ["getRotationStatus"]
     elif pytapoFunctionName == "getForceWhitelampState":
         return ["getLdc"]
     elif pytapoFunctionName == "getDayNightMode":
@@ -1452,17 +1440,7 @@ def pytapoFunctionMap(pytapoFunctionName):
         return ["getRotationStatus", "getLdc"]
     elif pytapoFunctionName == "getLensDistortionCorrection":
         return ["getLdc"]
-    elif pytapoFunctionName == "getAudioConfig":
-        return ["getAudioConfig"]
-    elif pytapoFunctionName == "getFirmwareAutoUpgradeConfig":
-        return ["getFirmwareAutoUpgradeConfig"]
-    elif pytapoFunctionName == "getSirenTypeList":
-        return ["getSirenTypeList"]
-    elif pytapoFunctionName == "getVideoQualities":
-        return ["getVideoQualities"]
-    elif pytapoFunctionName == "getVideoCapability":
-        return ["getVideoCapability"]
-    return []
+    return [pytapoFunctionName]
 
 
 def isCacheSupported(check_function, rawData):
