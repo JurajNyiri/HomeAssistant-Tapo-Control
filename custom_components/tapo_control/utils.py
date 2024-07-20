@@ -113,33 +113,46 @@ def getDataPath():
 
 
 def getColdDirPathForEntry(hass: HomeAssistant, entry_id: str):
-    if hass.data[DOMAIN][entry_id]["mediaSyncColdDir"] is False:
-        entry: ConfigEntry = hass.data[DOMAIN][entry_id]["entry"]
-        media_sync_cold_storage_path = entry.data.get(MEDIA_SYNC_COLD_STORAGE_PATH)
-        if media_sync_cold_storage_path == "":
-            coldDirPath = os.path.join(getDataPath(), f".storage/{DOMAIN}/{entry_id}/")
-        else:
-            coldDirPath = f"{media_sync_cold_storage_path}/"
+    # Fast retrieval of path without file IO
+    if (
+        entry_id in hass.data[DOMAIN]
+        and hass.data[DOMAIN][entry_id]["mediaSyncColdDir"] is not False
+    ):
+        return hass.data[DOMAIN][entry_id]["mediaSyncColdDir"].rstrip("/")
 
+    coldDirPath = os.path.join(getDataPath(), f".storage/{DOMAIN}/{entry_id}/")
+    if entry_id in hass.data[DOMAIN]:
+        entry: ConfigEntry = hass.data[DOMAIN][entry_id]["entry"]
+    else:  # if device is disabled, get entry from HA storage
+        entry: ConfigEntry = hass.config_entries.async_get_entry(entry_id)
+
+    media_sync_cold_storage_path = entry.data.get(MEDIA_SYNC_COLD_STORAGE_PATH)
+
+    if not media_sync_cold_storage_path == "":
+        coldDirPath = f"{media_sync_cold_storage_path}/"
+
+    if entry_id in hass.data[DOMAIN]:
         pathlib.Path(coldDirPath + "/videos").mkdir(parents=True, exist_ok=True)
         pathlib.Path(coldDirPath + "/thumbs").mkdir(parents=True, exist_ok=True)
         hass.data[DOMAIN][entry_id]["mediaSyncColdDir"] = coldDirPath
 
-    coldDirPath = hass.data[DOMAIN][entry_id]["mediaSyncColdDir"]
-    coldDirPath = coldDirPath.rstrip("/")
-    return coldDirPath
+    return coldDirPath.rstrip("/")
 
 
 def getHotDirPathForEntry(hass: HomeAssistant, entry_id: str):
-    if hass.data[DOMAIN][entry_id]["mediaSyncHotDir"] is False:
-        hotDirPath = os.path.join(getDataPath(), f"www/{DOMAIN}/{entry_id}/")
-        pathlib.Path(hotDirPath + "/videos").mkdir(parents=True, exist_ok=True)
-        pathlib.Path(hotDirPath + "/thumbs").mkdir(parents=True, exist_ok=True)
-        hass.data[DOMAIN][entry_id]["mediaSyncHotDir"] = hotDirPath
+    if hass.data[DOMAIN][entry_id]["mediaSyncHotDir"] is not False:
+        return hass.data[DOMAIN][entry_id]["mediaSyncHotDir"].rstrip("/")
 
-    hotDirPath = hass.data[DOMAIN][entry_id]["mediaSyncHotDir"]
-    hotDirPath = hotDirPath.rstrip("/")
-    return hotDirPath
+    hotDirPath = os.path.join(getDataPath(), f"www/{DOMAIN}/{entry_id}/")
+
+    if entry_id in hass.data[DOMAIN]:
+        if hass.data[DOMAIN][entry_id]["mediaSyncHotDir"] is False:
+            pathlib.Path(hotDirPath + "/videos").mkdir(parents=True, exist_ok=True)
+            pathlib.Path(hotDirPath + "/thumbs").mkdir(parents=True, exist_ok=True)
+            hass.data[DOMAIN][entry_id]["mediaSyncHotDir"] = hotDirPath
+
+        hotDirPath = hass.data[DOMAIN][entry_id]["mediaSyncHotDir"]
+    return hotDirPath.rstrip("/")
 
 
 async def getRecordings(hass, entry_id, date):
@@ -379,7 +392,7 @@ async def mediaCleanup(hass, entry):
     await deleteFilesOlderThan(hass, hotDirPath + "/thumbs/", HOT_DIR_DELETE_TIME)
 
 
-def deleteDir(dirPath):
+async def deleteDir(hass, dirPath):
     if (
         os.path.exists(dirPath)
         and os.path.isdir(dirPath)
@@ -387,7 +400,7 @@ def deleteDir(dirPath):
         and "tapo_control/" in dirPath
     ):
         LOGGER.debug("Deleting folder " + dirPath + "...")
-        shutil.rmtree(dirPath)
+        await hass.async_add_executor_job(shutil.rmtree, dirPath)
 
 
 async def deleteFilesOlderThan(hass: HomeAssistant, dirPath, deleteOlderThan):
@@ -1287,6 +1300,7 @@ async def getLatestFirmwareVersion(hass, config_entry, entry, controller):
 async def syncTime(hass, entry_id):
     device_mgmt = hass.data[DOMAIN][entry_id]["onvifManagement"]
     if device_mgmt:
+        LOGGER.debug("Syncing time for " + entry_id + "...")
         now = datetime.datetime.utcnow()
 
         time_params = device_mgmt.create_type("SetSystemDateAndTime")
