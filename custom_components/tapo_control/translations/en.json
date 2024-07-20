@@ -104,6 +104,13 @@
         },
         "description": "Modify settings of recordings media synchronization"
       },
+      "update_interval": {
+        "data": {
+          "update_interval_main": "Minimum update interval when powered from mains",
+          "update_interval_battery": "Minimum update interval when powered by solar or battery"
+        },
+        "description": "Modify update interval of the device"
+      },
       "auth": {
         "data": {
           "ip_address": "IP Address",
