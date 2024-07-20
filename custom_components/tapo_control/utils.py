@@ -948,7 +948,7 @@ async def getCamData(hass, controller):
 
     hubSiren = False
     alarmConfig = None
-    alarmStatus = None
+    alarmStatus = False
     alarmSirenTypeList = []
     try:
         if data["getSirenConfig"][0] != False:
