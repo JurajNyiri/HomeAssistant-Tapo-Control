@@ -138,6 +138,30 @@ async def async_setup_entry(
                 LOGGER.debug("Adding tapoMicrophoneNoiseCancellationSwitch...")
                 switches.append(tapoMicrophoneNoiseCancellationSwitch)
 
+        if (
+            "videoCapability" in entry["camData"]
+            and entry["camData"]["videoCapability"] is not None
+            and entry["camData"]["videoCapability"] is not False
+            and "video_capability" in entry["camData"]["videoCapability"]
+            and "main" in entry["camData"]["videoCapability"]["video_capability"]
+            and "hdrs"
+            in entry["camData"]["videoCapability"]["video_capability"]["main"]
+            and "videoQualities" in entry["camData"]
+            and "video" in entry["camData"]["videoQualities"]
+            and "main" in entry["camData"]["videoQualities"]["video"]
+            and "hdr" in entry["camData"]["videoQualities"]["video"]["main"]
+        ):
+            tapoHDRSwitch = await check_and_create(
+                entry,
+                hass,
+                TapoHDRSwitch,
+                "getVideoQualities",
+                config_entry,
+            )
+            if tapoHDRSwitch:
+                LOGGER.debug("Adding tapoHDRSwitch...")
+                switches.append(tapoHDRSwitch)
+
         return switches
 
     switches = await setupEntities(entry)
@@ -150,6 +174,54 @@ async def async_setup_entry(
         async_add_entities(switches)
     else:
         LOGGER.debug("No switch entities available.")
+
+
+class TapoHDRSwitch(TapoSwitchEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        TapoSwitchEntity.__init__(
+            self,
+            "HDR",
+            entry,
+            hass,
+            config_entry,
+            "mdi:hdr",
+        )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_on(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setHDR,
+            True,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "on"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_off(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setHDR,
+            False,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "off"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if (
+            not camData
+            or "videoQualities" not in camData
+            or "video" not in camData["videoQualities"]
+            or "main" not in camData["videoQualities"]["video"]
+            or "hdr" not in camData["videoQualities"]["video"]["main"]
+        ):
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            self._attr_is_on = camData["videoQualities"]["video"]["main"]["hdr"] == "1"
+            self._attr_state = "on" if self._attr_is_on else "off"
 
 
 class TapoRecordingPlanSwitch(TapoSwitchEntity):

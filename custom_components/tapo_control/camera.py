@@ -84,7 +84,6 @@ class TapoCamEntity(Camera):
         self._extra_arguments = config_entry.data.get(CONF_EXTRA_ARGUMENTS)
         self._enable_stream = config_entry.data.get(ENABLE_STREAM)
         self._attr_extra_state_attributes = entry["camData"]["basic_info"]
-        self._attr_motion_detection_enabled = False
         self._attr_icon = "mdi:cctv"
         self._attr_should_poll = True
         self._is_cam_entity = True
@@ -141,6 +140,7 @@ class TapoCamEntity(Camera):
         return self._attr_extra_state_attributes["device_model"]
 
     async def async_camera_image(self, width=None, height=None):
+        LOGGER.debug("async_camera_image - camera")
         ffmpeg = ImageFrame(self._ffmpeg.binary)
         streaming_url = getStreamSource(self._config_entry, self._hdstream)
         image = await asyncio.shield(
@@ -153,6 +153,7 @@ class TapoCamEntity(Camera):
         return image
 
     async def handle_async_mjpeg_stream(self, request):
+        LOGGER.debug("handle_async_mjpeg_stream - camera")
         streaming_url = getStreamSource(self._config_entry, self._hdstream)
         stream = CameraMjpeg(self._ffmpeg.binary)
         await stream.open_camera(
@@ -171,21 +172,13 @@ class TapoCamEntity(Camera):
             await stream.close()
 
     async def async_update(self) -> None:
-        try:
-            data = await self._hass.async_add_executor_job(
-                self._controller.getMotionDetection
-            )
-            self._attr_motion_detection_enabled = (
-                "enabled" in data and data["enabled"] == "on"
-            )
-        except Exception:
-            self._attr_state = STATE_UNAVAILABLE
         await self._coordinator.async_request_refresh()
 
     async def stream_source(self):
         return getStreamSource(self._config_entry, self._hdstream)
 
     def updateTapo(self, camData):
+        LOGGER.debug("updateTapo - camera")
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
@@ -204,42 +197,59 @@ class TapoCamEntity(Camera):
             self._attr_extra_state_attributes["presets"] = camData["presets"]
             if camData["recordPlan"]:
                 self._attr_extra_state_attributes["record_plan"] = {
-                    "sunday": camData["recordPlan"]["sunday"]
-                    if "sunday" in camData["recordPlan"]
-                    else None,
-                    "monday": camData["recordPlan"]["monday"]
-                    if "monday" in camData["recordPlan"]
-                    else None,
-                    "tuesday": camData["recordPlan"]["tuesday"]
-                    if "tuesday" in camData["recordPlan"]
-                    else None,
-                    "wednesday": camData["recordPlan"]["wednesday"]
-                    if "wednesday" in camData["recordPlan"]
-                    else None,
-                    "thursday": camData["recordPlan"]["thursday"]
-                    if "thursday" in camData["recordPlan"]
-                    else None,
-                    "friday": camData["recordPlan"]["friday"]
-                    if "friday" in camData["recordPlan"]
-                    else None,
-                    "saturday": camData["recordPlan"]["saturday"]
-                    if "saturday" in camData["recordPlan"]
-                    else None,
+                    "sunday": (
+                        camData["recordPlan"]["sunday"]
+                        if "sunday" in camData["recordPlan"]
+                        else None
+                    ),
+                    "monday": (
+                        camData["recordPlan"]["monday"]
+                        if "monday" in camData["recordPlan"]
+                        else None
+                    ),
+                    "tuesday": (
+                        camData["recordPlan"]["tuesday"]
+                        if "tuesday" in camData["recordPlan"]
+                        else None
+                    ),
+                    "wednesday": (
+                        camData["recordPlan"]["wednesday"]
+                        if "wednesday" in camData["recordPlan"]
+                        else None
+                    ),
+                    "thursday": (
+                        camData["recordPlan"]["thursday"]
+                        if "thursday" in camData["recordPlan"]
+                        else None
+                    ),
+                    "friday": (
+                        camData["recordPlan"]["friday"]
+                        if "friday" in camData["recordPlan"]
+                        else None
+                    ),
+                    "saturday": (
+                        camData["recordPlan"]["saturday"]
+                        if "saturday" in camData["recordPlan"]
+                        else None
+                    ),
                 }
 
     async def async_enable_motion_detection(self):
+        LOGGER.debug("async_enable_motion_detection - camera")
         await self.hass.async_add_executor_job(
             self._controller.setMotionDetection, True
         )
         await self._coordinator.async_request_refresh()
 
     async def async_disable_motion_detection(self):
+        LOGGER.debug("async_disable_motion_detection - camera")
         await self.hass.async_add_executor_job(
             self._controller.setMotionDetection, False
         )
         await self._coordinator.async_request_refresh()
 
     async def async_turn_on(self):
+        LOGGER.debug("async_turn_on - camera")
         await self._hass.async_add_executor_job(
             self._controller.setPrivacyMode,
             False,
@@ -247,6 +257,7 @@ class TapoCamEntity(Camera):
         await self._coordinator.async_request_refresh()
 
     async def async_turn_off(self):
+        LOGGER.debug("async_turn_off - camera")
         await self._hass.async_add_executor_job(
             self._controller.setPrivacyMode,
             True,
@@ -254,6 +265,7 @@ class TapoCamEntity(Camera):
         await self._coordinator.async_request_refresh()
 
     async def save_preset(self, name):
+        LOGGER.debug("save_preset - camera")
         if not name == "" and not name.isnumeric():
             await self.hass.async_add_executor_job(self._controller.savePreset, name)
             await self._coordinator.async_request_refresh()
@@ -263,6 +275,7 @@ class TapoCamEntity(Camera):
             )
 
     async def delete_preset(self, preset):
+        LOGGER.debug("delete_preset - camera")
         if preset.isnumeric():
             await self.hass.async_add_executor_job(
                 self._controller.deletePreset, preset

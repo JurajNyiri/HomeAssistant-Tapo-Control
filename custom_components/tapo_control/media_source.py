@@ -5,7 +5,6 @@ TODO:
 - Handle weird error that sometimes happens causing downloader to get stuck and never recovers until restart
 """
 
-
 from __future__ import annotations
 
 
@@ -78,7 +77,7 @@ class TapoMediaSource(MediaSource):
                 await getRecording(
                     self.hass, tapoController, entry, date, startDate, endDate
                 )
-                url = getWebFile(self.hass, entry, startDate, endDate, "videos")
+                url = await getWebFile(self.hass, entry, startDate, endDate, "videos")
                 LOGGER.debug(url)
             except Exception as e:
                 LOGGER.error(e)
@@ -203,16 +202,16 @@ class TapoMediaSource(MediaSource):
                 videoNames = sorted(
                     videoNames,
                     key=lambda x: x["startDate"],
-                    reverse=True
-                    if media_view_recordings_order == "Descending"
-                    else False,
+                    reverse=(
+                        True if media_view_recordings_order == "Descending" else False
+                    ),
                 )
 
                 dateChildren = []
                 for data in videoNames:
                     fileName = getFileName(data["startDate"], data["endDate"], False)
                     if fileName in self.hass.data[DOMAIN][entry]["downloadedStreams"]:
-                        thumbLink = getWebFile(
+                        thumbLink = await getWebFile(
                             self.hass,
                             entry,
                             data["startDate"],

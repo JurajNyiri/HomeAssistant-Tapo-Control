@@ -211,8 +211,8 @@ class TapoBatterySensor(TapoSensorEntity):
             entry,
             hass,
             config_entry,
-            None,
             "mdi:battery",
+            SensorDeviceClass.BATTERY,
         )
 
     @property
@@ -294,12 +294,39 @@ class TapoSyncSensor(TapoSensorEntity):
 
     def updateTapo(self, camData):
         enableMediaSync = self._config_entry.data.get(ENABLE_MEDIA_SYNC)
+        LOGGER.debug(f"Enable Media Sync: {enableMediaSync}")
         if enableMediaSync:
+            LOGGER.debug(
+                f"Initial Media Scan: {self._hass.data[DOMAIN][self._config_entry.entry_id]['initialMediaScanDone']}"
+            )
+            LOGGER.debug(
+                f"Media Sync Available: {self._hass.data[DOMAIN][self._config_entry.entry_id]['mediaSyncAvailable']}"
+            )
+            LOGGER.debug(
+                f"Download Progress: {self._hass.data[DOMAIN][self._config_entry.entry_id]['downloadProgress']}"
+            )
+            LOGGER.debug(
+                f"Running media sync: {self._hass.data[DOMAIN][self._config_entry.entry_id]['runningMediaSync']}"
+            )
+            LOGGER.debug(
+                f"Media Sync Schedueled: {self._hass.data[DOMAIN][self._config_entry.entry_id]['mediaSyncScheduled']}"
+            )
+            LOGGER.debug(
+                f"Media Sync Ran Once: {self._hass.data[DOMAIN][self._config_entry.entry_id]['mediaSyncRanOnce']}"
+            )
+
             if not self._hass.data[DOMAIN][self._config_entry.entry_id][
                 "initialMediaScanDone"
-            ]:
+            ] or (
+                self._hass.data[DOMAIN][self._config_entry.entry_id][
+                    "initialMediaScanDone"
+                ]
+                and not self._hass.data[DOMAIN][self._config_entry.entry_id][
+                    "mediaSyncRanOnce"
+                ]
+            ):
                 self._attr_state = "Starting"
-            if not self._hass.data[DOMAIN][self._config_entry.entry_id][
+            elif not self._hass.data[DOMAIN][self._config_entry.entry_id][
                 "mediaSyncAvailable"
             ]:
                 self._attr_state = "No Recordings Found"

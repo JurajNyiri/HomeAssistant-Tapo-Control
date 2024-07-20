@@ -46,11 +46,16 @@ from .const import (
     TIME_SYNC_PERIOD,
     UPDATE_CHECK_PERIOD,
     PYTAPO_REQUIRED_VERSION,
+    UPDATE_INTERVAL_BATTERY,
+    UPDATE_INTERVAL_BATTERY_DEFAULT,
+    UPDATE_INTERVAL_MAIN,
+    UPDATE_INTERVAL_MAIN_DEFAULT,
 )
 from .utils import (
     convert_to_timestamp,
     deleteDir,
     getColdDirPathForEntry,
+    getDataForController,
     getHotDirPathForEntry,
     isUsingHTTPS,
     mediaCleanup,
@@ -241,6 +246,13 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
         config_entry.version = 15
 
+    if config_entry.version == 15:
+        new = {**config_entry.data}
+        new[UPDATE_INTERVAL_MAIN] = UPDATE_INTERVAL_MAIN_DEFAULT
+        new[UPDATE_INTERVAL_BATTERY] = UPDATE_INTERVAL_BATTERY_DEFAULT
+
+        hass.config_entries.async_update_entry(config_entry, data=new, version=16)
+
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
     return True
@@ -248,16 +260,21 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     LOGGER.debug("Unloading tapo_control...")
-    await hass.config_entries.async_forward_entry_unload(entry, "binary_sensor")
-    await hass.config_entries.async_forward_entry_unload(entry, "sensor")
-    await hass.config_entries.async_forward_entry_unload(entry, "button")
-    await hass.config_entries.async_forward_entry_unload(entry, "camera")
-    await hass.config_entries.async_forward_entry_unload(entry, "light")
-    await hass.config_entries.async_forward_entry_unload(entry, "number")
-    await hass.config_entries.async_forward_entry_unload(entry, "select")
-    await hass.config_entries.async_forward_entry_unload(entry, "siren")
-    await hass.config_entries.async_forward_entry_unload(entry, "switch")
-    await hass.config_entries.async_forward_entry_unload(entry, "update")
+    await hass.config_entries.async_unload_platforms(
+        entry,
+        [
+            "binary_sensor",
+            "sensor",
+            "button",
+            "camera",
+            "light",
+            "number",
+            "select",
+            "siren",
+            "switch",
+            "update",
+        ],
+    )
 
     if hass.data[DOMAIN][entry.entry_id]["events"]:
         LOGGER.debug("Stopping events...")
@@ -278,15 +295,30 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     hotDirPath = getHotDirPathForEntry(hass, entry_id)
 
     # Delete all media stored in cold storage for entity
-    LOGGER.debug("Deleting cold storage files for entity " + entry_id + "...")
-    deleteDir(coldDirPath)
+    if coldDirPath:
+        LOGGER.debug("Deleting cold storage files for entity " + entry_id + "...")
+        await deleteDir(hass, coldDirPath)
+    else:
+        LOGGER.warn(
+            "No cold storage path found for entity"
+            + entry_id
+            + ". Not deleting anything."
+        )
 
     # Delete all media stored in hot storage for entity
-    LOGGER.debug("Deleting hot storage files for entity " + entry_id + "...")
-    deleteDir(hotDirPath)
+    if hotDirPath:
+        LOGGER.debug("Deleting hot storage files for entity " + entry_id + "...")
+        await deleteDir(hass, hotDirPath)
+    else:
+        LOGGER.warn(
+            "No hot storage path found for entity"
+            + entry_id
+            + ". Not deleting anything."
+        )
 
     # Remove the entry data
     hass.data[DOMAIN].pop(entry_id, None)
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     if PYTAPO_REQUIRED_VERSION != PYTAPO_VERSION:
@@ -305,6 +337,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
     cloud_password = entry.data.get(CLOUD_PASSWORD)
     enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
+    updateIntervalMain = entry.data.get(UPDATE_INTERVAL_MAIN)
+    updateIntervalBattery = entry.data.get(UPDATE_INTERVAL_BATTERY)
 
     if entry.entry_id not in hass.data[DOMAIN]:
         hass.data[DOMAIN][entry.entry_id] = {}
@@ -444,51 +478,128 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 # Update data for all controllers
                 updateDataForAllControllers = {}
                 for controller in hass.data[DOMAIN][entry.entry_id]["allControllers"]:
-                    try:
-                        updateDataForAllControllers[controller] = await getCamData(
-                            hass, controller
-                        )
-                        hass.data[DOMAIN][entry.entry_id]["reauth_retries"] = 0
-                    except Exception as e:
-                        updateDataForAllControllers[controller] = False
-                        if str(e) == "Invalid authentication data":
-                            if hass.data[DOMAIN][entry.entry_id]["reauth_retries"] < 3:
-                                hass.data[DOMAIN][entry.entry_id]["reauth_retries"] += 1
-                                raise e
-                            else:
-                                hass.data[DOMAIN][entry.entry_id][
-                                    "refreshEnabled"
-                                ] = False
-                                raise ConfigEntryAuthFailed(e)
-                        LOGGER.error(e)
+                    controllerData = getDataForController(hass, entry, controller)
+                    LOGGER.debug(
+                        f"{controllerData['name']} running on battery: {controllerData['isRunningOnBattery']}"
+                    )
+                    if (
+                        controllerData["isRunningOnBattery"] is False
+                        and ts - controllerData["lastUpdate"] > updateIntervalMain
+                    ) or (
+                        controllerData["isRunningOnBattery"] is True
+                        and ts - controllerData["lastUpdate"] > updateIntervalBattery
+                    ):
+                        timeForAnUpdate = True
+                        LOGGER.debug(f"Updating {controllerData['name']}...")
+                    else:
+                        timeForAnUpdate = False
+                        LOGGER.debug(f"Skipping update for {controllerData['name']}...")
+                    if timeForAnUpdate:
+                        try:
+                            updateDataForAllControllers[controller] = await getCamData(
+                                hass, controller
+                            )
+                            controllerData["isRunningOnBattery"] = (
+                                True
+                                if (
+                                    "basic_info"
+                                    in updateDataForAllControllers[controller]
+                                    and (
+                                        (
+                                            "power"
+                                            in updateDataForAllControllers[controller][
+                                                "basic_info"
+                                            ]
+                                            and (
+                                                (
+                                                    updateDataForAllControllers[
+                                                        controller
+                                                    ]["basic_info"]["power"]
+                                                    == "BATTERY"
+                                                )
+                                                or (
+                                                    updateDataForAllControllers[
+                                                        controller
+                                                    ]["basic_info"]["power"]
+                                                    == "SOLAR"
+                                                )
+                                            )
+                                        )
+                                        or (
+                                            "power_mode"
+                                            in updateDataForAllControllers[controller][
+                                                "basic_info"
+                                            ]
+                                            and (
+                                                (
+                                                    updateDataForAllControllers[
+                                                        controller
+                                                    ]["basic_info"]["power_mode"]
+                                                    == "BATTERY"
+                                                )
+                                                or (
+                                                    updateDataForAllControllers[
+                                                        controller
+                                                    ]["basic_info"]["power_mode"]
+                                                    == "SOLAR"
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                                else False
+                            )
+                            controllerData["lastUpdate"] = (
+                                datetime.datetime.utcnow().timestamp()
+                            )
+                            controllerData["reauth_retries"] = 0
+                        except Exception as e:
+                            updateDataForAllControllers[controller] = False
+                            if str(e) == "Invalid authentication data":
+                                if controllerData["reauth_retries"] < 3:
+                                    controllerData["reauth_retries"] += 1
+                                    raise e
+                                else:
+                                    controllerData["refreshEnabled"] = False
+                                    raise ConfigEntryAuthFailed(e)
+                            LOGGER.error(e)
 
-                hass.data[DOMAIN][entry.entry_id]["camData"] = (
-                    updateDataForAllControllers[tapoController]
-                )
+                if tapoController in updateDataForAllControllers:
+                    hass.data[DOMAIN][entry.entry_id]["camData"] = (
+                        updateDataForAllControllers[tapoController]
+                    )
 
-                LOGGER.debug("Updating entities...")
+                    LOGGER.debug("Updating entities...")
 
-                # Gather all entities, including of children devices
-                allEntities = getAllEntities(hass.data[DOMAIN][entry.entry_id])
+                    # Gather all entities, including of children devices
+                    allEntities = getAllEntities(hass.data[DOMAIN][entry.entry_id])
 
-                for entity in allEntities:
-                    if entity["entity"]._enabled:
-                        LOGGER.debug("Updating entity...")
-                        LOGGER.debug(entity["entity"])
-                        entity["camData"] = updateDataForAllControllers[
-                            entity["entry"]["controller"]
-                        ]
-                        entity["entity"].updateTapo(
-                            updateDataForAllControllers[entity["entry"]["controller"]]
-                        )
-                        entity["entity"].async_schedule_update_ha_state(True)
-                        # start noise detection
+                    for entity in allEntities:
                         if (
-                            not hass.data[DOMAIN][entry.entry_id]["noiseSensorStarted"]
-                            and entity["entity"]._is_noise_sensor
-                            and entity["entity"]._enable_sound_detection
+                            entity["entity"]._enabled
+                            and entity["entry"]["controller"]
+                            in updateDataForAllControllers
                         ):
-                            await entity["entity"].startNoiseDetection()
+                            LOGGER.debug("Updating entity...")
+                            LOGGER.debug(entity["entity"])
+                            entity["camData"] = updateDataForAllControllers[
+                                entity["entry"]["controller"]
+                            ]
+                            entity["entity"].updateTapo(
+                                updateDataForAllControllers[
+                                    entity["entry"]["controller"]
+                                ]
+                            )
+                            entity["entity"].async_schedule_update_ha_state(True)
+                            # start noise detection
+                            if (
+                                not hass.data[DOMAIN][entry.entry_id][
+                                    "noiseSensorStarted"
+                                ]
+                                and entity["entity"]._is_noise_sensor
+                                and entity["entity"]._enable_sound_detection
+                            ):
+                                await entity["entity"].startNoiseDetection()
 
                 if ("updateEntity" in hass.data[DOMAIN][entry.entry_id]) and hass.data[
                     DOMAIN
@@ -571,6 +682,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "camData": camData,
             "lastTimeSync": 0,
             "lastMediaCleanup": 0,
+            "lastUpdate": 0,
             "lastFirmwareCheck": 0,
             "latestFirmwareVersion": False,
             "mediaSyncColdDir": False,
@@ -585,6 +697,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "noiseSensorStarted": False,
             "name": camData["basic_info"]["device_alias"],
             "childDevices": [],
+            "isRunningOnBattery": (
+                True
+                if (
+                    "basic_info" in camData
+                    and "power" in camData["basic_info"]
+                    and camData["basic_info"]["power"] == "BATTERY"
+                )
+                else False
+            ),
             "isChild": False,
             "uuid": hashlib.md5(
                 (
@@ -597,6 +718,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "downloadProgress": False,
             "initialMediaScanDone": False,
             "mediaSyncScheduled": False,
+            "mediaSyncRanOnce": False,
             "mediaSyncAvailable": True,
             "initialMediaScanRunning": False,
             "mediaScanResult": {},  # keeps track of all videos currently on camera
@@ -605,9 +727,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         }
 
         if camData["childDevices"] is False or camData["childDevices"] is None:
-            hass.async_create_task(
-                hass.config_entries.async_forward_entry_setup(entry, "camera")
+            await hass.async_create_task(
+                hass.config_entries.async_forward_entry_setups(entry, ["camera"])
             )
+
         else:
             hass.data[DOMAIN][entry.entry_id]["isParent"] = True
             for childDevice in camData["childDevices"]["child_device_list"]:
@@ -631,6 +754,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         "camData": childCamData,
                         "lastTimeSync": 0,
                         "lastMediaCleanup": 0,
+                        "lastUpdate": 0,
                         "lastFirmwareCheck": 0,
                         "latestFirmwareVersion": False,
                         "motionSensorCreated": False,
@@ -638,36 +762,34 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         "name": camData["basic_info"]["device_alias"],
                         "childDevices": [],
                         "isChild": True,
+                        "isRunningOnBattery": (
+                            True
+                            if (
+                                "basic_info" in camData
+                                and "power" in camData["basic_info"]
+                                and camData["basic_info"]["power"] == "BATTERY"
+                            )
+                            else False
+                        ),
                         "isParent": False,
                     }
                 )
 
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "switch")
-        )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "button")
-        )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "light")
-        )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "number")
-        )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "select")
-        )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "siren")
-        )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "update")
-        )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "binary_sensor")
-        )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, "sensor")
+        await hass.async_create_task(
+            hass.config_entries.async_forward_entry_setups(
+                entry,
+                [
+                    "switch",
+                    "button",
+                    "light",
+                    "number",
+                    "select",
+                    "siren",
+                    "update",
+                    "binary_sensor",
+                    "sensor",
+                ],
+            )
         )
 
         # Needs to execute AFTER binary_sensor creation!
@@ -692,6 +814,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         # todo move to utils
         async def mediaSync(time=None):
             LOGGER.debug("mediaSync")
+            hass.data[DOMAIN][entry.entry_id]["mediaSyncRanOnce"] = True
             enableMediaSync = entry.data.get(ENABLE_MEDIA_SYNC)
             mediaSyncHours = entry.data.get(MEDIA_SYNC_HOURS)
 
@@ -767,7 +890,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                                 )
                                                 LOGGER.debug("getRecording -2")
                                             except Unresolvable as err:
-                                                LOGGER.warn(err)
+                                                if (
+                                                    str(err)
+                                                    == "Recording is currently in progress."
+                                                ):
+                                                    LOGGER.info(err)
+                                                else:
+                                                    LOGGER.warn(err)
                                             except Exception as err:
                                                 LOGGER.error(err)
                 except Exception as err:

@@ -36,6 +36,10 @@ from .const import (
     CONF_CUSTOM_STREAM,
     CONF_RTSP_TRANSPORT,
     RTSP_TRANS_PROTOCOLS,
+    UPDATE_INTERVAL_BATTERY_DEFAULT,
+    UPDATE_INTERVAL_MAIN,
+    UPDATE_INTERVAL_BATTERY,
+    UPDATE_INTERVAL_MAIN_DEFAULT,
 )
 
 
@@ -43,7 +47,7 @@ from .const import (
 class FlowHandler(ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 15
+    VERSION = 16
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -109,7 +113,6 @@ class FlowHandler(ConfigFlow):
                     allConfigData[CONF_PASSWORD] = password
                     self.hass.config_entries.async_update_entry(
                         self.reauth_entry,
-                        title=tapoHost,
                         data=allConfigData,
                         unique_id=DOMAIN + tapoHost,
                     )
@@ -227,7 +230,6 @@ class FlowHandler(ConfigFlow):
                 allConfigData[CLOUD_PASSWORD] = cloudPassword
                 self.hass.config_entries.async_update_entry(
                     self.reauth_entry,
-                    title=tapoHost,
                     data=allConfigData,
                     unique_id=DOMAIN + tapoHost,
                 )
@@ -413,6 +415,8 @@ class FlowHandler(ConfigFlow):
                     CONF_EXTRA_ARGUMENTS: extra_arguments,
                     CONF_CUSTOM_STREAM: custom_stream,
                     CONF_RTSP_TRANSPORT: rtsp_transport,
+                    UPDATE_INTERVAL_MAIN: UPDATE_INTERVAL_MAIN_DEFAULT,
+                    UPDATE_INTERVAL_BATTERY: UPDATE_INTERVAL_BATTERY_DEFAULT,
                 },
             )
 
@@ -824,6 +828,8 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     return await self.async_step_auth()
                 elif nextAction == "Configure media":
                     return await self.async_step_media()
+                elif nextAction == "Configure update interval":
+                    return await self.async_step_update_interval()
                 elif nextAction == "Configure sound sensor":
                     return await self.async_step_sound_sensor()
                 elif nextAction == "Help me debug motion sensor":
@@ -844,6 +850,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     "select": {
                         "options": [
                             "Configure device",
+                            "Configure update interval",
                             "Configure sound sensor",
                             "Configure media",
                             # "Help me debug motion sensor",
@@ -912,9 +919,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
 
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
-                    title=ip_address,
                     data=allConfigData,
-                    unique_id=DOMAIN + ip_address,
                 )
                 return self.async_create_entry(title="", data=None)
             except Exception as e:
@@ -949,6 +954,58 @@ class TapoOptionsFlowHandler(OptionsFlow):
             errors=errors,
         )
 
+    async def async_step_update_interval(self, user_input=None):
+        """Manage the Tapo options."""
+        LOGGER.debug(
+            "[%s] Opened Tapo options - update interval",
+            self.config_entry.data[CONF_IP_ADDRESS],
+        )
+        errors = {}
+        updateIntervalMain = self.config_entry.data[UPDATE_INTERVAL_MAIN]
+        updateIntervalBattery = self.config_entry.data[UPDATE_INTERVAL_BATTERY]
+
+        allConfigData = {**self.config_entry.data}
+        if user_input is not None:
+            try:
+                if UPDATE_INTERVAL_MAIN in user_input:
+                    updateIntervalMain = user_input[UPDATE_INTERVAL_MAIN]
+                else:
+                    updateIntervalMain = UPDATE_INTERVAL_MAIN_DEFAULT
+
+                if UPDATE_INTERVAL_BATTERY in user_input:
+                    updateIntervalBattery = user_input[UPDATE_INTERVAL_BATTERY]
+                else:
+                    updateIntervalBattery = UPDATE_INTERVAL_BATTERY_DEFAULT
+
+                allConfigData[UPDATE_INTERVAL_MAIN] = updateIntervalMain
+                allConfigData[UPDATE_INTERVAL_BATTERY] = updateIntervalBattery
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry,
+                    data=allConfigData,
+                )
+                await self.hass.config_entries.async_reload(self.config_entry.entry_id)
+                return self.async_create_entry(title="", data=None)
+            except Exception as e:
+                errors["base"] = "unknown"
+                LOGGER.error(e)
+
+        return self.async_show_form(
+            step_id="update_interval",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        UPDATE_INTERVAL_MAIN,
+                        description={"suggested_value": updateIntervalMain},
+                    ): int,
+                    vol.Required(
+                        UPDATE_INTERVAL_BATTERY,
+                        description={"suggested_value": updateIntervalBattery},
+                    ): int,
+                }
+            ),
+            errors=errors,
+        )
+
     async def async_step_media(self, user_input=None):
         """Manage the Tapo options."""
         LOGGER.debug(
@@ -964,7 +1021,6 @@ class TapoOptionsFlowHandler(OptionsFlow):
         media_sync_cold_storage_path = self.config_entry.data[
             MEDIA_SYNC_COLD_STORAGE_PATH
         ]
-        ip_address = self.config_entry.data[CONF_IP_ADDRESS]
 
         allConfigData = {**self.config_entry.data}
         if user_input is not None:
@@ -1005,12 +1061,9 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 allConfigData[MEDIA_SYNC_COLD_STORAGE_PATH] = (
                     media_sync_cold_storage_path
                 )
-                # todo also initial setup to add the default values!
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
-                    title=ip_address,
                     data=allConfigData,
-                    unique_id=DOMAIN + ip_address,
                 )
                 return self.async_create_entry(title="", data=None)
             except Exception as e:
@@ -1251,7 +1304,6 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 allConfigData[CONF_RTSP_TRANSPORT] = rtsp_transport
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
-                    title=ip_address,
                     data=allConfigData,
                     unique_id=DOMAIN + ip_address,
                 )
