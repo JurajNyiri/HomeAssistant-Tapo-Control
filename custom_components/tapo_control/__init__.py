@@ -466,10 +466,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         > MIN_UPDATE_INTERVAL_BATTERY
                     ):
                         timeForAnUpdate = True
-                        LOGGER.warn(f"Updating {controllerData['name']}...")
+                        LOGGER.debug(f"Updating {controllerData['name']}...")
                     else:
                         timeForAnUpdate = False
-                        LOGGER.warn(f"Skipping update for {controllerData['name']}...")
+                        LOGGER.debug(f"Skipping update for {controllerData['name']}...")
                     if timeForAnUpdate:
                         try:
                             updateDataForAllControllers[controller] = await getCamData(
