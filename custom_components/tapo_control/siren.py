@@ -138,7 +138,7 @@ class TapoSiren(TapoSirenEntity):
                 )
             else:
                 result = await self._hass.async_add_executor_job(
-                    self._controller.startManualAlarm,
+                    self._controller.stopManualAlarm,
                 )
                 # TODO: OPTIMIZE THIS TO USE SETSIRENSTATUS FROM PYTAPO?
                 result2 = await self._hass.async_add_executor_job(
@@ -148,7 +148,7 @@ class TapoSiren(TapoSirenEntity):
                         "params": {"msg_alarm": {"status": "off"}},
                     },
                 )
-                
+
             if result_has_error(result) and result_has_error(result2):
                 self._attr_available = False
 
