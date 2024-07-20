@@ -1446,55 +1446,58 @@ def pytapoFunctionMap(pytapoFunctionName):
 def isCacheSupported(check_function, rawData):
     rawFunctions = pytapoFunctionMap(check_function)
     for function in rawFunctions:
-        if function in rawData and rawData[function][0]:
-            if check_function == "getForceWhitelampState":
-                return (
-                    "image" in rawData["getLdc"][0]
-                    and "switch" in rawData["getLdc"][0]["image"]
-                    and "force_wtl_state" in rawData["getLdc"][0]["image"]["switch"]
-                )
-            elif check_function == "getDayNightMode":
-                return (
-                    "image" in rawData["getLightFrequencyInfo"][0]
-                    and "common" in rawData["getLightFrequencyInfo"][0]["image"]
-                    and "inf_type"
-                    in rawData["getLightFrequencyInfo"][0]["image"]["common"]
-                )
-            elif check_function == "getImageFlipVertical":
-                return (
-                    "image" in rawData["getLdc"][0]
-                    and "switch" in rawData["getLdc"][0]["image"]
-                    and "flip_type" in rawData["getLdc"][0]["image"]["switch"]
-                ) or (
-                    "image" in rawData["getRotationStatus"][0]
-                    and "switch" in rawData["getRotationStatus"][0]["image"]
-                    and "flip_type"
-                    in rawData["getRotationStatus"][0]["image"]["switch"]
-                )
-            elif check_function == "getLensDistortionCorrection":
-                return (
-                    "image" in rawData["getLdc"][0]
-                    and "switch" in rawData["getLdc"][0]["image"]
-                    and "ldc" in rawData["getLdc"][0]["image"]["switch"]
-                )
-            return True
+        if function in rawData:
+            if rawData[function][0]:
+                if check_function == "getForceWhitelampState":
+                    return (
+                        "image" in rawData["getLdc"][0]
+                        and "switch" in rawData["getLdc"][0]["image"]
+                        and "force_wtl_state" in rawData["getLdc"][0]["image"]["switch"]
+                    )
+                elif check_function == "getDayNightMode":
+                    return (
+                        "image" in rawData["getLightFrequencyInfo"][0]
+                        and "common" in rawData["getLightFrequencyInfo"][0]["image"]
+                        and "inf_type"
+                        in rawData["getLightFrequencyInfo"][0]["image"]["common"]
+                    )
+                elif check_function == "getImageFlipVertical":
+                    return (
+                        "image" in rawData["getLdc"][0]
+                        and "switch" in rawData["getLdc"][0]["image"]
+                        and "flip_type" in rawData["getLdc"][0]["image"]["switch"]
+                    ) or (
+                        "image" in rawData["getRotationStatus"][0]
+                        and "switch" in rawData["getRotationStatus"][0]["image"]
+                        and "flip_type"
+                        in rawData["getRotationStatus"][0]["image"]["switch"]
+                    )
+                elif check_function == "getLensDistortionCorrection":
+                    return (
+                        "image" in rawData["getLdc"][0]
+                        and "switch" in rawData["getLdc"][0]["image"]
+                        and "ldc" in rawData["getLdc"][0]["image"]["switch"]
+                    )
+                return True
+            else:
+                raise Exception(f"Capability {check_function} (mapped to:{function}) cached but not supported.")
     return False
 
 
 async def check_and_create(entry, hass, cls, check_function, config_entry):
-    if isCacheSupported(check_function, entry["camData"]["raw"]):
-        LOGGER.debug(
-            f"Found cached capability {check_function}, creating {cls.__name__}"
-        )
-        return cls(entry, hass, config_entry)
-    else:
-        LOGGER.debug(f"Capability {check_function} not found, querying again...")
-        try:
+    try:
+        if isCacheSupported(check_function, entry["camData"]["raw"]):
+            LOGGER.debug(
+                f"Found cached capability {check_function}, creating {cls.__name__}"
+            )
+            return cls(entry, hass, config_entry)
+        else:
+            LOGGER.debug(f"Capability {check_function} not found, querying again...")
             await hass.async_add_executor_job(
                 getattr(entry["controller"], check_function)
             )
-        except Exception:
-            LOGGER.info(f"Camera does not support {cls.__name__}")
-            return None
-        LOGGER.debug(f"Creating {cls.__name__}")
-        return cls(entry, hass, config_entry)
+            LOGGER.debug(f"Creating {cls.__name__}")
+            return cls(entry, hass, config_entry)
+    except Exception as err:
+        LOGGER.info(f"Camera does not support {cls.__name__}: {err}")
+        return None
