@@ -7,7 +7,7 @@
 5. Create the account credentials for your camera.
 6. Configure it in home assistant and done.
 
-Discovered & Documented by [@vitorsemeano](https://github.com/vitorsemeano), discuss at https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/categories/q-a .
+Discovered & Documented by [@vitorsemeano](https://github.com/vitorsemeano).
 
 ### Option 2 - Block DNS (via pihole for example)
 
@@ -18,8 +18,12 @@ Discovered & Documented by [@vitorsemeano](https://github.com/vitorsemeano), dis
 5. Create the account credentials for your camera.
 6. Configure it in home assistant and done.
 
-Discovered & Documented by [@lorenzomoriconi](https://github.com/lorenzomoriconi), discuss at https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/categories/q-a .
+Discovered & Documented by [@lorenzomoriconi](https://github.com/lorenzomoriconi).
 
 ### Option 3 - Downgrade camera firmware
 
 Follow https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/625#discussion-6941269.
+
+### Something not working right or have something to share?
+
+Ask a [question](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/categories/q-a) or [discuss](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/categories/discuss).
