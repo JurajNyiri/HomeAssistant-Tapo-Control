@@ -11,7 +11,7 @@ If you wish to use this integration, until this issue is resolved, you will need
 1. If your camera still works with integration: Block internet access of camera if you are using firmware build 230921 and higher
 2. If your camera no longer works with integration: [Block internet access and factory reset camera](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/blob/main/add_camera_with_new_firmware.md) or [Use older firmware](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/625) than build 230921 and optionally factory reset camera
 
-Learn more and discuss at https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/551 .
+[Learn more, get latest updates](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/551) and [discuss](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/categories/discuss).
 
 ## Installation
 
