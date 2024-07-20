@@ -96,21 +96,21 @@ class TapoSiren(TapoSirenEntity):
                 self._controller.setHubSirenStatus, True
             )
         else:
-            result2 = await self._hass.async_add_executor_job(
-                self._controller.startManualAlarm,
-            )
-            # TODO: OPTIMIZE THIS TO USE SETSIRENSTATUS FROM PYTAPO?
-            result = await self._hass.async_add_executor_job(
-                self._controller.startManualAlarm,
-            )
-            result2 = await self._hass.async_add_executor_job(
-                self._controller.performRequest,
-                {
-                    "method": "setSirenStatus",
-                    "params": {"msg_alarm": {"status": "on"}},
-                },
-            )
-            # TODO: OPTIMIZE THIS TO USE SETSIRENSTATUS FROM PYTAPO?
+            result = False
+            result2 = False
+            try:
+                result = await self._hass.async_add_executor_job(
+                    self._controller.startManualAlarm,
+                )
+            except Exception as e:
+                LOGGER.debug(e)
+
+            try:
+                result2 = await self._hass.async_add_executor_job(
+                    self._controller.setSirenStatus, True
+                )
+            except Exception as e:
+                LOGGER.debug(e)
 
         if result_has_error(result) and result_has_error(result2):
             self._attr_available = False
@@ -137,18 +137,22 @@ class TapoSiren(TapoSirenEntity):
                     self._controller.setHubSirenStatus, False
                 )
             else:
-                result = await self._hass.async_add_executor_job(
-                    self._controller.stopManualAlarm,
-                )
-                # TODO: OPTIMIZE THIS TO USE SETSIRENSTATUS FROM PYTAPO?
-                result2 = await self._hass.async_add_executor_job(
-                    self._controller.performRequest,
-                    {
-                        "method": "setSirenStatus",
-                        "params": {"msg_alarm": {"status": "off"}},
-                    },
-                )
+                result = False
+                result2 = False
 
+                try:
+                    result = await self._hass.async_add_executor_job(
+                        self._controller.stopManualAlarm,
+                    )
+                except Exception as e:
+                    LOGGER.debug(e)
+
+                try:
+                    result2 = await self._hass.async_add_executor_job(
+                        self._controller.setSirenStatus, False
+                    )
+                except Exception as e:
+                    LOGGER.debug(e)
             if result_has_error(result) and result_has_error(result2):
                 self._attr_available = False
 
@@ -175,7 +179,7 @@ def result_has_error(result):
                 result["result"]["responses"],
             )
         )
-    ):
+    ) or result is False:
         return False
     if "error_code" not in result or result["error_code"] == 0:
         return False
