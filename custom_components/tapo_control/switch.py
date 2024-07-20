@@ -141,6 +141,7 @@ async def async_setup_entry(
         if (
             "videoCapability" in entry["camData"]
             and entry["camData"]["videoCapability"] is not None
+            and entry["camData"]["videoCapability"] is not False
             and "video_capability" in entry["camData"]["videoCapability"]
             and "main" in entry["camData"]["videoCapability"]["video_capability"]
             and "hdrs"
