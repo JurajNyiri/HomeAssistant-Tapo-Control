@@ -1431,7 +1431,7 @@ def isCacheSupported(check_function, rawData):
                     )
                 return True
             else:
-                raise Exception(f"Capability {check_function} (raw:{rawFunctions}) cached but not supported.")
+                raise Exception(f"Capability {check_function} (mapped to:{function}) cached but not supported.")
     return False
 
 
