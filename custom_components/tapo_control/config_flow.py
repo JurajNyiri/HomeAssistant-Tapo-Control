@@ -113,7 +113,6 @@ class FlowHandler(ConfigFlow):
                     allConfigData[CONF_PASSWORD] = password
                     self.hass.config_entries.async_update_entry(
                         self.reauth_entry,
-                        title=tapoHost,
                         data=allConfigData,
                         unique_id=DOMAIN + tapoHost,
                     )
@@ -231,7 +230,6 @@ class FlowHandler(ConfigFlow):
                 allConfigData[CLOUD_PASSWORD] = cloudPassword
                 self.hass.config_entries.async_update_entry(
                     self.reauth_entry,
-                    title=tapoHost,
                     data=allConfigData,
                     unique_id=DOMAIN + tapoHost,
                 )
@@ -921,9 +919,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
 
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
-                    title=ip_address,
                     data=allConfigData,
-                    unique_id=DOMAIN + ip_address,
                 )
                 return self.async_create_entry(title="", data=None)
             except Exception as e:
@@ -1025,7 +1021,6 @@ class TapoOptionsFlowHandler(OptionsFlow):
         media_sync_cold_storage_path = self.config_entry.data[
             MEDIA_SYNC_COLD_STORAGE_PATH
         ]
-        ip_address = self.config_entry.data[CONF_IP_ADDRESS]
 
         allConfigData = {**self.config_entry.data}
         if user_input is not None:
@@ -1066,12 +1061,9 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 allConfigData[MEDIA_SYNC_COLD_STORAGE_PATH] = (
                     media_sync_cold_storage_path
                 )
-                # todo also initial setup to add the default values!
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
-                    title=ip_address,
                     data=allConfigData,
-                    unique_id=DOMAIN + ip_address,
                 )
                 return self.async_create_entry(title="", data=None)
             except Exception as e:
@@ -1312,7 +1304,6 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 allConfigData[CONF_RTSP_TRANSPORT] = rtsp_transport
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
-                    title=ip_address,
                     data=allConfigData,
                     unique_id=DOMAIN + ip_address,
                 )
