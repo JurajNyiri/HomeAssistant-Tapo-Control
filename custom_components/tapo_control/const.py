@@ -29,6 +29,13 @@ CONF_CUSTOM_STREAM = "custom_stream"
 
 ENABLE_MOTION_SENSOR = "enable_motion_sensor"
 ENABLE_MEDIA_SYNC = "enable_media_sync"
+
+UPDATE_INTERVAL_MAIN = "update_interval_main"
+UPDATE_INTERVAL_BATTERY = "update_interval_battery"
+
+UPDATE_INTERVAL_MAIN_DEFAULT = 30
+UPDATE_INTERVAL_BATTERY_DEFAULT = 60 * 10
+
 MEDIA_VIEW_DAYS_ORDER = "media_view_days_order"
 MEDIA_VIEW_RECORDINGS_ORDER = "media_view_recordings_order"
 MEDIA_SYNC_HOURS = "media_sync_hours"
@@ -54,8 +61,6 @@ LOGGER = logging.getLogger("custom_components." + DOMAIN)
 
 TIME_SYNC_PERIOD = 3600
 MEDIA_CLEANUP_PERIOD = 10 * 60
-MIN_UPDATE_INTERVAL_MAIN = 60
-MIN_UPDATE_INTERVAL_BATTERY = 10 * 60
 UPDATE_CHECK_PERIOD = 86400
 
 COLD_DIR_DELETE_TIME = 24 * 60 * 60

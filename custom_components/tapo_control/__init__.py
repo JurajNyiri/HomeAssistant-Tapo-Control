@@ -39,8 +39,6 @@ from .const import (
     MEDIA_SYNC_HOURS,
     MEDIA_VIEW_DAYS_ORDER,
     MEDIA_VIEW_RECORDINGS_ORDER,
-    MIN_UPDATE_INTERVAL_BATTERY,
-    MIN_UPDATE_INTERVAL_MAIN,
     RTSP_TRANS_PROTOCOLS,
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
@@ -48,6 +46,10 @@ from .const import (
     TIME_SYNC_PERIOD,
     UPDATE_CHECK_PERIOD,
     PYTAPO_REQUIRED_VERSION,
+    UPDATE_INTERVAL_BATTERY,
+    UPDATE_INTERVAL_BATTERY_DEFAULT,
+    UPDATE_INTERVAL_MAIN,
+    UPDATE_INTERVAL_MAIN_DEFAULT,
 )
 from .utils import (
     convert_to_timestamp,
@@ -244,6 +246,13 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
         config_entry.version = 15
 
+    if config_entry.version == 15:
+        new = {**config_entry.data}
+        new[UPDATE_INTERVAL_MAIN] = UPDATE_INTERVAL_MAIN_DEFAULT
+        new[UPDATE_INTERVAL_BATTERY] = UPDATE_INTERVAL_BATTERY_DEFAULT
+
+        hass.config_entries.async_update_entry(config_entry, data=new, version=16)
+
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
     return True
@@ -314,6 +323,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
     cloud_password = entry.data.get(CLOUD_PASSWORD)
     enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
+    updateIntervalMain = entry.data.get(UPDATE_INTERVAL_MAIN)
+    updateIntervalBattery = entry.data.get(UPDATE_INTERVAL_BATTERY)
 
     if entry.entry_id not in hass.data[DOMAIN]:
         hass.data[DOMAIN][entry.entry_id] = {}
@@ -454,16 +465,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 updateDataForAllControllers = {}
                 for controller in hass.data[DOMAIN][entry.entry_id]["allControllers"]:
                     controllerData = getDataForController(hass, entry, controller)
-                    LOGGER.warn(
+                    LOGGER.debug(
                         f"{controllerData['name']} running on battery: {controllerData['isRunningOnBattery']}"
                     )
                     if (
                         controllerData["isRunningOnBattery"] is False
-                        and ts - controllerData["lastUpdate"] > MIN_UPDATE_INTERVAL_MAIN
+                        and ts - controllerData["lastUpdate"] > updateIntervalMain
                     ) or (
                         controllerData["isRunningOnBattery"] is True
-                        and ts - controllerData["lastUpdate"]
-                        > MIN_UPDATE_INTERVAL_BATTERY
+                        and ts - controllerData["lastUpdate"] > updateIntervalBattery
                     ):
                         timeForAnUpdate = True
                         LOGGER.debug(f"Updating {controllerData['name']}...")
