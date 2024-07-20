@@ -26,8 +26,12 @@ async def async_setup_entry(
     async def setupEntities(entry):
         sirens = []
         tapoSiren = await check_and_create(
-            entry, hass, TapoSiren, "getSirenTypeList", config_entry
+            entry, hass, TapoSiren, "getAlarm", config_entry
         )
+        if not tapoSiren:
+            tapoSiren = await check_and_create(
+                entry, hass, TapoSiren, "getSirenTypeList", config_entry
+            )
         if tapoSiren:
             LOGGER.debug("Adding TapoSirenEntity...")
             sirens.append(tapoSiren)
@@ -93,29 +97,18 @@ class TapoSiren(TapoSirenEntity):
             )
         else:
             result = await self._hass.async_add_executor_job(
+                self._controller.startManualAlarm,
+            )
+            result2 = await self._hass.async_add_executor_job(
                 self._controller.performRequest,
                 {
-                    "method": "multipleRequest",
-                    "params": {
-                        "requests": [
-                            {
-                                "method": "do",
-                                "params": {
-                                    "msg_alarm": {
-                                        "manual_msg_alarm": {"action": "start"}
-                                    }
-                                },
-                            },
-                            {
-                                "method": "setSirenStatus",
-                                "params": {"msg_alarm": {"status": "on"}},
-                            },
-                        ]
-                    },
+                    "method": "setSirenStatus",
+                    "params": {"msg_alarm": {"status": "on"}},
                 },
             )
+            # TODO: OPTIMIZE THIS TO USE SETSIRENSTATUS FROM PYTAPO?
 
-        if result_has_error(result):
+        if result_has_error(result) and result_has_error(result2):
             self._attr_available = False
         else:
             self._is_on = True
@@ -133,7 +126,7 @@ class TapoSiren(TapoSirenEntity):
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
 
-    async def async_turn_off(self, send: bool | None = None, **kwargs) -> None:
+    async def async_turn_off(self, send: bool | None = True, **kwargs) -> None:
         if send:
             if self.is_hub:
                 result = await self._hass.async_add_executor_job(
@@ -141,26 +134,18 @@ class TapoSiren(TapoSirenEntity):
                 )
             else:
                 result = await self._hass.async_add_executor_job(
-                    self._controller.executeFunction,
-                    "multipleRequest",
+                    self._controller.startManualAlarm,
+                )
+                # TODO: OPTIMIZE THIS TO USE SETSIRENSTATUS FROM PYTAPO?
+                result2 = await self._hass.async_add_executor_job(
+                    self._controller.performRequest,
                     {
-                        "requests": [
-                            {
-                                "method": "do",
-                                "params": {
-                                    "msg_alarm": {
-                                        "manual_msg_alarm": {"action": "stop"}
-                                    }
-                                },
-                            },
-                            {
-                                "method": "setSirenStatus",
-                                "params": {"msg_alarm": {"status": "off"}},
-                            },
-                        ]
+                        "method": "setSirenStatus",
+                        "params": {"msg_alarm": {"status": "off"}},
                     },
                 )
-            if result_has_error(result):
+                
+            if result_has_error(result) and result_has_error(result2):
                 self._attr_available = False
 
         self._attr_is_on = False
@@ -180,7 +165,12 @@ def result_has_error(result):
     if (
         "result" in result
         and "responses" in result["result"]
-        and any(map(lambda x: "error_code" not in x or x["error_code"] == 0,result["result"]["responses"]))
+        and any(
+            map(
+                lambda x: "error_code" not in x or x["error_code"] == 0,
+                result["result"]["responses"],
+            )
+        )
     ):
         return False
     if "error_code" not in result or result["error_code"] == 0:
