@@ -91,6 +91,18 @@ async def async_setup_entry(
                 LOGGER.debug("Adding TapoSirenDuration...")
                 numbers.append(tapoSirenDuration)
 
+        if entry["camData"]["whitelampConfigIntensity"] is not None:
+            tapoSpotlightIntensity = await check_and_create(
+                entry,
+                hass,
+                TapoSpotlightIntensity,
+                "getNightVisionCapability",
+                config_entry,
+            )
+            if tapoSpotlightIntensity:
+                LOGGER.debug("Adding tapoSpotlightIntensity...")
+                numbers.append(tapoSpotlightIntensity)
+
         return numbers
 
     numbers = await setupEntities(entry)
@@ -342,6 +354,52 @@ class TapoSirenVolume(TapoNumberEntity):
                 self._attr_state = 10
             self.alarm_enabled = camData["alarm_config"]["automatic"] == "on"
             self.alarm_mode = camData["alarm_config"]["mode"]
+
+
+class TapoSpotlightIntensity(TapoNumberEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        LOGGER.debug("TapoSpotlightIntensity - init - start")
+        self._attr_min_value = 1
+        self._attr_native_min_value = 1
+        self._attr_max_value = 100
+        self._attr_native_max_value = 100
+        self._attr_step = 1
+        self._hass = hass
+        self._attr_native_value = entry["camData"]["whitelampConfigIntensity"]
+        self._attr_state = entry["camData"]["whitelampConfigIntensity"]
+
+        TapoNumberEntity.__init__(
+            self,
+            "Spotlight Intensity",
+            entry,
+            hass,
+            config_entry,
+            "mdi:lightbulb-on-50",
+        )
+        LOGGER.debug("TapoSpotlightIntensity - init - end")
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    @property
+    def entity_category(self):
+        return EntityCategory.CONFIG
+
+    async def async_set_native_value(self, value: float) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setWhitelampConfig, False, int(value)
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = value
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            self._attr_native_value = int(camData["whitelampConfigIntensity"])
+            self._attr_state = camData["whitelampConfigIntensity"]
 
 
 class TapoSirenDuration(TapoNumberEntity):
