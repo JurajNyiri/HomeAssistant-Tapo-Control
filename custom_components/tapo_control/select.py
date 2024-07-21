@@ -394,7 +394,6 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
-            LOGGER.debug(f"TapoAutomaticAlarmModeSelect: {camData["alarm_config"]["automatic"]} {camData["alarm_config"]["mode"]}")
             if camData["alarm_config"]["automatic"] == "off":
                 self._attr_current_option = "off"
             else:
