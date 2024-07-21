@@ -8,7 +8,7 @@
   ],
   "version": "5.4.31",
   "requirements": [
-    "pytapo==3.3.24"
+    "pytapo==3.3.27"
   ],
   "dependencies": [
     "ffmpeg",

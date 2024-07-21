@@ -4,7 +4,7 @@ from homeassistant.components.number import RestoreNumber
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import EntityCategory
-from homeassistant.const import STATE_UNAVAILABLE,UnitOfTime
+from homeassistant.const import STATE_UNAVAILABLE, UnitOfTime
 
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoEntity, TapoNumberEntity
@@ -73,20 +73,20 @@ async def async_setup_entry(
             if tapoSpeakerVolume:
                 LOGGER.debug("Adding tapoSpeakerVolume...")
                 numbers.append(tapoSpeakerVolume)
-        if (
-            "alarm_config" in entry["camData"] 
-            and ("siren_volume" in entry["camData"]["alarm_config"] or "alarm_volume" in entry["camData"]["alarm_config"])
+        if "alarm_config" in entry["camData"] and (
+            "siren_volume" in entry["camData"]["alarm_config"]
+            or "alarm_volume" in entry["camData"]["alarm_config"]
         ):
-            tapoSirenVolume = TapoSirenVolume(entry,hass,config_entry)
+            tapoSirenVolume = TapoSirenVolume(entry, hass, config_entry)
             if tapoSirenVolume:
                 LOGGER.debug("Adding TapoSirenVolume...")
                 numbers.append(tapoSirenVolume)
 
-        if (
-            "alarm_config" in entry["camData"] 
-            and ("siren_duration" in entry["camData"]["alarm_config"] or "alarm_duration" in entry["camData"]["alarm_config"])
+        if "alarm_config" in entry["camData"] and (
+            "siren_duration" in entry["camData"]["alarm_config"]
+            or "alarm_duration" in entry["camData"]["alarm_config"]
         ):
-            tapoSirenDuration = TapoSirenDuration(entry,hass,config_entry)
+            tapoSirenDuration = TapoSirenDuration(entry, hass, config_entry)
             if tapoSirenDuration:
                 LOGGER.debug("Adding TapoSirenDuration...")
                 numbers.append(tapoSirenDuration)
@@ -259,6 +259,7 @@ class TapoSpeakerVolume(TapoNumberEntity):
         else:
             self._attr_state = camData["speakerVolume"]
 
+
 class TapoSirenVolume(TapoNumberEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         LOGGER.debug("TapoSirenVolume - init - start")
@@ -269,13 +270,14 @@ class TapoSirenVolume(TapoNumberEntity):
         self._attr_step = 1
         self._hass = hass
         self.is_hub = entry["camData"]["alarm_is_hubSiren"]
+        self.typeOfAlarm = entry["camData"]["alarm_config"]["typeOfAlarm"]
         if "siren_volume" in entry["camData"]["alarm_config"]:
             self.value_key = "siren_volume"
         else:
             self.value_key = "alarm_volume"
-            
+
         self._attr_native_value = entry["camData"]["alarm_config"][self.value_key]
-    
+
         TapoNumberEntity.__init__(
             self,
             "Siren volume",
@@ -300,13 +302,26 @@ class TapoSirenVolume(TapoNumberEntity):
             )
         else:
             strval = "low"
-            if value>3:
+            if value > 3:
                 strval = "normal"
-            if value>7:
+            if value > 7:
                 strval = "high"
-            result = await self._hass.async_add_executor_job(
-                self._controller.executeFunction, "setAlarmConfig", {"msg_alarm": {self.value_key: strval}}
-            )
+            if self.typeOfAlarm == "getAlarm":
+                result = await self._hass.async_add_executor_job(
+                    self._controller.setAlarm,
+                    self.alarm_enabled == "on",
+                    "sound" in self.alarm_mode,
+                    "siren" in self.alarm_mode or "light" in self.alarm_mode,
+                    strval,
+                )
+            elif self.typeOfAlarm == "getAlarmConfig":
+                result = await self._hass.async_add_executor_job(
+                    self._controller.executeFunction,
+                    "setAlarmConfig",
+                    {"msg_alarm": {self.value_key: strval}},
+                )
+            else:
+                LOGGER.error("Unexpected type of alarm: " + self.typeOfAlarm)
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = value
         self.async_write_ha_state()
@@ -316,7 +331,18 @@ class TapoSirenVolume(TapoNumberEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
-            self._attr_state = camData["alarm_config"][self.value_key]
+            alarmVolume = camData["alarm_config"][self.value_key]
+            if str(alarmVolume).isnumeric():
+                self._attr_state = camData["alarm_config"][self.value_key]
+            elif str(alarmVolume) == "low":
+                self._attr_state = 1
+            elif str(alarmVolume) == "normal":
+                self._attr_state = 5
+            elif str(alarmVolume) == "high":
+                self._attr_state = 10
+            self.alarm_enabled = camData["alarm_config"]["automatic"] == "on"
+            self.alarm_mode = camData["alarm_config"]["mode"]
+
 
 class TapoSirenDuration(TapoNumberEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
@@ -326,11 +352,12 @@ class TapoSirenDuration(TapoNumberEntity):
         self._attr_max_value = 300
         self._attr_native_max_value = 300
         self.is_hub = entry["camData"]["alarm_is_hubSiren"]
+        self.typeOfAlarm = entry["camData"]["alarm_config"]["typeOfAlarm"]
         if self.is_hub:
             self._attr_max_value = 599
             self._attr_native_max_value = 599
         self._attr_step = 1
-        self._attr_native_unit_of_measurement:  UnitOfTime.SECONDS
+        self._attr_native_unit_of_measurement: UnitOfTime.SECONDS
         self._hass = hass
         if "siren_duration" in entry["camData"]["alarm_config"]:
             self.value_key = "siren_duration"
@@ -362,7 +389,9 @@ class TapoSirenDuration(TapoNumberEntity):
             )
         else:
             result = await self._hass.async_add_executor_job(
-                self._controller.executeFunction, "setAlarmConfig", {"msg_alarm": {self.value_key: int(value)}}
+                self._controller.executeFunction,
+                "setAlarmConfig",
+                {"msg_alarm": {self.value_key: int(value)}},
             )
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = value

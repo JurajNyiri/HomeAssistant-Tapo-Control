@@ -993,6 +993,7 @@ async def getCamData(hass, controller):
             hubSiren = True
             sirenData = data["getSirenConfig"][0]
             alarmConfig = {
+                "typeOfAlarm": "getSirenConfig",
                 "siren_type": sirenData["siren_type"],
                 "siren_volume": sirenData["volume"],
                 "siren_duration": sirenData["duration"],
@@ -1004,6 +1005,7 @@ async def getCamData(hass, controller):
         if not hubSiren and data["getAlarmConfig"][0] != False:
             alarmData = data["getAlarmConfig"][0]
             alarmConfig = {
+                "typeOfAlarm": "getAlarmConfig",
                 "mode": alarmData["alarm_mode"],
                 "automatic": alarmData["enabled"],
             }
@@ -1032,6 +1034,7 @@ async def getCamData(hass, controller):
         ):
             alarmData = data["getLastAlarmInfo"][0]["msg_alarm"]["chn1_msg_alarm_info"]
             alarmConfig = {
+                "typeOfAlarm": "getAlarm",
                 "mode": alarmData["alarm_mode"],
                 "automatic": alarmData["enabled"],
             }
@@ -1480,7 +1483,9 @@ def isCacheSupported(check_function, rawData):
                     )
                 return True
             else:
-                raise Exception(f"Capability {check_function} (mapped to:{function}) cached but not supported.")
+                raise Exception(
+                    f"Capability {check_function} (mapped to:{function}) cached but not supported."
+                )
     return False
 
 
