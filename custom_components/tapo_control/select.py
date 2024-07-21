@@ -312,6 +312,7 @@ class TapoNightVisionSelect(TapoSelectEntity):
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
+        LOGGER.warn(camData)
         if not camData:
             self._attr_state = "unavailable"
         else:
