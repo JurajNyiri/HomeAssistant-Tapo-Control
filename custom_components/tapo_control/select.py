@@ -144,7 +144,10 @@ async def async_setup_entry(
                 LOGGER.debug("Adding TapoWhitelampForceTimeSelect...")
                 selects.append(tapoWhitelampForceTimeSelect)
 
-        if entry["camData"]["whitelampConfigIntensity"] is not None:
+        if (
+            entry["camData"]["whitelampConfigIntensity"] is not None
+            and entry["camData"]["nightVisionCapability"] is None
+        ):
             tapoWhitelampIntensityLevelSelect = await check_and_create(
                 entry,
                 hass,

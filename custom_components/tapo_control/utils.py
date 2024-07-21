@@ -1078,6 +1078,19 @@ async def getCamData(hass, controller):
     camData["alarm_siren_type_list"] = alarmSirenTypeList
 
     try:
+        if (
+            "image_capability" in data["getNightVisionCapability"][0]
+            and "supplement_lamp"
+            in data["getNightVisionCapability"][0]["image_capability"]
+        ):
+            nightVisionCapability = data["getNightVisionCapability"][0][
+                "image_capability"
+            ]["supplement_lamp"]
+    except Exception:
+        nightVisionCapability = None
+    camData["nightVisionCapability"] = nightVisionCapability
+
+    try:
         led = data["getLedStatus"][0]["led"]["config"]["enabled"]
     except Exception:
         led = None
