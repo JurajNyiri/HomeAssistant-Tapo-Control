@@ -321,7 +321,7 @@ class TapoSirenVolume(TapoNumberEntity):
             if self.typeOfAlarm == "getAlarm":
                 result = await self._hass.async_add_executor_job(
                     self._controller.setAlarm,
-                    self.alarm_enabled == "on",
+                    self.alarm_enabled,
                     "sound" in self.alarm_mode,
                     "siren" in self.alarm_mode or "light" in self.alarm_mode,
                     strval,
@@ -449,7 +449,7 @@ class TapoSirenDuration(TapoNumberEntity):
             if self.typeOfAlarm == "getAlarm":
                 result = await self._hass.async_add_executor_job(
                     self._controller.setAlarm,
-                    self.alarm_enabled == "on",
+                    self.alarm_enabled,
                     "sound" in self.alarm_mode,
                     "siren" in self.alarm_mode or "light" in self.alarm_mode,
                     None,
