@@ -905,7 +905,6 @@ class TapoSirenTypeSelect(TapoSelectEntity):
 
 class TapoAlertTypeSelect(TapoSelectEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        self._attr_options = entry["camData"]["alarm_siren_type_list"]
         self.hub = entry["camData"]["alarm_is_hubSiren"]
         self.startID = 10
         self.alarm_siren_type_list = entry["camData"]["alarm_siren_type_list"]
@@ -927,6 +926,14 @@ class TapoAlertTypeSelect(TapoSelectEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
+            self._attr_options = camData["alarm_siren_type_list"]
+            self.user_sounds = {}
+            for user_sound in camData["alarm_user_sounds"]:
+                if "name" in user_sound:
+                    self._attr_options.append(user_sound["name"])
+                    if "id" in user_sound:
+                        self.user_sounds[user_sound["id"]] = user_sound["name"]
+
             self.alarm_enabled = camData["alarm_config"]["automatic"] == "on"
             self.alarm_mode = camData["alarm_config"]["mode"]
             currentSirenType = int(camData["alarm_config"]["siren_type"])
@@ -939,21 +946,26 @@ class TapoAlertTypeSelect(TapoSelectEntity):
                     currentSirenType - 2
                 ]
             else:
-                LOGGER.warn("TODO")
-                self._attr_state = STATE_UNAVAILABLE
+                self._attr_current_option = self.user_sounds[currentSirenType]
 
             self._attr_state = self._attr_current_option
         LOGGER.debug("Updating TapoHubSirenTypeSelect to: " + str(self._attr_state))
 
     async def async_select_option(self, option: str) -> None:
-        optionIndex = self.alarm_siren_type_list.index(option)
-        if optionIndex > 0 and optionIndex < self.startID:
-            optionIndex += 2
+        optionIndex = None
+        for index in self.user_sounds:
+            indexValue = self.user_sounds[index]
+            if indexValue == option:
+                optionIndex = index
+        if optionIndex is None:
+            optionIndex = self.alarm_siren_type_list.index(option)
+            if optionIndex > 0 and optionIndex < self.startID:
+                optionIndex += 2
 
         if self.typeOfAlarm == "getAlarm":
             result = await self._hass.async_add_executor_job(
                 self._controller.setAlarm,
-                self.alarm_enabled == "on",
+                self.alarm_enabled,
                 "sound" in self.alarm_mode,
                 "siren" in self.alarm_mode or "light" in self.alarm_mode,
                 None,
