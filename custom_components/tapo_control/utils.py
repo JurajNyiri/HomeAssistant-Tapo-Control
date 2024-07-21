@@ -1030,7 +1030,8 @@ async def getCamData(hass, controller):
             alarmConfig is None
             and "msg_alarm" in data["getLastAlarmInfo"][0]
             and "chn1_msg_alarm_info" in data["getLastAlarmInfo"][0]["msg_alarm"]
-            and data["getLastAlarmInfo"][0]["msg_alarm"]["chn1_msg_alarm_info"] != False
+            and data["getLastAlarmInfo"][0]["msg_alarm"]["chn1_msg_alarm_info"]
+            is not False
         ):
             alarmData = data["getLastAlarmInfo"][0]["msg_alarm"]["chn1_msg_alarm_info"]
             alarmConfig = {
@@ -1042,6 +1043,8 @@ async def getCamData(hass, controller):
                 alarmConfig["light_type"] = alarmData["light_type"]
             if "siren_type" in alarmData:
                 alarmConfig["siren_type"] = alarmData["siren_type"]
+            if "alarm_type" in alarmData:
+                alarmConfig["siren_type"] = alarmData["alarm_type"]
             if "siren_duration" in alarmData:
                 alarmConfig["siren_duration"] = alarmData["siren_duration"]
             if "alarm_duration" in alarmData:
@@ -1072,6 +1075,52 @@ async def getCamData(hass, controller):
         except Exception as err:
             LOGGER.error(f"getSirenTypeList unexpected error {err=}, {type(err)=}")
 
+    if len(alarmSirenTypeList) == 0:
+        try:
+            if (
+                data["getAlertTypeList"][0] is not False
+                and "msg_alarm" in data["getAlertTypeList"][0]
+                and "alert_type" in data["getAlertTypeList"][0]["msg_alarm"]
+                and "alert_type_list"
+                in data["getAlertTypeList"][0]["msg_alarm"]["alert_type"]
+            ):
+                alarmSirenTypeList = data["getAlertTypeList"][0]["msg_alarm"][
+                    "alert_type"
+                ]["alert_type_list"]
+        except Exception as err:
+            LOGGER.error(f"getSirenTypeList unexpected error {err=}, {type(err)=}")
+
+    alarm_user_sounds = None
+    try:
+        if (
+            data["getAlertConfig"][0] is not False
+            and "msg_alarm" in data["getAlertConfig"][0]
+            and "usr_def_audio" in data["getAlertConfig"][0]["msg_alarm"]
+        ):
+            alarm_user_sounds = []
+            for alarm_sound in data["getAlertConfig"][0]["msg_alarm"]["usr_def_audio"]:
+                first_key = next(iter(alarm_sound))
+                first_value = alarm_sound[first_key]
+                alarm_user_sounds.append(first_value)
+    except Exception:
+        alarm_user_sounds = None
+
+    alarm_user_start_id = None
+    try:
+        if (
+            data["getAlertConfig"][0] is not False
+            and "msg_alarm" in data["getAlertConfig"][0]
+            and "capability" in data["getAlertConfig"][0]["msg_alarm"]
+            and "usr_def_start_file_id"
+            in data["getAlertConfig"][0]["msg_alarm"]["capability"]
+        ):
+            alarm_user_start_id = data["getAlertConfig"][0]["msg_alarm"]["capability"][
+                "usr_def_start_file_id"
+            ]
+    except Exception:
+        alarm_user_start_id = None
+    camData["alarm_user_start_id"] = alarm_user_start_id
+    camData["alarm_user_sounds"] = alarm_user_sounds
     camData["alarm_config"] = alarmConfig
     camData["alarm_status"] = alarmStatus
     camData["alarm_is_hubSiren"] = hubSiren
