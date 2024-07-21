@@ -352,8 +352,9 @@ class TapoSirenVolume(TapoNumberEntity):
                 self._attr_state = 5
             elif str(alarmVolume) == "high":
                 self._attr_state = 10
-            self.alarm_enabled = camData["alarm_config"]["automatic"] == "on"
-            self.alarm_mode = camData["alarm_config"]["mode"]
+            if self.typeOfAlarm == "getAlarm":
+                self.alarm_enabled = camData["alarm_config"]["automatic"] == "on"
+                self.alarm_mode = camData["alarm_config"]["mode"]
 
 
 class TapoSpotlightIntensity(TapoNumberEntity):
@@ -471,5 +472,6 @@ class TapoSirenDuration(TapoNumberEntity):
             self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_state = camData["alarm_config"][self.value_key]
-            self.alarm_enabled = camData["alarm_config"]["automatic"] == "on"
-            self.alarm_mode = camData["alarm_config"]["mode"]
+            if self.typeOfAlarm == "getAlarm":
+                self.alarm_enabled = camData["alarm_config"]["automatic"] == "on"
+                self.alarm_mode = camData["alarm_config"]["mode"]
