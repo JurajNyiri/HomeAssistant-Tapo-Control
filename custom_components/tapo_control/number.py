@@ -388,11 +388,21 @@ class TapoSirenDuration(TapoNumberEntity):
                 self._controller.setHubSirenConfig, int(value)
             )
         else:
-            result = await self._hass.async_add_executor_job(
-                self._controller.executeFunction,
-                "setAlarmConfig",
-                {"msg_alarm": {self.value_key: int(value)}},
-            )
+            if self.typeOfAlarm == "getAlarm":
+                result = await self._hass.async_add_executor_job(
+                    self._controller.setAlarm,
+                    self.alarm_enabled == "on",
+                    "sound" in self.alarm_mode,
+                    "siren" in self.alarm_mode or "light" in self.alarm_mode,
+                    None,
+                    int(value),
+                )
+            elif self.typeOfAlarm == "getAlarmConfig":
+                result = await self._hass.async_add_executor_job(
+                    self._controller.executeFunction,
+                    "setAlarmConfig",
+                    {"msg_alarm": {self.value_key: int(value)}},
+                )
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = value
         self.async_write_ha_state()
@@ -403,3 +413,5 @@ class TapoSirenDuration(TapoNumberEntity):
             self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_state = camData["alarm_config"][self.value_key]
+            self.alarm_enabled = camData["alarm_config"]["automatic"] == "on"
+            self.alarm_mode = camData["alarm_config"]["mode"]
