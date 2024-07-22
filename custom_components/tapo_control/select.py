@@ -23,10 +23,11 @@ async def async_setup_entry(
     async def setupEntities(entry):
         selects = []
 
-        tapoNightVisionSelect = await check_and_create(
-            entry, hass, TapoNightVisionSelect, "getDayNightMode", config_entry
-        )
-        if tapoNightVisionSelect:
+        if (
+            "day_night_mode" in entry["camData"]
+            and entry["camData"]["day_night_mode"] is not None
+        ):
+            tapoNightVisionSelect = TapoNightVisionSelect(entry,hass,config_entry)
             LOGGER.debug("Adding tapoNightVisionSelect...")
             selects.append(tapoNightVisionSelect)
 
@@ -40,6 +41,12 @@ async def async_setup_entry(
         tapoAutomaticAlarmModeSelect = await check_and_create(
             entry, hass, TapoAutomaticAlarmModeSelect, "getAlarm", config_entry
         )
+
+        if not tapoAutomaticAlarmModeSelect:
+            tapoAutomaticAlarmModeSelect = await check_and_create(
+            entry, hass, TapoAutomaticAlarmModeSelect, "getAlarmConfig", config_entry
+            )
+
         if tapoAutomaticAlarmModeSelect:
             LOGGER.debug("Adding tapoAutomaticAlarmModeSelect...")
             selects.append(tapoAutomaticAlarmModeSelect)
