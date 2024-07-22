@@ -932,6 +932,14 @@ async def getCamData(hass, controller):
 
     if day_night_mode is None:
         try:
+            day_night_mode = data["getLightFrequencyInfo"][0]["image"]["common"][
+                "inf_type"
+            ]
+        except Exception:
+            day_night_mode = None
+
+    if day_night_mode is None:
+        try:
             if (
                 data["getNightVisionModeConfig"][0]["image"]["switch"][
                     "night_vision_mode"
