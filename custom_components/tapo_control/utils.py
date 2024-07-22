@@ -964,6 +964,14 @@ async def getCamData(hass, controller):
     camData["force_white_lamp_state"] = force_white_lamp_state
 
     try:
+        smartwtl_digital_level = data["getLdc"][0]["image"]["common"][
+            "smartwtl_digital_level"
+        ]
+    except Exception:
+        smartwtl_digital_level = None
+    camData["smartwtl_digital_level"] = smartwtl_digital_level
+
+    try:
         flip = (
             "on"
             if data["getLdc"][0]["image"]["switch"]["flip_type"] == "center"

@@ -91,14 +91,11 @@ async def async_setup_entry(
                 LOGGER.debug("Adding TapoSirenDuration...")
                 numbers.append(tapoSirenDuration)
 
-        if entry["camData"]["whitelampConfigIntensity"] is not None:
-            tapoSpotlightIntensity = await check_and_create(
-                entry,
-                hass,
-                TapoSpotlightIntensity,
-                "getNightVisionCapability",
-                config_entry,
-            )
+        if (
+            entry["camData"]["whitelampConfigIntensity"] is not None
+            and entry["camData"]["smartwtl_digital_level"] is not None
+        ):
+            tapoSpotlightIntensity = TapoSpotlightIntensity(entry, hass, config_entry)
             if tapoSpotlightIntensity:
                 LOGGER.debug("Adding tapoSpotlightIntensity...")
                 numbers.append(tapoSpotlightIntensity)
@@ -363,7 +360,7 @@ class TapoSpotlightIntensity(TapoNumberEntity):
         self._attr_min_value = 1
         self._attr_native_min_value = 1
         self._attr_max_value = 100
-        self._attr_native_max_value = 100
+        self._attr_native_max_value = int(entry["camData"]["smartwtl_digital_level"])
         self._attr_step = 1
         self._hass = hass
         self._attr_native_value = entry["camData"]["whitelampConfigIntensity"]
