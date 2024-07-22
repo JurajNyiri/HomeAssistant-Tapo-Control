@@ -27,7 +27,7 @@ async def async_setup_entry(
             "day_night_mode" in entry["camData"]
             and entry["camData"]["day_night_mode"] is not None
         ):
-            tapoNightVisionSelect = TapoNightVisionSelect(entry,hass,config_entry)
+            tapoNightVisionSelect = TapoNightVisionSelect(entry, hass, config_entry)
             LOGGER.debug("Adding tapoNightVisionSelect...")
             selects.append(tapoNightVisionSelect)
 
@@ -44,7 +44,11 @@ async def async_setup_entry(
 
         if not tapoAutomaticAlarmModeSelect:
             tapoAutomaticAlarmModeSelect = await check_and_create(
-            entry, hass, TapoAutomaticAlarmModeSelect, "getAlarmConfig", config_entry
+                entry,
+                hass,
+                TapoAutomaticAlarmModeSelect,
+                "getAlarmConfig",
+                config_entry,
             )
 
         if tapoAutomaticAlarmModeSelect:
@@ -160,7 +164,7 @@ async def async_setup_entry(
 
         if (
             entry["camData"]["whitelampConfigIntensity"] is not None
-            and entry["camData"]["nightVisionCapability"] is None
+            and entry["camData"]["smartwtl_digital_level"] is None
         ):
             tapoWhitelampIntensityLevelSelect = await check_and_create(
                 entry,
