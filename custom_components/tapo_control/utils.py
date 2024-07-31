@@ -660,6 +660,31 @@ def getDataForController(hass, entry, controller):
                     return childDevice
 
 
+def getNightModeMap():
+    return {
+        "inf_night_vision": "Infrared Mode",
+        "wtl_night_vision": "Full Color Mode",
+        "md_night_vision": "Smart Mode",
+        "dbl_night_vision": "Doorbell Mode",
+        "shed_night_vision": "Scheduled mode",
+    }
+
+
+def getNightModeName(value: str):
+    nightModeMap = getNightModeMap()
+    if value in nightModeMap:
+        return nightModeMap[value]
+    return value
+
+
+def getNightModeValue(value: str):
+    night_mode_map = getNightModeMap()
+    for key, val in night_mode_map.items():
+        if val == value:
+            return key
+    return value
+
+
 async def getCamData(hass, controller):
     LOGGER.debug("getCamData")
     data = await hass.async_add_executor_job(controller.getMost)
@@ -926,36 +951,35 @@ async def getCamData(hass, controller):
     camData["light_frequency_mode"] = light_frequency_mode
 
     try:
-        day_night_mode = data["getLdc"][0]["image"]["common"]["inf_type"]
+        night_vision_mode = data["getNightVisionModeConfig"][0]["image"]["switch"][
+            "night_vision_mode"
+        ]
     except Exception:
-        day_night_mode = None
+        night_vision_mode = None
+    camData["night_vision_mode"] = night_vision_mode
 
-    if day_night_mode is None:
+    try:
+        night_vision_capability = data["getNightVisionCapability"][0][
+            "image_capability"
+        ]["supplement_lamp"]["night_vision_mode_range"]
+    except Exception:
+        night_vision_capability = None
+    camData["night_vision_capability"] = night_vision_capability
+
+    try:
+        night_vision_mode_switching = data["getLdc"][0]["image"]["common"]["inf_type"]
+    except Exception:
+        night_vision_mode_switching = None
+    camData["night_vision_mode_switching"] = night_vision_mode_switching
+
+    if night_vision_mode_switching is None:
         try:
-            if (
-                data["getNightVisionModeConfig"][0]["image"]["switch"][
-                    "night_vision_mode"
-                ]
-                == "inf_night_vision"
-            ):
-                day_night_mode = "on"
-            elif (
-                data["getNightVisionModeConfig"][0]["image"]["switch"][
-                    "night_vision_mode"
-                ]
-                == "wtl_night_vision"
-            ):
-                day_night_mode = "off"
-            elif (
-                data["getNightVisionModeConfig"][0]["image"]["switch"][
-                    "night_vision_mode"
-                ]
-                == "md_night_vision"
-            ):
-                day_night_mode = "auto"
+            night_vision_mode_switching = data["getLightFrequencyInfo"][0]["image"][
+                "common"
+            ]["inf_type"]
         except Exception:
-            day_night_mode = None
-    camData["day_night_mode"] = day_night_mode
+            night_vision_mode_switching = None
+        camData["night_vision_mode_switching"] = night_vision_mode_switching
 
     try:
         force_white_lamp_state = data["getLdc"][0]["image"]["switch"]["force_wtl_state"]

@@ -5,7 +5,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoSelectEntity
-from .utils import check_and_create
+from .utils import check_and_create, getNightModeName, getNightModeValue
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -24,11 +24,36 @@ async def async_setup_entry(
         selects = []
 
         if (
-            "day_night_mode" in entry["camData"]
-            and entry["camData"]["day_night_mode"] is not None
+            "night_vision_mode_switching" in entry["camData"]
+            and entry["camData"]["night_vision_mode_switching"] is not None
         ):
-            tapoNightVisionSelect = TapoNightVisionSelect(entry, hass, config_entry)
-            LOGGER.debug("Adding tapoNightVisionSelect...")
+            tapoNightVisionSelect = TapoNightVisionSelect(
+                entry,
+                hass,
+                config_entry,
+                "Night Vision Switching",
+                ["auto", "on", "off"],
+                "night_vision_mode_switching",
+                entry["controller"].setDayNightMode,
+            )
+            LOGGER.debug("Adding tapoNightVisionSelect (Night Vision Switching)...")
+            selects.append(tapoNightVisionSelect)
+
+        if (
+            "night_vision_mode" in entry["camData"]
+            and entry["camData"]["night_vision_mode"] is not None
+            and entry["camData"]["night_vision_capability"] is not None
+        ):
+            tapoNightVisionSelect = TapoNightVisionSelect(
+                entry,
+                hass,
+                config_entry,
+                "Night Vision",
+                entry["camData"]["night_vision_capability"],
+                "night_vision_mode",
+                entry["controller"].setNightVisionModeConfig,
+            )
+            LOGGER.debug("Adding tapoNightVisionSelect (Night Vision)...")
             selects.append(tapoNightVisionSelect)
 
         tapoLightFrequencySelect = await check_and_create(
@@ -316,12 +341,26 @@ class TapoPatrolModeSelect(TapoSelectEntity):
 
 
 class TapoNightVisionSelect(TapoSelectEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        self._attr_options = ["auto", "on", "off"]
+    def __init__(
+        self,
+        entry: dict,
+        hass: HomeAssistant,
+        config_entry,
+        entityName: str,
+        nightVisionOptions: list,
+        currentValueKey: str,
+        method,
+    ):
+        self._attr_options = []
+        self.method = method
+        self.currentValueKey = currentValueKey
+        for nightVisionCapability in nightVisionOptions:
+            self._attr_options.append(getNightModeName(nightVisionCapability))
+
         self._attr_current_option = None
         TapoSelectEntity.__init__(
             self,
-            "Night Vision",
+            entityName,
             entry,
             hass,
             config_entry,
@@ -336,12 +375,13 @@ class TapoNightVisionSelect(TapoSelectEntity):
         if not camData:
             self._attr_state = "unavailable"
         else:
-            self._attr_current_option = camData["day_night_mode"]
+            self._attr_current_option = getNightModeName(camData[self.currentValueKey])
             self._attr_state = self._attr_current_option
 
     async def async_select_option(self, option: str) -> None:
+        LOGGER.debug("Calling " + self.method.__name__ + " with " + option + "...")
         result = await self._hass.async_add_executor_job(
-            self._controller.setDayNightMode, option
+            self.method, getNightModeValue(option)
         )
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = option
