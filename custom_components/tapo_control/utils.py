@@ -666,7 +666,7 @@ def getNightModeMap():
         "wtl_night_vision": "Full Color Mode",
         "md_night_vision": "Smart Mode",
         "dbl_night_vision": "Doorbell Mode",
-        "shed_night_vision": "Scheduled mode",
+        "shed_night_vision": "Scheduled Mode",
     }
 
 
