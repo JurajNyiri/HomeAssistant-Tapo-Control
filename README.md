@@ -228,7 +228,6 @@ Users reported full functionality with following Tapo Cameras:
 - C225
 - C310
 - C320WS
-- C420
 - C500
 - C510W
 - C520WS
@@ -237,6 +236,8 @@ The integration _should_ work with any other non-battery Tapo Cameras.
 
 Battery cameras controlled via HUB are working only for control:
 
+- D230
+- C420
 - C420S2
 
 If you had success with some other model, please report it via a new issue.
