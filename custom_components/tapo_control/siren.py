@@ -114,6 +114,7 @@ class TapoSiren(TapoSirenEntity):
 
         if result_has_error(result) and result_has_error(result2):
             self._attr_available = False
+            raise Exception("Camera does not support triggering the siren.")
         else:
             self._is_on = True
             if duration:
@@ -155,7 +156,7 @@ class TapoSiren(TapoSirenEntity):
                     LOGGER.debug(e)
             if result_has_error(result) and result_has_error(result2):
                 self._attr_available = False
-
+                raise Exception("Camera does not support triggering the siren.")
         self._attr_is_on = False
 
         self.async_write_ha_state()
