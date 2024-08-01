@@ -146,10 +146,6 @@ class TapoSensorEntity(SensorEntity, TapoEntity):
         self.updateTapo(entry["camData"])
         LOGGER.debug(f"Tapo {name_suffix} - init - end")
 
-    @property
-    def state(self):
-        return self._attr_state
-
 
 class TapoButtonEntity(ButtonEntity, TapoEntity):
     def __init__(
