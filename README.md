@@ -218,6 +218,7 @@ Users reported full functionality with following Tapo Cameras:
 
 - TC60
 - TC70
+- TC85
 - C100
 - C110
 - C120
