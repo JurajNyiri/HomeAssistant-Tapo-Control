@@ -171,7 +171,8 @@ class TapoSiren(TapoSirenEntity):
 
 def result_has_error(result):
     if (
-        "result" in result
+        result is not False
+        and "result" in result
         and "responses" in result["result"]
         and any(
             map(
