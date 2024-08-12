@@ -1,21 +1,18 @@
-from homeassistant.const import STATE_UNAVAILABLE
-from homeassistant.core import HomeAssistant
+"""Tapo camera sensors."""
+
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import (
+    PERCENTAGE,
+    SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+    STATE_UNAVAILABLE,
+)
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, ENABLE_MEDIA_SYNC, LOGGER
 from .tapo.entities import TapoSensorEntity
-
-from homeassistant.components.sensor import (
-    SensorDeviceClass,
-    SensorStateClass,
-)
-from homeassistant.helpers.entity import EntityCategory
-from homeassistant.const import PERCENTAGE, SIGNAL_STRENGTH_DECIBELS_MILLIWATT
-
-
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    return True
 
 
 async def async_setup_entry(
@@ -23,62 +20,44 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
+    """Setup Tapo camera sensors using config entry."""
     LOGGER.debug("Setting up sensors")
     entry = hass.data[DOMAIN][config_entry.entry_id]
 
-    async def setupEntities(entry):
+    async def setupEntities(entry: dict) -> list:
+        """Setup the entities."""
         sensors = []
 
-        if (
-            "camData" in entry
-            and "basic_info" in entry["camData"]
-            and "battery_percent" in entry["camData"]["basic_info"]
-        ):
-            LOGGER.debug("Adding tapoBatterySensor...")
-            sensors.append(TapoBatterySensor(entry, hass, entry))
+        if "camData" in entry:
+            camData: dict = entry["camData"]
+            if "basic_info" in camData and "battery_percent" in camData["basic_info"]:
+                LOGGER.debug("Adding tapoBatterySensor...")
+                sensors.append(TapoBatterySensor(entry, hass, config_entry))
 
-        if (
-            "camData" in entry
-            and "connectionInformation" in entry["camData"]
-            and entry["camData"]["connectionInformation"] is not False
-            and "ssid" in entry["camData"]["connectionInformation"]
-        ):
-            LOGGER.debug("Adding TapoSSIDSensor...")
-            sensors.append(TapoSSIDSensor(entry, hass, entry))
+            if camData.get("connectionInformation", False) is not False:
+                if "ssid" in camData["connectionInformation"]:
+                    LOGGER.debug("Adding TapoSSIDSensor...")
+                    sensors.append(TapoSSIDSensor(entry, hass, config_entry))
+                if "link_type" in camData["connectionInformation"]:
+                    LOGGER.debug("Adding TapoLinkTypeSensor...")
+                    sensors.append(TapoLinkTypeSensor(entry, hass, config_entry))
+                if "rssiValue" in camData["connectionInformation"]:
+                    LOGGER.debug("Adding TapoRSSISensor...")
+                    sensors.append(TapoRSSISensor(entry, hass, config_entry))
 
-        if (
-            "camData" in entry
-            and "connectionInformation" in entry["camData"]
-            and entry["camData"]["connectionInformation"] is not False
-            and "link_type" in entry["camData"]["connectionInformation"]
-        ):
-            LOGGER.debug("Adding TapoLinkTypeSensor...")
-            sensors.append(TapoLinkTypeSensor(entry, hass, entry))
-
-        if (
-            "camData" in entry
-            and "connectionInformation" in entry["camData"]
-            and entry["camData"]["connectionInformation"] is not False
-            and "rssiValue" in entry["camData"]["connectionInformation"]
-        ):
-            LOGGER.debug("Adding TapoRSSISensor...")
-            sensors.append(TapoRSSISensor(entry, hass, entry))
-
-        if (
-            "camData" in entry
-            and "sdCardData" in entry["camData"]
-            and len(entry["camData"]["sdCardData"]) > 0
-        ):
-            for hdd in entry["camData"]["sdCardData"]:
-                for sensorProperty in hdd:
-                    LOGGER.debug(
-                        f"Adding TapoHDDSensor for disk {hdd['disk_name']} and property {sensorProperty}..."
-                    )
-                    sensors.append(
-                        TapoHDDSensor(
-                            entry, hass, entry, hdd["disk_name"], sensorProperty
+            if "sdCardData" in camData and len(camData["sdCardData"]) > 0:
+                for hdd in camData["sdCardData"]:
+                    for field in hdd:
+                        LOGGER.debug(
+                            "Adding TapoHDDSensor for disk %s and property %s...",
+                            hdd["disk_name"],
+                            field,
                         )
-                    )
+                        sensors.append(
+                            TapoHDDSensor(
+                                entry, hass, config_entry, hdd["disk_name"], field
+                            )
+                        )
 
         sensors.append(TapoSyncSensor(entry, hass, config_entry))
 
@@ -92,13 +71,17 @@ async def async_setup_entry(
 
 
 class TapoRSSISensor(TapoSensorEntity):
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.SIGNAL_STRENGTH
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
+    """Tapo RSSI sensor entity."""
+
+    _attr_device_class = SensorDeviceClass.SIGNAL_STRENGTH
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = SIGNAL_STRENGTH_DECIBELS_MILLIWATT
 
-    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        self._attr_options = None
-        self._attr_current_option = None
+    def __init__(
+        self, entry: dict, hass: HomeAssistant, config_entry: ConfigEntry
+    ) -> None:
+        """Initialize the entity."""
         TapoSensorEntity.__init__(
             self,
             "RSSI",
@@ -109,32 +92,30 @@ class TapoRSSISensor(TapoSensorEntity):
             None,
         )
 
-    @property
-    def entity_category(self):
-        return EntityCategory.DIAGNOSTIC
-
     async def async_update(self) -> None:
         await self._coordinator.async_request_refresh()
 
-    def updateTapo(self, camData):
+    def updateTapo(self, camData: dict | None) -> None:
+        """Update the entity."""
         if (
             not camData
             or camData["connectionInformation"] is False
             or "rssiValue" not in camData["connectionInformation"]
         ):
-            self._attr_state = "unavailable"
+            self._attr_native_value = "unavailable"
         else:
-            self._attr_state = camData["connectionInformation"]["rssiValue"]
+            self._attr_native_value = camData["connectionInformation"]["rssiValue"]
 
 
 class TapoLinkTypeSensor(TapoSensorEntity):
-    _attr_device_class: SensorDeviceClass = None
-    _attr_state_class: SensorStateClass = None
-    _attr_native_unit_of_measurement = None
+    """Tapo link type sensor entity."""
 
-    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        self._attr_options = None
-        self._attr_current_option = None
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self, entry: dict, hass: HomeAssistant, config_entry: ConfigEntry
+    ) -> None:
+        """Initialize the entity."""
         TapoSensorEntity.__init__(
             self,
             "Link Type",
@@ -145,31 +126,31 @@ class TapoLinkTypeSensor(TapoSensorEntity):
             None,
         )
 
-    @property
-    def entity_category(self):
-        return EntityCategory.DIAGNOSTIC
-
     async def async_update(self) -> None:
+        """Update the entity."""
         await self._coordinator.async_request_refresh()
 
-    def updateTapo(self, camData):
+    def updateTapo(self, camData: dict | None) -> None:
+        """Update the entity."""
         if (
             not camData
             or camData["connectionInformation"] is False
             or "link_type" not in camData["connectionInformation"]
         ):
-            self._attr_state = "unavailable"
+            self._attr_native_value = "unavailable"
         else:
-            self._attr_state = camData["connectionInformation"]["link_type"]
+            self._attr_native_value = camData["connectionInformation"]["link_type"]
 
 
 class TapoSSIDSensor(TapoSensorEntity):
-    _attr_device_class: SensorDeviceClass = None
-    _attr_state_class: SensorStateClass = None
-    _attr_native_unit_of_measurement = None
+    """Tapo SSID sensor entity."""
 
-    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        self._attr_current_option = None
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self, entry: dict, hass: HomeAssistant, config_entry: ConfigEntry
+    ) -> None:
+        """Initialize the entity."""
         TapoSensorEntity.__init__(
             self,
             "Network SSID",
@@ -180,31 +161,34 @@ class TapoSSIDSensor(TapoSensorEntity):
             None,
         )
 
-    @property
-    def entity_category(self):
-        return EntityCategory.DIAGNOSTIC
-
     async def async_update(self) -> None:
+        """Update the entity."""
         await self._coordinator.async_request_refresh()
 
-    def updateTapo(self, camData):
+    def updateTapo(self, camData: dict | None) -> None:
+        """Update the entity."""
         if (
             not camData
             or camData["connectionInformation"] is False
             or "ssid" not in camData["connectionInformation"]
         ):
-            self._attr_state = "unavailable"
+            self._attr_native_value = "unavailable"
         else:
-            self._attr_state = camData["connectionInformation"]["ssid"]
+            self._attr_native_value = camData["connectionInformation"]["ssid"]
 
 
 class TapoBatterySensor(TapoSensorEntity):
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.BATTERY
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
+    """Tapo battery sensor entity."""
+
+    _attr_device_class = SensorDeviceClass.BATTERY
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = PERCENTAGE
 
-    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        self._attr_current_option = None
+    def __init__(
+        self, entry: dict, hass: HomeAssistant, config_entry: ConfigEntry
+    ) -> None:
+        """Initialize the entity."""
         TapoSensorEntity.__init__(
             self,
             "Battery",
@@ -215,30 +199,33 @@ class TapoBatterySensor(TapoSensorEntity):
             SensorDeviceClass.BATTERY,
         )
 
-    @property
-    def entity_category(self):
-        return EntityCategory.DIAGNOSTIC
-
     async def async_update(self) -> None:
+        """Update the entity."""
         await self._coordinator.async_request_refresh()
 
-    def updateTapo(self, camData):
+    def updateTapo(self, camData: dict | None) -> None:
+        """Update the entity."""
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_native_value = "unavailable"
         else:
-            self._attr_state = camData["basic_info"]["battery_percent"]
+            self._attr_native_value = camData["basic_info"]["battery_percent"]
 
 
 class TapoHDDSensor(TapoSensorEntity):
-    _attr_device_class: SensorDeviceClass = None
-    _attr_state_class: SensorStateClass = None
-    _attr_native_unit_of_measurement = None
+    """Tapo HDD sensor entities."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
 
     def __init__(
-        self, entry: dict, hass: HomeAssistant, config_entry, sensorName, sensorProperty
-    ):
-        self._attr_options = None
-        self._attr_current_option = None
+        self,
+        entry: dict,
+        hass: HomeAssistant,
+        config_entry: ConfigEntry,
+        sensorName: str,
+        sensorProperty: str,
+    ) -> None:
+        """Initialize the entity."""
         self._sensor_name = sensorName
         self._sensor_property = sensorProperty
         TapoSensorEntity.__init__(
@@ -251,30 +238,29 @@ class TapoHDDSensor(TapoSensorEntity):
             None,
         )
 
-    @property
-    def entity_category(self):
-        return EntityCategory.DIAGNOSTIC
-
     async def async_update(self) -> None:
+        """Update the entity."""
         await self._coordinator.async_request_refresh()
 
-    def updateTapo(self, camData):
+    def updateTapo(self, camData: dict | None) -> None:
+        """Update the entity."""
         state = STATE_UNAVAILABLE
         if camData and "sdCardData" in camData and len(camData["sdCardData"]) > 0:
             for hdd in camData["sdCardData"]:
                 if hdd["disk_name"] == self._sensor_name:
                     state = hdd[self._sensor_property]
-        self._attr_state = state
+        self._attr_native_value = state
 
 
 class TapoSyncSensor(TapoSensorEntity):
-    _attr_device_class: SensorDeviceClass = None
-    _attr_state_class: SensorStateClass = None
-    _attr_native_unit_of_measurement = None
+    """Tapo sync sensor entities."""
 
-    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        self._attr_options = None
-        self._attr_current_option = None
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self, entry: dict, hass: HomeAssistant, config_entry: ConfigEntry
+    ) -> None:
+        """Initialize the entity."""
         TapoSensorEntity.__init__(
             self,
             "Recordings Synchronization",
@@ -285,66 +271,35 @@ class TapoSyncSensor(TapoSensorEntity):
             None,
         )
 
-    @property
-    def entity_category(self):
-        return EntityCategory.DIAGNOSTIC
-
     async def async_update(self) -> None:
+        """Update the entity."""
         await self._coordinator.async_request_refresh()
 
-    def updateTapo(self, camData):
-        enableMediaSync = self._config_entry.data.get(ENABLE_MEDIA_SYNC)
-        LOGGER.debug(f"Enable Media Sync: {enableMediaSync}")
-        if enableMediaSync:
-            LOGGER.debug(
-                f"Initial Media Scan: {self._hass.data[DOMAIN][self._config_entry.entry_id]['initialMediaScanDone']}"
-            )
-            LOGGER.debug(
-                f"Media Sync Available: {self._hass.data[DOMAIN][self._config_entry.entry_id]['mediaSyncAvailable']}"
-            )
-            LOGGER.debug(
-                f"Download Progress: {self._hass.data[DOMAIN][self._config_entry.entry_id]['downloadProgress']}"
-            )
-            LOGGER.debug(
-                f"Running media sync: {self._hass.data[DOMAIN][self._config_entry.entry_id]['runningMediaSync']}"
-            )
-            LOGGER.debug(
-                f"Media Sync Schedueled: {self._hass.data[DOMAIN][self._config_entry.entry_id]['mediaSyncScheduled']}"
-            )
-            LOGGER.debug(
-                f"Media Sync Ran Once: {self._hass.data[DOMAIN][self._config_entry.entry_id]['mediaSyncRanOnce']}"
-            )
+    def updateTapo(self, camData: dict | None) -> None:
+        """Update the entity."""
+        enable_media_sync = self._config_entry.data.get(ENABLE_MEDIA_SYNC)
+        LOGGER.debug("Enable Media Sync: %s", enable_media_sync)
+        if enable_media_sync:
+            data = self._hass.data[DOMAIN][self._config_entry.entry_id]
+            LOGGER.debug("Initial Media Scan: %s", data["initialMediaScanDone"])
+            LOGGER.debug("Media Sync Available: %s", data["mediaSyncAvailable"])
+            LOGGER.debug("Download Progress: %s", data["downloadProgress"])
+            LOGGER.debug("Running media sync: %s", data["runningMediaSync"])
+            LOGGER.debug("Media Sync Schedueled: %s", data["mediaSyncScheduled"])
+            LOGGER.debug("Media Sync Ran Once: %s", data["mediaSyncRanOnce"])
 
-            if not self._hass.data[DOMAIN][self._config_entry.entry_id][
-                "initialMediaScanDone"
-            ] or (
-                self._hass.data[DOMAIN][self._config_entry.entry_id][
-                    "initialMediaScanDone"
-                ]
-                and not self._hass.data[DOMAIN][self._config_entry.entry_id][
-                    "mediaSyncRanOnce"
-                ]
+            if not data["initialMediaScanDone"] or (
+                data["initialMediaScanDone"] and not data["mediaSyncRanOnce"]
             ):
-                self._attr_state = "Starting"
-            elif not self._hass.data[DOMAIN][self._config_entry.entry_id][
-                "mediaSyncAvailable"
-            ]:
-                self._attr_state = "No Recordings Found"
-            elif self._hass.data[DOMAIN][self._config_entry.entry_id][
-                "downloadProgress"
-            ]:
-                if (
-                    self._hass.data[DOMAIN][self._config_entry.entry_id][
-                        "downloadProgress"
-                    ]
-                    == "Finished download"
-                ):
-                    self._attr_state = "Idle"
+                self._attr_native_value = "Starting"
+            elif not data["mediaSyncAvailable"]:
+                self._attr_native_value = "No Recordings Found"
+            elif data["downloadProgress"]:
+                if data["downloadProgress"] == "Finished download":
+                    self._attr_native_value = "Idle"
                 else:
-                    self._attr_state = self._hass.data[DOMAIN][
-                        self._config_entry.entry_id
-                    ]["downloadProgress"]
+                    self._attr_native_value = data["downloadProgress"]
             else:
-                self._attr_state = "Idle"
+                self._attr_native_value = "Idle"
         else:
-            self._attr_state = "Idle"
+            self._attr_native_value = "Idle"
