@@ -218,7 +218,6 @@ Users reported full functionality with following Tapo Cameras:
 
 - TC60
 - TC70
-- TC85
 - C100
 - C110
 - C120
@@ -239,6 +238,7 @@ Battery cameras controlled via HUB are working only for control:
 - D230
 - C420
 - C420S2
+- TC85
 
 If you had success with some other model, please report it via a new issue.
 
