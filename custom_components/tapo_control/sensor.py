@@ -1,11 +1,14 @@
 """Tapo camera sensors."""
 
+import re
+
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     PERCENTAGE,
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     STATE_UNAVAILABLE,
+    UnitOfInformation,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
@@ -249,6 +252,15 @@ class TapoHDDSensor(TapoSensorEntity):
             for hdd in camData["sdCardData"]:
                 if hdd["disk_name"] == self._sensor_name:
                     state = hdd[self._sensor_property]
+        if "space" in self._sensor_property and (
+            match := re.search(r"[-+]?\d*\.?\d+", state)
+        ):
+            value = match.group()
+            if (unit := state.replace(value, "")) in UnitOfInformation:
+                self._attr_device_class = SensorDeviceClass.DATA_SIZE
+                self._attr_native_unit_of_measurement = UnitOfInformation(unit)
+                self._attr_suggested_unit_of_measurement = UnitOfInformation.GIGABYTES
+                state = value
         self._attr_native_value = state
 
 
