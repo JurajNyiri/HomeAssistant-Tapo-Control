@@ -6,7 +6,7 @@
   "codeowners": [
     "@JurajNyiri"
   ],
-  "version": "5.6.1",
+  "version": "5.6.2",
   "requirements": [
     "pytapo==3.3.30"
   ],

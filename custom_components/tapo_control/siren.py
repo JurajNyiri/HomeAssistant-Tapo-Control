@@ -183,7 +183,9 @@ def result_has_error(result):
         )
     ):
         return False
-    if "error_code" not in result or result["error_code"] == 0:
+    if result is not False and (
+        "error_code" not in result or result["error_code"] == 0
+    ):
         return False
     else:
         return True
