@@ -732,6 +732,24 @@ async def getCamData(hass, controller):
     )
 
     try:
+        timezone_timezone = data["getTimezone"][0]["system"]["basic"]["timezone"]
+    except Exception:
+        timezone_timezone = None
+    camData["timezone_timezone"] = timezone_timezone
+
+    try:
+        timezone_zone_id = data["getTimezone"][0]["system"]["basic"]["zone_id"]
+    except Exception:
+        timezone_zone_id = None
+    camData["timezone_zone_id"] = timezone_zone_id
+
+    try:
+        timezone_timing_mode = data["getTimezone"][0]["system"]["basic"]["timing_mode"]
+    except Exception:
+        timezone_timing_mode = None
+    camData["timezone_timing_mode"] = timezone_timing_mode
+
+    try:
         personDetectionData = data["getPersonDetectionConfig"][0]["people_detection"][
             "detection"
         ]

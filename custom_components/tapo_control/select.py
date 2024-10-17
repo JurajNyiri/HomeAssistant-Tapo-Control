@@ -23,6 +23,13 @@ async def async_setup_entry(
     async def setupEntities(entry):
         selects = []
 
+        tapoTimezoneSelect = await check_and_create(
+            entry, hass, TapoTimezoneSelect, "getTimezone", config_entry
+        )
+        if tapoTimezoneSelect:
+            LOGGER.debug("Adding tapoTimezoneSelect...")
+            selects.append(tapoTimezoneSelect)
+
         if (
             "night_vision_mode_switching" in entry["camData"]
             and entry["camData"]["night_vision_mode_switching"] is not None
@@ -338,6 +345,140 @@ class TapoPatrolModeSelect(TapoSelectEntity):
     @property
     def entity_category(self):
         return None
+
+
+class TapoTimezoneSelect(TapoSelectEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._attr_options = [
+            "UTC+12:00 (Pacific/Wake)",
+            "UTC-11:00 (Pacific/Midway)",
+            "UTC-10:00 (Pacific/Honolulu)",
+            "UTC-09:00 (America/Archorage)",
+            "UTC-08:00 (America/Los_Angeles)",
+            "UTC-07:00 (America/Chihuahua)",
+            "UTC-07:00 (America/Denver)",
+            "UTC-06:00 (America/Tegucigalpa)",
+            "UTC-06:00 (America/Chicago)",
+            "UTC-06:00 (America/Mexico_City)",
+            "UTC-06:00 (Canada/Saskatchewan)",
+            "UTC-05:00 (America/Bogota)",
+            "UTC-05:00 (America/New_York)",
+            "UTC-05:00 (America/Indiana/Indianapolis)",
+            "UTC-04:00 (America/Caracas)",
+            "UTC-04:00 (America/Asuncion)",
+            "UTC-04:00 (America/Halifax)",
+            "UTC-04:00 (America/Cuiaba)",
+            "UTC-04:00 (America/La_Paz)",
+            "UTC-04:00 (America/Santiago)",
+            "UTC-03:30 (Canada/Newfoundland)",
+            "UTC-03:00 (America/Sao_Paulo)",
+            "UTC-03:00 (America/Buenos_Aires)",
+            "UTC-03:00 (America/Cayenne)",
+            "UTC-03:00 (America/Godthab)",
+            "UTC-03:00 (America/Montevideo)",
+            "UTC-02:00 (Atlantic/South_Georgia)",
+            "UTC-01:00 (Atlantic Azores)",
+            "UTC-01:00 (Atlantic/Cape_Verde)",
+            "UTC-00:00 (Africa/Casablanca)",
+            "UTC-00:00 (UTC)",
+            "UTC-00:00 (Europe/London)",
+            "UTC-00:00 (Atlantic/Reykjavik)",
+            "UTC+01:00 (Europe/Amsterdam)",
+            "UTC+01:00 (Europe/Belgrade)",
+            "UTC+01:00 (Europe/Brussels)",
+            "UTC+01:00 (Europe/Sarajevo)",
+            "UTC+01:00 (Africa/Algiers)",
+            "UTC+02:00 (Europe/Athens)",
+            "UTC+02:00 (Asia/Beirut)",
+            "UTC+02:00 (Africa/Cairo)",
+            "UTC+02:00 (Asia/Damascus)",
+            "UTC+02:00 (Africa/Harare)",
+            "UTC+02:00 (Europe/Vilnius)",
+            "UTC+02:00 (Asia/Jerusalem)",
+            "UTC+02:00 (Asia/Amman)",
+            "UTC+03:00 (Asia/Baghdad)",
+            "UTC+03:00 (Europe/Minsk)",
+            "UTC+03:00 (Asia/Kuwait)",
+            "UTC+03:00 (Africa/Nairobi)",
+            "UTC+03:00 (Asia/Istanbul)",
+            "UTC+03:00 (Europe/Moscow)",
+            "UTC+03:30 (Asia/Tehran)",
+            "UTC+04:00 (Asia/Muscat)",
+            "UTC+04:00 (Asia/Baku)",
+            "UTC+04:00 (Asia/Tbilisi)",
+            "UTC+04:00 (Asia/Yerevan)",
+            "UTC+04:30 (Asia/Kabul)",
+            "UTC+05:00 (Asia/Karachi)",
+            "UTC+05:00 (Asia/Yekaterinburg)",
+            "UTC+05:00 (Asia/Tashkent)",
+            "UTC+05:30 (Asia/Kolkata)",
+            "UTC+05:30 (Asia/Colombo)",
+            "UTC+05:45 (Asia/Katmandu)",
+            "UTC+06:00 (Asia/Dhaka)",
+            "UTC+06:30 (Asia/Rangoon)",
+            "UTC+07:00 (Asia/Bangkok)",
+            "UTC+07:00 (Asia/Novosibirsk)",
+            "UTC+07:00 (Asia/Krasnoyarsk)",
+            "UTC+08:00 (Asia/Hong_Kong)",
+            "UTC+08:00 (Asia/Kuala_Lumpur)",
+            "UTC+08:00 (Australia/Perth)",
+            "UTC+08:00 (Asia/Taipei)",
+            "UTC+08:00 (Asia/Ulaanbaatar)",
+            "UTC+08:00 (Asia/Irkutsk)",
+            "UTC+09:00 (Asia/Tokyo)",
+            "UTC+09:00 (Asia/Seoul)",
+            "UTC+09:00 (Asia/Yakutsk)",
+            "UTC+09:30 (Australia/Adelaide)",
+            "UTC+09:30 (Australia/Darwin)",
+            "UTC+10:00 (Australia/Brisbane)",
+            "UTC+10:00 (Australia/Canberra)",
+            "UTC+10:00 (Pacific/Guam)",
+            "UTC+10:00 (Australia/Hobart)",
+            "UTC+10:00 (Asia/Vladivostok)",
+            "UTC+11:00 (Pacific/Noumea)",
+            "UTC+11:00 (Asia/Magadan)",
+            "UTC+12:00 (Pacific/Auckland)",
+            "UTC+12:00 (Pacific/Fiji)",
+            "UTC+12:00 (Asia/Kamchatka)",
+            "UTC+13:00 (Pacific/Tongatapu)",
+        ]
+        self._attr_current_option = None
+        TapoSelectEntity.__init__(
+            self,
+            "Timezone",
+            entry,
+            hass,
+            config_entry,
+            "mdi:map-clock",
+        )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+
+        if (
+            not camData
+            or camData["timezone_timezone"] is None
+            or camData["timezone_zone_id"] is None
+        ):
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            self._attr_current_option = (
+                f"{camData['timezone_timezone']} ({camData['timezone_zone_id']})"
+            )
+            self._attr_state = self._attr_current_option
+
+    async def async_select_option(self, option: str) -> None:
+        timezone_timezone = option.split(" ")[0]
+        timezone_zone_id = option.split("(")[-1].strip(")")
+        result = await self._hass.async_add_executor_job(
+            self._controller.setTimezone, timezone_timezone, timezone_zone_id
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = option
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
 
 
 class TapoNightVisionSelect(TapoSelectEntity):
