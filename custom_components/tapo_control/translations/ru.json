@@ -98,7 +98,6 @@
         "data": {
           "media_view_days_order": "Порядок дней в браузере медиа",
           "media_view_recordings_order": "Порядок записей в браузере медиа",
-          "enable_media_sync": "Включить синхронизацию медиа",
           "media_sync_hours": "Количество часов для синхронизации",
           "media_sync_cold_storage_path": "[Требуется перезапуск] Путь к постоянному хранилищу"
         },

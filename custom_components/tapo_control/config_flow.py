@@ -16,7 +16,6 @@ from .utils import (
 )
 from .const import (
     DOMAIN,
-    ENABLE_MEDIA_SYNC,
     ENABLE_MOTION_SENSOR,
     ENABLE_STREAM,
     ENABLE_SOUND_DETECTION,
@@ -47,7 +46,7 @@ from .const import (
 class FlowHandler(ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 16
+    VERSION = 17
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -397,7 +396,6 @@ class FlowHandler(ConfigFlow):
                 data={
                     MEDIA_VIEW_DAYS_ORDER: "Ascending",
                     MEDIA_VIEW_RECORDINGS_ORDER: "Ascending",
-                    ENABLE_MEDIA_SYNC: False,
                     MEDIA_SYNC_HOURS: "",
                     MEDIA_SYNC_COLD_STORAGE_PATH: "",
                     ENABLE_MOTION_SENSOR: enable_motion_sensor,
@@ -1012,7 +1010,6 @@ class TapoOptionsFlowHandler(OptionsFlow):
             "[%s] Opened Tapo options - media.", self.config_entry.data[CONF_IP_ADDRESS]
         )
         errors = {}
-        enable_media_sync = self.config_entry.data[ENABLE_MEDIA_SYNC]
         media_view_days_order = self.config_entry.data[MEDIA_VIEW_DAYS_ORDER]
         media_view_recordings_order = self.config_entry.data[
             MEDIA_VIEW_RECORDINGS_ORDER
@@ -1025,10 +1022,6 @@ class TapoOptionsFlowHandler(OptionsFlow):
         allConfigData = {**self.config_entry.data}
         if user_input is not None:
             try:
-                if ENABLE_MEDIA_SYNC in user_input:
-                    enable_media_sync = user_input[ENABLE_MEDIA_SYNC]
-                else:
-                    enable_media_sync = False
 
                 if MEDIA_VIEW_DAYS_ORDER in user_input:
                     media_view_days_order = user_input[MEDIA_VIEW_DAYS_ORDER]
@@ -1054,7 +1047,6 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 else:
                     media_sync_cold_storage_path = ""
 
-                allConfigData[ENABLE_MEDIA_SYNC] = enable_media_sync
                 allConfigData[MEDIA_VIEW_DAYS_ORDER] = media_view_days_order
                 allConfigData[MEDIA_VIEW_RECORDINGS_ORDER] = media_view_recordings_order
                 allConfigData[MEDIA_SYNC_HOURS] = media_sync_hours
@@ -1082,10 +1074,6 @@ class TapoOptionsFlowHandler(OptionsFlow):
                         MEDIA_VIEW_RECORDINGS_ORDER,
                         description={"suggested_value": media_view_recordings_order},
                     ): vol.In(MEDIA_VIEW_RECORDINGS_ORDER_OPTIONS),
-                    vol.Optional(
-                        ENABLE_MEDIA_SYNC,
-                        description={"suggested_value": enable_media_sync},
-                    ): bool,
                     vol.Optional(
                         MEDIA_SYNC_HOURS,
                         description={"suggested_value": media_sync_hours},

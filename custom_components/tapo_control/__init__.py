@@ -17,6 +17,7 @@ from homeassistant.exceptions import (
     ConfigEntryAuthFailed,
     DependencyError,
 )
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt
 from homeassistant.components.media_source.error import Unresolvable
@@ -56,6 +57,7 @@ from .utils import (
     deleteDir,
     getColdDirPathForEntry,
     getDataForController,
+    getEntryStorageFile,
     getHotDirPathForEntry,
     isUsingHTTPS,
     mediaCleanup,
@@ -252,6 +254,18 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         new[UPDATE_INTERVAL_BATTERY] = UPDATE_INTERVAL_BATTERY_DEFAULT
 
         hass.config_entries.async_update_entry(config_entry, data=new, version=16)
+
+    if config_entry.version == 16:
+        new = {**config_entry.data}
+        entry_storage = Store(hass, version=1, key=getEntryStorageFile(config_entry))
+
+        if ENABLE_MEDIA_SYNC in new:
+            await entry_storage.async_save({ENABLE_MEDIA_SYNC: new[ENABLE_MEDIA_SYNC]})
+            del new[ENABLE_MEDIA_SYNC]
+        else:
+            await entry_storage.async_save({ENABLE_MEDIA_SYNC: False})
+
+        hass.config_entries.async_update_entry(config_entry, data=new, version=17)
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
@@ -648,11 +662,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     except Exception as err:
                         hass.data[DOMAIN][entry.entry_id]["initialMediaScanDone"] = True
                         hass.data[DOMAIN][entry.entry_id]["mediaSyncAvailable"] = False
-                        enableMediaSync = entry.data.get(ENABLE_MEDIA_SYNC)
+                        enableMediaSync = hass.data[DOMAIN][entry.entry_id][
+                            ENABLE_MEDIA_SYNC
+                        ]
                         errMsg = "Disabling media sync as there was error returned from getRecordingsList. Do you have SD card inserted?"
                         if enableMediaSync:
-                            LOGGER.warn(errMsg)
-                            LOGGER.warn(err)
+                            LOGGER.warning(errMsg)
+                            LOGGER.warning(err)
                         else:
                             LOGGER.info(errMsg)
                             LOGGER.info(err)
@@ -717,6 +733,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "downloadedStreams": {},  # keeps track of all videos downloaded
             "downloadProgress": False,
             "initialMediaScanDone": False,
+            ENABLE_MEDIA_SYNC: None,
             "mediaSyncScheduled": False,
             "mediaSyncRanOnce": False,
             "mediaSyncAvailable": True,
@@ -813,9 +830,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         # todo move to utils
         async def mediaSync(time=None):
-            LOGGER.debug("mediaSync")
+            LOGGER.warning("mediaSync")
             hass.data[DOMAIN][entry.entry_id]["mediaSyncRanOnce"] = True
-            enableMediaSync = entry.data.get(ENABLE_MEDIA_SYNC)
+            enableMediaSync = hass.data[DOMAIN][entry.entry_id][ENABLE_MEDIA_SYNC]
             mediaSyncHours = entry.data.get(MEDIA_SYNC_HOURS)
 
             if mediaSyncHours == "":
@@ -835,31 +852,37 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     tapoController: Tapo = hass.data[DOMAIN][entry.entry_id][
                         "controller"
                     ]
-                    LOGGER.debug("getRecordingsList -1")
+                    LOGGER.warning("getRecordingsList -1")
                     recordingsList = await hass.async_add_executor_job(
                         tapoController.getRecordingsList
                     )
-                    LOGGER.debug("getRecordingsList -2")
+                    LOGGER.warning("getRecordingsList -2")
 
                     ts = datetime.datetime.utcnow().timestamp()
                     for searchResult in recordingsList:
                         for key in searchResult:
-                            if (mediaSyncTime is False) or (
-                                (
-                                    mediaSyncTime is not False
-                                    and (
-                                        (int(ts) - (int(mediaSyncTime) + 86400))
-                                        < convert_to_timestamp(
-                                            searchResult[key]["date"]
+                            enableMediaSync = hass.data[DOMAIN][entry.entry_id][
+                                ENABLE_MEDIA_SYNC
+                            ]
+                            if enableMediaSync and (
+                                (mediaSyncTime is False)
+                                or (
+                                    (
+                                        mediaSyncTime is not False
+                                        and (
+                                            (int(ts) - (int(mediaSyncTime) + 86400))
+                                            < convert_to_timestamp(
+                                                searchResult[key]["date"]
+                                            )
                                         )
                                     )
                                 )
                             ):
-                                LOGGER.debug("getRecordings -1")
+                                LOGGER.warning("getRecordings -1")
                                 recordingsForDay = await getRecordings(
                                     hass, entry.entry_id, searchResult[key]["date"]
                                 )
-                                LOGGER.debug("getRecordings -2")
+                                LOGGER.warning("getRecordings -2")
                                 totalRecordingsToDownload = 0
                                 for recording in recordingsForDay:
                                     for recordingKey in recording:
@@ -875,20 +898,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                         ):
                                             recordingCount += 1
                                             try:
-                                                LOGGER.debug("getRecording -1")
-                                                await getRecording(
-                                                    hass,
-                                                    tapoController,
-                                                    entry.entry_id,
-                                                    searchResult[key]["date"],
-                                                    recording[recordingKey][
-                                                        "startTime"
-                                                    ],
-                                                    recording[recordingKey]["endTime"],
-                                                    recordingCount,
-                                                    totalRecordingsToDownload,
-                                                )
-                                                LOGGER.debug("getRecording -2")
+                                                enableMediaSync = hass.data[DOMAIN][
+                                                    entry.entry_id
+                                                ][ENABLE_MEDIA_SYNC]
+                                                if enableMediaSync:
+                                                    LOGGER.warning("getRecording -1")
+                                                    await getRecording(
+                                                        hass,
+                                                        tapoController,
+                                                        entry.entry_id,
+                                                        searchResult[key]["date"],
+                                                        recording[recordingKey][
+                                                            "startTime"
+                                                        ],
+                                                        recording[recordingKey][
+                                                            "endTime"
+                                                        ],
+                                                        recordingCount,
+                                                        totalRecordingsToDownload,
+                                                    )
+                                                    LOGGER.warning("getRecording -2")
+                                                else:
+                                                    LOGGER.warning(
+                                                        f"Media sync disabled (inside getRecording): {enableMediaSync}"
+                                                    )
                                             except Unresolvable as err:
                                                 if (
                                                     str(err)
@@ -896,13 +929,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                                 ):
                                                     LOGGER.info(err)
                                                 else:
-                                                    LOGGER.warn(err)
+                                                    LOGGER.warning(err)
                                             except Exception as err:
+                                                hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = False
                                                 LOGGER.error(err)
+                            else:
+                                LOGGER.warning(
+                                    f"Media sync ignoring {searchResult[key]["date"]}. Media sync: {enableMediaSync}."
+                                )
                 except Exception as err:
                     LOGGER.error(err)
-                LOGGER.debug("runningMediaSync -false")
+                LOGGER.warning("runningMediaSync -false")
                 hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = False
+            else:
+                LOGGER.warning(
+                    f"Media sync disabled (inside mediaSync): {enableMediaSync}"
+                )
 
         async def unsubscribe(event):
             if hass.data[DOMAIN][entry.entry_id]["events"]:
