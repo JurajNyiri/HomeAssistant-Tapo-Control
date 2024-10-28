@@ -11,6 +11,9 @@ from homeassistant.components.number import NumberEntity
 from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.util import slugify
+from homeassistant.const import (
+    STATE_UNAVAILABLE,
+)
 
 from ..const import BRAND, LOGGER, DOMAIN
 from ..utils import build_device_info
@@ -145,6 +148,11 @@ class TapoSensorEntity(SensorEntity, TapoEntity):
         SensorEntity.__init__(self)
         self.updateTapo(entry["camData"])
         LOGGER.debug(f"Tapo {name_suffix} - init - end")
+
+    @property
+    def available(self) -> bool:
+        """Return if the entity is available."""
+        return self._attr_native_value != STATE_UNAVAILABLE
 
 
 class TapoButtonEntity(ButtonEntity, TapoEntity):

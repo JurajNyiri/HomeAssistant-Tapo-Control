@@ -105,7 +105,7 @@ class TapoRSSISensor(TapoSensorEntity):
             or camData["connectionInformation"] is False
             or "rssiValue" not in camData["connectionInformation"]
         ):
-            self._attr_native_value = "unavailable"
+            self._attr_native_value = STATE_UNAVAILABLE
         else:
             self._attr_native_value = camData["connectionInformation"]["rssiValue"]
 
@@ -140,7 +140,7 @@ class TapoLinkTypeSensor(TapoSensorEntity):
             or camData["connectionInformation"] is False
             or "link_type" not in camData["connectionInformation"]
         ):
-            self._attr_native_value = "unavailable"
+            self._attr_native_value = STATE_UNAVAILABLE
         else:
             self._attr_native_value = camData["connectionInformation"]["link_type"]
 
@@ -175,7 +175,7 @@ class TapoSSIDSensor(TapoSensorEntity):
             or camData["connectionInformation"] is False
             or "ssid" not in camData["connectionInformation"]
         ):
-            self._attr_native_value = "unavailable"
+            self._attr_native_value = STATE_UNAVAILABLE
         else:
             self._attr_native_value = camData["connectionInformation"]["ssid"]
 
@@ -209,7 +209,7 @@ class TapoBatterySensor(TapoSensorEntity):
     def updateTapo(self, camData: dict | None) -> None:
         """Update the entity."""
         if not camData:
-            self._attr_native_value = "unavailable"
+            self._attr_native_value = STATE_UNAVAILABLE
         else:
             self._attr_native_value = camData["basic_info"]["battery_percent"]
 
