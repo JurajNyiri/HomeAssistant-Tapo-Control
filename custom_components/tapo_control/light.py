@@ -3,7 +3,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.components.light import ColorMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-
+from homeassistant.const import (
+    STATE_UNAVAILABLE,
+)
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoLightEntity
 from .utils import check_and_create
@@ -75,7 +77,11 @@ class TapoWhitelight(TapoLightEntity):
     async def async_turn_on(self) -> None:
         LOGGER.debug("Turning on light")
         camData = self._entry["camData"]
-        if str(camData["whitelampStatus"]) == "0":
+        if (
+            camData is not False
+            and "whitelampStatus" in camData
+            and str(camData["whitelampStatus"]) == "1"
+        ):
             result = await self._hass.async_add_executor_job(
                 self._controller.reverseWhitelampStatus
             )
@@ -92,7 +98,11 @@ class TapoWhitelight(TapoLightEntity):
     async def async_turn_off(self) -> None:
         LOGGER.debug("Turning off light")
         camData = self._entry["camData"]
-        if str(camData["whitelampStatus"]) == "1":
+        if (
+            camData is not False
+            and "whitelampStatus" in camData
+            and str(camData["whitelampStatus"]) == "1"
+        ):
             result = await self._hass.async_add_executor_job(
                 self._controller.reverseWhitelampStatus
             )
@@ -109,7 +119,7 @@ class TapoWhitelight(TapoLightEntity):
     def updateTapo(self, camData):
         LOGGER.debug("Updating light state.")
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_is_on = str(camData["whitelampStatus"]) == "1"
             self._attr_state = "on" if self._attr_is_on else "off"
@@ -165,7 +175,7 @@ class TapoFloodlight(TapoLightEntity):
     def updateTapo(self, camData):
         LOGGER.debug("Updating light state.")
         if not camData:
-            self._attr_state = "unavailable"
+            self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_is_on = camData["force_white_lamp_state"] == "on"
             self._attr_state = "on" if self._attr_is_on else "off"
