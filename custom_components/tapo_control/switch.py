@@ -9,10 +9,6 @@ from .tapo.entities import TapoSwitchEntity
 from .utils import check_and_create
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    return True
-
-
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,

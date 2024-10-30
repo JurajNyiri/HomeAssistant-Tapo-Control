@@ -11,10 +11,6 @@ from .tapo.entities import TapoButtonEntity
 from .utils import syncTime, check_and_create
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    return True
-
-
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
