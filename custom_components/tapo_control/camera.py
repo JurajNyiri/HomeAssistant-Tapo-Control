@@ -33,10 +33,6 @@ from .const import (
 from .utils import build_device_info, getStreamSource
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    return True
-
-
 async def async_setup_entry(
     hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: Callable
 ):

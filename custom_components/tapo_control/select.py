@@ -8,10 +8,6 @@ from .tapo.entities import TapoSelectEntity
 from .utils import check_and_create, getNightModeName, getNightModeValue
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    return True
-
-
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
