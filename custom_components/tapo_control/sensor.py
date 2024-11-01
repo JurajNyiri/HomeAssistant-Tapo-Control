@@ -295,15 +295,15 @@ class TapoSyncSensor(TapoSensorEntity):
         runningMediaSync = self._hass.data[DOMAIN][self._config_entry.entry_id][
             "runningMediaSync"
         ]
-        LOGGER.warning("Enable Media Sync: %s", enable_media_sync)
+        LOGGER.debug("Enable Media Sync: %s", enable_media_sync)
         if enable_media_sync or runningMediaSync is True:
             data = self._hass.data[DOMAIN][self._config_entry.entry_id]
-            LOGGER.warning("Initial Media Scan: %s", data["initialMediaScanDone"])
-            LOGGER.warning("Media Sync Available: %s", data["mediaSyncAvailable"])
-            LOGGER.warning("Download Progress: %s", data["downloadProgress"])
-            LOGGER.warning("Running media sync: %s", data["runningMediaSync"])
-            LOGGER.warning("Media Sync Schedueled: %s", data["mediaSyncScheduled"])
-            LOGGER.warning("Media Sync Ran Once: %s", data["mediaSyncRanOnce"])
+            LOGGER.debug("Initial Media Scan: %s", data["initialMediaScanDone"])
+            LOGGER.debug("Media Sync Available: %s", data["mediaSyncAvailable"])
+            LOGGER.debug("Download Progress: %s", data["downloadProgress"])
+            LOGGER.debug("Running media sync: %s", data["runningMediaSync"])
+            LOGGER.debug("Media Sync Schedueled: %s", data["mediaSyncScheduled"])
+            LOGGER.debug("Media Sync Ran Once: %s", data["mediaSyncRanOnce"])
 
             if not data["initialMediaScanDone"] or (
                 data["initialMediaScanDone"] and not data["mediaSyncRanOnce"]
