@@ -174,6 +174,10 @@ async def getRecordings(hass, entry_id, date):
     return recordingsForDay
 
 
+def getEntryStorageFile(config_entry):
+    return f"tapo_control_{config_entry.entry_id}"
+
+
 # todo: findMedia needs to run periodically
 async def findMedia(hass, entry):
     entry_id = entry.entry_id

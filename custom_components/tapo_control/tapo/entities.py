@@ -109,6 +109,7 @@ class TapoSwitchEntity(SwitchEntity, TapoEntity):
         self._attr_is_on = False
         self._hass = hass
         self._attr_icon = icon
+        self._config_entry = config_entry
         self._attr_device_class = device_class
         entry["entities"].append({"entity": self, "entry": entry})
         self.updateTapo(entry["camData"])

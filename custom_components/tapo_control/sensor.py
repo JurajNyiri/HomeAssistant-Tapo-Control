@@ -289,9 +289,14 @@ class TapoSyncSensor(TapoSensorEntity):
 
     def updateTapo(self, camData: dict | None) -> None:
         """Update the entity."""
-        enable_media_sync = self._config_entry.data.get(ENABLE_MEDIA_SYNC)
+        enable_media_sync = self._hass.data[DOMAIN][self._config_entry.entry_id][
+            ENABLE_MEDIA_SYNC
+        ]
+        runningMediaSync = self._hass.data[DOMAIN][self._config_entry.entry_id][
+            "runningMediaSync"
+        ]
         LOGGER.debug("Enable Media Sync: %s", enable_media_sync)
-        if enable_media_sync:
+        if enable_media_sync or runningMediaSync is True:
             data = self._hass.data[DOMAIN][self._config_entry.entry_id]
             LOGGER.debug("Initial Media Scan: %s", data["initialMediaScanDone"])
             LOGGER.debug("Media Sync Available: %s", data["mediaSyncAvailable"])

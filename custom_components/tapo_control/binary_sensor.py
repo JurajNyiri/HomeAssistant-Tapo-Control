@@ -23,15 +23,13 @@ from homeassistant.helpers.entity import EntityCategory
 from .const import (
     BRAND,
     DOMAIN,
-    ENABLE_MEDIA_SYNC,
     LOGGER,
     ENABLE_SOUND_DETECTION,
-    MEDIA_SYNC_HOURS,
     SOUND_DETECTION_PEAK,
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_RESET,
 )
-from .utils import build_device_info, getColdDirPathForEntry, getStreamSource
+from .utils import build_device_info, getStreamSource
 from .tapo.entities import TapoBinarySensorEntity
 
 import haffmpeg.sensor as ffmpeg_sensor
@@ -51,48 +49,10 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         LOGGER.debug("Adding TapoNoiseBinarySensor...")
         binarySensors.append(TapoNoiseBinarySensor(entry, hass, config_entry))
 
-    binarySensors.append(TapoMediaSyncEnabledSensor(entry, hass, config_entry))
-
     if binarySensors:
         async_add_entities(binarySensors)
 
     return True
-
-
-class TapoMediaSyncEnabledSensor(TapoBinarySensorEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        LOGGER.debug("TapoMediaSyncEnabledSensor - init - start")
-        self._config_entry = config_entry
-        self.latestCamData = entry["camData"]
-        self._hass = hass
-        self._attr_extra_state_attributes = {}
-        TapoBinarySensorEntity.__init__(
-            self,
-            "Media Sync Enabled",
-            entry,
-            hass,
-            config_entry,
-            None,
-        )
-        self.updateTapo(self.latestCamData)
-
-        LOGGER.debug("TapoMediaSyncEnabledSensor - init - end")
-
-    def updateTapo(self, camData):
-        enableMediaSync = self._config_entry.data.get(ENABLE_MEDIA_SYNC)
-        mediaSyncHours = self._config_entry.data.get(MEDIA_SYNC_HOURS)
-        if enableMediaSync and mediaSyncHours:
-            self._attr_state = STATE_ON
-        else:
-            self._attr_state = STATE_OFF
-        self._attr_extra_state_attributes["sync_hours"] = mediaSyncHours
-        self._attr_extra_state_attributes["storage_path"] = getColdDirPathForEntry(
-            self._hass, self._config_entry.entry_id
-        )
-
-    @property
-    def entity_category(self):
-        return EntityCategory.DIAGNOSTIC
 
 
 class TapoNoiseBinarySensor(TapoBinarySensorEntity):

@@ -1,12 +1,13 @@
 from homeassistant.core import HomeAssistant
 from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.helpers.storage import Store
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, LOGGER
+from .const import DOMAIN, LOGGER, ENABLE_MEDIA_SYNC, MEDIA_SYNC_HOURS
 from .tapo.entities import TapoSwitchEntity
-from .utils import check_and_create
+from .utils import check_and_create, getColdDirPathForEntry, getEntryStorageFile
 
 
 async def async_setup_entry(
@@ -20,6 +21,8 @@ async def async_setup_entry(
     switches = []
 
     async def setupEntities(entry):
+        entry_storage = Store(hass, version=1, key=getEntryStorageFile(config_entry))
+        entry_stored_data = await entry_storage.async_load()
         switches = []
         tapoPrivacySwitch = await check_and_create(
             entry, hass, TapoPrivacySwitch, "getPrivacyMode", config_entry
@@ -27,6 +30,21 @@ async def async_setup_entry(
         if tapoPrivacySwitch:
             LOGGER.debug("Adding tapoPrivacySwitch...")
             switches.append(tapoPrivacySwitch)
+
+        if entry_stored_data is None or ENABLE_MEDIA_SYNC not in entry_stored_data:
+            await entry_storage.async_save({ENABLE_MEDIA_SYNC: False})
+            entry_stored_data = await entry_storage.async_load()
+
+        tapoEnableMediaSyncSwitch = TapoEnableMediaSyncSwitch(
+            entry,
+            hass,
+            config_entry,
+            entry_storage,
+            entry_stored_data[ENABLE_MEDIA_SYNC],
+        )
+        if tapoEnableMediaSyncSwitch:
+            LOGGER.debug("Adding TapoEnableMediaSyncSwitch...")
+            switches.append(tapoEnableMediaSyncSwitch)
 
         tapoLensDistortionCorrectionSwitch = await check_and_create(
             entry,
@@ -170,6 +188,46 @@ async def async_setup_entry(
         async_add_entities(switches)
     else:
         LOGGER.debug("No switch entities available.")
+
+
+class TapoEnableMediaSyncSwitch(TapoSwitchEntity):
+    def __init__(
+        self,
+        entry: dict,
+        hass: HomeAssistant,
+        config_entry,
+        entry_storage: Store,
+        savedValue: bool,
+    ):
+        self._attr_extra_state_attributes = {}
+        TapoSwitchEntity.__init__(
+            self,
+            "Media Sync",
+            entry,
+            hass,
+            config_entry,
+            "mdi:sync",
+        )
+        self._entry_storage = entry_storage
+        self._attr_state = "on" if savedValue else "off"
+        hass.data[DOMAIN][config_entry.entry_id][ENABLE_MEDIA_SYNC] = savedValue
+
+    async def async_turn_on(self) -> None:
+        await self._entry_storage.async_save({ENABLE_MEDIA_SYNC: True})
+        self._hass.data[DOMAIN][self._config_entry.entry_id][ENABLE_MEDIA_SYNC] = True
+        self._attr_state = "on"
+
+    async def async_turn_off(self) -> None:
+        await self._entry_storage.async_save({ENABLE_MEDIA_SYNC: False})
+        self._hass.data[DOMAIN][self._config_entry.entry_id][ENABLE_MEDIA_SYNC] = False
+        self._attr_state = "off"
+
+    def updateTapo(self, camData):
+        mediaSyncHours = self._config_entry.data.get(MEDIA_SYNC_HOURS)
+        self._attr_extra_state_attributes["sync_hours"] = mediaSyncHours
+        self._attr_extra_state_attributes["storage_path"] = getColdDirPathForEntry(
+            self._hass, self._config_entry.entry_id
+        )
 
 
 class TapoHDRSwitch(TapoSwitchEntity):
