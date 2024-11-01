@@ -35,7 +35,7 @@ async def async_setup_entry(
             LOGGER.debug("Adding tapoPrivacySwitch...")
             switches.append(tapoPrivacySwitch)
 
-        if ENABLE_MEDIA_SYNC not in entry_stored_data:
+        if entry_stored_data is None or ENABLE_MEDIA_SYNC not in entry_stored_data:
             await entry_storage.async_save({ENABLE_MEDIA_SYNC: False})
             entry_stored_data = await entry_storage.async_load()
 
