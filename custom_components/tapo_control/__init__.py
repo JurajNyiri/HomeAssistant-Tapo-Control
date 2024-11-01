@@ -308,6 +308,9 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     coldDirPath = getColdDirPathForEntry(hass, entry_id)
     hotDirPath = getHotDirPathForEntry(hass, entry_id)
 
+    entry_storage = Store(hass, version=1, key=getEntryStorageFile(entry))
+    await entry_storage.async_remove()
+
     # Delete all media stored in cold storage for entity
     if coldDirPath:
         LOGGER.debug("Deleting cold storage files for entity " + entry_id + "...")
