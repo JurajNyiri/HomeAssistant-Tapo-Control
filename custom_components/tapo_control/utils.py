@@ -1427,7 +1427,7 @@ async def syncTime(hass, entry_id):
 
         time_params = device_mgmt.create_type("SetSystemDateAndTime")
         time_params.DateTimeType = "Manual"
-        time_params.DaylightSavings = True
+        time_params.DaylightSavings = time.localtime().tm_isdst == 1
         time_params.UTCDateTime = {
             "Date": {"Year": now.year, "Month": now.month, "Day": now.day},
             "Time": {
@@ -1443,7 +1443,7 @@ async def syncTime(hass, entry_id):
         ] = datetime.datetime.utcnow().timestamp()
     else:
         raise Exception(
-            "Onvif not set up for the camera. Ensure motion detection is enabled and camera can reach Home Assistant via onvif protocol."
+            "Onvif is not set up for the camera (yet?). Ensure motion detection or automatic time sync is enabled and camera can reach Home Assistant via onvif protocol."
         )
 
 
