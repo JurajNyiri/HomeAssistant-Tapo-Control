@@ -1422,6 +1422,7 @@ async def syncTime(hass, entry_id):
     if device_mgmt:
         LOGGER.warning("OK")
         LOGGER.warning("Syncing time for " + entry_id + "...")
+        LOGGER.warning("Is DST: " + time.localtime().tm_isdst)
         now = datetime.datetime.utcnow()
 
         time_params = device_mgmt.create_type("SetSystemDateAndTime")
