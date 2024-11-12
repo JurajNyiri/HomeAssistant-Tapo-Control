@@ -35,10 +35,6 @@ from .tapo.entities import TapoBinarySensorEntity
 import haffmpeg.sensor as ffmpeg_sensor
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    return True
-
-
 async def async_setup_entry(hass, config_entry, async_add_entities):
     LOGGER.debug("Setting up binary sensor for motion.")
     entry = hass.data[DOMAIN][config_entry.entry_id]
