@@ -110,6 +110,15 @@ class TapoSyncTimeButton(TapoButtonEntity):
     def entity_category(self):
         return EntityCategory.CONFIG
 
+    def updateTapo(self, camData):
+        if (
+            not camData
+            or not self._hass.data[DOMAIN][self._entry_id]["onvifManagement"]
+        ):
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            self._attr_state = None
+
 
 class TapoStartManualAlarmButton(TapoButtonEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
