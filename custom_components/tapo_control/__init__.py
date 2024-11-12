@@ -687,6 +687,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         cameraTime = await hass.async_add_executor_job(tapoController.getTime)
         cameraTS = cameraTime["system"]["clock_status"]["seconds_from_1970"]
         currentTS = dt.as_timestamp(dt.now())
+        timezoneOffset = cameraTS - currentTS
+
+        LOGGER.warning(f"Timezone offset is {timezoneOffset}.")
 
         hass.data[DOMAIN][entry.entry_id] = {
             "setup_retries": 0,
@@ -742,7 +745,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "mediaSyncAvailable": True,
             "initialMediaScanRunning": False,
             "mediaScanResult": {},  # keeps track of all videos currently on camera
-            "timezoneOffset": cameraTS - currentTS,
+            "timezoneOffset": timezoneOffset,
             "refreshEnabled": True,
         }
 
