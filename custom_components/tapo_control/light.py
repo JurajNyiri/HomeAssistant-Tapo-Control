@@ -76,7 +76,7 @@ class TapoWhitelight(TapoLightEntity):
         if (
             camData is not False
             and "whitelampStatus" in camData
-            and str(camData["whitelampStatus"]) == "1"
+            and str(camData["whitelampStatus"]) == "0"
         ):
             result = await self._hass.async_add_executor_job(
                 self._controller.reverseWhitelampStatus
