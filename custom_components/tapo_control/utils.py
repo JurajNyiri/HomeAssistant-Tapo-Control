@@ -736,6 +736,18 @@ async def getCamData(hass, controller):
     )
 
     try:
+        dst_data = data["getDstRule"][0]["system"]["dst"]
+    except Exception:
+        dst_data = None
+    camData["dst_data"] = dst_data
+
+    try:
+        clock_data = data["getClockStatus"][0]["system"]["clock_status"]
+    except Exception:
+        clock_data = None
+    camData["clock_data"] = clock_data
+
+    try:
         timezone_timezone = data["getTimezone"][0]["system"]["basic"]["timezone"]
     except Exception:
         timezone_timezone = None

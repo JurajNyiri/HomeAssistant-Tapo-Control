@@ -95,6 +95,7 @@ class TapoFormatButton(TapoButtonEntity):
 class TapoSyncTimeButton(TapoButtonEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         self._entry_id = config_entry.entry_id
+        self._attr_extra_state_attributes = {}
         TapoButtonEntity.__init__(
             self,
             "Sync Time",
@@ -118,6 +119,25 @@ class TapoSyncTimeButton(TapoButtonEntity):
             self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_state = None
+        if camData:
+            if "clock_data" in camData and camData["clock_data"]:
+                self._attr_extra_state_attributes["clock_data"] = {}
+                if "local_time" in camData["clock_data"]:
+                    self._attr_extra_state_attributes["clock_data"]["local_time"] = (
+                        camData["clock_data"]["local_time"]
+                    )
+                if "seconds_from_1970" in camData["clock_data"]:
+                    self._attr_extra_state_attributes["clock_data"][
+                        "seconds_from_1970"
+                    ] = camData["clock_data"]["seconds_from_1970"]
+            if "dst_data" in camData and camData["dst_data"]:
+                self._attr_extra_state_attributes["dst_data"] = {}
+                filtered_obj = {
+                    key: value
+                    for key, value in camData["dst_data"].items()
+                    if not key.startswith(".")
+                }
+                self._attr_extra_state_attributes["dst_data"].update(filtered_obj)
 
 
 class TapoStartManualAlarmButton(TapoButtonEntity):
