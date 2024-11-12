@@ -385,7 +385,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             return allEntities
 
         async def async_update_data():
-            LOGGER.debug("async_update_data - entry")
+            LOGGER.warning("async_update_data - entry")
             tapoController = hass.data[DOMAIN][entry.entry_id]["controller"]
             host = entry.data.get(CONF_IP_ADDRESS)
             username = entry.data.get(CONF_USERNAME)
@@ -396,7 +396,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
             # motion detection retries
             if motionSensor or enableTimeSync:
-                LOGGER.debug("Motion sensor or time sync is enabled.")
+                LOGGER.warning("Motion sensor or time sync is enabled.")
                 if (
                     not hass.data[DOMAIN][entry.entry_id]["isChild"]
                     and not hass.data[DOMAIN][entry.entry_id]["isParent"]
@@ -406,12 +406,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         or not hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
                     ):
                         # retry if connection to onvif failed
-                        LOGGER.debug("Setting up subscription to motion sensor...")
+                        LOGGER.warning("Setting up subscription to motion sensor...")
                         onvifDevice = await initOnvifEvents(
                             hass, host, username, password
                         )
                         if onvifDevice:
-                            LOGGER.debug(onvifDevice)
+                            LOGGER.warning(onvifDevice)
                             hass.data[DOMAIN][entry.entry_id]["eventsDevice"] = (
                                 onvifDevice["device"]
                             )
