@@ -228,6 +228,7 @@ Users reported full functionality with following Tapo Cameras:
 - C500
 - C510W
 - C520WS
+- C720
 
 The integration _should_ work with any other non-battery Tapo Cameras.
 
