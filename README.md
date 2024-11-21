@@ -214,6 +214,7 @@ As well as:
 
 Users reported full functionality with following Tapo Cameras:
 
+- TC55
 - TC60
 - TC70
 - C100
