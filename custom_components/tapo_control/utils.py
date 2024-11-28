@@ -615,6 +615,27 @@ async def isRtspStreamWorking(hass, host, username, password, full_url=""):
     return not image == b""
 
 
+def result_has_error(result):
+    if (
+        result is not False
+        and "result" in result
+        and "responses" in result["result"]
+        and any(
+            map(
+                lambda x: "error_code" not in x or x["error_code"] == 0,
+                result["result"]["responses"],
+            )
+        )
+    ):
+        return False
+    if result is not False and (
+        "error_code" not in result or result["error_code"] == 0
+    ):
+        return False
+    else:
+        return True
+
+
 async def initOnvifEvents(hass, host, username, password):
     device = ONVIFCamera(
         host,
