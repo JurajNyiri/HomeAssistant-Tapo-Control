@@ -742,6 +742,12 @@ async def getCamData(hass, controller):
     camData["timezone_timezone"] = timezone_timezone
 
     try:
+        alert_event_types = data["getAlertEventType"][0]["msg_alarm"]["msg_alarm_type"]
+    except Exception:
+        alert_event_types = None
+    camData["alert_event_types"] = alert_event_types
+
+    try:
         timezone_zone_id = data["getTimezone"][0]["system"]["basic"]["zone_id"]
     except Exception:
         timezone_zone_id = None

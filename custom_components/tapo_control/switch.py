@@ -35,6 +35,17 @@ async def async_setup_entry(
             await entry_storage.async_save({ENABLE_MEDIA_SYNC: False})
             entry_stored_data = await entry_storage.async_load()
 
+        if (
+            "alert_event_types" in entry["camData"]
+            and entry["camData"]["alert_event_types"]
+        ):
+            for alertEventType in entry["camData"]["alert_event_types"]:
+                switches.append(
+                    TapoAlarmEventTypeSwitch(
+                        entry, hass, config_entry, alertEventType["name"]
+                    )
+                )
+
         tapoEnableMediaSyncSwitch = TapoEnableMediaSyncSwitch(
             entry,
             hass,
@@ -532,6 +543,54 @@ class TapoRichNotificationsSwitch(TapoSwitchEntity):
             self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_is_on = camData["rich_notifications"] == "on"
+            self._attr_state = "on" if self._attr_is_on else "off"
+
+
+class TapoAlarmEventTypeSwitch(TapoSwitchEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry, eventType: str):
+        self.eventType = eventType
+        TapoSwitchEntity.__init__(
+            self,
+            f"Trigger alarm on {eventType}",
+            entry,
+            hass,
+            config_entry,
+            "mdi:exclamation",
+        )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_on(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setAlertEventType,
+            self.eventType,
+            True,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "on"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_off(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setAlertEventType,
+            self.eventType,
+            False,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "on"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            if "alert_event_types" in camData and camData["alert_event_types"]:
+                for alertEventType in camData["alert_event_types"]:
+                    if alertEventType["name"] == self.eventType:
+                        self._attr_is_on = alertEventType["enabled"] == "on"
             self._attr_state = "on" if self._attr_is_on else "off"
 
 
