@@ -94,10 +94,10 @@ async def async_setup_entry(
             entry, hass, TapoAlertTypeSelect, "getAlertTypeList", config_entry
         )
         if tapoAlertTypeSelect:
-            LOGGER.warning("Adding tapoAlertTypeSelect...")
+            LOGGER.debug("Adding tapoAlertTypeSelect...")
             selects.append(tapoAlertTypeSelect)
         else:
-            LOGGER.warning("Adding tapoAlertTypeSelect with start ID 0...")
+            LOGGER.debug("Adding tapoAlertTypeSelect with start ID 0...")
             selects.append(TapoAlertTypeSelect(entry, hass, config_entry, 0))
 
         tapoMotionDetectionSelect = await check_and_create(
@@ -1095,7 +1095,7 @@ class TapoSirenTypeSelect(TapoSelectEntity):
 
 
 class TapoAlertTypeSelect(TapoSelectEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant, config_entry, startID):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry, startID=10):
         self.hub = entry["camData"]["alarm_is_hubSiren"]
         self.startID = startID
         self.alarm_siren_type_list = entry["camData"]["alarm_siren_type_list"]
