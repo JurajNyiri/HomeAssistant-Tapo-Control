@@ -96,6 +96,9 @@ async def async_setup_entry(
         if tapoAlertTypeSelect:
             LOGGER.debug("Adding tapoAlertTypeSelect...")
             selects.append(tapoAlertTypeSelect)
+        else:
+            LOGGER.debug("Adding tapoAlertTypeSelect with start ID 0...")
+            selects.append(TapoAlertTypeSelect(entry, hass, config_entry, 0))
 
         tapoMotionDetectionSelect = await check_and_create(
             entry, hass, TapoMotionDetectionSelect, "getMotionDetection", config_entry
@@ -1092,9 +1095,9 @@ class TapoSirenTypeSelect(TapoSelectEntity):
 
 
 class TapoAlertTypeSelect(TapoSelectEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry, startID=10):
         self.hub = entry["camData"]["alarm_is_hubSiren"]
-        self.startID = 10
+        self.startID = startID
         self.alarm_siren_type_list = entry["camData"]["alarm_siren_type_list"]
         self.typeOfAlarm = entry["camData"]["alarm_config"]["typeOfAlarm"]
 
@@ -1116,17 +1119,20 @@ class TapoAlertTypeSelect(TapoSelectEntity):
         else:
             self._attr_options = camData["alarm_siren_type_list"]
             self.user_sounds = {}
-            for user_sound in camData["alarm_user_sounds"]:
-                if "name" in user_sound:
-                    self._attr_options.append(user_sound["name"])
-                    if "id" in user_sound:
-                        self.user_sounds[user_sound["id"]] = user_sound["name"]
+            if camData["alarm_user_sounds"] is not None:
+                for user_sound in camData["alarm_user_sounds"]:
+                    if "name" in user_sound:
+                        self._attr_options.append(user_sound["name"])
+                        if "id" in user_sound:
+                            self.user_sounds[user_sound["id"]] = user_sound["name"]
 
             self.alarm_enabled = camData["alarm_config"]["automatic"] == "on"
             self.alarm_mode = camData["alarm_config"]["mode"]
             currentSirenType = int(camData["alarm_config"]["siren_type"])
             if currentSirenType == 0:
                 self._attr_current_option = camData["alarm_siren_type_list"][0]
+            elif currentSirenType == 1:
+                self._attr_current_option = camData["alarm_siren_type_list"][1]
             elif currentSirenType < self.startID:
                 # on these cameras, the 0 is the first entry, but then it starts from 3
                 # and it has 3 and 4 values, assuming -2 for the rest

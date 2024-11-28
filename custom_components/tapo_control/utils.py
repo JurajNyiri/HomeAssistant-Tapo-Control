@@ -615,6 +615,27 @@ async def isRtspStreamWorking(hass, host, username, password, full_url=""):
     return not image == b""
 
 
+def result_has_error(result):
+    if (
+        result is not False
+        and "result" in result
+        and "responses" in result["result"]
+        and any(
+            map(
+                lambda x: "error_code" not in x or x["error_code"] == 0,
+                result["result"]["responses"],
+            )
+        )
+    ):
+        return False
+    if result is not False and (
+        "error_code" not in result or result["error_code"] == 0
+    ):
+        return False
+    else:
+        return True
+
+
 async def initOnvifEvents(hass, host, username, password):
     device = ONVIFCamera(
         host,
@@ -740,6 +761,12 @@ async def getCamData(hass, controller):
     except Exception:
         timezone_timezone = None
     camData["timezone_timezone"] = timezone_timezone
+
+    try:
+        alert_event_types = data["getAlertEventType"][0]["msg_alarm"]["msg_alarm_type"]
+    except Exception:
+        alert_event_types = None
+    camData["alert_event_types"] = alert_event_types
 
     try:
         timezone_zone_id = data["getTimezone"][0]["system"]["basic"]["zone_id"]
@@ -1144,33 +1171,41 @@ async def getCamData(hass, controller):
         except Exception as err:
             LOGGER.error(f"getSirenTypeList unexpected error {err=}, {type(err)=}")
 
+    if len(alarmSirenTypeList) == 0:
+        # Some cameras have hardcoded 0 and 1 values (Siren, Tone)
+        alarmSirenTypeList.append("Siren")
+        alarmSirenTypeList.append("Tone")
+
     alarm_user_sounds = None
     try:
-        if (
-            data["getAlertConfig"][0] is not False
-            and "msg_alarm" in data["getAlertConfig"][0]
-            and "usr_def_audio" in data["getAlertConfig"][0]["msg_alarm"]
-        ):
-            alarm_user_sounds = []
-            for alarm_sound in data["getAlertConfig"][0]["msg_alarm"]["usr_def_audio"]:
-                first_key = next(iter(alarm_sound))
-                first_value = alarm_sound[first_key]
-                alarm_user_sounds.append(first_value)
+        for alertConfig in data["getAlertConfig"]:
+            if (
+                alertConfig is not False
+                and "msg_alarm" in alertConfig
+                and "usr_def_audio" in alertConfig["msg_alarm"]
+                and (alarm_user_sounds is None or len(alarm_user_sounds) == 0)
+            ):
+                alarm_user_sounds = []
+                for alarm_sound in alertConfig["msg_alarm"]["usr_def_audio"]:
+                    first_key = next(iter(alarm_sound))
+                    first_value = alarm_sound[first_key]
+                    alarm_user_sounds.append(first_value)
     except Exception:
         alarm_user_sounds = None
 
     alarm_user_start_id = None
     try:
-        if (
-            data["getAlertConfig"][0] is not False
-            and "msg_alarm" in data["getAlertConfig"][0]
-            and "capability" in data["getAlertConfig"][0]["msg_alarm"]
-            and "usr_def_start_file_id"
-            in data["getAlertConfig"][0]["msg_alarm"]["capability"]
-        ):
-            alarm_user_start_id = data["getAlertConfig"][0]["msg_alarm"]["capability"][
-                "usr_def_start_file_id"
-            ]
+        for alertConfig in data["getAlertConfig"]:
+            if (
+                alertConfig is not False
+                and "msg_alarm" in alertConfig
+                and "capability" in alertConfig["msg_alarm"]
+                and "usr_def_start_file_id" in alertConfig["msg_alarm"]["capability"]
+                and alarm_user_start_id is None
+            ):
+                alarm_user_start_id = alertConfig["msg_alarm"]["capability"][
+                    "usr_def_start_file_id"
+                ]
     except Exception:
         alarm_user_start_id = None
     camData["alarm_user_start_id"] = alarm_user_start_id
