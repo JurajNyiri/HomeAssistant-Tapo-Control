@@ -87,8 +87,11 @@ async def async_setup_entry(
             entry, hass, TapoSirenTypeSelect, "getSirenTypeList", config_entry
         )
         if tapoSirenTypeSelect:
-            LOGGER.debug("Adding tapoSirenTypeSelect...")
+            LOGGER.warning("Adding tapoSirenTypeSelect...")
             selects.append(tapoSirenTypeSelect)
+        else:
+            LOGGER.warning("Adding tapoBasicSirenTypeSelect...")
+            # selects.append(TapoBasicSirenTypeSelect(entry, hass, config_entry))
 
         tapoAlertTypeSelect = await check_and_create(
             entry, hass, TapoAlertTypeSelect, "getAlertTypeList", config_entry
@@ -1042,6 +1045,53 @@ class TapoMoveToPresetSelect(TapoSelectEntity):
     @property
     def entity_category(self):
         return None
+
+
+class TapoBasicSirenTypeSelect(TapoSelectEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._attr_options = entry["camData"]["alarm_siren_type_list"]
+        self._attr_current_option = entry["camData"]["alarm_config"]["siren_type"]
+        self.hub = entry["camData"]["alarm_is_hubSiren"]
+        TapoSelectEntity.__init__(
+            self,
+            "Siren Type",
+            entry,
+            hass,
+            config_entry,
+            "mdi:home-sound-in-outline",
+        )
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            if "siren_type" in camData["alarm_config"]:
+                self._attr_current_option = camData["alarm_config"]["siren_type"]
+            else:
+                self._attr_state = STATE_UNAVAILABLE
+
+            self._attr_state = self._attr_current_option
+        LOGGER.debug("Updating TapoHubSirenTypeSelect to: " + str(self._attr_state))
+
+    async def async_select_option(self, option: str) -> None:
+        if self.hub:
+            result = await self.hass.async_add_executor_job(
+                self._controller.setHubSirenConfig, None, option
+            )
+        else:
+            result = await self.hass.async_add_executor_job(
+                self._controller.executeFunction,
+                "setAlarmConfig",
+                {
+                    "msg_alarm": {
+                        "siren_type": option,
+                    }
+                },
+            )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = option
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
 
 
 class TapoSirenTypeSelect(TapoSelectEntity):

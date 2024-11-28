@@ -136,11 +136,13 @@ class TapoStartManualAlarmButton(TapoButtonEntity):
 
         if result_has_error(result) and result_has_error(result2):
             if self.sirenType is not None:
-                result3 = await self._hass.async_add_executor_job(
-                    self._controller.testUsrDefAudio, self.sirenType, True
-                )
-                if result_has_error(result3):
-                    self._attr_available = False
+                try:
+                    result3 = await self._hass.async_add_executor_job(
+                        self._controller.testUsrDefAudio, self.sirenType, True
+                    )
+                    if result_has_error(result3):
+                        raise Exception("Camera does not support triggering the siren.")
+                except Exception:
                     raise Exception("Camera does not support triggering the siren.")
             else:
                 raise Exception("Camera does not support triggering the siren.")
@@ -188,11 +190,14 @@ class TapoStopManualAlarmButton(TapoButtonEntity):
 
         if result_has_error(result) and result_has_error(result2):
             if self.sirenType is not None:
-                result3 = await self._hass.async_add_executor_job(
-                    self._controller.testUsrDefAudio, self.sirenType, False
-                )
-                if result_has_error(result3):
-                    self._attr_available = False
+                try:
+                    result3 = await self._hass.async_add_executor_job(
+                        self._controller.testUsrDefAudio, self.sirenType, False
+                    )
+                    if result_has_error(result3):
+                        self._attr_available = False
+                        raise Exception("Camera does not support triggering the siren.")
+                except Exception:
                     raise Exception("Camera does not support triggering the siren.")
             else:
                 raise Exception("Camera does not support triggering the siren.")
