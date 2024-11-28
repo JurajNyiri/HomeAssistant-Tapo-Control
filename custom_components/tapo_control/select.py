@@ -1119,11 +1119,12 @@ class TapoAlertTypeSelect(TapoSelectEntity):
         else:
             self._attr_options = camData["alarm_siren_type_list"]
             self.user_sounds = {}
-            for user_sound in camData["alarm_user_sounds"]:
-                if "name" in user_sound:
-                    self._attr_options.append(user_sound["name"])
-                    if "id" in user_sound:
-                        self.user_sounds[user_sound["id"]] = user_sound["name"]
+            if camData["alarm_user_sounds"] is not None:
+                for user_sound in camData["alarm_user_sounds"]:
+                    if "name" in user_sound:
+                        self._attr_options.append(user_sound["name"])
+                        if "id" in user_sound:
+                            self.user_sounds[user_sound["id"]] = user_sound["name"]
 
             self.alarm_enabled = camData["alarm_config"]["automatic"] == "on"
             self.alarm_mode = camData["alarm_config"]["mode"]
