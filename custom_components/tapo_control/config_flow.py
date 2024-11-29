@@ -1,4 +1,5 @@
 import voluptuous as vol
+import os
 
 from homeassistant.core import callback
 
@@ -1047,6 +1048,11 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 else:
                     media_sync_cold_storage_path = ""
 
+                if media_sync_cold_storage_path != "" and not os.path.exists(
+                    media_sync_cold_storage_path
+                ):
+                    raise Exception("Cold storage path does not exist")
+
                 allConfigData[MEDIA_VIEW_DAYS_ORDER] = media_view_days_order
                 allConfigData[MEDIA_VIEW_RECORDINGS_ORDER] = media_view_recordings_order
                 allConfigData[MEDIA_SYNC_HOURS] = media_sync_hours
@@ -1059,7 +1065,10 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 )
                 return self.async_create_entry(title="", data=None)
             except Exception as e:
-                errors["base"] = "unknown"
+                if "Cold storage path does not exist" in str(e):
+                    errors["base"] = "cold_storage_path_does_not_exist"
+                else:
+                    errors["base"] = "unknown"
                 LOGGER.error(e)
 
         return self.async_show_form(
