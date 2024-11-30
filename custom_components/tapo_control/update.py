@@ -62,38 +62,35 @@ class TapoCamUpdate(UpdateEntity):
         if camData and camData["updated"] > self._lastDataUpdate:
             LOGGER.debug(f"Processing new data (updated at {camData["updated"]})...")
             self._lastDataUpdate = camData["updated"]
-            if not camData:
-                self._state = "unavailable"
-            else:
-                self._attributes = camData["basic_info"]
-                if self._in_progress:
-                    LOGGER.debug("Status of firmware status:")
-                    LOGGER.debug(camData["firmwareUpdateStatus"])
-                    ts = datetime.datetime.utcnow().timestamp()
-                    if (
-                        ts > self._installRequestedTime + 60
-                        and "firmwareUpdateStatus" in camData
-                        and "upgrade_status" in camData["firmwareUpdateStatus"]
-                        and "state" in camData["firmwareUpdateStatus"]["upgrade_status"]
-                        and camData["firmwareUpdateStatus"]["upgrade_status"]["state"]
-                        == "normal"
-                    ):
-                        LOGGER.debug(
-                            "Update has been finished, updating information in integration..."
-                        )
-                        # Update Device Registry with new information
-                        deviceRegistry = dr.async_get(self._hass)
-                        newDeviceInfo = build_device_info(camData["basic_info"])
-                        device = deviceRegistry.async_get_device(
-                            newDeviceInfo["identifiers"]
-                        )
-                        deviceRegistry.async_update_device(
-                            device.id, sw_version=newDeviceInfo["sw_version"]
-                        )
-                        # Reset check for firmware check
-                        self._entry["lastFirmwareCheck"] = 0
-                        self._in_progress = False
-                        LOGGER.debug("Update has been fully completed.")
+            self._attributes = camData["basic_info"]
+            if self._in_progress:
+                LOGGER.debug("Status of firmware status:")
+                LOGGER.debug(camData["firmwareUpdateStatus"])
+                ts = datetime.datetime.utcnow().timestamp()
+                if (
+                    ts > self._installRequestedTime + 60
+                    and "firmwareUpdateStatus" in camData
+                    and "upgrade_status" in camData["firmwareUpdateStatus"]
+                    and "state" in camData["firmwareUpdateStatus"]["upgrade_status"]
+                    and camData["firmwareUpdateStatus"]["upgrade_status"]["state"]
+                    == "normal"
+                ):
+                    LOGGER.debug(
+                        "Update has been finished, updating information in integration..."
+                    )
+                    # Update Device Registry with new information
+                    deviceRegistry = dr.async_get(self._hass)
+                    newDeviceInfo = build_device_info(camData["basic_info"])
+                    device = deviceRegistry.async_get_device(
+                        newDeviceInfo["identifiers"]
+                    )
+                    deviceRegistry.async_update_device(
+                        device.id, sw_version=newDeviceInfo["sw_version"]
+                    )
+                    # Reset check for firmware check
+                    self._entry["lastFirmwareCheck"] = 0
+                    self._in_progress = False
+                    LOGGER.debug("Update has been fully completed.")
 
     async def async_added_to_hass(self) -> None:
         self._enabled = True
