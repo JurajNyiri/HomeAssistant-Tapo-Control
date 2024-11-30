@@ -96,7 +96,7 @@ async def async_setup_entry(
         if tapoAlertTypeSelect:
             LOGGER.debug("Adding tapoAlertTypeSelect...")
             selects.append(tapoAlertTypeSelect)
-        else:
+        elif not tapoSirenTypeSelect:
             LOGGER.debug("Adding tapoAlertTypeSelect with start ID 0...")
             selects.append(TapoAlertTypeSelect(entry, hass, config_entry, 0))
 
