@@ -10,12 +10,11 @@ from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.components.number import NumberEntity
 from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.helpers.entity import EntityCategory
-from homeassistant.util import slugify
 from homeassistant.const import (
     STATE_UNAVAILABLE,
 )
 
-from ..const import BRAND, LOGGER, DOMAIN
+from ..const import BRAND, LOGGER
 from ..utils import build_device_info
 
 
@@ -79,11 +78,15 @@ class TapoUpdateEntity(UpdateEntity, TapoEntity):
         self._attr_is_on = False
         self._hass = hass
         self._attr_icon = icon
+        self._config_entry = config_entry
         self._attr_device_class = device_class
-        self.updateTapo(entry["camData"])
+        entry["entities"].append({"entity": self, "entry": entry})
 
         TapoEntity.__init__(self, entry, name_suffix)
         UpdateEntity.__init__(self)
+
+        self.updateTapo(entry["camData"])
+
         LOGGER.debug(f"Tapo {name_suffix} - init - end")
 
     @property

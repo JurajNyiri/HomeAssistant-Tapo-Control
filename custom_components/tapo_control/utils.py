@@ -1350,6 +1350,8 @@ async def getCamData(hass, controller):
         videoQualities = None
     camData["videoQualities"] = videoQualities
 
+    camData["updated"] = datetime.datetime.utcnow().timestamp()
+
     LOGGER.debug("getCamData - done")
     LOGGER.debug("Processed update data:")
     LOGGER.debug(camData)

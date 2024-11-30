@@ -1,6 +1,5 @@
 import datetime
 import hashlib
-import logging
 import asyncio
 
 from homeassistant.core import HomeAssistant, callback
@@ -453,29 +452,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     ):
                         await syncTime(hass, entry.entry_id)
                 ts = datetime.datetime.utcnow().timestamp()
-                if (
-                    ts - hass.data[DOMAIN][entry.entry_id]["lastFirmwareCheck"]
-                    > UPDATE_CHECK_PERIOD
-                ):
-                    hass.data[DOMAIN][entry.entry_id]["latestFirmwareVersion"] = (
+            if (
+                ts - hass.data[DOMAIN][entry.entry_id]["lastFirmwareCheck"]
+                > UPDATE_CHECK_PERIOD
+            ):
+                LOGGER.debug("Getting latest firmware...")
+                hass.data[DOMAIN][entry.entry_id]["latestFirmwareVersion"] = (
+                    await getLatestFirmwareVersion(
+                        hass,
+                        entry,
+                        hass.data[DOMAIN][entry.entry_id],
+                        tapoController,
+                    )
+                )
+                LOGGER.debug(hass.data[DOMAIN][entry.entry_id]["latestFirmwareVersion"])
+                for childDevice in hass.data[DOMAIN][entry.entry_id]["childDevices"]:
+                    childDevice["latestFirmwareVersion"] = (
                         await getLatestFirmwareVersion(
                             hass,
                             entry,
                             hass.data[DOMAIN][entry.entry_id],
-                            tapoController,
+                            childDevice["controller"],
                         )
                     )
-                    for childDevice in hass.data[DOMAIN][entry.entry_id][
-                        "childDevices"
-                    ]:
-                        childDevice["latestFirmwareVersion"] = (
-                            await getLatestFirmwareVersion(
-                                hass,
-                                entry,
-                                hass.data[DOMAIN][entry.entry_id],
-                                childDevice["controller"],
-                            )
-                        )
 
             # cameras state
             LOGGER.debug("async_update_data - before someEntityEnabled check")
@@ -934,7 +933,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                                 else:
                                                     LOGGER.warning(err)
                                             except Exception as err:
-                                                hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = False
+                                                hass.data[DOMAIN][entry.entry_id][
+                                                    "runningMediaSync"
+                                                ] = False
                                                 LOGGER.error(err)
                             else:
                                 LOGGER.debug(
