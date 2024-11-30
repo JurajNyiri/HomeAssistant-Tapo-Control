@@ -61,7 +61,7 @@ This custom component creates:
 - Sensor entities for Storage diagnostics
 - And finally 2 tapo_control.\* services to control a camera
 
-Use these services in following service calls.
+Additionally, following services are available:
 
 <details>
   <summary>tapo_control.save_preset</summary>
