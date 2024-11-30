@@ -33,13 +33,8 @@ jobs:
             The issue you are searching for:
             - Is pinned under issues
             - Has a section in main readme file with big title right at the top
-            - Has 3 red exclamations marks in the title
             - Contains a workaround both for accounts still working and the ones affected.
-            
-            And a warning was sent a month ago as an update via HACS.
 
             You can find it at https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/551.
-
-            Please do not post me too comments or any other comment that does not provide any value to the discussion as everyone monitoring it gets notified. If the comments with no value continue maintainer will be forced to lock the issue to contributors only.
           labels: |
             Duplicate
