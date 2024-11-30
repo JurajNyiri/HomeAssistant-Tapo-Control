@@ -59,7 +59,6 @@ This custom component creates:
 - Media Source for browsing and playing recordings stored on camera
 - Sensor entity that reports monitor media sync status
 - Sensor entities for Storage diagnostics
-- And finally 2 tapo_control.\* services to control a camera
 
 Additionally, following services are available:
 
