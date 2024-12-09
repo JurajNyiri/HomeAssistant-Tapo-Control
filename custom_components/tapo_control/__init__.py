@@ -24,6 +24,7 @@ import homeassistant.helpers.entity_registry
 
 from .const import (
     CONF_RTSP_TRANSPORT,
+    CONTROL_PORT,
     ENABLE_MEDIA_SYNC,
     ENABLE_SOUND_DETECTION,
     CONF_CUSTOM_STREAM,
@@ -207,11 +208,16 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         try:
             if cloud_password != "":
                 tapoController = await hass.async_add_executor_job(
-                    registerController, host, "admin", cloud_password, cloud_password
+                    registerController,
+                    host,
+                    443,
+                    "admin",
+                    cloud_password,
+                    cloud_password,
                 )
             else:
                 tapoController = await hass.async_add_executor_job(
-                    registerController, host, username, password
+                    registerController, host, 443, username, password
                 )
             camData = await getCamData(hass, tapoController)
             macAddress = camData["basic_info"]["mac"].lower()
@@ -265,6 +271,12 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
             await entry_storage.async_save({ENABLE_MEDIA_SYNC: False})
 
         hass.config_entries.async_update_entry(config_entry, data=new, version=17)
+
+    if config_entry.version == 17:
+        new = {**config_entry.data}
+        new[CONTROL_PORT] = 443
+
+        hass.config_entries.async_update_entry(config_entry, data=new, version=18)
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
@@ -348,6 +360,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data.setdefault(DOMAIN, {})
 
     host = entry.data.get(CONF_IP_ADDRESS)
+    controlPort = entry.data.get(CONTROL_PORT)
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
     motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
@@ -369,11 +382,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     try:
         if cloud_password != "":
             tapoController = await hass.async_add_executor_job(
-                registerController, host, "admin", cloud_password, cloud_password
+                registerController,
+                host,
+                controlPort,
+                "admin",
+                cloud_password,
+                cloud_password,
             )
         else:
             tapoController = await hass.async_add_executor_job(
-                registerController, host, username, password
+                registerController, host, controlPort, username, password
             )
 
         def getAllEntities(entry):
@@ -756,6 +774,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 tapoChildController = await hass.async_add_executor_job(
                     registerController,
                     host,
+                    controlPort,
                     "admin",
                     cloud_password,
                     cloud_password,
