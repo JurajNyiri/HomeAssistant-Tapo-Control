@@ -96,6 +96,24 @@ async def async_setup_entry(
                 LOGGER.debug("Adding tapoSpotlightIntensity...")
                 numbers.append(tapoSpotlightIntensity)
 
+        if (
+            entry["camData"]["flood_light_capability"] is not None
+            and entry["camData"]["flood_light_config"] is not None
+            and "min_intensity" in entry["camData"]["flood_light_capability"]
+            and "intensity_level_max" in entry["camData"]["flood_light_capability"]
+            and "intensity_level" in entry["camData"]["flood_light_config"]
+        ):
+            tapoFloodlightBrightness = TapoFloodlightBrightness(
+                entry,
+                hass,
+                config_entry,
+                entry["camData"]["flood_light_capability"]["min_intensity"],
+                entry["camData"]["flood_light_capability"]["intensity_level_max"],
+            )
+            if tapoFloodlightBrightness:
+                LOGGER.debug("Adding tapoFloodlightBrightness...")
+                numbers.append(tapoFloodlightBrightness)
+
         return numbers
 
     numbers = await setupEntities(entry)
@@ -348,6 +366,58 @@ class TapoSirenVolume(TapoNumberEntity):
             if self.typeOfAlarm == "getAlarm":
                 self.alarm_enabled = camData["alarm_config"]["automatic"] == "on"
                 self.alarm_mode = camData["alarm_config"]["mode"]
+
+
+class TapoFloodlightBrightness(TapoNumberEntity):
+    def __init__(
+        self, entry: dict, hass: HomeAssistant, config_entry, minValue, maxValue
+    ):
+        LOGGER.debug("TapoFloodlightBrightness - init - start")
+        self._attr_min_value = int(minValue)
+        self._attr_native_min_value = int(minValue)
+        self._attr_max_value = int(maxValue)
+        self._attr_native_max_value = int(maxValue)
+        self._attr_step = 1
+        self._hass = hass
+        self._attr_native_value = entry["camData"]["flood_light_config"][
+            "intensity_level"
+        ]
+        self._attr_state = entry["camData"]["flood_light_config"]["intensity_level"]
+
+        TapoNumberEntity.__init__(
+            self,
+            "Spotlight Brightness",
+            entry,
+            hass,
+            config_entry,
+            "mdi:lightbulb-on-50",
+        )
+        LOGGER.debug("TapoFloodlightBrightness - init - end")
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    @property
+    def entity_category(self):
+        return EntityCategory.CONFIG
+
+    async def async_set_native_value(self, value: float) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setFloodlightConfig, None, None, None, None, int(value)
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = int(value)
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            self._attr_native_value = int(
+                camData["flood_light_config"]["intensity_level"]
+            )
+            self._attr_state = camData["flood_light_config"]["intensity_level"]
 
 
 class TapoSpotlightIntensity(TapoNumberEntity):

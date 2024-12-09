@@ -1065,6 +1065,14 @@ async def getCamData(hass, controller):
     camData["flood_light_status"] = flood_light_status
 
     try:
+        flood_light_capability = data["getFloodlightCapability"][0]["floodlight"][
+            "capability"
+        ]
+    except Exception:
+        flood_light_capability = None
+    camData["flood_light_capability"] = flood_light_capability
+
+    try:
         flip = (
             "on"
             if data["getLdc"][0]["image"]["switch"]["flip_type"] == "center"
