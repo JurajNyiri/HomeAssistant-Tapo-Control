@@ -1053,6 +1053,18 @@ async def getCamData(hass, controller):
     camData["smartwtl_digital_level"] = smartwtl_digital_level
 
     try:
+        flood_light_config = data["getFloodlightConfig"][0]["floodlight"]["config"]
+    except Exception:
+        flood_light_config = None
+    camData["flood_light_config"] = flood_light_config
+
+    try:
+        flood_light_status = data["getFloodlightStatus"][0]["status"]
+    except Exception:
+        flood_light_status = None
+    camData["flood_light_status"] = flood_light_status
+
+    try:
         flip = (
             "on"
             if data["getLdc"][0]["image"]["switch"]["flip_type"] == "center"
