@@ -1,3 +1,6 @@
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
+[![GitHub release](https://img.shields.io/github/release/JurajNyiri/HomeAssistant-Tapo-Control.svg)](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/releases/)
+[![HA integration usage](https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=integration%20usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.tapo_control.total)](https://analytics.home-assistant.io/custom_integrations.json)
 # HomeAssistant - Tapo: Cameras Control
 
 Custom component - Tapo: Cameras Control - to add Tapo cameras into Home Assistant
