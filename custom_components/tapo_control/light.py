@@ -28,6 +28,13 @@ async def async_setup_entry(
         if tapoFloodlight:
             LOGGER.debug("Adding tapoFloodlight...")
             lights.append(tapoFloodlight)
+        else:
+            tapoFloodlightModern = await check_and_create(
+                entry, hass, TapoFloodlightModern, "getFloodlightConfig", config_entry
+            )
+            if tapoFloodlightModern:
+                LOGGER.debug("Adding tapoFloodlightModern...")
+                lights.append(tapoFloodlightModern)
 
         tapoWhitelight = await check_and_create(
             entry,
@@ -118,6 +125,62 @@ class TapoWhitelight(TapoLightEntity):
             self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_is_on = str(camData["whitelampStatus"]) == "1"
+            self._attr_state = "on" if self._attr_is_on else "off"
+
+
+class TapoFloodlightModern(TapoLightEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        LOGGER.debug("TapoFloodlightModern - init - start")
+        self._attr_is_on = False
+        self._attr_color_mode = ColorMode.ONOFF
+        self._attr_supported_color_modes = set([ColorMode.ONOFF])
+        self._hass = hass
+
+        TapoLightEntity.__init__(
+            self,
+            "Floodlight",
+            entry,
+            hass,
+            config_entry,
+            "mdi:light-flood-down",
+        )
+        LOGGER.debug("TapoFloodlight - init - end")
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_on(self) -> None:
+        LOGGER.debug("Turning on light")
+        result = await self._hass.async_add_executor_job(
+            self._controller.manualFloodlightOp,
+            True,
+        )
+        LOGGER.debug(result)
+        if "error_code" not in result or result["error_code"] == 0:
+            LOGGER.debug("Setting light state to: on")
+            self._attr_state = "on"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_off(self) -> None:
+        LOGGER.debug("Turning off light")
+        result = await self._hass.async_add_executor_job(
+            self._controller.manualFloodlightOp,
+            False,
+        )
+        LOGGER.debug(result)
+        if "error_code" not in result or result["error_code"] == 0:
+            LOGGER.debug("Setting light state to: off")
+            self._attr_state = "off"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        LOGGER.debug("Updating light state.")
+        if not camData:
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            self._attr_is_on = str(camData["flood_light_status"]) == "1"
             self._attr_state = "on" if self._attr_is_on else "off"
 
 

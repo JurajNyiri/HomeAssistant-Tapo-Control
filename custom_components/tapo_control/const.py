@@ -5,7 +5,8 @@ from datetime import timedelta
 
 from homeassistant.helpers import config_validation as cv
 
-PYTAPO_REQUIRED_VERSION = "3.3.36"
+CONTROL_PORT = "control_port"
+PYTAPO_REQUIRED_VERSION = "3.3.37"
 DOMAIN = "tapo_control"
 BRAND = "TP-Link"
 ALARM_MODE = "alarm_mode"

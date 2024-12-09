@@ -30,6 +30,7 @@ from homeassistant.util import slugify
 from .const import (
     BRAND,
     COLD_DIR_DELETE_TIME,
+    CONTROL_PORT,
     ENABLE_MOTION_SENSOR,
     DOMAIN,
     ENABLE_WEBHOOKS,
@@ -80,7 +81,13 @@ def pytapoLog(msg):
 
 
 def registerController(
-    host, username, password, password_cloud="", super_secret_key="", device_id=None
+    host,
+    control_port,
+    username,
+    password,
+    password_cloud="",
+    super_secret_key="",
+    device_id=None,
 ):
     return Tapo(
         host,
@@ -92,6 +99,7 @@ def registerController(
         reuseSession=False,
         printDebugInformation=pytapoLog,
         retryStok=False,
+        controlPort=control_port,
     )
 
 
@@ -576,8 +584,8 @@ async def getRecording(
     return coldFilePath
 
 
-def areCameraPortsOpened(host):
-    return isOpen(host, 443) and isOpen(host, 554) and isOpen(host, 2020)
+def areCameraPortsOpened(host, controlPort=443):
+    return isOpen(host, int(controlPort)) and isOpen(host, 554) and isOpen(host, 2020)
 
 
 async def isRtspStreamWorking(hass, host, username, password, full_url=""):
@@ -1045,6 +1053,26 @@ async def getCamData(hass, controller):
     camData["smartwtl_digital_level"] = smartwtl_digital_level
 
     try:
+        flood_light_config = data["getFloodlightConfig"][0]["floodlight"]["config"]
+    except Exception:
+        flood_light_config = None
+    camData["flood_light_config"] = flood_light_config
+
+    try:
+        flood_light_status = data["getFloodlightStatus"][0]["status"]
+    except Exception:
+        flood_light_status = None
+    camData["flood_light_status"] = flood_light_status
+
+    try:
+        flood_light_capability = data["getFloodlightCapability"][0]["floodlight"][
+            "capability"
+        ]
+    except Exception:
+        flood_light_capability = None
+    camData["flood_light_capability"] = flood_light_capability
+
+    try:
         flip = (
             "on"
             if data["getLdc"][0]["image"]["switch"]["flip_type"] == "center"
@@ -1373,6 +1401,7 @@ def convert_to_timestamp(date_string):
 async def update_listener(hass, entry):
     """Handle options update."""
     host = entry.data.get(CONF_IP_ADDRESS)
+    controlPort = entry.data.get(CONTROL_PORT)
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
     motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
@@ -1394,11 +1423,11 @@ async def update_listener(hass, entry):
                 )
             if cloud_password != "":
                 tapoController = await hass.async_add_executor_job(
-                    registerController, host, "admin", cloud_password
+                    registerController, host, controlPort, "admin", cloud_password
                 )
             else:
                 tapoController = await hass.async_add_executor_job(
-                    registerController, host, username, password
+                    registerController, host, controlPort, username, password
                 )
             hass.data[DOMAIN][entry.entry_id]["usingCloudPassword"] = (
                 cloud_password != ""

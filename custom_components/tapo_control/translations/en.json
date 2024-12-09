@@ -18,7 +18,8 @@
       },
       "ip": {
         "data": {
-          "ip_address": "IP Address"
+          "ip_address": "IP Address",
+          "control_port": "Control Port"
         },
         "description": "Enter camera IP address.\n\nMake sure to create camera account.\n\nCamera account is created via Tapo app at:\nCamera Settings > Advanced Settings > Camera Account.\n\n\n\nIf you are using vlans, or some other advanced networking, make sure ports 443, 554 and 2020 are opened for camera."
       },
@@ -114,6 +115,7 @@
       "auth": {
         "data": {
           "ip_address": "IP Address",
+          "control_port": "Control Port",
           "username": "Username",
           "password": "Password",
           "enable_motion_sensor": "Enable motion sensor",
