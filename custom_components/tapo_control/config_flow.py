@@ -1147,6 +1147,9 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 if CONF_IP_ADDRESS in user_input:
                     ip_address = user_input[CONF_IP_ADDRESS]
 
+                if CONTROL_PORT in user_input:
+                    controlPort = user_input[CONTROL_PORT]
+
                 LOGGER.debug(
                     "[%s] Verifying updated data.",
                     ip_address,
@@ -1267,6 +1270,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                         self.config_entry.data[CONF_PASSWORD] != password
                         or self.config_entry.data[CONF_USERNAME] != username
                         or self.config_entry.data[CONF_IP_ADDRESS] != ip_address
+                        or self.config_entry.data[CONTROL_PORT] != controlPort
                         or self.config_entry.data[CLOUD_PASSWORD] != cloud_password
                     ):
                         LOGGER.debug(
@@ -1379,6 +1383,9 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 {
                     vol.Required(
                         CONF_IP_ADDRESS, description={"suggested_value": ip_address}
+                    ): str,
+                    vol.Required(
+                        CONTROL_PORT, description={"suggested_value": controlPort}
                     ): str,
                     vol.Required(
                         CONF_USERNAME, description={"suggested_value": username}
