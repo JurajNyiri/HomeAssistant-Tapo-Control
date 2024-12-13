@@ -12,29 +12,3 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           issue-close-message: "@${issue.user.login} this issue was automatically closed because it did not follow the [Bug Report](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new?assignees=&labels=bug&template=bug_report.yml) or [Feature Request](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new?assignees=JurajNyiri&labels=enhancement&template=feature_request.md&title=Feature+Request%3A) template."
           issue-pattern: ".*Camera has all attributes filled out in developer tools.*|.*Is your feature request related to a problem.*"
-  autoclose-cloud-token:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check issue description for invalid string
-        id: check_body
-        run: |
-          if [[ "${{ github.event.issue.body }}" == *"cloud password"* ]]; then
-            echo "contains_invalid_string=true" >> $GITHUB_ENV
-          else
-            echo "contains_invalid_string=false" >> $GITHUB_ENV
-          fi
-      - name: Close Issue - comment
-        if: env.contains_invalid_string == 'true'
-        uses: peter-evans/close-issue@v3
-        with:
-          comment: |
-            This issue was automatically closed because it is a duplicate.
-            
-            The issue you are searching for:
-            - Is pinned under issues
-            - Has a section in main readme file with big title right at the top
-            - Contains a workaround both for accounts still working and the ones affected.
-
-            You can find it at https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/551.
-          labels: |
-            Duplicate
