@@ -1,3 +1,6 @@
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
+[![GitHub release](https://img.shields.io/github/release/JurajNyiri/HomeAssistant-Tapo-Control.svg)](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/releases/)
+[![HA integration usage](https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=integration%20usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.tapo_control.total)](https://analytics.home-assistant.io/custom_integrations.json)
 # HomeAssistant - Tapo: Cameras Control
 
 Custom component - Tapo: Cameras Control - to add Tapo cameras into Home Assistant
@@ -48,9 +51,8 @@ This custom component creates:
 - Media Source for browsing and playing recordings stored on camera
 - Sensor entity that reports monitor media sync status
 - Sensor entities for Storage diagnostics
-- And finally 2 tapo_control.\* services to control a camera
 
-Use these services in following service calls.
+Additionally, following services are available:
 
 <details>
   <summary>tapo_control.save_preset</summary>
