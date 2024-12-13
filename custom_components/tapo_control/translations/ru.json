@@ -14,7 +14,7 @@
         "data": {
           "cloud_password": "Пароль от облака"
         },
-        "description": "Камера требует ваш пароль от облака для управления.\nЭто пароль, который вы использовали с вашей электронной почтой при входе в приложение Tapo.\nПлатная подписка Tapo Care не требуется.\nЕсли вы не использовали один и тот же пароль для облака и для учётной записи камеры, этот пароль не совпадает.\nЭлектронная почта не требуется, и вся коммуникация по-прежнему полностью локальная."
+        "description": "Camera requires your cloud password for recordings.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local.\n\nYou can skip this step by leaving password empty and enter password later if you do not need recordings viewing functionality."
       },
       "ip": {
         "data": {
@@ -33,7 +33,7 @@
         "data": {
           "cloud_password": "Пароль от облака"
         },
-        "description": "Камера требует ваш пароль от облака для управления.\nЭто пароль, который вы использовали с вашей электронной почтой при входе в приложение Tapo.\nПлатная подписка Tapo Care не требуется.\nЕсли вы не использовали один и тот же пароль для облака и для учётной записи камеры, этот пароль не совпадает.\nЭлектронная почта не требуется, и вся коммуникация по-прежнему полностью локальная."
+        "description": "Camera requires your cloud password for recordings.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local.\n\nYou can skip this step by leaving password empty and enter password later if you do not need recordings viewing functionality."
       },
       "auth_optional_cloud": {
         "data": {
@@ -66,7 +66,7 @@
       "invalid_auth": "Неверные данные аутентификации.\nУбедитесь, что вы создали учетную запись камеры через приложение Tapo.\nВы можете проверить работоспособность этих учётных данных через поток rtsp, например, используя VLC по ссылке\nrtsp:\/\/username:password@IP Address:554\/stream1",
       "unknown": "Неизвестная ошибка",
       "connection_failed": "Не удалось подключиться",
-      "invalid_auth_cloud": "Неверный пароль от облака.\nУбедитесь, что вы вводите пароль от вашего облачного аккаунта, а НЕ пароль, который вы создали через настройки камеры (если они не одинаковы).\nВам нужно ввести пароль, который вы использовали с вашей электронной почтой при входе в приложение Tapo.",
+      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).",
       "camera_requires_admin": "Камера требует пароль от облака для управления",
       "already_configured": "IP-адрес уже настроен",
       "incorrect_peak_value": "Некорректное значение пика обнаружения звука."
@@ -126,7 +126,7 @@
       "invalid_auth": "Ошибка аутентификации",
       "unknown": "Неизвестная ошибка",
       "connection_failed": "Не удалось подключиться",
-      "invalid_auth_cloud": "Неверный пароль от облака.\nУбедитесь, что вы вводите пароль от вашего облачного аккаунта, а НЕ пароль, который вы создали через настройки камеры (если они не одинаковы).\nВам нужно ввести пароль, который вы использовали с вашей электронной почтой при входе в приложение Tapo.",
+      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).",
       "camera_requires_admin": "Камера требует пароль от облака для управления",
       "incorrect_peak_value": "Некорректное значение пика обнаружения звука.",
       "incorrect_options_action": "Выбрано некорректное действие"

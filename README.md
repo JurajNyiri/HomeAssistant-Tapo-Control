@@ -2,17 +2,6 @@
 
 Custom component - Tapo: Cameras Control - to add Tapo cameras into Home Assistant
 
-## Integration does not work temporarily on firmware build 230921 and higher
-
-TP-Link is currently working on a solution that will fixed this issue. 
-
-If you wish to use this integration, until this issue is resolved, you will need to either:
-
-1. If your camera still works with integration: Block internet access of camera if you are using firmware build 230921 and higher
-2. If your camera no longer works with integration: [Block internet access and factory reset camera](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/blob/main/add_camera_with_new_firmware.md) or [Use older firmware](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/625) than build 230921 and optionally factory reset camera
-
-[Learn more, get latest updates](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/551), [ask a question](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/categories/q-a) or [discuss](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/categories/discuss).
-
 ## Installation
 
 Copy contents of custom_components/tapo_control/ to custom_components/tapo_control/ in your Home Assistant config folder.
@@ -195,17 +184,14 @@ As well as:
 </details>
 
 <details>
-  <summary>I see error `Invalid cloud password. Invalid cloud password. Make sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same). You need to enter password which you used with your email when signing into the Tapo app.` when I enter correct password</summary>
+  <summary>I see error `Invalid cloud password.`</summary>
 
-  If you are using firmware build 230921 and higher, check issue https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/551.
-
-  Otherwise, try those troubleshooting options:
-
-  1. Make sure that "Two-Step Verification" for login is disabled. Go in the Tapo app > Me > View Account > Login Security > Turn off the "Two-Step Verification".
-  2. Reset your password.
-  3. Make sure your camera can access the internet.
-  4. Reboot your camera a few times.
-  5. Reset the camera. Remove it from your account, do a factory reset, add it back with internet access, add it back to the integration.
+  1. Ensure you have Third Party Compatibility turned on in official Tapo app on your smartphone. Tapo App -> Me -> Tapo Lab -> Third-Party Compatibility -> On
+  2. Make sure that "Two-Step Verification" for login is disabled. Go in the Tapo app > Me > View Account > Login Security > Turn off the "Two-Step Verification".
+  3. Reset your password.
+  4. Make sure your camera can access the internet.
+  5. Reboot your camera a few times.
+  6. Reset the camera. Remove it from your account, do a factory reset, add it back with internet access, add it back to the integration.
 
 </details>
 
