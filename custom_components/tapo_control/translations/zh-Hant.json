@@ -20,7 +20,7 @@
         "data": {
           "cloud_password": "Cloud Password"
         },
-        "description": "攝影機需要您的雲端密碼(cloud password)才能控制.\n不需要Email，所有通訊都是本地進行傳輸."
+        "description": "Camera requires your cloud password for recordings.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local.\n\nYou can skip this step by leaving password empty and enter password later if you do not need recordings viewing functionality."
       },
       "other_options": {
         "data": {
@@ -41,7 +41,7 @@
       "invalid_auth": "Invalid authentication data",
       "unknown": "未知的錯誤",
       "connection_failed": "連接失敗",
-      "invalid_auth_cloud": "雲端密碼(cloud password)錯誤",
+      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).",
       "camera_requires_admin": "攝影機需要您的雲端密碼(cloud password)才能控制",
       "already_configured": "IP 位址已經設定過了",
       "incorrect_peak_value": "聲音檢測峰值設定錯誤"
@@ -74,7 +74,7 @@
       "invalid_auth": "Invalid authentication data",
       "unknown": "未知的錯誤",
       "connection_failed": "連接失敗",
-      "invalid_auth_cloud": "雲端密碼(cloud password)錯誤",
+      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).",
       "camera_requires_admin": "攝影機需要您的雲端密碼(cloud password)才能控制",
       "incorrect_peak_value": "聲音檢測峰值設定錯誤."
     }
