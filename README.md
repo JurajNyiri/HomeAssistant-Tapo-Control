@@ -25,6 +25,12 @@ Following target TCP (v)LAN ports **must be open** in firewall for the camera to
 
 **These are not WAN ports, _DO NOT_ OPEN WAN PORTS VIA PORT FORWARDING. You might need to open (v)lan ports _only_ if you know what all of this means.**
 
+### Third-Party Compatibility
+
+Ensure you have Third Party Compatibility turned on in official Tapo app on your smartphone. Tapo App -> Me -> Tapo Lab -> Third-Party Compatibility -> On
+
+![Image describing how to enable Third-Party Compatibility](img/tapo_third_party.png)
+
 ## Usage
 
 Add cameras via Integrations (search for Tapo) in Home Assistant UI. You can also simply click the button below if you have MyHomeAssistant redirects set up.
