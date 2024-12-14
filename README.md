@@ -33,6 +33,11 @@ Ensure you have Third Party Compatibility turned on in the official Tapo app on 
 
 ![Image describing how to enable Third-Party Compatibility](img/tapo_third_party.png)
 
+**Note: Version 3.8.103 and later is required.** 
+
+- [iOS version](https://apps.apple.com/us/app/tp-link-tapo/id1472718009) is released globally as per 2024-12-14.
+- [Android version](https://play.google.com/store/apps/details?id=com.tplink.iot) is not released to all countries as per 2024-12-14. In my opinion, it might take a few days, or possibly a week or two for the staged rollout to be completed.
+
 ## Usage
 
 Add cameras via Integrations (search for Tapo) in Home Assistant UI. You can also simply click the button below if you have MyHomeAssistant redirects set up.
