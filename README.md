@@ -28,6 +28,7 @@ Following target TCP (v)LAN ports **must be open** in firewall for the camera to
 ### Third-Party Compatibility
 
 Ensure you have Third Party Compatibility turned on in official Tapo app on your smartphone. 
+
 **Tapo App -> Me -> Tapo Lab -> Third-Party Compatibility -> On**
 
 ![Image describing how to enable Third-Party Compatibility](img/tapo_third_party.png)
