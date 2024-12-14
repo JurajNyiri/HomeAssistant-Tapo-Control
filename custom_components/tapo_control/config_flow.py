@@ -606,7 +606,7 @@ class FlowHandler(ConfigFlow):
                         elif "Temporary Suspension" in str(e):
                             LOGGER.debug(
                                 "[ADD DEVICE][%s] Temporary suspension.",
-                                self.tapoHost,
+                                host,
                             )
                             raise Exception("temporary_suspension")
                         else:
