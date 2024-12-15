@@ -35,8 +35,8 @@ Ensure you have Third Party Compatibility turned on in the official Tapo app on 
 
 **Note: Version 3.8.103 and later is required.** 
 
-- [iOS version](https://apps.apple.com/us/app/tp-link-tapo/id1472718009) is released globally as per 2024-12-14.
-- [Android version](https://play.google.com/store/apps/details?id=com.tplink.iot) is not released to all countries as per 2024-12-14. In my opinion, it might take a few days, or possibly a week or two for the staged rollout to be completed.
+- [iOS version](https://apps.apple.com/us/app/tp-link-tapo/id1472718009) is released globally as of 2024-12-14.
+- [Android version](https://play.google.com/store/apps/details?id=com.tplink.iot) migtht not be released to all countries as of 2024-12-15. APK is available at https://www.apkmirror.com/apk/tp-link-global-inc/tp-link-tapo/tp-link-tapo-3-8-113-release/ .
 
 ## Usage
 
