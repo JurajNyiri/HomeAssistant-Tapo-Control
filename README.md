@@ -40,9 +40,11 @@ Ensure you have Third Party Compatibility turned on in the official Tapo app on 
 
 ## Usage
 
-Add cameras via Integrations (search for Tapo) in Home Assistant UI. You can also simply click the button below if you have MyHomeAssistant redirects set up.
+Add cameras via Integrations (search for `Tapo: Cameras Control`) in Home Assistant UI. You can also simply click the button below if you have MyHomeAssistant redirects set up.
 
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=tapo_control)
+
+**Note:** There are other Tapo integrations, make sure you select `Tapo: Cameras Control`. Otherwise you might choose the one for plugs and lights, or the official HA one which has a minimum feature set compared to this integration as per December 2024.
 
 Cameras are also automatically discovered when they are (re)connected to WIFI.
 
