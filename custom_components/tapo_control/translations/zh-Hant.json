@@ -3,80 +3,144 @@
   "config": {
     "flow_title": "Tapo: Cameras Control {name}",
     "step": {
+      "reauth_confirm_stream": {
+        "data": {
+          "username": "攝影機帳戶 - 使用者名稱",
+          "password": "攝影機帳戶 - 密碼"
+        },
+        "description": "您的密碼已更改，請輸入最新的密碼。\n\n攝影機帳戶是透過 Tapo 應用程式建立的，路徑為：\n攝影機設定 > 進階設定 > 攝影機帳戶\n\n您可以使用 rtsp 串流測試這些憑據是否有效，例如使用 VLC 連結：\nrtsp://username:password@IP Address:554/stream1"
+      },
+      "reauth_confirm_cloud": {
+        "data": {
+          "cloud_password": "雲端密碼"
+        },
+        "description": "攝影機需要您的雲端密碼才能控制。\n這是您在使用電子郵件登入 Tapo 應用程式時所使用的密碼。\n請確保您已在 Tapo 應用程式中開啟第三方相容性（我 -> Tapo Lab -> 第三方相容性 - 開啟）。\n\n不需要 Tapo Care 付費訂閱。\n除非您有建立其他雲端密碼，否則雲端密碼與攝影機帳戶密碼是相同的。\n不需要電子郵件，所有通信仍完全本地化。"
+      },
       "ip": {
         "data": {
-          "ip_address": "IP Address"
+          "ip_address": "IP 位址",
+          "control_port": "控制埠"
         },
-        "description": "請輸入攝影機 IP 位址.\n\n請確定您有註冊攝影機帳號.\n\n可以到 Tapo App 註冊攝影機帳號:\n攝影機設定 > 進階設定 > 攝影機帳戶.\n\n\n\n如果您是使用 vlan (虛擬區域網路), 或是其他 advanced networking, 請確保 port 443,554,2020 為開啟狀態"
+        "description": "請輸入攝影機 IP 位址。\n\n請確保已建立攝影機帳戶。\n\n攝影機帳戶是通過 Tapo 應用程式建立的，路徑為：攝影機設定 > 進階設定 > 攝影機帳戶。\n\n\n\n如果您使用 VLAN 或其他進階網路設定，請確保已為攝影機開啟 443、554 和 2020 端口。"
       },
       "auth": {
         "data": {
-          "username": "Username",
-          "password": "Password"
+          "username": "使用者名稱",
+          "password": "密碼"
         },
-        "description": "請輸入攝影機帳號與密碼.\n\n帳號透過 Tapo App 進行註冊，如未註冊請至:\n攝影機設定 > 進階設定 > 攝影機帳戶"
+        "description": "請輸入攝影機帳戶憑證。\n\n此帳戶是通過 Tapo 應用程式建立的，路徑為：攝影機設定 > 進階設定 > 攝影機帳戶。"
       },
       "auth_cloud_password": {
         "data": {
-          "cloud_password": "Cloud Password"
+          "cloud_password": "雲端密碼"
         },
-        "description": "Camera requires your cloud password for recordings.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local.\n\nYou can skip this step by leaving password empty and enter password later if you do not need recordings viewing functionality."
+        "description": "攝影機需要您的雲端密碼才能控制。\n這是您在使用電子郵件登入 Tapo 應用程式時所使用的密碼。\n請確保您已在 Tapo 應用程式中開啟第三方相容性（我 -> Tapo Lab -> 第三方相容性 - 開啟）。\n\n不需要 Tapo Care 付費訂閱。\n除非您有建立其他雲端密碼，否則雲端密碼與攝影機帳戶密碼是相同的。\n不需要電子郵件，所有通信仍完全本地化。"
+      },
+      "auth_optional_cloud": {
+        "data": {
+          "cloud_password": "雲端密碼"
+        },
+        "description": "攝影機需要您的雲端密碼才能錄製。\n這是您在使用電子郵件登入 Tapo 應用程式時所使用的密碼。\n請確保您已在 Tapo 應用程式中開啟第三方相容性（我 -> Tapo Lab -> 第三方相容性 - 開啟）。\n\n不需要 Tapo Care 付費訂閱。\n除非您有建立其他雲端密碼，否則雲端密碼與攝影機帳戶密碼是相同的。\n不需要電子郵件，所有通信仍完全本地化。\n\n如果您不需要查看錄製功能，將密碼欄位留空，可以跳過此步驟，並在需要時輸入密碼。"
       },
       "other_options": {
         "data": {
-          "enable_motion_sensor": "開啟移動偵測",
+          "enable_motion_sensor": "啟用動態感測器",
+          "enable_webhooks": "啟用 webhooks",
           "enable_time_sync": "自動同步時間",
-          "enable_stream": "Use Stream from Home Assistant",
-          "enable_sound_detection": "啟用聲音閾值檢測",
-          "sound_detection_peak": "[Sound Detection] 檢測噪音的閾值，以dB為單位。 0 最大，-100 最小.",
-          "sound_detection_duration": "[Sound Detection] 噪音需要超過峰值持續多久的時間才能觸發該狀態。",
-          "sound_detection_reset": "[Sound Detection] 如果在沒有新的噪音超過峰值的話，需要多久時間才會重置狀態。"
+          "enable_stream": "使用 Home Assistant 的串流功能（需要重新啟動）",
+          "enable_sound_detection": "啟用聲音閾值檢測（需要重新啟動）",
+          "sound_detection_peak": "[聲音檢測] 峰值以分貝（dB）為單位。0 表示非常大聲，-100 表示很小聲。",
+          "sound_detection_duration": "[聲音檢測] 噪音需要超過峰值多長時間才會觸發狀態。",
+          "sound_detection_reset": "[聲音檢測] 在沒有新的噪音超過峰值時，重置狀態的時間。",
+          "extra_arguments": "FFmpeg 額外參數（需重新啟動）",
+          "custom_stream": "自定義串流連結",
+          "rtsp_transport": "RTSP 傳輸機制"
         },
-        "description": "快設定完成了!\n只剩下一些選項..."
+        "description": "快完成了！\n只剩最後一步了！"
       }
     },
     "error": {
-      "not_tapo_device": "此 IP 位址並不是 Tapo 的裝置",
-      "ports_closed": "Port 443, 554, or 2020 是關閉狀態",
-      "invalid_auth": "Invalid authentication data",
-      "unknown": "未知的錯誤",
-      "connection_failed": "連接失敗",
-      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).",
-      "camera_requires_admin": "攝影機需要您的雲端密碼(cloud password)才能控制",
-      "already_configured": "IP 位址已經設定過了",
-      "incorrect_peak_value": "聲音檢測峰值設定錯誤"
+      "invalid_stream_auth": "無效的 RTSP 串流驗證資料",
+      "account_suspended": "帳戶暫時被停用，請稍後再試。\n請查看日誌了解更多詳細資訊。",
+      "not_tapo_device": "IP 位址不是受支援的 Tapo 裝置",
+      "ports_closed": "443、554 或 2020 端口是關閉狀態",
+      "invalid_auth": "無效的認證數據。\n請確保您已通過 Tapo 應用程式建立第三方帳戶。\n您也可以使用 rtsp 串流測試這些憑證是否有效，例如使用 VLC 連結：\nrtsp://username:password@IP Address:554/stream1",
+      "unknown": "未知錯誤",
+      "connection_failed": "連線失敗",
+      "invalid_auth_cloud": "雲端密碼無效。\n請確保您輸入的是雲端帳戶的密碼，而不是您在攝影機設定中建立的密碼（除非它們是相同的）。\n您需要輸入您使用電子郵件登入 Tapo 應用程式時所使用的密碼。\n\n請確保您已在 Tapo 應用程式中開啟第三方相容性（我 -> Tapo Lab -> 第三方相容性 - 開啟）。",
+      "cold_storage_path_does_not_exist": "冷儲存路徑不存在",
+      "camera_requires_admin": "您的攝影機需要雲端密碼才能控制",
+      "already_configured": "IP 位址已經配置",
+      "incorrect_peak_value": "聲音檢測峰值不正確"
     },
     "abort": {
-      "already_configured": "IP 位址已經設定過了",
-      "not_tapo_device": "發現的裝置並不是 Tapo 的攝影機"
+      "already_configured": "IP 位址已經配置",
+      "not_tapo_device": "發現的裝置不是 Tapo 的攝影機",
+      "reauth_successful": "重新認證成功."
     }
   },
   "options": {
     "step": {
+      "init": {
+        "data": {
+          "tapo_config_action": "修改設定"
+        },
+        "description": "您想做什麼？"
+      },
+      "sound_sensor": {
+        "data": {
+          "enable_sound_detection": "啟用聲音閾值檢測（需重新啟動）",
+          "sound_detection_peak": "[聲音檢測] 峰值以分貝（dB）為單位。0 表示非常大聲，-100 表示很小聲。",
+          "sound_detection_duration": "[聲音檢測] 噪音需要超過峰值多長時間才會觸發狀態。",
+          "sound_detection_reset": "[聲音檢測] 在沒有新的噪音超過峰值時，重置狀態的時間。"
+        },
+        "description": "設定噪音檢測感測器"
+      },
+      "media": {
+        "data": {
+          "media_view_days_order": "媒體瀏覽器中的日期排序。",
+          "media_view_recordings_order": "媒體瀏覽器中的錄音排序。",
+          "media_sync_hours": "保持同步的時間長度（以小時為單位）",
+          "media_sync_cold_storage_path": "[需要重新啟動]  冷儲存路徑"
+        },
+        "description": "修改錄影媒體同步設定"
+      },
+      "update_interval": {
+        "data": {
+          "update_interval_main": "最小更新間隔（電源供電時）",
+          "update_interval_battery": "最小更新間隔（太陽能或電池供電時）"
+        },
+        "description": "修改裝置更新間隔"
+      },
       "auth": {
         "data": {
-          "ip_address": "IP 位址",
-          "username": "Username",
-          "password": "Password",
-          "enable_motion_sensor": "開啟移動偵測",
-          "enable_stream": "Use Stream from Home Assistant [需要重啟]",
+          "ip_address": "IP位址",
+          "control_port": "控制埠",
+          "username": "使用者名稱",
+          "password": "密碼",
+          "enable_motion_sensor": "啟用動態感測器",
+          "enable_webhooks": "啟用 webhooks",
+          "enable_stream": "使用 Home Assistant 的串流功能（需要重新啟動）",
           "enable_time_sync": "自動同步時間",
-          "enable_sound_detection": "啟用聲音閾值檢測",
-          "cloud_password": "Cloud Password (選填)",
-          "sound_detection_peak": "[Sound Detection] 檢測噪音的閾值，以dB為單位。 0 最大，-100 最小。",
-          "sound_detection_duration": "[Sound Detection] 噪音需要超過峰值持續多久的時間才能觸發該狀態。",
-          "sound_detection_reset": "[Sound Detection] 如果在沒有新的噪音超過峰值的話，需要多久時間才會重置狀態。"
+          "cloud_password": "雲端密碼（可選）",
+          "extra_arguments": "FFmpeg 額外參數（需重新啟動）",
+          "custom_stream": "自定義串流連結",
+          "rtsp_transport": "RTSP 傳輸機制"
         },
-        "description": "編輯您的 Tapo 攝影機設定.\n\nUse stream from Home Assistant:\nYes - 較高的延遲，cpu使用率相對較低，允許使用播放控制\nNo - 極低的延遲, cpu使用率相對較高, 不能使用播放控制"
+        "description": "修改您的 Tapo 攝影機設定\n\n使用 Home Assistant 的串流:\nYes - 播放延遲較長，CPU 使用率較低，允許播放控制。\nNo - 播放延遲非常短，CPU 使用率較高，不允許播放控制。"
       }
     },
     "error": {
-      "invalid_auth": "Invalid authentication data",
-      "unknown": "未知的錯誤",
-      "connection_failed": "連接失敗",
-      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).",
-      "camera_requires_admin": "攝影機需要您的雲端密碼(cloud password)才能控制",
-      "incorrect_peak_value": "聲音檢測峰值設定錯誤."
+      "invalid_stream_auth": "RTSP 串流驗證資料無效",
+      "account_suspended": "帳戶暫時被停用，請稍後再試。\n請查看日誌了解更多詳細資訊。",
+      "invalid_auth": "無效的身份驗證數據",
+      "unknown": "未知錯誤",
+      "connection_failed": "連線失敗",
+      "invalid_auth_cloud": "雲端密碼無效。\n請確保您輸入的是雲端帳戶的密碼，而不是您在攝影機設定中建立的密碼（除非它們是相同的）。\n您需要輸入您使用電子郵件登入 Tapo 應用程式時所使用的密碼。\n\n請確保您已在 Tapo 應用程式中開啟第三方相容性（我 -> Tapo Lab -> 第三方相容性 - 開啟）。",
+      "cold_storage_path_does_not_exist": "冷儲存路徑不存在",
+      "camera_requires_admin": "您的攝影機需要雲端密碼才能進行控制",
+      "incorrect_peak_value": "錯誤的聲音檢測峰值。",
+      "incorrect_options_action": "選擇了錯誤的動作"
     }
   }
 }
