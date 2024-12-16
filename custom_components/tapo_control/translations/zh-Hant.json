@@ -114,7 +114,7 @@
       },
       "auth": {
         "data": {
-          "ip_address": "IP位址,
+          "ip_address": "IP位址",
           "control_port": "控制埠",
           "username": "使用者名稱",
           "password": "密碼",
