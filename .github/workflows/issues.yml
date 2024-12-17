@@ -31,7 +31,7 @@ jobs:
             This issue was automatically closed because it has a solution under [FAQ](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control?tab=readme-ov-file#troubleshooting--faq) and is a duplicate.
             
             See `I see error 'Invalid cloud password.'`.
-            
+
             Note: This action has been done automatically, owner is notified about this issue and if there is a need he will reopen.
           labels: |
             Duplicate
@@ -41,7 +41,7 @@ jobs:
       - name: Check issue description for invalid string
         id: check_body
         run: |
-          if [[ "${{ github.event.issue.body }}" == *"Invalid authentication data. Make sure you have created your 3rd party account via Tapo app."* ]]; then
+          if [[ "${{ github.event.issue.body }}" == *"sure you have created your 3rd party account via Tapo app"* ]]; then
             echo "contains_invalid_string=true" >> $GITHUB_ENV
           else
             echo "contains_invalid_string=false" >> $GITHUB_ENV
