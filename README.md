@@ -1,6 +1,7 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
 [![GitHub release](https://img.shields.io/github/release/JurajNyiri/HomeAssistant-Tapo-Control.svg)](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/releases/)
 [![HA integration usage](https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=integration%20usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.tapo_control.total)](https://analytics.home-assistant.io/custom_integrations.json)
+
 # HomeAssistant - Tapo: Cameras Control
 
 Custom component - Tapo: Cameras Control - to add Tapo cameras into Home Assistant
@@ -27,13 +28,13 @@ Following target TCP (v)LAN ports **must be open** in firewall for the camera to
 
 ### Third-Party Compatibility
 
-Ensure you have Third Party Compatibility turned on in the official Tapo app on your smartphone. 
+Ensure you have Third Party Compatibility turned on in the official Tapo app on your smartphone.
 
 **Tapo App -> Me -> Tapo Lab -> Third-Party Compatibility -> On**
 
 ![Image describing how to enable Third-Party Compatibility](img/tapo_third_party.png)
 
-**Note: Version 3.8.103 and later is required.** 
+**Note: Version 3.8.103 and later is required.**
 
 - [iOS version](https://apps.apple.com/us/app/tp-link-tapo/id1472718009) is released globally as of 2024-12-14.
 - [Android version](https://play.google.com/store/apps/details?id=com.tplink.iot) might not be released to all countries as of 2024-12-15. APK is available at [apkmirror.com](https://www.apkmirror.com/apk/tp-link-global-inc/tp-link-tapo/tp-link-tapo-3-8-113-release/).
@@ -115,7 +116,7 @@ Motion sensor is added only after a motion is detected for the first time.
 - Make sure the camera has motion detection turned on
 - Make sure the camera has privacy mode turned off
 - Make sure the camera can see you and your movement
-- If you have webhooks enabled, and your Home Assistant internal URL is reachable on HTTP, make sure camera can reach it. 
+- If you have webhooks enabled, and your Home Assistant internal URL is reachable on HTTP, make sure camera can reach it.
 - Make sure you have correct IP set for Home Assistant. Turn on Advanced Mode under `/profile`. Go to `/config/network` and under `Network Adapter` verify correct IP is shown for the device. If it is not correct, under `Home Assistant URL` uncheck `Automatic` next to `Local Network` and set it to `http://<some IP address>:8123`. **DO NOT USE HTTPS**.
 - Certain camera firmwares have pullpoint broken, with only webhooks working. If you are not able to run webhooks because of above (https, or vlan setup), binary sensor will never show up.
 - Try walking in front of the camera
@@ -180,12 +181,15 @@ entity: camera.bedroom_hd
 
 You might be entering incorrect password or are encountering a camera limitation.
 
-See [official Tapo documentation](https://www.tp-link.com/cz/support/faq/2742/)
+- Check logs for any error messages
+- Check that HA can reach the camera on ports 554 and 2020
+
+Finally, most likely issue, see [official Tapo documentation](https://www.tp-link.com/cz/support/faq/2742/)
 
 > **Q3**: Can multiple accounts/devices view the Tapo camera at the same time?
-> 
+>
 > **A**: Currently, each camera can be controlled or managed by only one account on the Tapo App. You can share it with 5 different accounts at most, and these two accounts can only access live view and playback features of the camera.
-> 
+>
 > Each camera also supports up to 2 simultaneous video streams. You could use up to 2 devices to view the live feed of the camera simultaneously using the Tapo App or via RTSP. You may also only view the playback of a camera using one Tapo app at a time.
 
 As well as:
@@ -195,7 +199,7 @@ As well as:
 > **A**: Due to the limited hardware performance of the camera itself, Tapo Care works best with one of the NVR or SD card recordings.
 >
 > If you are using an SD card and Tapo Care at the same time, the NVR(RTSP/ONVIF) will be disabled.
-> 
+>
 > To restart the recording on the NVR, please remove the SD card from the camera.
 
 </details>
@@ -203,12 +207,14 @@ As well as:
 <details>
   <summary>I see error `Invalid cloud password.`</summary>
 
-  1. Ensure you have Third Party Compatibility turned on in official Tapo app on your smartphone. Tapo App -> Me -> Tapo Lab -> Third-Party Compatibility -> On
-  2. Make sure that "Two-Step Verification" for login is disabled. Go in the Tapo app > Me > View Account > Login Security > Turn off the "Two-Step Verification".
-  3. Reset your password.
-  4. Make sure your camera can access the internet.
-  5. Reboot your camera a few times.
-  6. Reset the camera. Remove it from your account, do a factory reset, add it back with internet access, add it back to the integration.
+1. Ensure you have Third Party Compatibility turned on in official Tapo app on your smartphone. Tapo App -> Me -> Tapo Lab -> Third-Party Compatibility -> On
+2. Make sure that "Two-Step Verification" for login is disabled. Go in the Tapo app > Me > View Account > Login Security > Turn off the "Two-Step Verification".
+3. Reset your password.
+4. Make sure your camera can access the internet.
+5. Reboot your camera a few times.
+6. Reset the camera. Remove it from your account, do a factory reset, add it back with internet access, add it back to the integration.
+7. Try checking Third-Party Compatibility off and on again and opening the camera via Tapo App.
+8. If all of this fails (unlikely) repeat from step 1, wait a few hours and try again.
 
 </details>
 
@@ -251,20 +257,20 @@ If you had success with some other model, please report it via a new issue.
   <summary>What is webhook when referred to on camera?</summary>
 
 Camera uses ONVIF standard to communicate motion events. This communication can work with 2 ways:
-  
-  1. Pullpoint: Client opens connection to the camera and waits until the camera responds. Camera responds only when there is some event to communicate. After camera responds, client reopens the connection and waits again.
-  2. Webhook: Client tells the camera its URL to receive events at. When an event happens, camera communicates this to the URL client defined.
-  
+
+1. Pullpoint: Client opens connection to the camera and waits until the camera responds. Camera responds only when there is some event to communicate. After camera responds, client reopens the connection and waits again.
+2. Webhook: Client tells the camera its URL to receive events at. When an event happens, camera communicates this to the URL client defined.
+
 Webhooks are the preffered method of communication as they are faster and lighter. That being said;
-  
-  - Webhooks require an HTTP only HA setup because Tapo cameras do not support HTTPS webhooks
-  - Webhooks require a proper base_url to be defined in HA, so that the URL communicated is correct (you can check URL sent by enabling debug logs for homeassistant.onvif)
-  
+
+- Webhooks require an HTTP only HA setup because Tapo cameras do not support HTTPS webhooks
+- Webhooks require a proper base_url to be defined in HA, so that the URL communicated is correct (you can check URL sent by enabling debug logs for homeassistant.onvif)
+
 Points above are automatically determined by this integration and if the HA does not meet the criteria, webhooks are disabled. That being said;
 
-  - There are camera (and/or firmwares) which freeze when both webhooks and pullpoint connection is created, which happens at the start to see if webhooks is supported at all so that communication can fallback back to pullpoint.
-  - There are camera firmwares which have pullpoint broken (1.3.6 C200) and only webhooks work
-  
+- There are camera (and/or firmwares) which freeze when both webhooks and pullpoint connection is created, which happens at the start to see if webhooks is supported at all so that communication can fallback back to pullpoint.
+- There are camera firmwares which have pullpoint broken (1.3.6 C200) and only webhooks work
+
 For webhooks to work, all the user needs to do is make sure he is using HA on HTTP and that the HA is available on the URL communicated.
 
 </details>
