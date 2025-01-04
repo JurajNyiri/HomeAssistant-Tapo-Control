@@ -47,6 +47,8 @@ Add cameras via Integrations (search for `Tapo: Cameras Control`) in Home Assist
 
 **Note:** There are other Tapo integrations, make sure you select `Tapo: Cameras Control`. Otherwise you might choose the one for plugs and lights, or the official HA one which has a minimum feature set compared to this integration as of December 2024.
 
+When integrating Tapo cameras, ensure only ONE integration is used. If multiple are used at the same time it will result in conflicts and instability of connection to camera for all the integrations / services connecting to camera.
+
 Cameras are also automatically discovered when they are (re)connected to WIFI.
 
 To add multiple cameras, add integration multiple times.
