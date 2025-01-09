@@ -1,0 +1,82 @@
+{
+  "title": "Tapo: Controlo de Câmaras",
+  "config": {
+    "flow_title": "Tapo: Controlo de Câmaras {nome}",
+    "step": {
+      "ip": {
+        "data": {
+          "ip_address": "Endereço IP"
+        },
+        "description": "Introduza o endereço IP da câmara.\n\nCertifique-se de criar uma conta na câmara.\n\nEsta conta da câmara é criada na app Tapo, em:\nCamera Settings > Advanced Settings > Camera Account.\n\n\n\nSe estiver a utilizar VLAN ou outro tipo de rede avançada, certifique-se de que as portas 443, 554 e 2020 estão abertas para a câmara."
+      },
+      "auth": {
+        "data": {
+          "username": "Nome de Utilizador",
+          "password": "Palavra-passe"
+        },
+        "description": "Introduza as credenciais da conta da câmara.\n\nEsta conta da câmara é criada na app Tapo, em:\nCamera Settings > Advanced Settings > Camera Account"
+      },
+      "auth_cloud_password": {
+        "data": {
+          "cloud_password": "Palavra-passe de Cloud"
+        },
+        "description": "A câmara requer a sua palavra-passe de cloud para gravações.\nEsta é a palavra-passe que utilizou com o seu email ao iniciar sessão na app Tapo.\nCertifique-se de que tem a compatibilidade de terceiros ativada na app Tapo (Eu -> Tapo Lab -> Third-Party Compatibility - Ativado).\n\nNão é necessário ter a subscrição paga do Tapo Care.\nA menos que tenha utilizado a mesma palavra-passe para a cloud e para a conta da câmara, esta palavra-passe não é a mesma.\nO email não é necessário e toda a comunicação continua totalmente local.\n\nPode ignorar este passo deixando o campo da palavra-passe em branco e introduzi-la mais tarde, caso não necessite da funcionalidade de visualização de gravações."
+      },
+      "other_options": {
+        "data": {
+          "enable_motion_sensor": "Ativar sensor de movimento",
+          "enable_time_sync": "Sincronizar hora automaticamente",
+          "enable_stream": "Utilizar streaming do Home Assistant (requer reinício)",
+          "enable_sound_detection": "Ativar deteção de limite de som (requer reinício)",
+          "sound_detection_peak": "[Deteção de som] Pico em dB. 0 é muito alto e -100 é baixo.",
+          "sound_detection_duration": "[Deteção de som] Quanto tempo o ruído necessita de estar acima do pico para ativar o estado.",
+          "sound_detection_reset": "[Deteção de som] Tempo para repor o estado depois de não haver ruído acima do pico."
+        },
+        "description": "Quase lá!\nSó mais algumas opções..."
+      }
+    },
+    "error": {
+      "not_tapo_device": "O endereço IP não corresponde a um dispositivo Tapo",
+      "ports_closed": "A porta 443, 554 ou 2020 está fechada",
+      "invalid_auth": "Dados de autenticação inválidos",
+      "unknown": "Erro desconhecido",
+      "connection_failed": "Falha na ligação",
+      "invalid_auth_cloud": "Palavra-passe de cloud inválida.\nCertifique-se de que está a introduzir a palavra-passe da sua conta de cloud e NÃO a palavra-passe que criou nas definições da câmara (a não ser que sejam a mesma).\nTem de introduzir a palavra-passe que utilizou com o seu email ao iniciar sessão na app Tapo.\n\nCertifique-se de que tem a compatibilidade de terceiros ativada na app Tapo (Eu -> Tapo Lab -> Third-Party Compatibility - Ativado).",
+      "camera_requires_admin": "A sua câmara necessita de uma palavra-passe de cloud para controlo",
+      "already_configured": "O endereço IP já está configurado",
+      "incorrect_peak_value": "Valor de pico de deteção de som incorreto."
+    },
+    "abort": {
+      "already_configured": "O endereço IP já está configurado",
+      "not_tapo_device": "O dispositivo encontrado não é uma câmara Tapo"
+    }
+  },
+  "options": {
+    "step": {
+      "auth": {
+        "data": {
+          "ip_address": "Endereço IP",
+          "username": "Nome de Utilizador",
+          "password": "Palavra-passe",
+          "enable_motion_sensor": "Ativar sensor de movimento",
+          "enable_stream": "Utilizar streaming do Home Assistant (requer reinício)",
+          "enable_sound_detection": "Ativar deteção de limite de som (requer reinício)",
+          "enable_time_sync": "Sincronizar hora automaticamente",
+          "cloud_password": "Palavra-passe de cloud (opcional)",
+          "sound_detection_peak": "[Deteção de som] Pico em dB. 0 é muito alto e -100 é baixo.",
+          "sound_detection_duration": "[Deteção de som] Quanto tempo o ruído necessita de estar acima do pico para ativar o estado.",
+          "sound_detection_reset": "[Deteção de som] Tempo para repor o estado depois de não haver ruído acima do pico."
+        },
+        "description": "Modificar definições da sua câmara Tapo.\n\nUtilizar streaming do Home Assistant:\n- Sim: Maior atraso de reprodução, menor utilização de CPU, permite controlo de reprodução\n- Não: Atraso de reprodução muito curto, maior utilização de CPU, sem controlo de reprodução"
+      }
+    },
+    "error": {
+      "invalid_auth": "Dados de autenticação inválidos",
+      "unknown": "Erro desconhecido",
+      "connection_failed": "Falha na ligação",
+      "invalid_auth_cloud": "Palavra-passe de cloud inválida.\nCertifique-se de que está a introduzir a palavra-passe da sua conta de cloud e NÃO a palavra-passe que criou nas definições da câmara (a não ser que sejam a mesma).\nTem de introduzir a palavra-passe que utilizou com o seu email ao iniciar sessão na app Tapo.\n\nCertifique-se de que tem a compatibilidade de terceiros ativada na app Tapo (Eu -> Tapo Lab -> Third-Party Compatibility - Ativado).",
+      "camera_requires_admin": "A sua câmara necessita de uma palavra-passe de cloud para controlo",
+      "incorrect_peak_value": "Valor de pico de deteção de som incorreto."
+    }
+  }
+}
