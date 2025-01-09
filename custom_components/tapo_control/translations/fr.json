@@ -1,0 +1,146 @@
+{
+  "title": "Tapo: Contrôle Caméras",
+  "config": {
+    "flow_title": "Tapo: Contrôle Caméras {name}",
+    "step": {
+      "reauth_confirm_stream": {
+        "data": {
+          "username": "Compte de la Camera - Nom d'utilisateur",
+          "password": "Compte de la Camera - Mot de passe"
+        },
+        "description": "Votre mot de passe a été modifié. Veuillez saisir un mot de passe à jour.\n\nLe compte de la caméra est créé via l'application Tapo à:\nRéglages de l'appareil > Réglages avancés > Compte de la caméra.\n\nVous pouvez tester si ces informations d'identification fonctionnent via le flux rtsp, par exemple avec VLC en utilisant le lien\nrtsp://username:password@IP Address:554/stream1"
+      },
+      "reauth_confirm_cloud": {
+        "data": {
+          "cloud_password": "Mot de passe Cloud"
+        },
+        "description": "La caméra nécessite votre mot de passe cloud pour le contrôle.\nIl s'agit du mot de passe que vous avez utilisé avec votre e-mail lors de la connexion à l'application Tapo.\nAssurez-vous que la compatibilité tierce est activée dans l'application Tapo (Moi -> Tapo Lab -> Compatibilité tierce - Activé).\n\nL'abonnement payant à Tapo Care n'est pas requis.\nÀ moins que vous n'ayez utilisé le même mot de passe pour le cloud que pour votre compte de caméra, ce mot de passe n'est pas le même.\nLe e-mail n'est pas nécessaire et toutes les communications restent entièrement locales."
+      },
+      "ip": {
+        "data": {
+          "ip_address": "Addresse IP",
+          "control_port": "Port de contrôle"
+        },
+        "description": "Enter l'adresse IP de la camera.\n\nAssurez-vous de créer un compte de caméra.\n\nLe compte de la caméra est créé via l'application Tapo à:\nRéglages de l'appareil > Réglages avancés > Compte de la caméra.\n\n\n\nSi vous utilisez des VLAN ou d'autres réseaux avancés, assurez-vous que les ports 443, 554 et 2020 sont ouverts pour la caméra."
+      },
+      "auth": {
+        "data": {
+          "username": "Nom d'utilisateur",
+          "password": "Mot de Passe"
+        },
+        "description": "Entrez les informations d'identification du compte de la caméra.\n\nLe compte de la caméra est créé via l'application Tapo à:\nRéglages de l'appareil > Réglages avancés > Compte de la caméra"
+      },
+      "auth_cloud_password": {
+        "data": {
+          "cloud_password": "Mot de passe Cloud"
+        },
+        "description": "La caméra nécessite votre mot de passe cloud pour le contrôle.\nIl s'agit du mot de passe que vous avez utilisé avec votre e-mail lors de la connexion à l'application Tapo.\nAssurez-vous que la compatibilité tierce est activée dans l'application Tapo (Moi -> Tapo Lab -> Compatibilité tierce - Activé).\n\nL'abonnement payant à Tapo Care n'est pas requis.\nÀ moins que vous n'ayez utilisé le même mot de passe pour le cloud que pour votre compte de caméra, ce mot de passe n'est pas le même.\nLe e-mail n'est pas nécessaire et toutes les communications restent entièrement locales."
+      },
+      "auth_optional_cloud": {
+        "data": {
+          "cloud_password": "Mot de passe Cloud"
+        },
+        "description": "La caméra nécessite votre mot de passe cloud pour l'enregistrement.\nIl s'agit du mot de passe que vous avez utilisé avec votre e-mail lors de la connexion à l'application Tapo.\nAssurez-vous que la compatibilité tierce est activée dans l'application Tapo (Moi -> Tapo Lab -> Compatibilité tierce - Activé).\n\nL'abonnement payant à Tapo Care n'est pas requis.\nÀ moins que vous n'ayez utilisé le même mot de passe pour le cloud que pour votre compte de caméra, ce mot de passe n'est pas le même.\nLe e-mail n'est pas nécessaire et toutes les communications restent entièrement locales.\n\nVous pouvez ignorer cette étape en laissant le mot de passe vide et saisir le mot de passe plus tard si vous n'avez pas besoin de la fonctionnalité de visualisation des enregistrements."
+      },
+      "other_options": {
+        "data": {
+          "enable_motion_sensor": "Activer le détecteur de mouvement",
+          "enable_webhooks": "Activer les webhooks",
+          "enable_time_sync": "Synchroniser automatiquement l'heure",
+          "enable_stream": "Utiliser le flux de Home Assistant (redémarrage requis)",
+          "enable_sound_detection": "Activer la détection du seuil sonore (redémarrage requis)",
+          "sound_detection_peak": "[Détection sonore] Pic en dB. 0 est très fort et -100 est faible.",
+          "sound_detection_duration": "[Détection sonore] Combien de temps le bruit doit-il dépasser le pic pour déclencher l'état.",
+          "sound_detection_reset": "[Détection sonore] Le temps de réinitialisation de l'état après qu'aucun nouveau bruit n'a dépassé le pic.",
+          "extra_arguments": "Arguments supplémentaires pour ffmpeg (redémarrage requis)",
+          "custom_stream": "Lien de flux personnalisé",
+          "rtsp_transport": "Mécanisme de transport RTSP"
+        },
+        "description": "Presque terminé!\nEncore quelques options finales..."
+      }
+    },
+    "error": {
+      "invalid_stream_auth": "Données d'authentification de flux RTSP invalides",
+      "account_suspended": "Compte temporairement suspendu, veuillez réessayer plus tard.\n Voir le journal pour plus de détails.",
+      "not_tapo_device": "L'adresse IP n'est pas un appareil Tapo pris en charge",
+      "ports_closed": "Le port 443, 554 ou 2020 est fermé",
+      "invalid_auth": "Données d'authentification invalides.\nAssurez-vous d'avoir créé votre compte tiers via l'application Tapo.\nVous pouvez également tester si ces informations d'identification fonctionnent via le flux rtsp, par exemple avec VLC en utilisant le lien\nrtsp://username:password@IP Address:554/stream1",
+      "unknown": "Erreur inconnue",
+      "connection_failed": "La connexion a échoué",
+      "invalid_auth_cloud": "Mot de passe cloud invalide.\nAssurez-vous de saisir le mot de passe de votre compte cloud et NON le mot de passe que vous avez créé via les paramètres de la caméro (sauf s'ils sont identiques).\nVous devez saisir le mot de passe que vous avez utilisé avec votre e-mail lors de la connexion à l'application Tapo.\n\nAssurez-vous que la compatibilité tierce est activée dans l'application Tapo (Moi -> Tapo Lab -> Compatibilité tierce - Activé).",
+      "cold_storage_path_does_not_exist": "Le chemin de stockage à froid n'existe pas",
+      "camera_requires_admin": "Votre caméra nécessite un mot de passe cloud pour le contrôle",
+      "already_configured": "Adresse IP déjà configurée",
+      "incorrect_peak_value": "Valeur de pic de détection sonore incorrecte."
+    },
+    "abort": {
+      "already_configured": "Adresse IP déjà configurée",
+      "not_tapo_device": "L'appareil découvert n'est pas une caméra Tapo",
+      "reauth_successful": "La réauthentification a réussi."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "tapo_config_action": "Action"
+        },
+        "description": "Que voulez faire?"
+      },
+      "sound_sensor": {
+        "data": {
+          "enable_sound_detection": "Activer la détection du seuil sonore (redémarrage requis)",
+          "sound_detection_peak": "[Détection sonore] Pic en dB. 0 est très fort et -100 est faible.",
+          "sound_detection_duration": "[Détection sonore] Combien de temps le bruit doit-il dépasser le pic pour déclencher l'état.",
+          "sound_detection_reset": "[Détection sonore] Le temps nécessaire pour réinitialiser l'état après qu'aucun nouveau bruit n'a dépassé le pic."
+        },
+        "description": "Configurer le capteur de détection de bruit"
+      },
+      "media": {
+        "data": {
+          "media_view_days_order": "Ordre des jours dans le navigateur multimédia",
+          "media_view_recordings_order": "Ordre des enregistrements dans Media Browser",
+          "media_sync_hours": "Number of hours to keep synchronized",
+          "media_sync_cold_storage_path": "[Nécessite un redémarrage] Chemin de stockage à froid"
+        },
+        "description": "Modifier les paramètres de synchronisation des médias d'enregistrement"
+      },
+      "update_interval": {
+        "data": {
+          "update_interval_main": "Intervalle de mise à jour minimum lorsqu'alimentaté sur secteur",
+          "update_interval_battery": "Intervalle de mise à jour minimum lorsqu'alimentaté par énergie solaire ou batterie"
+        },
+        "description": "Modifier l'intervalle de mise à jour de l'appareil"
+      },
+      "auth": {
+        "data": {
+          "ip_address": "Addresse IP",
+          "control_port": "Port de contrôle",
+          "username": "Nom d'utilisateur",
+          "password": "Mot de passe",
+          "enable_motion_sensor": "Activer le détecteur de mouvement",
+          "enable_webhooks": "Activer les webhooks",
+          "enable_stream": "Utiliser le flux de Home Assistant (redémarrage requis)",
+          "enable_time_sync": "Synchroniser automatiquement l'heure",
+          "cloud_password": "Mot de passe Cloud (facultatif)",
+          "extra_arguments": "Arguments supplémentaires pour ffmpeg (redémarrage requis)",
+          "custom_stream": "Lien de flux personnalisé",
+          "rtsp_transport": "Mécanisme de transport RTSP"
+        },
+        "description": "Modifier les paramètres de votre caméra Tapo.\n\nUtiliser le flux de Home Assistant:\nOui - Délai de lecture plus long, utilisation réduite du processeur, permet le contrôle de la lecture\nNon - Délai de lecture très court, utilisation plus élevée du processeur, aucun contrôle de lecture"
+      }
+    },
+    "error": {
+      "invalid_stream_auth": "Données d'authentification du flux RTSP invalides",
+      "account_suspended": "Compte temporairement suspendu, veuillez réessayer plus tard.\nVoir le journal pour plus de détails.",
+      "invalid_auth": "Données d'authentification invalides",
+      "unknown": "Erreur inconnue",
+      "connection_failed": "La connexion a échoué",
+      "invalid_auth_cloud": "Mot de passe cloud invalide.\nAssurez-vous de saisir le mot de passe de votre compte cloud et NON le mot de passe que vous avez créé via les paramètres de la caméra (sauf s'ils sont identiques).\nVous devez saisir le mot de passe que vous avez utilisé avec votre e-mail lors de la connexion à l'application Tapo.\n\nAssurez-vous que la compatibilité tierce est activée dans l'application Tapo (Moi -> Tapo Lab -> Compatibilité tierce - Activé).",
+      "cold_storage_path_does_not_exist": "Le chemin de stockage à froid n'existe pas",
+      "camera_requires_admin": "La caméra nécessite un mot de passe cloud pour le contrôle",
+      "incorrect_peak_value": "Valeur de pic de détection sonore incorrecte.",
+      "incorrect_options_action": "Action incorrecte choisie"
+    }
+  }
+}
