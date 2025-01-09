@@ -208,6 +208,20 @@ async def async_setup_entry(
                 LOGGER.debug("Adding TapoWhitelampIntensityLevelSelect...")
                 selects.append(tapoWhitelampIntensityLevelSelect)
 
+        if(
+            "quick_response" in entry["camData"]
+            and entry["camData"]["quick_response"] is not None
+            and len(entry["camData"]["quick_response"]) > 0
+        ):
+            tapoQuickResponseSelect = TapoQuickResponseSelect(
+                entry,
+                hass,
+                config_entry
+            )
+            if tapoQuickResponseSelect:
+                LOGGER.debug("Adding tapoQuickResponseSelect...")
+                selects.append(tapoQuickResponseSelect)
+
         return selects
 
     selects = await setupEntities(entry)
@@ -302,6 +316,43 @@ class TapoWhitelampIntensityLevelSelect(TapoSelectEntity):
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
 
+class TapoQuickResponseSelect(TapoSelectEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._attr_options = []
+        self._attr_options_id = []
+        
+        for quick_resp_audio in entry["camData"]["quick_response"]:
+            for key in quick_resp_audio:
+                self._attr_options.append(quick_resp_audio[key]["name"])
+                self._attr_options_id.append(quick_resp_audio[key]["id"])
+        
+        self._attr_current_option = None
+        TapoSelectEntity.__init__(
+            self,
+            "Quick Response",
+            entry,
+            hass,
+            config_entry,
+            "mdi:comment-alert",
+        )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = "unavailable"
+        else:
+            self._attr_current_option = None
+            self._attr_state = self._attr_current_option
+
+    async def async_select_option(self, option: str) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.playQuickResponse, self._attr_options_id[self._attr_options.index(option)]
+        )
+        self._attr_state = None
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
 
 class TapoPatrolModeSelect(TapoSelectEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
