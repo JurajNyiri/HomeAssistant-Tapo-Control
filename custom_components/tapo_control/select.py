@@ -318,13 +318,7 @@ class TapoWhitelampIntensityLevelSelect(TapoSelectEntity):
 
 class TapoQuickResponseSelect(TapoSelectEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        self._attr_options = []
-        self._attr_options_id = []
-        
-        for quick_resp_audio in entry["camData"]["quick_response"]:
-            for key in quick_resp_audio:
-                self._attr_options.append(quick_resp_audio[key]["name"])
-                self._attr_options_id.append(quick_resp_audio[key]["id"])
+        self.populateSelectOptions(entry["camData"])
         
         self._attr_current_option = None
         TapoSelectEntity.__init__(
@@ -336,6 +330,14 @@ class TapoQuickResponseSelect(TapoSelectEntity):
             "mdi:comment-alert",
         )
 
+    def populateSelectOptions(self, camData):
+        self._attr_options = []
+        self._attr_options_id = []
+        for quick_resp_audio in camData["quick_response"]:
+            for key in quick_resp_audio:
+                self._attr_options.append(quick_resp_audio[key]["name"])
+                self._attr_options_id.append(quick_resp_audio[key]["id"])
+
     async def async_update(self) -> None:
         await self._coordinator.async_request_refresh()
 
@@ -343,6 +345,7 @@ class TapoQuickResponseSelect(TapoSelectEntity):
         if not camData:
             self._attr_state = "unavailable"
         else:
+            self.populateSelectOptions(camData)
             self._attr_current_option = None
             self._attr_state = self._attr_current_option
 
