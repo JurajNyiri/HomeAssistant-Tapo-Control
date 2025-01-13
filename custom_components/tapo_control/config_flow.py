@@ -825,10 +825,10 @@ class FlowHandler(ConfigFlow):
 
                     return await self.async_step_auth_optional_cloud()
                 elif skip_rtsp is False:
-                    self.tapoUsername = ""
-                    self.tapoPassword = ""
                     errors["base"] = "skip_rtsp_not_checked"
                 else:
+                    self.tapoUsername = ""
+                    self.tapoPassword = ""
                     return await self.async_step_auth_cloud_password()
             except Exception as e:
                 if "Failed to establish a new connection" in str(e):
