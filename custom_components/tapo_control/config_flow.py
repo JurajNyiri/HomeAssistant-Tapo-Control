@@ -791,7 +791,7 @@ class FlowHandler(ConfigFlow):
                     self.tapoCloudPassword = ""
 
                     try:
-                        LOGGER.warning(
+                        LOGGER.debug(
                             "[ADD DEVICE][%s] Testing control of camera using Camera Account.",
                             host,
                         )
@@ -802,13 +802,13 @@ class FlowHandler(ConfigFlow):
                             username,
                             password,
                         )
-                        LOGGER.warning(
+                        LOGGER.debug(
                             "[ADD DEVICE][%s] Camera Account works for control.",
                             host,
                         )
                     except Exception as e:
                         if str(e) == "Invalid authentication data":
-                            LOGGER.warning(
+                            LOGGER.debug(
                                 "[ADD DEVICE][%s] Camera Account does not work for control, requesting cloud password.",
                                 host,
                             )
@@ -1275,7 +1275,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     and len(password) > 0
                     and len(username) > 0
                 ):
-                    LOGGER.warning(
+                    LOGGER.debug(
                         "[%s] Testing RTSP stream.",
                         ip_address,
                     )
