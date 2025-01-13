@@ -48,7 +48,7 @@ from .const import (
 class FlowHandler(ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 18
+    VERSION = 19
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -557,7 +557,7 @@ class FlowHandler(ConfigFlow):
         """Enter IP Address and verify Tapo device"""
         errors = {}
         host = ""
-        controlPort = "443"
+        controlPort = 443
         if user_input is not None:
             LOGGER.debug("[ADD DEVICE] Verifying IP address")
             try:
@@ -647,7 +647,7 @@ class FlowHandler(ConfigFlow):
                     ): str,
                     vol.Required(
                         CONTROL_PORT, description={"suggested_value": controlPort}
-                    ): str,
+                    ): int,
                 }
             ),
             errors=errors,
@@ -1386,7 +1386,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     ): str,
                     vol.Required(
                         CONTROL_PORT, description={"suggested_value": controlPort}
-                    ): str,
+                    ): int,
                     vol.Required(
                         CONF_USERNAME, description={"suggested_value": username}
                     ): str,

@@ -278,6 +278,12 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
         hass.config_entries.async_update_entry(config_entry, data=new, version=18)
 
+    if config_entry.version == 18:
+        new = {**config_entry.data}
+        new[CONTROL_PORT] = int(new[CONTROL_PORT])
+
+        hass.config_entries.async_update_entry(config_entry, data=new, version=19)
+
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
     return True
