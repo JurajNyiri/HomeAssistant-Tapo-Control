@@ -1380,6 +1380,11 @@ async def getCamData(hass, controller):
 
     camData["updated"] = datetime.datetime.utcnow().timestamp()
 
+    try:
+        camData['quick_response'] = data['getQuickRespList']['quick_resp_audio']
+    except Exception:
+        camData['quick_response'] = None
+
     LOGGER.debug("getCamData - done")
     LOGGER.debug("Processed update data:")
     LOGGER.debug(camData)
