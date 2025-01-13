@@ -1374,6 +1374,15 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     and len(password) == 0
                     and len(username) == 0
                 )
+                if (len(password) == 0 or len(username) > 0) and (
+                    enable_motion_sensor or enable_time_sync
+                ):
+
+                    enable_motion_sensor = False
+                    enable_time_sync = False
+                    LOGGER.warning(
+                        "Turning off motion sensor and time sync as RTSP username or password are empty. These functionalities require RTSP/Onvif credentials."
+                    )
 
                 LOGGER.debug(
                     "[%s] Updating entry.",
