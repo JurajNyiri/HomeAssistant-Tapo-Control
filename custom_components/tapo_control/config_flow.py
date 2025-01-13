@@ -749,8 +749,6 @@ class FlowHandler(ConfigFlow):
                         LOGGER.debug(
                             "[ADD DEVICE][%s] Skipping verifying camera Account.", host
                         )
-                        self.tapoUsername = username
-                        self.tapoPassword = password
                     else:
                         LOGGER.debug("[ADD DEVICE][%s] Verifying Camera Account.", host)
                         LOGGER.debug(
@@ -827,6 +825,8 @@ class FlowHandler(ConfigFlow):
 
                     return await self.async_step_auth_optional_cloud()
                 elif skip_rtsp is False:
+                    self.tapoUsername = ""
+                    self.tapoPassword = ""
                     errors["base"] = "skip_rtsp_not_checked"
                 else:
                     return await self.async_step_auth_cloud_password()
