@@ -1188,6 +1188,9 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 password = (
                     user_input[CONF_PASSWORD] if CONF_PASSWORD in user_input else ""
                 )
+                if len(username) == 0 or len(password) == 0:
+                    username = ""
+                    password = ""
                 tapoController = None
 
                 if CLOUD_PASSWORD in user_input:
@@ -1360,6 +1363,18 @@ class TapoOptionsFlowHandler(OptionsFlow):
                         ip_address,
                     )
 
+                rtspEnablementChanged = (
+                    len(self.config_entry.data[CONF_PASSWORD]) == 0
+                    and len(self.config_entry.data[CONF_USERNAME]) == 0
+                    and len(password) > 0
+                    and len(username) > 0
+                ) or (
+                    len(self.config_entry.data[CONF_PASSWORD]) > 0
+                    and len(self.config_entry.data[CONF_USERNAME]) > 0
+                    and len(password) == 0
+                    and len(username) == 0
+                )
+
                 LOGGER.debug(
                     "[%s] Updating entry.",
                     ip_address,
@@ -1383,9 +1398,10 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     data=allConfigData,
                     unique_id=DOMAIN + ip_address,
                 )
-                if ipChanged:
+
+                if ipChanged or rtspEnablementChanged:
                     LOGGER.debug(
-                        "[%s] IP Changed, reloading entry...",
+                        "[%s] IP or RTSP Enablement Changed, reloading entry...",
                         ip_address,
                     )
                     await self.hass.config_entries.async_reload(
