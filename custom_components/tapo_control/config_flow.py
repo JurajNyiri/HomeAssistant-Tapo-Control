@@ -1182,8 +1182,12 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     "[%s] Verifying updated data.",
                     ip_address,
                 )
-                username = user_input[CONF_USERNAME]
-                password = user_input[CONF_PASSWORD]
+                username = (
+                    user_input[CONF_USERNAME] if CONF_USERNAME in user_input else ""
+                )
+                password = (
+                    user_input[CONF_PASSWORD] if CONF_PASSWORD in user_input else ""
+                )
                 tapoController = None
 
                 if CLOUD_PASSWORD in user_input:
@@ -1263,14 +1267,19 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     rtsp_transport = RTSP_TRANS_PROTOCOLS[0]
 
                 if (
-                    self.config_entry.data[CONF_PASSWORD] != password
-                    or self.config_entry.data[CONF_USERNAME] != username
-                    or self.config_entry.data[CONF_IP_ADDRESS] != ip_address
+                    (
+                        self.config_entry.data[CONF_PASSWORD] != password
+                        or self.config_entry.data[CONF_USERNAME] != username
+                        or self.config_entry.data[CONF_IP_ADDRESS] != ip_address
+                    )
+                    and len(password) > 0
+                    and len(username) > 0
                 ):
-                    LOGGER.debug(
+                    LOGGER.warning(
                         "[%s] Testing RTSP stream.",
                         ip_address,
                     )
+
                     rtspStreamWorks = await isRtspStreamWorking(
                         self.hass, ip_address, username, password, custom_stream
                     )
@@ -1415,10 +1424,10 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     vol.Required(
                         CONTROL_PORT, description={"suggested_value": controlPort}
                     ): int,
-                    vol.Required(
+                    vol.Optional(
                         CONF_USERNAME, description={"suggested_value": username}
                     ): str,
-                    vol.Required(
+                    vol.Optional(
                         CONF_PASSWORD, description={"suggested_value": password}
                     ): str,
                     vol.Optional(
