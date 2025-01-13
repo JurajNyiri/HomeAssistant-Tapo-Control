@@ -64,7 +64,7 @@ This custom component creates:
 - Light entity, if the camera supports a floodlight switch
 - Buttons for Calibrate, Format, Manual Alarm start & stop, Moving the camera, Reboot and syncing time
 - Switch entities for Auto track, Flip setting, LED Indicator, Lens Distortion Correction, (Rich) Notifications, Recording, Microphone Mute, Microphone Noise Cancelling, Automatically Upgrade Firmware, HDR mode, Alarm Trigger Event types and Privacy mode
-- Select entities for Automatic Alarm, Light Frequency, Motion Detection, Night Vision, Spotlight Intensity, Alarm Type and Move to Preset
+- Select entities for Automatic Alarm, Light Frequency, Motion Detection, Night Vision, Spotlight Intensity, Alarm Type, Quick Response and Move to Preset
 - Number entity for Movement Angle, Speaker Volume, Microphone Volume, Spotlight Intensity, Siren Volume, Siren Duration and Motion Detection Digital Sensitivity
 - Media Source for browsing and playing recordings stored on camera
 - Sensor entity that reports monitor media sync status
