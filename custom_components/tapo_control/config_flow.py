@@ -16,6 +16,7 @@ from .utils import (
     isOpen,
 )
 from .const import (
+    CONF_SKIP_RTSP,
     DOMAIN,
     CONTROL_PORT,
     ENABLE_MOTION_SENSOR,
@@ -727,84 +728,108 @@ class FlowHandler(ConfigFlow):
         errors = {}
         username = ""
         password = ""
+        skip_rtsp = False
         host = self.tapoHost
         controlPort = self.tapoControlPort
         if user_input is not None:
             try:
-                LOGGER.debug("[ADD DEVICE][%s] Verifying Camera Account.", host)
-                username = user_input[CONF_USERNAME]
-                password = user_input[CONF_PASSWORD]
-
-                LOGGER.debug(
-                    "[ADD DEVICE][%s] Verifying ports all required camera ports.",
-                    host,
+                username = (
+                    user_input[CONF_USERNAME] if CONF_USERNAME in user_input else ""
                 )
-                if not areCameraPortsOpened(host, controlPort=controlPort):
-                    LOGGER.debug(
-                        "[ADD DEVICE][%s] Some of the required ports are closed.",
-                        host,
-                    )
-                    raise Exception("ports_closed")
-                else:
-                    LOGGER.debug(
-                        "[ADD DEVICE][%s] All camera ports are opened.",
-                        host,
-                    )
-
-                LOGGER.debug(
-                    "[ADD DEVICE][%s] Testing RTSP stream.",
-                    host,
+                password = (
+                    user_input[CONF_PASSWORD] if CONF_PASSWORD in user_input else ""
                 )
-                rtspStreamWorks = await isRtspStreamWorking(
-                    self.hass, host, username, password
+                skip_rtsp = (
+                    user_input[CONF_SKIP_RTSP]
+                    if CONF_SKIP_RTSP in user_input
+                    else False
                 )
-                if not rtspStreamWorks:
-                    LOGGER.debug(
-                        "[ADD DEVICE][%s] RTSP stream returned invalid authentication data error.",
-                        host,
-                    )
-                    raise Exception("Invalid authentication data")
-                else:
-                    LOGGER.debug(
-                        "[ADD DEVICE][%s] RTSP stream works.",
-                        host,
-                    )
-
-                self.tapoUsername = username
-                self.tapoPassword = password
-                self.tapoCloudPassword = ""
-
-                try:
-                    LOGGER.debug(
-                        "[ADD DEVICE][%s] Testing control of camera using Camera Account.",
-                        host,
-                    )
-                    await self.hass.async_add_executor_job(
-                        registerController, host, controlPort, username, password
-                    )
-                    LOGGER.debug(
-                        "[ADD DEVICE][%s] Camera Account works for control.",
-                        host,
-                    )
-                except Exception as e:
-                    if str(e) == "Invalid authentication data":
+                if len(username) > 0 and len(password) > 0:
+                    if skip_rtsp is True:
                         LOGGER.debug(
-                            "[ADD DEVICE][%s] Camera Account does not work for control, requesting cloud password.",
+                            "[ADD DEVICE][%s] Skipping verifying camera Account.", host
+                        )
+                        self.tapoUsername = username
+                        self.tapoPassword = password
+                    else:
+                        LOGGER.debug("[ADD DEVICE][%s] Verifying Camera Account.", host)
+                        LOGGER.debug(
+                            "[ADD DEVICE][%s] Verifying ports all required camera ports.",
                             host,
                         )
-                        return await self.async_step_auth_cloud_password()
-                    elif "Temporary Suspension" in str(e):
+                        if not areCameraPortsOpened(host, controlPort=controlPort):
+                            LOGGER.debug(
+                                "[ADD DEVICE][%s] Some of the required ports are closed.",
+                                host,
+                            )
+                            raise Exception("ports_closed")
+                        else:
+                            LOGGER.debug(
+                                "[ADD DEVICE][%s] All camera ports are opened.",
+                                host,
+                            )
+
                         LOGGER.debug(
-                            "[ADD DEVICE][%s] Temporary suspension.",
-                            self.tapoHost,
+                            "[ADD DEVICE][%s] Testing RTSP stream.",
+                            host,
                         )
-                        raise Exception("temporary_suspension")
-                    else:
-                        LOGGER.error(e)
-                        raise Exception(e)
+                        rtspStreamWorks = await isRtspStreamWorking(
+                            self.hass, host, username, password
+                        )
+                        if not rtspStreamWorks:
+                            LOGGER.debug(
+                                "[ADD DEVICE][%s] RTSP stream returned invalid authentication data error.",
+                                host,
+                            )
+                            raise Exception("Invalid authentication data")
+                        else:
+                            LOGGER.debug(
+                                "[ADD DEVICE][%s] RTSP stream works.",
+                                host,
+                            )
 
-                return await self.async_step_auth_optional_cloud()
+                    self.tapoUsername = username
+                    self.tapoPassword = password
+                    self.tapoCloudPassword = ""
 
+                    try:
+                        LOGGER.warning(
+                            "[ADD DEVICE][%s] Testing control of camera using Camera Account.",
+                            host,
+                        )
+                        await self.hass.async_add_executor_job(
+                            registerController,
+                            host,
+                            controlPort,
+                            username,
+                            password,
+                        )
+                        LOGGER.warning(
+                            "[ADD DEVICE][%s] Camera Account works for control.",
+                            host,
+                        )
+                    except Exception as e:
+                        if str(e) == "Invalid authentication data":
+                            LOGGER.warning(
+                                "[ADD DEVICE][%s] Camera Account does not work for control, requesting cloud password.",
+                                host,
+                            )
+                            return await self.async_step_auth_cloud_password()
+                        elif "Temporary Suspension" in str(e):
+                            LOGGER.debug(
+                                "[ADD DEVICE][%s] Temporary suspension.",
+                                self.tapoHost,
+                            )
+                            raise Exception("temporary_suspension")
+                        else:
+                            LOGGER.error(e)
+                            raise Exception(e)
+
+                    return await self.async_step_auth_optional_cloud()
+                elif skip_rtsp is False:
+                    errors["base"] = "skip_rtsp_not_checked"
+                else:
+                    return await self.async_step_auth_cloud_password()
             except Exception as e:
                 if "Failed to establish a new connection" in str(e):
                     errors["base"] = "connection_failed"
@@ -827,12 +852,15 @@ class FlowHandler(ConfigFlow):
             step_id="auth",
             data_schema=vol.Schema(
                 {
-                    vol.Required(
+                    vol.Optional(
                         CONF_USERNAME, description={"suggested_value": username}
                     ): str,
-                    vol.Required(
+                    vol.Optional(
                         CONF_PASSWORD, description={"suggested_value": password}
                     ): str,
+                    vol.Required(
+                        CONF_SKIP_RTSP, description={"suggested_value": skip_rtsp}
+                    ): bool,
                 }
             ),
             errors=errors,

@@ -26,7 +26,8 @@
       "auth": {
         "data": {
           "username": "Username",
-          "password": "Password"
+          "password": "Password",
+          "skip_rtsp": "Skip RTSP check; If checked, credentials will not be verified against RTSP stream and camera stream might not work. This is useful if camera does not support RTSP stream but allows control, or if stream is unavailable. Stream can be also unavailable for example if both Tapo Care recordings and SD card recordings are turned on."
         },
         "description": "Enter camera account credentials.\n\nThis account is created via Tapo app at:\nCamera Settings > Advanced Settings > Camera Account"
       },
@@ -60,6 +61,7 @@
       }
     },
     "error": {
+      "skip_rtsp_not_checked": "Enter both username and password, or leave empty and check Skip RTSP check.\n If left empty, RTSP stream will not work.",
       "invalid_stream_auth": "Invalid RTSP stream authentication data",
       "account_suspended": "Account temporarily suspended, please try again later.\n See log for more details.",
       "not_tapo_device": "IP address is not a supported Tapo device",
