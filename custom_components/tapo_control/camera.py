@@ -4,7 +4,7 @@ from haffmpeg.camera import CameraMjpeg
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from typing import Callable
 
-from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.const import STATE_UNAVAILABLE, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 from homeassistant.components.camera import (
     CameraEntityFeature,
@@ -50,12 +50,16 @@ async def async_setup_entry(
         "delete_preset",
     )
 
-    hdStream = TapoCamEntity(hass, config_entry, entry, True)
-    sdStream = TapoCamEntity(hass, config_entry, entry, False)
+    if (
+        len(config_entry.data[CONF_USERNAME]) > 0
+        and len(config_entry.data[CONF_PASSWORD]) > 0
+    ):
+        hdStream = TapoCamEntity(hass, config_entry, entry, True)
+        sdStream = TapoCamEntity(hass, config_entry, entry, False)
 
-    entry["entities"].append({"entity": hdStream, "entry": entry})
-    entry["entities"].append({"entity": sdStream, "entry": entry})
-    async_add_entities([hdStream, sdStream])
+        entry["entities"].append({"entity": hdStream, "entry": entry})
+        entry["entities"].append({"entity": sdStream, "entry": entry})
+        async_add_entities([hdStream, sdStream])
 
 
 class TapoCamEntity(Camera):
@@ -183,7 +187,9 @@ class TapoCamEntity(Camera):
 
             for attr, value in camData["basic_info"].items():
                 self._attr_extra_state_attributes[attr] = value
-            self._attr_extra_state_attributes["alarm"] = camData["alarm_config"]["automatic"]
+            self._attr_extra_state_attributes["alarm"] = camData["alarm_config"][
+                "automatic"
+            ]
             self._attr_extra_state_attributes["user"] = camData["user"]
             # Disable incorrect location report by camera
             self._attr_extra_state_attributes["longitude"] = 0
