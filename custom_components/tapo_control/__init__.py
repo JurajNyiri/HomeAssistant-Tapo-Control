@@ -370,8 +370,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
     motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
-    cloud_password = entry.data.get(CLOUD_PASSWORD)
     enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
+    # Disable onvif related capabilities if rtsp data not provided
+    if len(username) == 0 or len(password) == 0:
+        motionSensor = False
+        enableTimeSync = False
+    cloud_password = entry.data.get(CLOUD_PASSWORD)
     updateIntervalMain = entry.data.get(UPDATE_INTERVAL_MAIN)
     updateIntervalBattery = entry.data.get(UPDATE_INTERVAL_BATTERY)
 
@@ -415,6 +419,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             password = entry.data.get(CONF_PASSWORD)
             motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
             enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
+            # Disable onvif related capabilities if rtsp data not provided
+            if len(username) == 0 or len(password) == 0:
+                motionSensor = False
+                enableTimeSync = False
             ts = datetime.datetime.utcnow().timestamp()
 
             # motion detection retries
@@ -476,6 +484,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     ):
                         await syncTime(hass, entry.entry_id)
                 ts = datetime.datetime.utcnow().timestamp()
+            else:
+                debugMsg = "Both motion sensor and time sync are disabled."
+                if len(username) == 0 or len(password) == 0:
+                    debugMsg += " This is because RTSP username or password is empty."
+                LOGGER.debug(debugMsg)
             if (
                 ts - hass.data[DOMAIN][entry.entry_id]["lastFirmwareCheck"]
                 > UPDATE_CHECK_PERIOD
@@ -846,6 +859,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             if motionSensor:
                 LOGGER.debug("Seting up motion sensor for the first time.")
                 await setupOnvif(hass, entry)
+            else:
+                debugMsg = "Motion sensor is disabled."
+                if len(username) == 0 or len(password) == 0:
+                    debugMsg += " This is because RTSP username or password is empty."
+                LOGGER.debug(debugMsg)
             if enableTimeSync:
                 await syncTime(hass, entry.entry_id)
 
