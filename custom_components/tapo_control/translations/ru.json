@@ -14,7 +14,7 @@
         "data": {
           "cloud_password": "Пароль от облака"
         },
-        "description": "Camera requires your cloud password for control and recordings.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
+        "description": "Для управления камерой и записи требуется ваш пароль к облаку. .\nЭто пароль, который вы использовали при входе в приложение Tapo с вашей электронной почтой.\nУбедитесь, что в приложении Tapo включена совместимость со сторонними продуктами (Я -> Лаборатория Tapo -> Совместимость со сторонними продуктами - Вкл.).\n\nПлатная подписка Tapo Care не требуется.\nЕсли вы не использовали тот же пароль для облака, что и для вашей учетной записи Camera, этот пароль не тот же.\nЭлектронная почта не нужна, и все общение по-прежнему полностью локальное."
       },
       "ip": {
         "data": {
@@ -33,7 +33,7 @@
         "data": {
           "cloud_password": "Пароль от облака"
         },
-        "description": "Camera requires your cloud password for control and recordings.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
+        "description": "Для управления камерой и записи требуется ваш пароль к облаку. .\nЭто пароль, который вы использовали при входе в приложение Tapo с вашей электронной почтой.\nУбедитесь, что в приложении Tapo включена совместимость со сторонними продуктами (Я -> Лаборатория Tapo -> Совместимость со сторонними продуктами - Вкл.).\n\nПлатная подписка Tapo Care не требуется.\nЕсли вы не использовали тот же пароль для облака, что и для вашей учетной записи Camera, этот пароль не тот же.\nЭлектронная почта не нужна, и все общение по-прежнему полностью локальное."
       },
       "auth_optional_cloud": {
         "data": {
