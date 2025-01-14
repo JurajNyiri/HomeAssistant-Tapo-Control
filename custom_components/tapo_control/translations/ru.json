@@ -8,13 +8,13 @@
           "username": "Учётная запись камеры — Имя пользователя",
           "password": "Учётная запись камеры — Пароль"
         },
-        "description": "Ваш пароль изменился. Пожалуйста, введите актуальный пароль.\n\nУчётная запись создается через приложение Tapo по пути:\nНастройки устройства > Дополнительные настройки > Учетная запись камеры.\n\nВы можете проверить работоспособность этих учётных данных через поток rtsp, например, используя VLC по ссылке\nrtsp:\/\/username:password@IP Address:554\/stream1"
+        "description": "Ваш пароль изменился. Пожалуйста, введите актуальный пароль.\n\nУчётная запись создается через приложение Tapo по пути:\nНастройки устройства > Дополнительные настройки > Учетная запись камеры.\n\nВы можете проверить работоспособность этих учётных данных через поток rtsp, например, используя VLC по ссылке\nrtsp://username:password@IP Address:554/stream1"
       },
       "reauth_confirm_cloud": {
         "data": {
           "cloud_password": "Пароль от облака"
         },
-        "description": "Camera requires your cloud password for recordings.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local.\n\nYou can skip this step by leaving password empty and enter password later if you do not need recordings viewing functionality."
+        "description": "Camera requires your cloud password for recordings.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
       },
       "ip": {
         "data": {
@@ -33,7 +33,7 @@
         "data": {
           "cloud_password": "Пароль от облака"
         },
-        "description": "Camera requires your cloud password for recordings.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local.\n\nYou can skip this step by leaving password empty and enter password later if you do not need recordings viewing functionality."
+        "description": "Camera requires your cloud password for recordings.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
       },
       "auth_optional_cloud": {
         "data": {
@@ -63,7 +63,7 @@
       "account_suspended": "Учётная запись приостановлена, пожалуйста, повторите попытку позже.\nБолее подробную информацию см. в журнале.",
       "not_tapo_device": "IP-адрес не является поддерживаемым устройством Tapo",
       "ports_closed": "Порт 443, 554 или 2020 закрыт.",
-      "invalid_auth": "Неверные данные аутентификации.\nУбедитесь, что вы создали учетную запись камеры через приложение Tapo.\nВы можете проверить работоспособность этих учётных данных через поток rtsp, например, используя VLC по ссылке\nrtsp:\/\/username:password@IP Address:554\/stream1",
+      "invalid_auth": "Неверные данные аутентификации.\nУбедитесь, что вы создали учетную запись камеры через приложение Tapo.\nВы можете проверить работоспособность этих учётных данных через поток rtsp, например, используя VLC по ссылке\nrtsp://username:password@IP Address:554/stream1",
       "unknown": "Неизвестная ошибка",
       "connection_failed": "Не удалось подключиться",
       "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).",
