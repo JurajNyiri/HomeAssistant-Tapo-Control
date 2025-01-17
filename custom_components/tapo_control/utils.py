@@ -1381,7 +1381,12 @@ async def getCamData(hass, controller):
     camData["updated"] = datetime.datetime.utcnow().timestamp()
 
     try:
-        camData['quick_response'] = data['getQuickRespList']['quick_resp_audio']
+        if isinstance(data['getQuickRespList'], list):
+            camData['quick_response'] = data['getQuickRespList'][0]['quick_response']['quick_resp_audio']
+        elif isinstance(data['getQuickRespList'], dict):
+            camData['quick_response'] = data['getQuickRespList']['quick_resp_audio']
+        else:
+            LOGGER.warning("Quick response data is not in expected format")
     except Exception:
         camData['quick_response'] = None
 
