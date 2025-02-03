@@ -1374,7 +1374,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     and len(password) == 0
                     and len(username) == 0
                 )
-                if (len(password) == 0 or len(username) > 0) and (
+                if (len(password) == 0 or len(username) == 0) and (
                     enable_motion_sensor or enable_time_sync
                 ):
 
