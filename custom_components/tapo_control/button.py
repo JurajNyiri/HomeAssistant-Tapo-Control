@@ -103,6 +103,13 @@ class TapoSyncTimeButton(TapoButtonEntity):
             "mdi:timer-sync-outline",
         )
 
+    def updateTapo(self, camData):
+        device_mgmt = self._hass.data[DOMAIN][self._entry_id]["onvifManagement"]
+        if device_mgmt:
+            self._attr_state = None
+        else:
+            self._attr_state = STATE_UNAVAILABLE
+
     async def async_press(self) -> None:
         await syncTime(self._hass, self._entry_id)
 

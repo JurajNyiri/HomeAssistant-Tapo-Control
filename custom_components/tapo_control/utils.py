@@ -1381,14 +1381,16 @@ async def getCamData(hass, controller):
     camData["updated"] = datetime.datetime.utcnow().timestamp()
 
     try:
-        if isinstance(data['getQuickRespList'], list):
-            camData['quick_response'] = data['getQuickRespList'][0]['quick_response']['quick_resp_audio']
-        elif isinstance(data['getQuickRespList'], dict):
-            camData['quick_response'] = data['getQuickRespList']['quick_resp_audio']
+        if isinstance(data["getQuickRespList"], list):
+            camData["quick_response"] = data["getQuickRespList"][0]["quick_response"][
+                "quick_resp_audio"
+            ]
+        elif isinstance(data["getQuickRespList"], dict):
+            camData["quick_response"] = data["getQuickRespList"]["quick_resp_audio"]
         else:
             LOGGER.warning("Quick response data is not in expected format")
     except Exception:
-        camData['quick_response'] = None
+        camData["quick_response"] = None
 
     LOGGER.debug("getCamData - done")
     LOGGER.debug("Processed update data:")
@@ -1495,7 +1497,13 @@ async def getLatestFirmwareVersion(hass, config_entry, entry, controller):
 async def syncTime(hass, entry_id):
     device_mgmt = hass.data[DOMAIN][entry_id]["onvifManagement"]
     if device_mgmt:
-        LOGGER.debug("Syncing time for " + entry_id + "...")
+        LOGGER.debug(
+            "Syncing time for "
+            + hass.data[DOMAIN][entry_id]["name"]
+            + ", timezone offset is "
+            + str(hass.data[DOMAIN][entry_id]["timezoneOffset"])
+            + "..."
+        )
         now = datetime.datetime.utcnow()
 
         time_params = device_mgmt.create_type("SetSystemDateAndTime")
@@ -1504,15 +1512,26 @@ async def syncTime(hass, entry_id):
         time_params.UTCDateTime = {
             "Date": {"Year": now.year, "Month": now.month, "Day": now.day},
             "Time": {
-                "Hour": now.hour if time.localtime().tm_isdst == 0 else now.hour + 1,
+                "Hour": (now.hour if time.localtime().tm_isdst == 0 else now.hour + 1),
                 "Minute": now.minute,
                 "Second": now.second,
             },
         }
+        LOGGER.debug(
+            "Sending time parameters to " + hass.data[DOMAIN][entry_id]["name"] + ":"
+        )
+        LOGGER.debug(time_params)
         await device_mgmt.SetSystemDateAndTime(time_params)
-        hass.data[DOMAIN][entry_id][
-            "lastTimeSync"
-        ] = datetime.datetime.utcnow().timestamp()
+        now = datetime.datetime.utcnow().timestamp()
+        LOGGER.debug(
+            "Finished synchronizing time successfully. Setting last time sync to: "
+            + str(now)
+        )
+        hass.data[DOMAIN][entry_id]["lastTimeSync"] = now
+    else:
+        LOGGER.warning(
+            "Onvif has not been initialized yet, unable to synchronize time."
+        )
 
 
 async def setupOnvif(hass, entry):

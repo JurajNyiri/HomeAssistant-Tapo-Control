@@ -482,7 +482,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         ts - hass.data[DOMAIN][entry.entry_id]["lastTimeSync"]
                         > TIME_SYNC_PERIOD
                     ):
-                        await syncTime(hass, entry.entry_id)
+                        try:
+                            await syncTime(hass, entry.entry_id)
+                        except Exception as e:
+                            LOGGER.error(
+                                f"Failed to sync time for {host}: {e}",
+                                exc_info=True,
+                            )
                 ts = datetime.datetime.utcnow().timestamp()
             else:
                 debugMsg = "Both motion sensor and time sync are disabled."
@@ -865,7 +871,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     debugMsg += " This is because RTSP username or password is empty."
                 LOGGER.debug(debugMsg)
             if enableTimeSync:
-                await syncTime(hass, entry.entry_id)
+                try:
+                    await syncTime(hass, entry.entry_id)
+                except Exception as e:
+                    LOGGER.error(
+                        f"Failed to sync time for {host}: {e}",
+                        exc_info=True,
+                    )
 
         # Media sync
 
