@@ -869,8 +869,11 @@ class FlowHandler(ConfigFlow):
 
 
 class TapoOptionsFlowHandler(OptionsFlow):
+    @property
+    def config_entry(self):
+        return self.hass.config_entries.async_get_entry(self.handler)
+
     def __init__(self, config_entry):
-        self.config_entry = config_entry
         self.options = dict(config_entry.options)
 
     # todo rewrite strings into variables
