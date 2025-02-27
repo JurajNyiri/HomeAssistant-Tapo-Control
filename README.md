@@ -99,7 +99,7 @@ Integration is capable of synchronizing recordings for fast playback.
 
 Synchronization is turned off by default, you can browse media stored on camera and request it to be played. However, downloading is rather slow, so it is a good idea to enable media synchronization in background. That way, you will be able to play any synchronized media from camera instantly.
 
-You can enable this setting by navigating to Home Assistant Settings -> Devices and clicking on Configure button next to the Tapo device you wish to turn media synchronization on for. Here, you need to define the number of hours to synchronize. Unless it is specified, synchronization does not run. Here, you are able to also set the storage path where the synchronized recordings will be stored (defaults to /config/.storage/tapo_control).
+You can enable this setting by navigating to `Home Assistant Settings` -> `Devices & services` and clicking the `Tapo: Cameras control` integration. There, click on the `Configure` button next to the Tapo device you wish to turn media synchronization on for, and choose `Configure media`. Here, you need to define the number of hours to synchronize. Unless it is specified, synchronization does not run. Here, you are able to also set the storage path where the synchronized recordings will be stored (defaults to /config/.storage/tapo_control).
 
 Finally, you can turn on, or off switch entity `switch.*_media_sync`.
 
