@@ -743,10 +743,10 @@ def convertBasicInfo(basicInfo):
 
 
 async def getCamData(hass, controller):
-    LOGGER.debug("getCamData")
+    LOGGER.warning("getCamData")
     data = await hass.async_add_executor_job(controller.getMost)
     LOGGER.debug("Raw update data:")
-    LOGGER.warn(data)
+    LOGGER.warning(data)
     camData = {}
 
     camData["raw"] = data
@@ -1400,8 +1400,20 @@ async def getCamData(hass, controller):
         connectionInformation = data["getConnectionType"][0]
     except Exception:
         connectionInformation = None
+
+    if connectionInformation is None:
+        connectionInformation = {}
+        try:
+            connectionInformation["ssid"] = base64.b64decode(
+                data["get_device_info"][0]["ssid"]
+            ).decode("utf-8")
+        except Exception:
+            pass
+
     camData["connectionInformation"] = connectionInformation
 
+    LOGGER.warn("----")
+    LOGGER.warn(camData["connectionInformation"])
     try:
         videoCapability = data["getVideoCapability"][0]
     except Exception:
