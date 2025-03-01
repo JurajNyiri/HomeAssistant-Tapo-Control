@@ -1448,6 +1448,12 @@ async def getCamData(hass, controller):
     camData["chimeAlarmConfigurations"] = chimeAlarmConfigurations
 
     try:
+        supportAlarmTypeList = data["get_support_alarm_type_list"][0]
+    except Exception:
+        supportAlarmTypeList = None
+    camData["supportAlarmTypeList"] = supportAlarmTypeList
+
+    try:
         if isinstance(data["getQuickRespList"], list):
             camData["quick_response"] = data["getQuickRespList"][0]["quick_response"][
                 "quick_resp_audio"
