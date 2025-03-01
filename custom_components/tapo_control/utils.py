@@ -1409,6 +1409,11 @@ async def getCamData(hass, controller):
             ).decode("utf-8")
         except Exception:
             pass
+        try:
+            connectionInformation["rssiValue"] = data["get_device_info"][0]["rssi"]
+
+        except Exception:
+            pass
 
     camData["connectionInformation"] = connectionInformation
 
