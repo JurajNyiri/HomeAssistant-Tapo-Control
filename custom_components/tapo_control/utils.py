@@ -745,10 +745,10 @@ def convertBasicInfo(basicInfo):
 
 
 async def getCamData(hass, controller):
-    LOGGER.warning("getCamData")
+    LOGGER.debug("getCamData")
     data = await hass.async_add_executor_job(controller.getMost)
     LOGGER.debug("Raw update data:")
-    LOGGER.warning(data)
+    LOGGER.debug(data)
     camData = {}
 
     camData["raw"] = data
@@ -1436,6 +1436,19 @@ async def getCamData(hass, controller):
     camData["updated"] = datetime.datetime.utcnow().timestamp()
 
     try:
+        chimeAlarmConfigurations = {}
+        count = 0
+        for chimeAlarmConfiguration in data["get_chime_alarm_configure"]:
+            chimeAlarmConfigurations[data["get_pair_list"][0]["mac_list"][count]] = (
+                chimeAlarmConfiguration
+            )
+            count += 1
+    except Exception as err:
+        LOGGER.error(err)
+        chimeAlarmConfigurations = None
+    camData["chimeAlarmConfigurations"] = chimeAlarmConfigurations
+
+    try:
         if isinstance(data["getQuickRespList"], list):
             camData["quick_response"] = data["getQuickRespList"][0]["quick_response"][
                 "quick_resp_audio"
@@ -1764,7 +1777,7 @@ async def check_and_create(entry, hass, cls, check_function, config_entry):
             return cls(entry, hass, config_entry)
         else:
             if (
-                entry["controller"].isKLAP is False or True  # temp or true to load test
+                entry["controller"].isKLAP is False
             ):  # no uncached entries for klap devices, so no need to check them
                 LOGGER.debug(
                     f"Capability {check_function} not found, querying again..."
