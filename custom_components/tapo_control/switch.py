@@ -46,16 +46,17 @@ async def async_setup_entry(
                     )
                 )
 
-        tapoEnableMediaSyncSwitch = TapoEnableMediaSyncSwitch(
-            entry,
-            hass,
-            config_entry,
-            entry_storage,
-            entry_stored_data[ENABLE_MEDIA_SYNC],
-        )
-        if tapoEnableMediaSyncSwitch:
-            LOGGER.debug("Adding TapoEnableMediaSyncSwitch...")
-            switches.append(tapoEnableMediaSyncSwitch)
+        if entry["controller"].isKLAP is False:
+            tapoEnableMediaSyncSwitch = TapoEnableMediaSyncSwitch(
+                entry,
+                hass,
+                config_entry,
+                entry_storage,
+                entry_stored_data[ENABLE_MEDIA_SYNC],
+            )
+            if tapoEnableMediaSyncSwitch:
+                LOGGER.debug("Adding TapoEnableMediaSyncSwitch...")
+                switches.append(tapoEnableMediaSyncSwitch)
 
         tapoLensDistortionCorrectionSwitch = await check_and_create(
             entry,

@@ -93,12 +93,13 @@ async def async_setup_entry(
         tapoAlertTypeSelect = await check_and_create(
             entry, hass, TapoAlertTypeSelect, "getAlertTypeList", config_entry
         )
-        if tapoAlertTypeSelect:
-            LOGGER.debug("Adding tapoAlertTypeSelect...")
-            selects.append(tapoAlertTypeSelect)
-        elif not tapoSirenTypeSelect:
-            LOGGER.debug("Adding tapoAlertTypeSelect with start ID 0...")
-            selects.append(TapoAlertTypeSelect(entry, hass, config_entry, 0))
+        if entry["controller"].isKLAP is False:
+            if tapoAlertTypeSelect:
+                LOGGER.debug("Adding tapoAlertTypeSelect...")
+                selects.append(tapoAlertTypeSelect)
+            elif not tapoSirenTypeSelect:
+                LOGGER.debug("Adding tapoAlertTypeSelect with start ID 0...")
+                selects.append(TapoAlertTypeSelect(entry, hass, config_entry, 0))
 
         tapoMotionDetectionSelect = await check_and_create(
             entry, hass, TapoMotionDetectionSelect, "getMotionDetection", config_entry
@@ -208,16 +209,12 @@ async def async_setup_entry(
                 LOGGER.debug("Adding TapoWhitelampIntensityLevelSelect...")
                 selects.append(tapoWhitelampIntensityLevelSelect)
 
-        if(
+        if (
             "quick_response" in entry["camData"]
             and entry["camData"]["quick_response"] is not None
             and len(entry["camData"]["quick_response"]) > 0
         ):
-            tapoQuickResponseSelect = TapoQuickResponseSelect(
-                entry,
-                hass,
-                config_entry
-            )
+            tapoQuickResponseSelect = TapoQuickResponseSelect(entry, hass, config_entry)
             if tapoQuickResponseSelect:
                 LOGGER.debug("Adding tapoQuickResponseSelect...")
                 selects.append(tapoQuickResponseSelect)
@@ -316,10 +313,11 @@ class TapoWhitelampIntensityLevelSelect(TapoSelectEntity):
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
 
+
 class TapoQuickResponseSelect(TapoSelectEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         self.populateSelectOptions(entry["camData"])
-        
+
         self._attr_current_option = None
         TapoSelectEntity.__init__(
             self,
@@ -351,11 +349,13 @@ class TapoQuickResponseSelect(TapoSelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         result = await self._hass.async_add_executor_job(
-            self._controller.playQuickResponse, self._attr_options_id[self._attr_options.index(option)]
+            self._controller.playQuickResponse,
+            self._attr_options_id[self._attr_options.index(option)],
         )
         self._attr_state = None
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
+
 
 class TapoPatrolModeSelect(TapoSelectEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):

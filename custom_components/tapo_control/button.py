@@ -22,8 +22,9 @@ async def async_setup_entry(
     async def setupEntities(entry):
         buttons = []
         if not entry["isChild"]:
-            buttons.append(TapoRebootButton(entry, hass, config_entry))
-            buttons.append(TapoFormatButton(entry, hass, config_entry))
+            if entry["controller"].isKLAP is False:
+                buttons.append(TapoRebootButton(entry, hass, config_entry))
+                buttons.append(TapoFormatButton(entry, hass, config_entry))
 
             tapoStartManualAlarmButton = await check_and_create(
                 entry, hass, TapoStartManualAlarmButton, "getAlarm", config_entry
@@ -39,7 +40,7 @@ async def async_setup_entry(
                 LOGGER.debug("Adding tapoStopManualAlarmButton...")
                 buttons.append(tapoStopManualAlarmButton)
 
-            if not entry["isParent"]:
+            if not entry["isParent"] and entry["controller"].isKLAP is False:
                 buttons.append(TapoSyncTimeButton(entry, hass, config_entry))
 
         tapoCalibrateButton = await check_and_create(

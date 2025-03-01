@@ -69,18 +69,26 @@ async def async_setup_entry(
             if tapoSpeakerVolume:
                 LOGGER.debug("Adding tapoSpeakerVolume...")
                 numbers.append(tapoSpeakerVolume)
-        if "alarm_config" in entry["camData"] and (
-            "siren_volume" in entry["camData"]["alarm_config"]
-            or "alarm_volume" in entry["camData"]["alarm_config"]
+        if (
+            "alarm_config" in entry["camData"]
+            and entry["camData"]["alarm_config"] is not None
+            and (
+                "siren_volume" in entry["camData"]["alarm_config"]
+                or "alarm_volume" in entry["camData"]["alarm_config"]
+            )
         ):
             tapoSirenVolume = TapoSirenVolume(entry, hass, config_entry)
             if tapoSirenVolume:
                 LOGGER.debug("Adding TapoSirenVolume...")
                 numbers.append(tapoSirenVolume)
 
-        if "alarm_config" in entry["camData"] and (
-            "siren_duration" in entry["camData"]["alarm_config"]
-            or "alarm_duration" in entry["camData"]["alarm_config"]
+        if (
+            "alarm_config" in entry["camData"]
+            and entry["camData"]["alarm_config"] is not None
+            and (
+                "siren_duration" in entry["camData"]["alarm_config"]
+                or "alarm_duration" in entry["camData"]["alarm_config"]
+            )
         ):
             tapoSirenDuration = TapoSirenDuration(entry, hass, config_entry)
             if tapoSirenDuration:

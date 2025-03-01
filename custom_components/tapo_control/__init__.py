@@ -376,6 +376,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     controlPort = entry.data.get(CONTROL_PORT)
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
+    isKlapDevice = entry.data.get(IS_KLAP_DEVICE)
     motionSensor = entry.data.get(ENABLE_MOTION_SENSOR)
     enableTimeSync = entry.data.get(ENABLE_TIME_SYNC)
     # Disable onvif related capabilities if rtsp data not provided
@@ -408,7 +409,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             )
         else:
             tapoController = await hass.async_add_executor_job(
-                registerController, host, controlPort, username, password
+                registerController,
+                host,
+                controlPort,
+                username,
+                password,
+                "",
+                "",
+                None,
+                isKlapDevice,
             )
 
         def getAllEntities(entry):
@@ -733,8 +742,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
 
         camData = await getCamData(hass, tapoController)
-        cameraTime = await hass.async_add_executor_job(tapoController.getTime)
-        cameraTS = cameraTime["system"]["clock_status"]["seconds_from_1970"]
+        if not tapoController.isKLAP:
+            cameraTime = await hass.async_add_executor_job(tapoController.getTime)
+            cameraTS = cameraTime["system"]["clock_status"]["seconds_from_1970"]
+        else:
+            cameraTS = dt.as_timestamp(dt.now())
         currentTS = dt.as_timestamp(dt.now())
 
         hass.data[DOMAIN][entry.entry_id] = {
@@ -795,55 +807,55 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "refreshEnabled": True,
         }
 
-        if camData["childDevices"] is False or camData["childDevices"] is None:
-            await hass.async_create_task(
-                hass.config_entries.async_forward_entry_setups(entry, ["camera"])
-            )
-
-        else:
-            hass.data[DOMAIN][entry.entry_id]["isParent"] = True
-            for childDevice in camData["childDevices"]["child_device_list"]:
-                tapoChildController = await hass.async_add_executor_job(
-                    registerController,
-                    host,
-                    controlPort,
-                    "admin",
-                    cloud_password,
-                    cloud_password,
-                    "",
-                    childDevice["device_id"],
+        if tapoController.isKLAP is False:
+            if camData["childDevices"] is False or camData["childDevices"] is None:
+                await hass.async_create_task(
+                    hass.config_entries.async_forward_entry_setups(entry, ["camera"])
                 )
-                hass.data[DOMAIN][entry.entry_id]["allControllers"].append(
-                    tapoChildController
-                )
-                childCamData = await getCamData(hass, tapoChildController)
-                hass.data[DOMAIN][entry.entry_id]["childDevices"].append(
-                    {
-                        "controller": tapoChildController,
-                        "coordinator": tapoCoordinator,
-                        "camData": childCamData,
-                        "lastTimeSync": 0,
-                        "lastMediaCleanup": 0,
-                        "lastUpdate": 0,
-                        "lastFirmwareCheck": 0,
-                        "latestFirmwareVersion": False,
-                        "motionSensorCreated": False,
-                        "entities": [],
-                        "name": childCamData["basic_info"]["device_alias"],
-                        "childDevices": [],
-                        "isChild": True,
-                        "isRunningOnBattery": (
-                            True
-                            if (
-                                "basic_info" in camData
-                                and "power" in camData["basic_info"]
-                                and camData["basic_info"]["power"] == "BATTERY"
-                            )
-                            else False
-                        ),
-                        "isParent": False,
-                    }
-                )
+            else:
+                hass.data[DOMAIN][entry.entry_id]["isParent"] = True
+                for childDevice in camData["childDevices"]["child_device_list"]:
+                    tapoChildController = await hass.async_add_executor_job(
+                        registerController,
+                        host,
+                        controlPort,
+                        "admin",
+                        cloud_password,
+                        cloud_password,
+                        "",
+                        childDevice["device_id"],
+                    )
+                    hass.data[DOMAIN][entry.entry_id]["allControllers"].append(
+                        tapoChildController
+                    )
+                    childCamData = await getCamData(hass, tapoChildController)
+                    hass.data[DOMAIN][entry.entry_id]["childDevices"].append(
+                        {
+                            "controller": tapoChildController,
+                            "coordinator": tapoCoordinator,
+                            "camData": childCamData,
+                            "lastTimeSync": 0,
+                            "lastMediaCleanup": 0,
+                            "lastUpdate": 0,
+                            "lastFirmwareCheck": 0,
+                            "latestFirmwareVersion": False,
+                            "motionSensorCreated": False,
+                            "entities": [],
+                            "name": childCamData["basic_info"]["device_alias"],
+                            "childDevices": [],
+                            "isChild": True,
+                            "isRunningOnBattery": (
+                                True
+                                if (
+                                    "basic_info" in camData
+                                    and "power" in camData["basic_info"]
+                                    and camData["basic_info"]["power"] == "BATTERY"
+                                )
+                                else False
+                            ),
+                            "isParent": False,
+                        }
+                    )
 
         await hass.async_create_task(
             hass.config_entries.async_forward_entry_setups(
@@ -863,7 +875,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
 
         # Needs to execute AFTER binary_sensor creation!
-        if camData["childDevices"] is None and (motionSensor or enableTimeSync):
+        if (
+            tapoController.isKLAP is False
+            and camData["childDevices"] is None
+            and (motionSensor or enableTimeSync)
+        ):
             onvifDevice = await initOnvifEvents(hass, host, username, password)
             hass.data[DOMAIN][entry.entry_id]["eventsDevice"] = onvifDevice["device"]
             hass.data[DOMAIN][entry.entry_id]["onvifManagement"] = onvifDevice[
@@ -887,10 +903,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     )
 
         # Media sync
-
-        timeCorrection = await hass.async_add_executor_job(
-            tapoController.getTimeCorrection
-        )
+        if tapoController.isKLAP is False:
+            timeCorrection = await hass.async_add_executor_job(
+                tapoController.getTimeCorrection
+            )
+        else:
+            timeCorrection = 0
 
         # todo move to utils
         async def mediaSync(time=None):
