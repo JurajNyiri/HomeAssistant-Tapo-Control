@@ -23,6 +23,13 @@
         },
         "description": "Enter camera IP address.\n\nMake sure to create camera account.\n\nCamera account is created via Tapo app at:\nCamera Settings > Advanced Settings > Camera Account.\n\n\n\nIf you are using vlans, or some other advanced networking, make sure ports 443, 554 and 2020 are opened for camera."
       },
+      "auth_klap": {
+        "data": {
+          "email": "E-mail",
+          "password": "Password"
+        },
+        "description": "Enter your TPLink account credentials.\n\nAll communication is fully local."
+      },
       "auth": {
         "data": {
           "username": "Username",

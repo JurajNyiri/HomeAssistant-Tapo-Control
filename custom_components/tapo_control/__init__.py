@@ -29,6 +29,7 @@ from .const import (
     ENABLE_SOUND_DETECTION,
     CONF_CUSTOM_STREAM,
     ENABLE_WEBHOOKS,
+    IS_KLAP_DEVICE,
     LOGGER,
     DOMAIN,
     ENABLE_MOTION_SENSOR,
@@ -72,8 +73,8 @@ from .utils import (
     findMedia,
     getRecordings,
 )
-from pytapo import Tapo
-from pytapo.version import PYTAPO_VERSION
+from .pytapo import Tapo
+from .pytapo.version import PYTAPO_VERSION
 
 from homeassistant.helpers.event import async_track_time_interval
 from datetime import timedelta
@@ -283,6 +284,12 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         new[CONTROL_PORT] = int(new[CONTROL_PORT])
 
         hass.config_entries.async_update_entry(config_entry, data=new, version=19)
+
+    if config_entry.version == 19:
+        new = {**config_entry.data}
+        new[IS_KLAP_DEVICE] = False
+
+        hass.config_entries.async_update_entry(config_entry, data=new, version=20)
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 

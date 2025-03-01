@@ -29,7 +29,7 @@ from .utils import (
     getWebFile,
 )
 
-from pytapo import Tapo
+from .pytapo import Tapo
 
 
 async def async_get_media_source(hass: HomeAssistant) -> TapoMediaSource:
