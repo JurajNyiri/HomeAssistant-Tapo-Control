@@ -1773,9 +1773,10 @@ async def check_and_create(entry, hass, cls, check_function, config_entry):
                 LOGGER.debug(
                     f"Capability {check_function} not found, querying again..."
                 )
-                await hass.async_add_executor_job(
+                result = await hass.async_add_executor_job(
                     getattr(entry["controller"], check_function)
                 )
+                LOGGER.debug(result)
                 LOGGER.debug(f"Creating {cls.__name__}")
                 return cls(entry, hass, config_entry)
     except Exception as err:
