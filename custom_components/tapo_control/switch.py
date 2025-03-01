@@ -69,10 +69,8 @@ async def async_setup_entry(
             LOGGER.debug("Adding tapoLensDistortionCorrectionSwitch...")
             switches.append(tapoLensDistortionCorrectionSwitch)
 
-        tapoIndicatorLedSwitch = await check_and_create(
-            entry, hass, TapoIndicatorLedSwitch, "getLED", config_entry
-        )
-        if tapoIndicatorLedSwitch:
+        if "led" in entry["camData"] and entry["camData"]["led"] is not None:
+            tapoIndicatorLedSwitch = TapoIndicatorLedSwitch(entry, hass, config_entry)
             LOGGER.debug("Adding tapoIndicatorLedSwitch...")
             switches.append(tapoIndicatorLedSwitch)
 

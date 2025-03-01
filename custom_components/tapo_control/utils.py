@@ -100,6 +100,7 @@ def registerController(
     super_secret_key="",
     device_id=None,
     is_klap=None,
+    hass=None,
 ):
     return Tapo(
         host,
@@ -113,6 +114,7 @@ def registerController(
         retryStok=False,
         controlPort=control_port,
         isKLAP=is_klap,
+        hass=hass,
     )
 
 
@@ -1296,6 +1298,10 @@ async def getCamData(hass, controller):
         led = data["getLedStatus"][0]["led"]["config"]["enabled"]
     except Exception:
         led = None
+
+    if led is None:
+        LOGGER.warning(data["get_device_info"][0]["led_off"])
+        led = "on" if data["get_device_info"][0]["led_off"] == 0 else "off"
     camData["led"] = led
 
     # todo rest
@@ -1761,12 +1767,17 @@ async def check_and_create(entry, hass, cls, check_function, config_entry):
             )
             return cls(entry, hass, config_entry)
         else:
-            LOGGER.debug(f"Capability {check_function} not found, querying again...")
-            await hass.async_add_executor_job(
-                getattr(entry["controller"], check_function)
-            )
-            LOGGER.debug(f"Creating {cls.__name__}")
-            return cls(entry, hass, config_entry)
+            if (
+                entry["controller"].isKLAP is False or True  # temp or true to load test
+            ):  # no uncached entries for klap devices, so no need to check them
+                LOGGER.debug(
+                    f"Capability {check_function} not found, querying again..."
+                )
+                await hass.async_add_executor_job(
+                    getattr(entry["controller"], check_function)
+                )
+                LOGGER.debug(f"Creating {cls.__name__}")
+                return cls(entry, hass, config_entry)
     except Exception as err:
         LOGGER.info(f"Camera does not support {cls.__name__}: {err}")
         return None
