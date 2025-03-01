@@ -1300,7 +1300,6 @@ async def getCamData(hass, controller):
         led = None
 
     if led is None:
-        LOGGER.warning(data["get_device_info"][0]["led_off"])
         led = "on" if data["get_device_info"][0]["led_off"] == 0 else "off"
     camData["led"] = led
 
@@ -1420,11 +1419,8 @@ async def getCamData(hass, controller):
 
         except Exception:
             pass
-
     camData["connectionInformation"] = connectionInformation
 
-    LOGGER.warn("----")
-    LOGGER.warn(camData["connectionInformation"])
     try:
         videoCapability = data["getVideoCapability"][0]
     except Exception:
