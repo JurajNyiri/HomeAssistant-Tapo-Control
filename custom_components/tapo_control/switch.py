@@ -168,11 +168,7 @@ async def async_setup_entry(
         ):
             for macAddress in entry["camData"]["chimeAlarmConfigurations"]:
                 tapoChimeRingtoneSwitch = TapoChimeRingtoneSwitch(
-                    entry,
-                    hass,
-                    config_entry,
-                    macAddress,
-                    entry["camData"]["chimeAlarmConfigurations"][macAddress]["mac"],
+                    entry, hass, config_entry, macAddress
                 )
                 switches.append(tapoChimeRingtoneSwitch)
         if (
@@ -260,13 +256,11 @@ class TapoChimeRingtoneSwitch(TapoSwitchEntity):
         hass: HomeAssistant,
         config_entry,
         macAddress: str,
-        readMacAddress: str,
     ):
         self.macAddress = macAddress
-        self.readMacAddress = readMacAddress
         TapoSwitchEntity.__init__(
             self,
-            f"Ringtone - {macAddress}",
+            f"{macAddress} - Chime Ringtone",
             entry,
             hass,
             config_entry,
@@ -299,6 +293,7 @@ class TapoChimeRingtoneSwitch(TapoSwitchEntity):
             not camData
             or "chimeAlarmConfigurations" not in camData
             or len(camData["chimeAlarmConfigurations"]) == 0
+            or self.macAddress not in camData["chimeAlarmConfigurations"]
         ):
             self._attr_state = STATE_UNAVAILABLE
         else:
