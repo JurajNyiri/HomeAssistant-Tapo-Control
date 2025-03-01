@@ -129,7 +129,11 @@ async def async_setup_entry(
         ):
             for macAddress in entry["camData"]["chimeAlarmConfigurations"]:
                 tapoChimeVolume = TapoChimeVolume(entry, hass, config_entry, macAddress)
+                tapoChimeDuration = TapoChimeDuration(
+                    entry, hass, config_entry, macAddress
+                )
                 numbers.append(tapoChimeVolume)
+                numbers.append(tapoChimeDuration)
 
         return numbers
 
@@ -214,6 +218,68 @@ class TapoMotionDetectionDigitalSensitivity(TapoNumberEntity):
             self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_state = camData["motion_detection_digital_sensitivity"]
+
+
+class TapoChimeDuration(TapoNumberEntity):
+    def __init__(
+        self,
+        entry: dict,
+        hass: HomeAssistant,
+        config_entry,
+        macAddress: str,
+    ):
+        LOGGER.debug("TapoChimeDuration - init - start")
+        self._attr_min_value = 0
+        self._attr_max_value = 30
+        self._attr_native_min_value = 0
+        self._attr_native_max_value = 30
+        self._attr_step = 1
+        self._hass = hass
+        self.macAddress = macAddress
+
+        TapoNumberEntity.__init__(
+            self,
+            f"{macAddress} - Chime Duration",
+            entry,
+            hass,
+            config_entry,
+            "mdi:dots-horizontal-circle",
+        )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    @property
+    def entity_category(self):
+        return EntityCategory.CONFIG
+
+    async def async_set_native_value(self, value: float) -> None:
+        if value < 5:
+            value = 0
+        result = await self._hass.async_add_executor_job(
+            self._controller.setChimeAlarmConfigure,
+            self.macAddress,
+            None,
+            None,
+            None,
+            int(value),
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = value
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if (
+            not camData
+            or "chimeAlarmConfigurations" not in camData
+            or len(camData["chimeAlarmConfigurations"]) == 0
+            or self.macAddress not in camData["chimeAlarmConfigurations"]
+        ):
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            chimeData = camData["chimeAlarmConfigurations"][self.macAddress]
+            self._attr_state = chimeData["duration"]
 
 
 class TapoChimeVolume(TapoNumberEntity):
