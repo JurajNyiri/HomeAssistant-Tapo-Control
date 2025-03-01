@@ -1443,7 +1443,7 @@ async def getCamData(hass, controller):
                 chimeAlarmConfiguration
             )
             count += 1
-    except Exception as err:
+    except Exception:
         chimeAlarmConfigurations = None
     camData["chimeAlarmConfigurations"] = chimeAlarmConfigurations
 
