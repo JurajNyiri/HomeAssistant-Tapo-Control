@@ -418,6 +418,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 "",
                 None,
                 isKlapDevice,
+                hass,
             )
 
         def getAllEntities(entry):
