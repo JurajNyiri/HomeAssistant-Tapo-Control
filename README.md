@@ -4,7 +4,7 @@
 
 # HomeAssistant - Tapo: Cameras Control
 
-Custom component - Tapo: Cameras Control - to add Tapo cameras into Home Assistant
+Custom component - Tapo: Cameras Control - to add Tapo cameras, doorbells and chimes into Home Assistant
 
 ## Installation
 
@@ -20,9 +20,16 @@ HACS is a community store for Home Assistant. You can install [HACS](https://git
 
 Following target TCP (v)LAN ports **must be open** in firewall for the camera to access your Tapo Camera from Home Assistant:
 
+Chimes:
+
+- 80 - HTTP for control of the camera ([services](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control#services))
+
+Cameras and Doorbells:
+
 - 443 - HTTPS for control of the camera ([services](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control#services))
-- 554 - RTSP to fetch video stream from the camera
-- 2020 - ONVIF to track detected movement via a binary sensor
+- 8800 - Proprietary protocol for video streaming and recordings downloads (if available on device)
+- 554 - RTSP to fetch video stream from the camera (if available on device)
+- 2020 - ONVIF to track detected movement via a binary sensor (if available on device)
 
 **These are not WAN ports, _DO NOT_ OPEN WAN PORTS VIA PORT FORWARDING. You might need to open (v)lan ports _only_ if you know what all of this means.**
 
@@ -41,23 +48,27 @@ Ensure you have Third Party Compatibility turned on in the official Tapo app on 
 
 ## Usage
 
-Add cameras via Integrations (search for `Tapo: Cameras Control`) in Home Assistant UI. You can also simply click the button below if you have MyHomeAssistant redirects set up.
+Add cameras, doorbells or chimes via Integrations (search for `Tapo: Cameras Control`) in Home Assistant UI. You can also simply click the button below if you have MyHomeAssistant redirects set up.
 
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=tapo_control)
 
 **Note:** There are other Tapo integrations, make sure you select `Tapo: Cameras Control`. Otherwise you might choose the one for plugs and lights, or the official HA one which has a minimum feature set compared to this integration as of December 2024.
 
-When integrating Tapo cameras, ensure only ONE integration is used. If multiple are used at the same time it will result in conflicts and instability of connection to camera for all the integrations / services connecting to camera.
+When integrating Tapo cameras, doorbells and chimes, ensure only ONE integration is used. If multiple are used at the same time it will result in conflicts and instability of connection to camera for all the integrations / services connecting to camera.
 
-Cameras are also automatically discovered when they are (re)connected to WIFI.
+If you are adding a chime, set Control Port to 80 instead of 443.
 
-To add multiple cameras, add integration multiple times.
+Devices are also automatically discovered when they are (re)connected to WIFI.
+
+To add multiple devices, add integration multiple times.
 
 See [examples for lovelace cards](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/blob/main/examples/EXAMPLES_LOVELACE.md).
 
 ## Quick Start
 
 This custom component creates:
+
+Doorbells, Cameras:
 
 - Camera entities, one for HD and one for SD stream
 - Binary sensor for motion after the motion is detected for the first time
@@ -69,6 +80,13 @@ This custom component creates:
 - Media Source for browsing and playing recordings stored on camera
 - Sensor entity that reports monitor media sync status
 - Sensor entities for Storage diagnostics
+
+Chimes:
+- Number entity for Chime Duration and Chime Volume
+- Switch entity for Chime Ringtone and LED
+- Select entity for Chime Sound Type
+- Sensor entities for Network SSID, Signal Level, RSSI
+- Button entity for Reboot and Ringing the chime
 
 Additionally, following services are available:
 
@@ -223,7 +241,7 @@ As well as:
 <details>
   <summary>Supported models</summary>
 
-Users reported full functionality with following Tapo Cameras:
+Users reported full functionality with following Tapo Cameras, Doorbells and Chimes:
 
 - TC55
 - TC60
@@ -241,8 +259,9 @@ Users reported full functionality with following Tapo Cameras:
 - C510W
 - C520WS
 - C720
+- D100C
 
-The integration _should_ work with any other non-battery Tapo Cameras.
+The integration _should_ work with any other non-battery Tapo Camera based devices and chimes.
 
 Battery cameras controlled via HUB are working only for control:
 
