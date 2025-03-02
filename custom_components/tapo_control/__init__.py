@@ -743,11 +743,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
 
         camData = await getCamData(hass, tapoController)
+        cameraTime = await hass.async_add_executor_job(tapoController.getTime)
         if not tapoController.isKLAP:
-            cameraTime = await hass.async_add_executor_job(tapoController.getTime)
             cameraTS = cameraTime["system"]["clock_status"]["seconds_from_1970"]
         else:
-            cameraTS = dt.as_timestamp(dt.now())
+            cameraTS = cameraTime["timestamp"]
         currentTS = dt.as_timestamp(dt.now())
 
         hass.data[DOMAIN][entry.entry_id] = {
@@ -904,12 +904,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     )
 
         # Media sync
-        if tapoController.isKLAP is False:
-            timeCorrection = await hass.async_add_executor_job(
-                tapoController.getTimeCorrection
-            )
-        else:
-            timeCorrection = 0
+        timeCorrection = await hass.async_add_executor_job(
+            tapoController.getTimeCorrection
+        )
 
         # todo move to utils
         async def mediaSync(time=None):
