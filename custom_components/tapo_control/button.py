@@ -22,8 +22,8 @@ async def async_setup_entry(
     async def setupEntities(entry):
         buttons = []
         if not entry["isChild"]:
+            buttons.append(TapoRebootButton(entry, hass, config_entry))
             if entry["controller"].isKLAP is False:
-                buttons.append(TapoRebootButton(entry, hass, config_entry))
                 buttons.append(TapoFormatButton(entry, hass, config_entry))
 
             tapoStartManualAlarmButton = await check_and_create(
