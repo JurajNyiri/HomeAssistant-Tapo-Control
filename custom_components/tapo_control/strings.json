@@ -21,7 +21,14 @@
           "ip_address": "IP Address",
           "control_port": "Control Port"
         },
-        "description": "Enter camera IP address.\n\nMake sure to create camera account.\n\nCamera account is created via Tapo app at:\nCamera Settings > Advanced Settings > Camera Account.\n\n\n\nIf you are using vlans, or some other advanced networking, make sure ports 443, 554 and 2020 are opened for camera."
+        "description": "Enter camera, doorbell or chime IP address.\n\nIf you are adding a chime, set port to 80, if camera or doorbell, leave at 443.\n\nIf you are using vlans, or some other advanced networking, make sure ports 443, 554 and 2020 are opened for camera. For chimes, 80 is needed."
+      },
+      "auth_klap": {
+        "data": {
+          "email": "E-mail",
+          "password": "Password"
+        },
+        "description": "Enter your TPLink account credentials.\n\nAll communication is fully local."
       },
       "auth": {
         "data": {

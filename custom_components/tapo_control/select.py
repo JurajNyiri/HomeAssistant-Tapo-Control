@@ -1,7 +1,9 @@
-from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoSelectEntity
@@ -93,12 +95,13 @@ async def async_setup_entry(
         tapoAlertTypeSelect = await check_and_create(
             entry, hass, TapoAlertTypeSelect, "getAlertTypeList", config_entry
         )
-        if tapoAlertTypeSelect:
-            LOGGER.debug("Adding tapoAlertTypeSelect...")
-            selects.append(tapoAlertTypeSelect)
-        elif not tapoSirenTypeSelect:
-            LOGGER.debug("Adding tapoAlertTypeSelect with start ID 0...")
-            selects.append(TapoAlertTypeSelect(entry, hass, config_entry, 0))
+        if entry["controller"].isKLAP is False:
+            if tapoAlertTypeSelect:
+                LOGGER.debug("Adding tapoAlertTypeSelect...")
+                selects.append(tapoAlertTypeSelect)
+            elif not tapoSirenTypeSelect:
+                LOGGER.debug("Adding tapoAlertTypeSelect with start ID 0...")
+                selects.append(TapoAlertTypeSelect(entry, hass, config_entry, 0))
 
         tapoMotionDetectionSelect = await check_and_create(
             entry, hass, TapoMotionDetectionSelect, "getMotionDetection", config_entry
@@ -208,20 +211,34 @@ async def async_setup_entry(
                 LOGGER.debug("Adding TapoWhitelampIntensityLevelSelect...")
                 selects.append(tapoWhitelampIntensityLevelSelect)
 
-        if(
+        if (
             "quick_response" in entry["camData"]
             and entry["camData"]["quick_response"] is not None
             and len(entry["camData"]["quick_response"]) > 0
         ):
-            tapoQuickResponseSelect = TapoQuickResponseSelect(
-                entry,
-                hass,
-                config_entry
-            )
+            tapoQuickResponseSelect = TapoQuickResponseSelect(entry, hass, config_entry)
             if tapoQuickResponseSelect:
                 LOGGER.debug("Adding tapoQuickResponseSelect...")
                 selects.append(tapoQuickResponseSelect)
 
+        if (
+            "chimeAlarmConfigurations" in entry["camData"]
+            and entry["camData"]["chimeAlarmConfigurations"] is not None
+            and len(entry["camData"]["chimeAlarmConfigurations"]) > 0
+            and "supportAlarmTypeList" in entry["camData"]
+            and entry["camData"]["supportAlarmTypeList"] is not None
+        ):
+            for macAddress in entry["camData"]["chimeAlarmConfigurations"]:
+                tapoChimeRingtone = TapoChimeSound(
+                    entry, hass, config_entry, macAddress
+                )
+                selects.append(tapoChimeRingtone)
+
+        if (
+            "supportAlarmTypeList" in entry["camData"]
+            and entry["camData"]["supportAlarmTypeList"] is not None
+        ):
+            selects.append(TapoChimeSoundPlay(entry, hass, config_entry))
         return selects
 
     selects = await setupEntities(entry)
@@ -229,6 +246,98 @@ async def async_setup_entry(
         selects.extend(await setupEntities(childDevice))
 
     async_add_entities(selects)
+
+
+class TapoChimeSoundPlay(RestoreEntity, TapoSelectEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._attr_options = entry["camData"]["supportAlarmTypeList"]["alarm_type_list"]
+        self._attr_current_option = entry["chime_play_type"] = 1
+        TapoSelectEntity.__init__(
+            self,
+            "Chime Play - Type",
+            entry,
+            hass,
+            config_entry,
+            "mdi:music",
+        )
+        RestoreEntity.__init__(self)
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if (
+            "supportAlarmTypeList" not in camData
+            or camData["supportAlarmTypeList"] is None
+        ):
+            self._attr_state = STATE_UNAVAILABLE
+
+    async def async_select_option(self, option: str) -> None:
+        self._attr_state = option
+        self._attr_current_option = self._entry["chime_play_type"] = option
+        self.async_write_ha_state()
+
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+
+        data = await self.async_get_last_state()
+
+        if data is not None and data.state not in (
+            None,
+            STATE_UNKNOWN,
+            STATE_UNAVAILABLE,
+        ):
+            self._attr_current_option = self._entry["chime_play_type"] = data.state
+            self._attr_state = data.state
+        else:
+            self._attr_current_option = self._entry["chime_play_type"] = 1
+            self._attr_state = 1
+
+
+class TapoChimeSound(TapoSelectEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry, macAddress: str):
+        self.macAddress = macAddress
+        self._attr_options = entry["camData"]["supportAlarmTypeList"]["alarm_type_list"]
+        chimeData = entry["camData"]["chimeAlarmConfigurations"][self.macAddress]
+        self._attr_current_option = chimeData["type"]
+        TapoSelectEntity.__init__(
+            self,
+            f"{macAddress} - Chime Sound",
+            entry,
+            hass,
+            config_entry,
+            "mdi:music",
+        )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if (
+            not camData
+            or "chimeAlarmConfigurations" not in camData
+            or len(camData["chimeAlarmConfigurations"]) == 0
+            or self.macAddress not in camData["chimeAlarmConfigurations"]
+            or "supportAlarmTypeList" not in camData
+            or camData["supportAlarmTypeList"] is None
+        ):
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            chimeData = camData["chimeAlarmConfigurations"][self.macAddress]
+            self._attr_current_option = chimeData["type"]
+            self._attr_state = self._attr_current_option
+
+    async def async_select_option(self, option: str) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setChimeAlarmConfigure,
+            self.macAddress,
+            None,
+            option,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = option
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
 
 
 class TapoWhitelampForceTimeSelect(TapoSelectEntity):
@@ -316,10 +425,11 @@ class TapoWhitelampIntensityLevelSelect(TapoSelectEntity):
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
 
+
 class TapoQuickResponseSelect(TapoSelectEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         self.populateSelectOptions(entry["camData"])
-        
+
         self._attr_current_option = None
         TapoSelectEntity.__init__(
             self,
@@ -351,11 +461,13 @@ class TapoQuickResponseSelect(TapoSelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         result = await self._hass.async_add_executor_job(
-            self._controller.playQuickResponse, self._attr_options_id[self._attr_options.index(option)]
+            self._controller.playQuickResponse,
+            self._attr_options_id[self._attr_options.index(option)],
         )
         self._attr_state = None
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
+
 
 class TapoPatrolModeSelect(TapoSelectEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):

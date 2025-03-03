@@ -187,10 +187,12 @@ class TapoCamEntity(Camera):
 
             for attr, value in camData["basic_info"].items():
                 self._attr_extra_state_attributes[attr] = value
-            self._attr_extra_state_attributes["alarm"] = camData["alarm_config"][
-                "automatic"
-            ]
-            self._attr_extra_state_attributes["user"] = camData["user"]
+            if "alarm_config" in self._attr_extra_state_attributes:
+                self._attr_extra_state_attributes["alarm"] = camData["alarm_config"][
+                    "automatic"
+                ]
+            if "user" in camData:
+                self._attr_extra_state_attributes["user"] = camData["user"]
             # Disable incorrect location report by camera
             self._attr_extra_state_attributes["longitude"] = 0
             self._attr_extra_state_attributes["latitude"] = 0

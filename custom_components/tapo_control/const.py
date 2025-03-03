@@ -6,7 +6,7 @@ from datetime import timedelta
 from homeassistant.helpers import config_validation as cv
 
 CONTROL_PORT = "control_port"
-PYTAPO_REQUIRED_VERSION = "3.3.38"
+PYTAPO_REQUIRED_VERSION = "3.3.39"
 DOMAIN = "tapo_control"
 BRAND = "TP-Link"
 ALARM_MODE = "alarm_mode"
@@ -31,6 +31,7 @@ CONF_SKIP_RTSP = "skip_rtsp"
 ENABLE_MOTION_SENSOR = "enable_motion_sensor"
 ENABLE_MEDIA_SYNC = "enable_media_sync"
 
+IS_KLAP_DEVICE = "is_klap_device"
 UPDATE_INTERVAL_MAIN = "update_interval_main"
 UPDATE_INTERVAL_BATTERY = "update_interval_battery"
 
@@ -76,3 +77,11 @@ SERVICE_DELETE_PRESET = "delete_preset"
 SCHEMA_SERVICE_DELETE_PRESET = {
     vol.Required(PRESET): cv.string,
 }
+
+TAPO_PREFIXES = (
+    r"^c[0-9]{3}[a-zA-Z]*_.*",  # Security Cameras (C100, C200, C310, C325WB, etc.)
+    r"^d[0-9]{3}[a-zA-Z]*_.*",  # Doorbells (D230, D235, D350V, etc.)
+    r"^tc[0-9]{2,3}[a-zA-Z]*_.*",  # Pan/Tilt Cameras (TC60, TC70, TC85, etc.)
+    r"^d[0-9]{3}[a-zA-Z]*c_.*",  # Doorbell Chimes (D100C, D230C, D325C, etc.)
+    r"^h[0-9]{3}[a-zA-Z]*_.*",  # Smart Hubs (H100, H200, H300, etc.)
+)

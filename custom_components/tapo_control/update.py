@@ -20,8 +20,9 @@ async def async_setup_entry(
 
     async def setupEntities(entry):
         updates = []
-        entry["updateEntity"] = TapoCamUpdate(entry, hass, entry)
-        updates.append(entry["updateEntity"])
+        if entry["controller"].isKLAP is False:
+            entry["updateEntity"] = TapoCamUpdate(entry, hass, entry)
+            updates.append(entry["updateEntity"])
 
         return updates
 

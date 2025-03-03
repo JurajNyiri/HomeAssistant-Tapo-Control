@@ -23,7 +23,8 @@ async def async_setup_entry(
         buttons = []
         if not entry["isChild"]:
             buttons.append(TapoRebootButton(entry, hass, config_entry))
-            buttons.append(TapoFormatButton(entry, hass, config_entry))
+            if entry["controller"].isKLAP is False:
+                buttons.append(TapoFormatButton(entry, hass, config_entry))
 
             tapoStartManualAlarmButton = await check_and_create(
                 entry, hass, TapoStartManualAlarmButton, "getAlarm", config_entry
@@ -39,7 +40,7 @@ async def async_setup_entry(
                 LOGGER.debug("Adding tapoStopManualAlarmButton...")
                 buttons.append(tapoStopManualAlarmButton)
 
-            if not entry["isParent"]:
+            if not entry["isParent"] and entry["controller"].isKLAP is False:
                 buttons.append(TapoSyncTimeButton(entry, hass, config_entry))
 
         tapoCalibrateButton = await check_and_create(
@@ -54,6 +55,13 @@ async def async_setup_entry(
         else:
             LOGGER.info("Buttons: Camera does not support movement.")
 
+        if (
+            "chimeAlarmConfigurations" in entry["camData"]
+            and entry["camData"]["chimeAlarmConfigurations"] is not None
+            and len(entry["camData"]["chimeAlarmConfigurations"]) > 0
+        ):
+            buttons.append(TapoChimeRing(entry, hass, config_entry))
+
         return buttons
 
     buttons = await setupEntities(entry)
@@ -62,6 +70,24 @@ async def async_setup_entry(
         buttons.extend(await setupEntities(childDevice))
 
     async_add_entities(buttons)
+
+
+class TapoChimeRing(TapoButtonEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        TapoButtonEntity.__init__(self, "Play Chime", entry, hass, "mdi:home-sound-out")
+
+    async def async_press(self) -> None:
+        type = self._entry["chime_play_type"]
+        volume = self._entry["chime_play_volume"]
+        duration = self._entry["chime_play_duration"]
+
+        await self._hass.async_add_executor_job(
+            self._controller.playAlarm, duration, type, volume
+        )
+
+    @property
+    def entity_category(self):
+        return None
 
 
 class TapoRebootButton(TapoButtonEntity):

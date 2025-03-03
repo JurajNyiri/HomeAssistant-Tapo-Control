@@ -37,7 +37,10 @@ async def async_setup_entry(
                 LOGGER.debug("Adding tapoBatterySensor...")
                 sensors.append(TapoBatterySensor(entry, hass, config_entry))
 
-            if camData.get("connectionInformation", False) is not False:
+            if (
+                camData.get("connectionInformation", False) is not False
+                and camData["connectionInformation"] is not None
+            ):
                 if "ssid" in camData["connectionInformation"]:
                     LOGGER.debug("Adding TapoSSIDSensor...")
                     sensors.append(TapoSSIDSensor(entry, hass, config_entry))
@@ -61,8 +64,16 @@ async def async_setup_entry(
                                 entry, hass, config_entry, hdd["disk_name"], field
                             )
                         )
+            if (
+                "basic_info" in camData
+                and camData["basic_info"] is not None
+                and "signal_level" in camData["basic_info"]
+                and camData["basic_info"]["signal_level"] is not None
+            ):
+                sensors.append(TapoChimeSignalLevel(entry, hass, config_entry))
 
-        sensors.append(TapoSyncSensor(entry, hass, config_entry))
+        if entry["controller"].isKLAP is False:
+            sensors.append(TapoSyncSensor(entry, hass, config_entry))
 
         return sensors
 
@@ -143,6 +154,42 @@ class TapoLinkTypeSensor(TapoSensorEntity):
             self._attr_native_value = STATE_UNAVAILABLE
         else:
             self._attr_native_value = camData["connectionInformation"]["link_type"]
+
+
+class TapoChimeSignalLevel(TapoSensorEntity):
+    """Tapo Chime Signal Level sensor entity."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self, entry: dict, hass: HomeAssistant, config_entry: ConfigEntry
+    ) -> None:
+        """Initialize the entity."""
+        TapoSensorEntity.__init__(
+            self,
+            "Signal Level",
+            entry,
+            hass,
+            config_entry,
+            "mdi:signal",
+            None,
+        )
+
+    async def async_update(self) -> None:
+        """Update the entity."""
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData: dict | None) -> None:
+        """Update the entity."""
+        if (
+            not camData
+            or camData["basic_info"] is False
+            or camData["basic_info"] is None
+            or "signal_level" not in camData["basic_info"]
+        ):
+            self._attr_native_value = STATE_UNAVAILABLE
+        else:
+            self._attr_native_value = camData["basic_info"]["signal_level"]
 
 
 class TapoSSIDSensor(TapoSensorEntity):

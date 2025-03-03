@@ -1,11 +1,17 @@
 import voluptuous as vol
 import os
+import re
 
 from homeassistant.core import callback
 
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
 from homeassistant.config_entries import HANDLERS, ConfigFlow, OptionsFlow
-from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
+from homeassistant.const import (
+    CONF_IP_ADDRESS,
+    CONF_USERNAME,
+    CONF_PASSWORD,
+    CONF_EMAIL,
+)
 from homeassistant.helpers.device_registry import async_get as device_registry_async_get
 from homeassistant.helpers.selector import selector
 
@@ -14,6 +20,7 @@ from .utils import (
     isRtspStreamWorking,
     areCameraPortsOpened,
     isOpen,
+    isKLAP,
 )
 from .const import (
     CONF_SKIP_RTSP,
@@ -23,6 +30,7 @@ from .const import (
     ENABLE_STREAM,
     ENABLE_SOUND_DETECTION,
     ENABLE_WEBHOOKS,
+    IS_KLAP_DEVICE,
     LOGGER,
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
@@ -38,6 +46,7 @@ from .const import (
     CONF_CUSTOM_STREAM,
     CONF_RTSP_TRANSPORT,
     RTSP_TRANS_PROTOCOLS,
+    TAPO_PREFIXES,
     UPDATE_INTERVAL_BATTERY_DEFAULT,
     UPDATE_INTERVAL_MAIN,
     UPDATE_INTERVAL_BATTERY,
@@ -49,7 +58,7 @@ from .const import (
 class FlowHandler(ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 19
+    VERSION = 20
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -304,12 +313,9 @@ class FlowHandler(ConfigFlow):
             LOGGER.debug("[ADD DEVICE][%s] Already discovered.", dhcp_discovery.ip)
             return self.async_abort(reason="already_configured")
 
-        if (
-            not dhcp_discovery.hostname.startswith("C100_")
-            and not dhcp_discovery.hostname.startswith("C200_")
-            and not dhcp_discovery.hostname.startswith("C310_")
-            and not dhcp_discovery.hostname.startswith("TC60_")
-            and not dhcp_discovery.hostname.startswith("TC70_")
+        if not any(
+            re.match(pattern, dhcp_discovery.hostname, re.IGNORECASE)
+            for pattern in TAPO_PREFIXES
         ):
             LOGGER.debug("[ADD DEVICE][%s] Not a tapo device.", dhcp_discovery.ip)
             return self.async_abort(reason="not_tapo_device")
@@ -318,10 +324,23 @@ class FlowHandler(ConfigFlow):
         await self.async_set_unique_id(mac_address)
         self.context.update({"title_placeholders": {"name": dhcp_discovery.ip}})
         self.tapoHost = dhcp_discovery.ip
-        LOGGER.debug(
-            "[ADD DEVICE][%s] Initiating config flow by discovery.", dhcp_discovery.ip
+        isKLAPResult = await self.hass.async_add_executor_job(
+            isKLAP, self.tapoHost, 80, 5
         )
-        return await self.async_step_auth()
+        if isKLAPResult:
+            self.tapoControlPort = 80
+            LOGGER.debug(
+                "[ADD DEVICE][%s] Initiating config flow by discovery (klap).",
+                dhcp_discovery.ip,
+            )
+            return await self.async_step_auth_klap()
+        else:
+            self.tapoControlPort = 443
+            LOGGER.debug(
+                "[ADD DEVICE][%s] Initiating config flow by discovery (camera).",
+                dhcp_discovery.ip,
+            )
+            return await self.async_step_auth()
 
     @callback
     def _async_host_already_configured(self, host):
@@ -429,6 +448,7 @@ class FlowHandler(ConfigFlow):
                     CONF_RTSP_TRANSPORT: rtsp_transport,
                     UPDATE_INTERVAL_MAIN: UPDATE_INTERVAL_MAIN_DEFAULT,
                     UPDATE_INTERVAL_BATTERY: UPDATE_INTERVAL_BATTERY_DEFAULT,
+                    IS_KLAP_DEVICE: False,
                 },
             )
 
@@ -554,6 +574,113 @@ class FlowHandler(ConfigFlow):
             last_step=False,
         )
 
+    async def async_step_auth_klap(self, user_input=None):
+        """Provide authentication data."""
+        errors = {}
+        email = ""
+        password = ""
+        host = self.tapoHost
+        controlPort = self.tapoControlPort
+        if user_input is not None:
+            try:
+                email = user_input[CONF_EMAIL]
+                password = user_input[CONF_PASSWORD]
+                self.tapoUsername = email
+                self.tapoPassword = password
+
+                try:
+                    LOGGER.debug(
+                        "[ADD DEVICE][%s] Testing control of camera using KLAP Account.",
+                        host,
+                    )
+                    await self.hass.async_add_executor_job(
+                        registerController,
+                        host,
+                        controlPort,
+                        email,
+                        password,
+                    )
+                    LOGGER.warning(
+                        "[ADD DEVICE][%s] KLAP Account works for control.",
+                        host,
+                    )
+                except Exception as e:
+                    if str(e) == "Invalid authentication data":
+                        raise Exception("Invalid authentication data")
+                    elif "Temporary Suspension" in str(e):
+                        LOGGER.debug(
+                            "[ADD DEVICE][%s] Temporary suspension.",
+                            self.tapoHost,
+                        )
+                        raise Exception("temporary_suspension")
+                    else:
+                        LOGGER.error(e)
+                        raise Exception(e)
+
+                await self.async_set_unique_id(DOMAIN + host)
+                return self.async_create_entry(
+                    title=host,
+                    data={
+                        MEDIA_VIEW_DAYS_ORDER: "Ascending",
+                        MEDIA_VIEW_RECORDINGS_ORDER: "Ascending",
+                        MEDIA_SYNC_HOURS: "",
+                        MEDIA_SYNC_COLD_STORAGE_PATH: "",
+                        ENABLE_MOTION_SENSOR: False,
+                        ENABLE_WEBHOOKS: False,
+                        ENABLE_STREAM: False,
+                        ENABLE_TIME_SYNC: False,
+                        CONF_IP_ADDRESS: host,
+                        CONTROL_PORT: controlPort,
+                        CONF_USERNAME: email,
+                        CONF_PASSWORD: password,
+                        CLOUD_PASSWORD: "",
+                        ENABLE_SOUND_DETECTION: False,
+                        SOUND_DETECTION_PEAK: -30,
+                        SOUND_DETECTION_DURATION: 1,
+                        SOUND_DETECTION_RESET: 10,
+                        CONF_EXTRA_ARGUMENTS: "",
+                        CONF_CUSTOM_STREAM: "",
+                        CONF_RTSP_TRANSPORT: "tcp",
+                        UPDATE_INTERVAL_MAIN: UPDATE_INTERVAL_MAIN_DEFAULT,
+                        UPDATE_INTERVAL_BATTERY: UPDATE_INTERVAL_BATTERY_DEFAULT,
+                        IS_KLAP_DEVICE: True,
+                    },
+                )
+
+            except Exception as e:
+                if "Failed to establish a new connection" in str(e):
+                    errors["base"] = "connection_failed"
+                    LOGGER.error(e)
+                elif "ports_closed" in str(e):
+                    errors["base"] = "ports_closed"
+                elif str(e) == "Invalid authentication data":
+                    errors["base"] = "invalid_auth"
+                elif str(e) == "temporary_suspension":
+                    errors["base"] = str(e)
+                else:
+                    errors["base"] = "unknown"
+                    LOGGER.error(e)
+
+        LOGGER.debug(
+            "[ADD DEVICE][%s] Showing config flow for KLAP Account.",
+            host,
+        )
+        return self.async_show_form(
+            step_id="auth_klap",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_EMAIL, description={"suggested_value": email}
+                    ): str,
+                    vol.Required(
+                        CONF_PASSWORD, description={"suggested_value": password}
+                    ): str,
+                }
+            ),
+            errors=errors,
+            last_step=False,
+        )
+
     async def async_step_ip(self, user_input=None):
         """Enter IP Address and verify Tapo device"""
         errors = {}
@@ -595,7 +722,14 @@ class FlowHandler(ConfigFlow):
                                 self.tapoControlPort = controlPort
                                 self.tapoUsername = ""
                                 self.tapoPassword = ""
-                                return await self.async_step_auth_cloud_password()
+                                isKLAPResult = await self.hass.async_add_executor_job(
+                                    isKLAP, host, controlPort, 5
+                                )
+
+                                if isKLAPResult:
+                                    return await self.async_step_auth_klap()
+                                else:
+                                    return await self.async_step_auth_cloud_password()
                             else:
                                 LOGGER.debug(
                                     "[ADD DEVICE][%s] All camera ports are opened, proceeding to requesting Camera Account.",

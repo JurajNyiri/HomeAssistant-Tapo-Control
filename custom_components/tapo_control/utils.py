@@ -9,6 +9,8 @@ import socket
 import time
 import urllib.parse
 import uuid
+import requests
+import base64
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
@@ -80,6 +82,15 @@ def pytapoLog(msg):
     LOGGER.debug(f"[pytapo] {msg}")
 
 
+def isKLAP(host, port, timeout=2):
+    try:
+        url = f"http://{host}:{port}"
+        response = requests.get(url, timeout=timeout)
+        return "200 OK" in response.text
+    except requests.RequestException:
+        return False
+
+
 def registerController(
     host,
     control_port,
@@ -88,6 +99,8 @@ def registerController(
     password_cloud="",
     super_secret_key="",
     device_id=None,
+    is_klap=None,
+    hass=None,
 ):
     return Tapo(
         host,
@@ -100,6 +113,8 @@ def registerController(
         printDebugInformation=pytapoLog,
         retryStok=False,
         controlPort=control_port,
+        isKLAP=is_klap,
+        hass=hass,
     )
 
 
@@ -718,6 +733,17 @@ def getNightModeValue(value: str):
     return value
 
 
+def convertBasicInfo(basicInfo):
+    convertedBasicInfo = basicInfo
+    convertedBasicInfo["device_alias"] = base64.b64decode(basicInfo["nickname"]).decode(
+        "utf-8"
+    )
+    convertedBasicInfo["device_model"] = basicInfo["model"]
+    convertedBasicInfo["sw_version"] = basicInfo["fw_ver"]
+    convertedBasicInfo["hw_version"] = basicInfo["hw_ver"]
+    return convertedBasicInfo
+
+
 async def getCamData(hass, controller):
     LOGGER.debug("getCamData")
     data = await hass.async_add_executor_job(controller.getMost)
@@ -728,7 +754,11 @@ async def getCamData(hass, controller):
     camData["raw"] = data
 
     camData["user"] = controller.user
-    camData["basic_info"] = data["getDeviceInfo"][0]["device_info"]["basic_info"]
+    if controller.isKLAP:
+        camData["basic_info"] = convertBasicInfo(data["get_device_info"][0])
+    else:
+        camData["basic_info"] = data["getDeviceInfo"][0]["device_info"]["basic_info"]
+
     try:
         motionDetectionData = data["getDetectionConfig"][0]["motion_detection"][
             "motion_det"
@@ -1097,107 +1127,115 @@ async def getCamData(hass, controller):
     alarmConfig = None
     alarmStatus = False
     alarmSirenTypeList = []
-    try:
-        if data["getSirenConfig"][0] != False:
-            hubSiren = True
-            sirenData = data["getSirenConfig"][0]
-            alarmConfig = {
-                "typeOfAlarm": "getSirenConfig",
-                "siren_type": sirenData["siren_type"],
-                "siren_volume": sirenData["volume"],
-                "siren_duration": sirenData["duration"],
-            }
-    except Exception as err:
-        LOGGER.error(f"getSirenConfig unexpected error {err=}, {type(err)=}")
+    if controller.isKLAP is False:
+        try:
+            if data["getSirenConfig"][0] != False:
+                hubSiren = True
+                sirenData = data["getSirenConfig"][0]
+                alarmConfig = {
+                    "typeOfAlarm": "getSirenConfig",
+                    "siren_type": sirenData["siren_type"],
+                    "siren_volume": sirenData["volume"],
+                    "siren_duration": sirenData["duration"],
+                }
+        except Exception as err:
+            LOGGER.error(f"getSirenConfig unexpected error {err=}, {type(err)=}")
 
-    try:
-        if not hubSiren and data["getAlarmConfig"][0] != False:
-            alarmData = data["getAlarmConfig"][0]
-            alarmConfig = {
-                "typeOfAlarm": "getAlarmConfig",
-                "mode": alarmData["alarm_mode"],
-                "automatic": alarmData["enabled"],
-            }
-            if "light_type" in alarmData:
-                alarmConfig["light_type"] = alarmData["light_type"]
-            if "siren_type" in alarmData:
-                alarmConfig["siren_type"] = alarmData["siren_type"]
-            if "siren_duration" in alarmData:
-                alarmConfig["siren_duration"] = alarmData["siren_duration"]
-            if "alarm_duration" in alarmData:
-                alarmConfig["alarm_duration"] = alarmData["alarm_duration"]
-            if "siren_volume" in alarmData:
-                alarmConfig["siren_volume"] = alarmData["siren_volume"]
-            if "alarm_volume" in alarmData:
-                alarmConfig["alarm_volume"] = alarmData["alarm_volume"]
+    if controller.isKLAP is False:
+        try:
+            if not hubSiren and data["getAlarmConfig"][0] != False:
+                alarmData = data["getAlarmConfig"][0]
+                alarmConfig = {
+                    "typeOfAlarm": "getAlarmConfig",
+                    "mode": alarmData["alarm_mode"],
+                    "automatic": alarmData["enabled"],
+                }
+                if "light_type" in alarmData:
+                    alarmConfig["light_type"] = alarmData["light_type"]
+                if "siren_type" in alarmData:
+                    alarmConfig["siren_type"] = alarmData["siren_type"]
+                if "siren_duration" in alarmData:
+                    alarmConfig["siren_duration"] = alarmData["siren_duration"]
+                if "alarm_duration" in alarmData:
+                    alarmConfig["alarm_duration"] = alarmData["alarm_duration"]
+                if "siren_volume" in alarmData:
+                    alarmConfig["siren_volume"] = alarmData["siren_volume"]
+                if "alarm_volume" in alarmData:
+                    alarmConfig["alarm_volume"] = alarmData["alarm_volume"]
 
-    except Exception as err:
-        LOGGER.error(f"getAlarmConfig unexpected error {err=}, {type(err)=}")
+        except Exception as err:
+            LOGGER.error(f"getAlarmConfig unexpected error {err=}, {type(err)=}")
 
-    try:
-        if (
-            alarmConfig is None
-            and "msg_alarm" in data["getLastAlarmInfo"][0]
-            and "chn1_msg_alarm_info" in data["getLastAlarmInfo"][0]["msg_alarm"]
-            and data["getLastAlarmInfo"][0]["msg_alarm"]["chn1_msg_alarm_info"]
-            is not False
-        ):
-            alarmData = data["getLastAlarmInfo"][0]["msg_alarm"]["chn1_msg_alarm_info"]
-            alarmConfig = {
-                "typeOfAlarm": "getAlarm",
-                "mode": alarmData["alarm_mode"],
-                "automatic": alarmData["enabled"],
-            }
-            if "light_type" in alarmData:
-                alarmConfig["light_type"] = alarmData["light_type"]
-            if "siren_type" in alarmData:
-                alarmConfig["siren_type"] = alarmData["siren_type"]
-            if "alarm_type" in alarmData:
-                alarmConfig["siren_type"] = alarmData["alarm_type"]
-            if "siren_duration" in alarmData:
-                alarmConfig["siren_duration"] = alarmData["siren_duration"]
-            if "alarm_duration" in alarmData:
-                alarmConfig["alarm_duration"] = alarmData["alarm_duration"]
-            if "siren_volume" in alarmData:
-                alarmConfig["siren_volume"] = alarmData["siren_volume"]
-            if "alarm_volume" in alarmData:
-                alarmConfig["alarm_volume"] = alarmData["alarm_volume"]
-    except Exception as err:
-        LOGGER.error(f"getLastAlarmInfo unexpected error {err=}, {type(err)=}")
-
-    try:
-        if (
-            data["getSirenStatus"][0] is not False
-            and "status" in data["getSirenStatus"][0]
-        ):
-            alarmStatus = data["getSirenStatus"][0]["status"]
-    except Exception as err:
-        LOGGER.error(f"getSirenStatus unexpected error {err=}, {type(err)=}")
-
-    if alarmConfig is not None:
+    if controller.isKLAP is False:
         try:
             if (
-                data["getSirenTypeList"][0] is not False
-                and "siren_type_list" in data["getSirenTypeList"][0]
+                alarmConfig is None
+                and "msg_alarm" in data["getLastAlarmInfo"][0]
+                and "chn1_msg_alarm_info" in data["getLastAlarmInfo"][0]["msg_alarm"]
+                and data["getLastAlarmInfo"][0]["msg_alarm"]["chn1_msg_alarm_info"]
+                is not False
             ):
-                alarmSirenTypeList = data["getSirenTypeList"][0]["siren_type_list"]
+                alarmData = data["getLastAlarmInfo"][0]["msg_alarm"][
+                    "chn1_msg_alarm_info"
+                ]
+                alarmConfig = {
+                    "typeOfAlarm": "getAlarm",
+                    "mode": alarmData["alarm_mode"],
+                    "automatic": alarmData["enabled"],
+                }
+                if "light_type" in alarmData:
+                    alarmConfig["light_type"] = alarmData["light_type"]
+                if "siren_type" in alarmData:
+                    alarmConfig["siren_type"] = alarmData["siren_type"]
+                if "alarm_type" in alarmData:
+                    alarmConfig["siren_type"] = alarmData["alarm_type"]
+                if "siren_duration" in alarmData:
+                    alarmConfig["siren_duration"] = alarmData["siren_duration"]
+                if "alarm_duration" in alarmData:
+                    alarmConfig["alarm_duration"] = alarmData["alarm_duration"]
+                if "siren_volume" in alarmData:
+                    alarmConfig["siren_volume"] = alarmData["siren_volume"]
+                if "alarm_volume" in alarmData:
+                    alarmConfig["alarm_volume"] = alarmData["alarm_volume"]
         except Exception as err:
-            LOGGER.error(f"getSirenTypeList unexpected error {err=}, {type(err)=}")
+            LOGGER.error(f"getLastAlarmInfo unexpected error {err=}, {type(err)=}")
 
-    if len(alarmSirenTypeList) == 0:
+    if controller.isKLAP is False:
         try:
             if (
-                data["getAlertTypeList"][0] is not False
-                and "msg_alarm" in data["getAlertTypeList"][0]
-                and "alert_type" in data["getAlertTypeList"][0]["msg_alarm"]
-                and "alert_type_list"
-                in data["getAlertTypeList"][0]["msg_alarm"]["alert_type"]
+                data["getSirenStatus"][0] is not False
+                and "status" in data["getSirenStatus"][0]
             ):
-                alarmSirenTypeList = data["getAlertTypeList"][0]["msg_alarm"][
-                    "alert_type"
-                ]["alert_type_list"]
+                alarmStatus = data["getSirenStatus"][0]["status"]
         except Exception as err:
-            LOGGER.error(f"getSirenTypeList unexpected error {err=}, {type(err)=}")
+            LOGGER.error(f"getSirenStatus unexpected error {err=}, {type(err)=}")
+
+    if controller.isKLAP is False:
+        if alarmConfig is not None:
+            try:
+                if (
+                    data["getSirenTypeList"][0] is not False
+                    and "siren_type_list" in data["getSirenTypeList"][0]
+                ):
+                    alarmSirenTypeList = data["getSirenTypeList"][0]["siren_type_list"]
+            except Exception as err:
+                LOGGER.error(f"getSirenTypeList unexpected error {err=}, {type(err)=}")
+
+    if controller.isKLAP is False:
+        if len(alarmSirenTypeList) == 0:
+            try:
+                if (
+                    data["getAlertTypeList"][0] is not False
+                    and "msg_alarm" in data["getAlertTypeList"][0]
+                    and "alert_type" in data["getAlertTypeList"][0]["msg_alarm"]
+                    and "alert_type_list"
+                    in data["getAlertTypeList"][0]["msg_alarm"]["alert_type"]
+                ):
+                    alarmSirenTypeList = data["getAlertTypeList"][0]["msg_alarm"][
+                        "alert_type"
+                    ]["alert_type_list"]
+            except Exception as err:
+                LOGGER.error(f"getSirenTypeList unexpected error {err=}, {type(err)=}")
 
     if len(alarmSirenTypeList) == 0:
         # Some cameras have hardcoded 0 and 1 values (Siren, Tone)
@@ -1260,6 +1298,9 @@ async def getCamData(hass, controller):
         led = data["getLedStatus"][0]["led"]["config"]["enabled"]
     except Exception:
         led = None
+
+    if led is None:
+        led = "on" if data["get_device_info"][0]["led_off"] == 0 else "off"
     camData["led"] = led
 
     # todo rest
@@ -1364,6 +1405,20 @@ async def getCamData(hass, controller):
         connectionInformation = data["getConnectionType"][0]
     except Exception:
         connectionInformation = None
+
+    if connectionInformation is None:
+        connectionInformation = {}
+        try:
+            connectionInformation["ssid"] = base64.b64decode(
+                data["get_device_info"][0]["ssid"]
+            ).decode("utf-8")
+        except Exception:
+            pass
+        try:
+            connectionInformation["rssiValue"] = data["get_device_info"][0]["rssi"]
+
+        except Exception:
+            pass
     camData["connectionInformation"] = connectionInformation
 
     try:
@@ -1379,6 +1434,24 @@ async def getCamData(hass, controller):
     camData["videoQualities"] = videoQualities
 
     camData["updated"] = datetime.datetime.utcnow().timestamp()
+
+    try:
+        chimeAlarmConfigurations = {}
+        count = 0
+        for chimeAlarmConfiguration in data["get_chime_alarm_configure"]:
+            chimeAlarmConfigurations[data["get_pair_list"][0]["mac_list"][count]] = (
+                chimeAlarmConfiguration
+            )
+            count += 1
+    except Exception:
+        chimeAlarmConfigurations = None
+    camData["chimeAlarmConfigurations"] = chimeAlarmConfigurations
+
+    try:
+        supportAlarmTypeList = data["get_support_alarm_type_list"][0]
+    except Exception:
+        supportAlarmTypeList = None
+    camData["supportAlarmTypeList"] = supportAlarmTypeList
 
     try:
         if isinstance(data["getQuickRespList"], list):
@@ -1708,12 +1781,18 @@ async def check_and_create(entry, hass, cls, check_function, config_entry):
             )
             return cls(entry, hass, config_entry)
         else:
-            LOGGER.debug(f"Capability {check_function} not found, querying again...")
-            await hass.async_add_executor_job(
-                getattr(entry["controller"], check_function)
-            )
-            LOGGER.debug(f"Creating {cls.__name__}")
-            return cls(entry, hass, config_entry)
+            if (
+                entry["controller"].isKLAP is False
+            ):  # no uncached entries for klap devices, so no need to check them
+                LOGGER.debug(
+                    f"Capability {check_function} not found, querying again..."
+                )
+                result = await hass.async_add_executor_job(
+                    getattr(entry["controller"], check_function)
+                )
+                LOGGER.debug(result)
+                LOGGER.debug(f"Creating {cls.__name__}")
+                return cls(entry, hass, config_entry)
     except Exception as err:
         LOGGER.info(f"Camera does not support {cls.__name__}: {err}")
         return None
