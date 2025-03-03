@@ -416,7 +416,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 "",
                 None,
                 isKlapDevice,
-                hass,
             )
         else:
             LOGGER.warning("Setting up controller using username and password.")
@@ -430,7 +429,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 "",
                 None,
                 isKlapDevice,
-                hass,
             )
         LOGGER.warning("Controller has been set up.")
 
