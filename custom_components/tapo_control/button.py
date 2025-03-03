@@ -74,7 +74,7 @@ async def async_setup_entry(
 
 class TapoChimeRing(TapoButtonEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
-        TapoButtonEntity.__init__(self, "Play Alarm", entry, hass)
+        TapoButtonEntity.__init__(self, "Play Chime", entry, hass)
 
     async def async_press(self) -> None:
         type = self._entry["chime_play_type"]
