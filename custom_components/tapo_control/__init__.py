@@ -396,7 +396,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     LOGGER.debug("Checking for HTTPS on HA")
     if isUsingHTTPS(hass):
-        LOGGER.debug(
+        LOGGER.warning(
             "Home Assistant is running on HTTPS or it was not able to detect base_url schema. Disabling webhooks."
         )
     else:
