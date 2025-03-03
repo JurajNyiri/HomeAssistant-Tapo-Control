@@ -369,6 +369,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             ]
         )
 
+    LOGGER.debug("Starting setup of Tapo: Cameras Control")
+
     """Set up the Tapo: Cameras Control component from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
@@ -392,13 +394,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         if "setup_retries" not in hass.data[DOMAIN][entry.entry_id]:
             hass.data[DOMAIN][entry.entry_id]["setup_retries"] = 0
 
+    LOGGER.debug("Checking for HTTPS on HA")
     if isUsingHTTPS(hass):
-        LOGGER.warn(
+        LOGGER.warning(
             "Home Assistant is running on HTTPS or it was not able to detect base_url schema. Disabling webhooks."
         )
+    else:
+        LOGGER.debug("HA is not using HTTPS.")
 
     try:
+        LOGGER.debug(isKlapDevice)
         if cloud_password != "":
+            LOGGER.debug("Setting up controller using cloud password.")
             tapoController = await hass.async_add_executor_job(
                 registerController,
                 host,
@@ -406,8 +413,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 "admin",
                 cloud_password,
                 cloud_password,
+                "",
+                None,
+                isKlapDevice,
             )
         else:
+            LOGGER.debug("Setting up controller using username and password.")
             tapoController = await hass.async_add_executor_job(
                 registerController,
                 host,
@@ -418,8 +429,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 "",
                 None,
                 isKlapDevice,
-                hass,
             )
+        LOGGER.debug("Controller has been set up.")
 
         def getAllEntities(entry):
             # Gather all entities, including of children devices
@@ -735,6 +746,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             LOGGER.info(errMsg)
                             LOGGER.info(err)
 
+        LOGGER.debug("Setting up data update coordinator.")
+
         tapoCoordinator = DataUpdateCoordinator(
             hass,
             LOGGER,
@@ -742,14 +755,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             update_method=async_update_data,
         )
 
+        LOGGER.debug("Retriving initial device data.")
+
         camData = await getCamData(hass, tapoController)
+        LOGGER.debug("Retrieved initial device data.")
+        LOGGER.debug("Retrieving camera time.")
         cameraTime = await hass.async_add_executor_job(tapoController.getTime)
         if not tapoController.isKLAP:
             cameraTS = cameraTime["system"]["clock_status"]["seconds_from_1970"]
         else:
             cameraTS = cameraTime["timestamp"]
+        LOGGER.debug("Retrieved camera time.")
         currentTS = dt.as_timestamp(dt.now())
 
+        LOGGER.debug("Setting up entry data.")
         hass.data[DOMAIN][entry.entry_id] = {
             "setup_retries": 0,
             "reauth_retries": 0,
@@ -807,15 +826,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "timezoneOffset": cameraTS - currentTS,
             "refreshEnabled": True,
         }
+        LOGGER.debug("Entry data has been set up.")
 
         if tapoController.isKLAP is False:
+            LOGGER.debug("Controller is not KLAP device.")
             if camData["childDevices"] is False or camData["childDevices"] is None:
+                LOGGER.debug("Setting up camera entities.")
                 await hass.async_create_task(
                     hass.config_entries.async_forward_entry_setups(entry, ["camera"])
                 )
             else:
+                LOGGER.debug("Device is a parent.")
                 hass.data[DOMAIN][entry.entry_id]["isParent"] = True
                 for childDevice in camData["childDevices"]["child_device_list"]:
+                    LOGGER.debug("Setting up child controller.")
                     tapoChildController = await hass.async_add_executor_job(
                         registerController,
                         host,
@@ -826,10 +850,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         "",
                         childDevice["device_id"],
                     )
+                    LOGGER.debug("Child controller set up.")
                     hass.data[DOMAIN][entry.entry_id]["allControllers"].append(
                         tapoChildController
                     )
+                    LOGGER.debug("Getting initial child device data.")
                     childCamData = await getCamData(hass, tapoChildController)
+                    LOGGER.debug("Retrieved initial child device data.")
                     hass.data[DOMAIN][entry.entry_id]["childDevices"].append(
                         {
                             "controller": tapoChildController,
@@ -858,6 +885,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         }
                     )
 
+        LOGGER.debug("Setting up entities.")
         await hass.async_create_task(
             hass.config_entries.async_forward_entry_setups(
                 entry,
@@ -874,6 +902,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 ],
             )
         )
+        LOGGER.debug("Entities set up.")
 
         # Needs to execute AFTER binary_sensor creation!
         if (
