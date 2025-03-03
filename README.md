@@ -82,9 +82,9 @@ Doorbells, Cameras:
 - Sensor entities for Storage diagnostics
 
 Chimes:
-- Number entity for Chime Duration and Chime Volume
+- Number entity for Chime Duration, Chime Volume, Chime Play Duration and Chime Play Volume
 - Switch entity for Chime Ringtone and LED
-- Select entity for Chime Sound Type
+- Select entity for Chime Sound Type and Chime Play Type
 - Sensor entities for Network SSID, Signal Level, RSSI
 - Button entity for Reboot and Ringing the chime
 
