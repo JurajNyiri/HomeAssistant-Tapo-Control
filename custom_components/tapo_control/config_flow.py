@@ -692,9 +692,9 @@ class FlowHandler(ConfigFlow):
                 host = user_input[CONF_IP_ADDRESS]
                 controlPort = user_input[CONTROL_PORT]
 
-                # if self._async_host_already_configured(host):
-                #    LOGGER.debug("[ADD DEVICE][%s] IP already configured.", host)
-                #    raise Exception("already_configured")
+                if self._async_host_already_configured(host):
+                    LOGGER.debug("[ADD DEVICE][%s] IP already configured.", host)
+                    raise Exception("already_configured")
 
                 LOGGER.debug("[ADD DEVICE][%s] Verifying port %s.", host, controlPort)
                 if isOpen(host, controlPort):
