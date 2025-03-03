@@ -55,6 +55,13 @@ async def async_setup_entry(
         else:
             LOGGER.info("Buttons: Camera does not support movement.")
 
+        if (
+            "chimeAlarmConfigurations" in entry["camData"]
+            and entry["camData"]["chimeAlarmConfigurations"] is not None
+            and len(entry["camData"]["chimeAlarmConfigurations"]) > 0
+        ):
+            buttons.append(TapoChimeRing(entry, hass, config_entry))
+
         return buttons
 
     buttons = await setupEntities(entry)
@@ -63,6 +70,24 @@ async def async_setup_entry(
         buttons.extend(await setupEntities(childDevice))
 
     async_add_entities(buttons)
+
+
+class TapoChimeRing(TapoButtonEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        TapoButtonEntity.__init__(self, "Play Alarm", entry, hass)
+
+    async def async_press(self) -> None:
+        type = self._entry["chime_play_type"]
+        volume = self._entry["chime_play_volume"]
+        duration = self._entry["chime_play_duration"]
+
+        await self._hass.async_add_executor_job(
+            self._controller.playAlarm, duration, type, volume
+        )
+
+    @property
+    def entity_category(self):
+        return None
 
 
 class TapoRebootButton(TapoButtonEntity):

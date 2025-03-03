@@ -1,7 +1,9 @@
-from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoSelectEntity
@@ -232,6 +234,11 @@ async def async_setup_entry(
                 )
                 selects.append(tapoChimeRingtone)
 
+        if (
+            "supportAlarmTypeList" in entry["camData"]
+            and entry["camData"]["supportAlarmTypeList"] is not None
+        ):
+            selects.append(TapoChimeSoundPlay(entry, hass, config_entry))
         return selects
 
     selects = await setupEntities(entry)
@@ -239,6 +246,52 @@ async def async_setup_entry(
         selects.extend(await setupEntities(childDevice))
 
     async_add_entities(selects)
+
+
+class TapoChimeSoundPlay(RestoreEntity, TapoSelectEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._attr_options = entry["camData"]["supportAlarmTypeList"]["alarm_type_list"]
+        self._attr_current_option = entry["chime_play_type"] = 1
+        TapoSelectEntity.__init__(
+            self,
+            "Chime Play - Type",
+            entry,
+            hass,
+            config_entry,
+            "mdi:music",
+        )
+        RestoreEntity.__init__(self)
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if (
+            "supportAlarmTypeList" not in camData
+            or camData["supportAlarmTypeList"] is None
+        ):
+            self._attr_state = STATE_UNAVAILABLE
+
+    async def async_select_option(self, option: str) -> None:
+        self._attr_state = option
+        self._attr_current_option = self._entry["chime_play_type"] = option
+        self.async_write_ha_state()
+
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+
+        data = await self.async_get_last_state()
+
+        if data is not None and data.state not in (
+            None,
+            STATE_UNKNOWN,
+            STATE_UNAVAILABLE,
+        ):
+            self._attr_current_option = self._entry["chime_play_type"] = data.state
+            self._attr_state = data.state
+        else:
+            self._attr_current_option = self._entry["chime_play_type"] = 1
+            self._attr_state = 1
 
 
 class TapoChimeSound(TapoSelectEntity):

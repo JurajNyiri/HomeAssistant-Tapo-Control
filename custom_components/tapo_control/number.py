@@ -127,6 +127,8 @@ async def async_setup_entry(
             and entry["camData"]["chimeAlarmConfigurations"] is not None
             and len(entry["camData"]["chimeAlarmConfigurations"]) > 0
         ):
+            numbers.append(TapoChimeDurationPlay(entry, hass, config_entry))
+            numbers.append(TapoChimeVolumePlay(entry, hass, config_entry))
             for macAddress in entry["camData"]["chimeAlarmConfigurations"]:
                 tapoChimeVolume = TapoChimeVolume(entry, hass, config_entry, macAddress)
                 tapoChimeDuration = TapoChimeDuration(
@@ -143,6 +145,86 @@ async def async_setup_entry(
         numbers.extend(await setupEntities(childDevice))
 
     async_add_entities(numbers)
+
+
+class TapoChimeVolumePlay(RestoreNumber, TapoEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        LOGGER.debug("TapoChimeVolumePlay - init - start")
+        self._attr_native_min_value = 1
+        self._attr_native_max_value = 15
+        self._attr_native_step = 1
+        self._attr_native_value = entry["chime_play_volume"] = 15
+        self._hass = hass
+        self._attr_icon = "mdi:map-marker-distance"
+
+        TapoNumberEntity.__init__(
+            self,
+            "Chime Play - Volume",
+            entry,
+            hass,
+            config_entry,
+            "mdi:volume-high",
+        )
+        RestoreNumber.__init__(self)
+        LOGGER.debug("TapoChimeVolumePlay - init - end")
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    @property
+    def entity_category(self):
+        return EntityCategory.CONFIG
+
+    async def async_set_native_value(self, value: float) -> None:
+        self._attr_native_value = self._entry["chime_play_volume"] = value
+
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+
+        data = await self.async_get_last_number_data()
+
+        if data is not None and data.native_value is not None:
+            await self.async_set_native_value(data.native_value)
+
+
+class TapoChimeDurationPlay(RestoreNumber, TapoEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        LOGGER.debug("TapoChimeDurationPlay - init - start")
+        self._attr_native_min_value = 0
+        self._attr_native_max_value = 30
+        self._attr_native_step = 1
+        self._attr_native_value = entry["chime_play_duration"] = 0
+        self._hass = hass
+        self._attr_icon = "mdi:map-marker-distance"
+
+        TapoNumberEntity.__init__(
+            self,
+            "Chime Play - Duration",
+            entry,
+            hass,
+            config_entry,
+            "mdi:dots-horizontal-circle",
+        )
+        RestoreNumber.__init__(self)
+        LOGGER.debug("TapoChimeDurationPlay - init - end")
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    @property
+    def entity_category(self):
+        return EntityCategory.CONFIG
+
+    async def async_set_native_value(self, value: float) -> None:
+        self._attr_native_value = self._entry["chime_play_duration"] = value
+
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+
+        data = await self.async_get_last_number_data()
+
+        if data is not None and data.native_value is not None:
+            await self.async_set_native_value(data.native_value)
 
 
 class TapoMovementAngle(RestoreNumber, TapoEntity):
