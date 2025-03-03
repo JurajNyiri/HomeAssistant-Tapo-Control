@@ -369,7 +369,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             ]
         )
 
-    LOGGER.warning("Starting setup of Tapo: Cameras Control")
+    LOGGER.debug("Starting setup of Tapo: Cameras Control")
 
     """Set up the Tapo: Cameras Control component from a config entry."""
     hass.data.setdefault(DOMAIN, {})
@@ -394,18 +394,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         if "setup_retries" not in hass.data[DOMAIN][entry.entry_id]:
             hass.data[DOMAIN][entry.entry_id]["setup_retries"] = 0
 
-    LOGGER.warning("Checking for HTTPS on HA")
+    LOGGER.debug("Checking for HTTPS on HA")
     if isUsingHTTPS(hass):
-        LOGGER.warning(
+        LOGGER.debug(
             "Home Assistant is running on HTTPS or it was not able to detect base_url schema. Disabling webhooks."
         )
     else:
-        LOGGER.warning("HA is not using HTTPS.")
+        LOGGER.debug("HA is not using HTTPS.")
 
     try:
-        LOGGER.warning(isKlapDevice)
+        LOGGER.debug(isKlapDevice)
         if cloud_password != "":
-            LOGGER.warning("Setting up controller using cloud password.")
+            LOGGER.debug("Setting up controller using cloud password.")
             tapoController = await hass.async_add_executor_job(
                 registerController,
                 host,
@@ -418,7 +418,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 isKlapDevice,
             )
         else:
-            LOGGER.warning("Setting up controller using username and password.")
+            LOGGER.debug("Setting up controller using username and password.")
             tapoController = await hass.async_add_executor_job(
                 registerController,
                 host,
@@ -430,7 +430,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 None,
                 isKlapDevice,
             )
-        LOGGER.warning("Controller has been set up.")
+        LOGGER.debug("Controller has been set up.")
 
         def getAllEntities(entry):
             # Gather all entities, including of children devices
@@ -440,7 +440,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             return allEntities
 
         async def async_update_data():
-            LOGGER.warning("async_update_data - entry")
+            LOGGER.debug("async_update_data - entry")
             tapoController = hass.data[DOMAIN][entry.entry_id]["controller"]
             host = entry.data.get(CONF_IP_ADDRESS)
             username = entry.data.get(CONF_USERNAME)
@@ -455,7 +455,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
             # motion detection retries
             if motionSensor or enableTimeSync:
-                LOGGER.warning("Motion sensor or time sync is enabled.")
+                LOGGER.debug("Motion sensor or time sync is enabled.")
                 if (
                     not hass.data[DOMAIN][entry.entry_id]["isChild"]
                     and not hass.data[DOMAIN][entry.entry_id]["isParent"]
@@ -465,12 +465,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         or not hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
                     ):
                         # retry if connection to onvif failed
-                        LOGGER.warning("Setting up subscription to motion sensor...")
+                        LOGGER.debug("Setting up subscription to motion sensor...")
                         onvifDevice = await initOnvifEvents(
                             hass, host, username, password
                         )
                         if onvifDevice:
-                            LOGGER.warning(onvifDevice)
+                            LOGGER.debug(onvifDevice)
                             hass.data[DOMAIN][entry.entry_id]["eventsDevice"] = (
                                 onvifDevice["device"]
                             )
@@ -483,7 +483,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         not hass.data[DOMAIN][entry.entry_id]["eventsSetup"]
                         and motionSensor
                     ):
-                        LOGGER.warning(
+                        LOGGER.debug(
                             "Setting up subcription to motion sensor events..."
                         )
                         # retry if subscription to events failed
@@ -496,9 +496,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                 raise AssertionError(e)
 
                     else:
-                        LOGGER.warning("Motion sensor: OK")
+                        LOGGER.debug("Motion sensor: OK")
                 else:
-                    LOGGER.warning(
+                    LOGGER.debug(
                         "Not updating motion sensor because device is child or parent."
                     )
 
@@ -522,12 +522,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 debugMsg = "Both motion sensor and time sync are disabled."
                 if len(username) == 0 or len(password) == 0:
                     debugMsg += " This is because RTSP username or password is empty."
-                LOGGER.warning(debugMsg)
+                LOGGER.debug(debugMsg)
             if (
                 ts - hass.data[DOMAIN][entry.entry_id]["lastFirmwareCheck"]
                 > UPDATE_CHECK_PERIOD
             ):
-                LOGGER.warning("Getting latest firmware...")
+                LOGGER.debug("Getting latest firmware...")
                 hass.data[DOMAIN][entry.entry_id]["latestFirmwareVersion"] = (
                     await getLatestFirmwareVersion(
                         hass,
@@ -536,9 +536,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         tapoController,
                     )
                 )
-                LOGGER.warning(
-                    hass.data[DOMAIN][entry.entry_id]["latestFirmwareVersion"]
-                )
+                LOGGER.debug(hass.data[DOMAIN][entry.entry_id]["latestFirmwareVersion"])
                 for childDevice in hass.data[DOMAIN][entry.entry_id]["childDevices"]:
                     childDevice["latestFirmwareVersion"] = (
                         await getLatestFirmwareVersion(
@@ -550,15 +548,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     )
 
             # cameras state
-            LOGGER.warning("async_update_data - before someEntityEnabled check")
+            LOGGER.debug("async_update_data - before someEntityEnabled check")
             someEntityEnabled = False
             allEntities = getAllEntities(hass.data[DOMAIN][entry.entry_id])
             for entity in allEntities:
-                LOGGER.warning(entity["entity"])
+                LOGGER.debug(entity["entity"])
                 if entity["entity"]._enabled:
-                    LOGGER.warning(
-                        "async_update_data - enabling someEntityEnabled check"
-                    )
+                    LOGGER.debug("async_update_data - enabling someEntityEnabled check")
                     someEntityEnabled = True
                     break
 
@@ -570,7 +566,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 updateDataForAllControllers = {}
                 for controller in hass.data[DOMAIN][entry.entry_id]["allControllers"]:
                     controllerData = getDataForController(hass, entry, controller)
-                    LOGGER.warning(
+                    LOGGER.debug(
                         f"{controllerData['name']} running on battery: {controllerData['isRunningOnBattery']}"
                     )
                     if (
@@ -581,12 +577,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         and ts - controllerData["lastUpdate"] > updateIntervalBattery
                     ):
                         timeForAnUpdate = True
-                        LOGGER.warning(f"Updating {controllerData['name']}...")
+                        LOGGER.debug(f"Updating {controllerData['name']}...")
                     else:
                         timeForAnUpdate = False
-                        LOGGER.warning(
-                            f"Skipping update for {controllerData['name']}..."
-                        )
+                        LOGGER.debug(f"Skipping update for {controllerData['name']}...")
                     if timeForAnUpdate:
                         try:
                             updateDataForAllControllers[controller] = await getCamData(
@@ -662,7 +656,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         updateDataForAllControllers[tapoController]
                     )
 
-                    LOGGER.warning("Updating entities...")
+                    LOGGER.debug("Updating entities...")
 
                     # Gather all entities, including of children devices
                     allEntities = getAllEntities(hass.data[DOMAIN][entry.entry_id])
@@ -673,8 +667,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             and entity["entry"]["controller"]
                             in updateDataForAllControllers
                         ):
-                            LOGGER.warning("Updating entity...")
-                            LOGGER.warning(entity["entity"])
+                            LOGGER.debug("Updating entity...")
+                            LOGGER.debug(entity["entity"])
                             entity["camData"] = updateDataForAllControllers[
                                 entity["entry"]["controller"]
                             ]
