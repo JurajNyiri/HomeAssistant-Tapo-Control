@@ -77,3 +77,11 @@ SERVICE_DELETE_PRESET = "delete_preset"
 SCHEMA_SERVICE_DELETE_PRESET = {
     vol.Required(PRESET): cv.string,
 }
+
+TAPO_PREFIXES = (
+    r"^c[0-9]{3}_.*",  # Security Cameras (C100, C200, C310, etc.)
+    r"^d[0-9]{3}_.*",  # Doorbells (D230, D235, etc.)
+    r"^tc[0-9]{2}_.*",  # Pan/Tilt Cameras (TC60, TC70, etc.)
+    r"^d[0-9]{3}c_.*",  # Doorbell Chimes (D100C, D230C, etc.)
+    r"^h[0-9]{3}_.*",  # Smart Hubs (H100, H200, etc.)
+)

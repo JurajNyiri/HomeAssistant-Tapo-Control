@@ -1,5 +1,6 @@
 import voluptuous as vol
 import os
+import re
 
 from homeassistant.core import callback
 
@@ -45,6 +46,7 @@ from .const import (
     CONF_CUSTOM_STREAM,
     CONF_RTSP_TRANSPORT,
     RTSP_TRANS_PROTOCOLS,
+    TAPO_PREFIXES,
     UPDATE_INTERVAL_BATTERY_DEFAULT,
     UPDATE_INTERVAL_MAIN,
     UPDATE_INTERVAL_BATTERY,
@@ -311,12 +313,9 @@ class FlowHandler(ConfigFlow):
             LOGGER.debug("[ADD DEVICE][%s] Already discovered.", dhcp_discovery.ip)
             return self.async_abort(reason="already_configured")
 
-        if (
-            not dhcp_discovery.hostname.startswith("C100_")
-            and not dhcp_discovery.hostname.startswith("C200_")
-            and not dhcp_discovery.hostname.startswith("C310_")
-            and not dhcp_discovery.hostname.startswith("TC60_")
-            and not dhcp_discovery.hostname.startswith("TC70_")
+        if not any(
+            re.match(pattern, dhcp_discovery.hostname, re.IGNORECASE)
+            for pattern in TAPO_PREFIXES
         ):
             LOGGER.debug("[ADD DEVICE][%s] Not a tapo device.", dhcp_discovery.ip)
             return self.async_abort(reason="not_tapo_device")
@@ -325,10 +324,23 @@ class FlowHandler(ConfigFlow):
         await self.async_set_unique_id(mac_address)
         self.context.update({"title_placeholders": {"name": dhcp_discovery.ip}})
         self.tapoHost = dhcp_discovery.ip
-        LOGGER.debug(
-            "[ADD DEVICE][%s] Initiating config flow by discovery.", dhcp_discovery.ip
+        isKLAPResult = await self.hass.async_add_executor_job(
+            isKLAP, self.tapoHost, 80, 5
         )
-        return await self.async_step_auth()
+        if isKLAPResult:
+            self.tapoControlPort = 80
+            LOGGER.debug(
+                "[ADD DEVICE][%s] Initiating config flow by discovery (klap).",
+                dhcp_discovery.ip,
+            )
+            return await self.async_step_auth_klap()
+        else:
+            self.tapoControlPort = 443
+            LOGGER.debug(
+                "[ADD DEVICE][%s] Initiating config flow by discovery (camera).",
+                dhcp_discovery.ip,
+            )
+            return await self.async_step_auth()
 
     @callback
     def _async_host_already_configured(self, host):
