@@ -1,0 +1,155 @@
+{
+  "title": "Tapo: Cameras Control",
+  "config": {
+    "flow_title": "Tapo: Cameras Control {name}",
+    "step": {
+      "reauth_confirm_stream": {
+        "data": {
+          "username": "Λογαριασμός Κάμερας - Όνομα Χρήστη",
+          "password": "Λογαριασμός Κάμερας - Κωδικός"
+        },
+        "description": "Οι κωδικοί άλλαξαν. Παρακαλώ εισάγετε ενημερωμένους κωδικούς.\n\nΟ λογαριασμός κάμερας δημιουργείται μέσα από την εφαρμογή Tapo στο:\nΡυθμίσεις Συσκευής > Προηγμένες Ρυθμίσεις > Ο λογαριασμός της Κάμερας.\n\nΜπορείτε να δοκιμάσετε αν αυτά τα στοιχεία δουλεύουν μέσω μιας ροής rtsp, για παράδειγμα με το VLC με χρήση του συνδέσμου\nrtsp://ΌνομαΧρήστη:Κωδικός@IP Address:554/stream1"
+      },
+      "reauth_confirm_cloud": {
+        "data": {
+          "cloud_password": "Κωδικός Cloud"
+        },
+        "description": "Η κάμερα απαιτεί τους cloud κωδικούς για διαχείριση.\nΑυτός είναι ο κωδικός που χρησιμοποιήσατε με τη διεύθυνση ηλεκτρονικού ταχυδρομείου σας όταν κάνατε εγγραφή στην εφαρμογή Tapo .\nΒεβαιωθείτε ότι έχετε ενεργή την επιλογή Third-Party Compatibility στην εφαρμογή Tapo (Εγώ -> Tapo Lab -> Third-Party Compatibility - On).\n\nΔεν απαιτείται επί πληρωμή συνδρομή Tapo Care.\nΕκτός αν χρησιμοποιήσατε τον ίδιο κωδικό για το cloud με αυτόν που χρησιμοποιήσατε στο Λογαριασμός της κάμερας, δεν είναι ο ίδιος κωδικός.\nΔιεύθυνση ηλ. ταχυδρομείου δεν απαιτείται και όλη η επικοινωνία είναι εντελώς τοπική."
+      },
+      "ip": {
+        "data": {
+          "ip_address": "Διεύθυνση IP",
+          "control_port": "Θύρα Ελέγχου"
+        },
+        "description": "Εισάγετε τη διεύθυνση IP της κάμερας ή του κουδουνιού.\n\nΓια απλό κουδούνι, ορίστε την θύρα 80, αν είναι κάμερα ή κουδούνι πόρτας με κάμερα, αφήστε την 443.\n\nΑν χρησιμοποιείτε vlans, ή κάποιον άλλο τύπο προχωρημένων δικτυακών ρυθμίσεων, Βεβαιωθείτε ότι οι θύρες 443, 554 και 2020 είναι ανοικτές για την κάμερα. Για τα κουδούνια, χρειάζεται η 80."
+      },
+      "auth_klap": {
+        "data": {
+          "email": "E-mail",
+          "password": "Password"
+        },
+        "description": "Enter your TPLink account credentials.\n\nAll communication is fully local."
+      },
+      "auth": {
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "skip_rtsp": "Skip RTSP check; If checked, credentials will not be verified against RTSP stream and camera stream might not work. This is useful if camera does not support RTSP stream but allows control. Stream can be also unavailable for example if both Tapo Care recordings and SD card recordings are turned on."
+        },
+        "description": "Enter camera account credentials.\n\nThis account is created via Tapo app at:\nCamera Settings > Advanced Settings > Camera Account"
+      },
+      "auth_cloud_password": {
+        "data": {
+          "cloud_password": "Cloud Password"
+        },
+        "description": "Camera requires your cloud password for control.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
+      },
+      "auth_optional_cloud": {
+        "data": {
+          "cloud_password": "Cloud Password"
+        },
+        "description": "Camera requires your cloud password for recordings.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local.\n\nYou can skip this step by leaving password empty and enter password later if you do not need recordings viewing functionality."
+      },
+      "other_options": {
+        "data": {
+          "enable_motion_sensor": "Enable motion sensor",
+          "enable_webhooks": "Enable webhooks",
+          "enable_time_sync": "Automatically synchronise time",
+          "enable_stream": "Use Stream from Home Assistant (restart required)",
+          "enable_sound_detection": "Enable sound threshold detection (restart required)",
+          "sound_detection_peak": "[Sound Detection] Peak in dB. 0 is very loud and -100 is low.",
+          "sound_detection_duration": "[Sound Detection] How long the noise needs to be over the peak to trigger the state.",
+          "sound_detection_reset": "[Sound Detection] The time to reset the state after no new noise is over the peak.",
+          "extra_arguments": "Extra arguments for ffmpeg (restart required)",
+          "custom_stream": "Custom stream link",
+          "rtsp_transport": "RTSP transport mechanism"
+        },
+        "description": "Almost there!\nJust some final options..."
+      }
+    },
+    "error": {
+      "skip_rtsp_not_checked": "Enter both username and password, or leave empty and check Skip RTSP check.\n If left empty, RTSP stream will not work.",
+      "invalid_stream_auth": "Invalid RTSP stream authentication data",
+      "account_suspended": "Account temporarily suspended, please try again later.\n See log for more details.",
+      "not_tapo_device": "IP address is not a supported Tapo device",
+      "ports_closed": "Port 443, 554, or 2020 is closed",
+      "invalid_auth": "Invalid authentication data.\nMake sure you have created your 3rd party account via Tapo app.\nYou can also test if these credentials work via rtsp stream, for example VLC using link\nrtsp://username:password@IP Address:554/stream1",
+      "unknown": "Unknown error",
+      "connection_failed": "Connection failed",
+      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).",
+      "cold_storage_path_does_not_exist": "Cold storage path does not exist",
+      "camera_requires_admin": "Your camera requires cloud password for control",
+      "already_configured": "IP address already configured",
+      "incorrect_peak_value": "Incorrect sound detection peak value."
+    },
+    "abort": {
+      "already_configured": "IP address already configured",
+      "not_tapo_device": "Discovered device is not a Tapo camera",
+      "reauth_successful": "Reauthentication has been successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "tapo_config_action": "Action"
+        },
+        "description": "What do you want to do?"
+      },
+      "sound_sensor": {
+        "data": {
+          "enable_sound_detection": "Enable sound threshold detection (restart required)",
+          "sound_detection_peak": "[Sound Detection] Peak in dB. 0 is very loud and -100 is low.",
+          "sound_detection_duration": "[Sound Detection] How long the noise needs to be over the peak to trigger the state.",
+          "sound_detection_reset": "[Sound Detection] The time to reset the state after no new noise is over the peak."
+        },
+        "description": "Configure noise detection sensor"
+      },
+      "media": {
+        "data": {
+          "media_view_days_order": "Order of days in Media Browser",
+          "media_view_recordings_order": "Order of recordings in Media Browser",
+          "media_sync_hours": "Number of hours to keep synchronized",
+          "media_sync_cold_storage_path": "[Requires restart] Cold storage path"
+        },
+        "description": "Modify settings of recordings media synchronization"
+      },
+      "update_interval": {
+        "data": {
+          "update_interval_main": "Minimum update interval when powered from mains",
+          "update_interval_battery": "Minimum update interval when powered by solar or battery"
+        },
+        "description": "Modify update interval of the device"
+      },
+      "auth": {
+        "data": {
+          "ip_address": "IP Address",
+          "control_port": "Control Port",
+          "username": "Username",
+          "password": "Password",
+          "enable_motion_sensor": "Enable motion sensor",
+          "enable_webhooks": "Enable webhooks",
+          "enable_stream": "Use Stream from Home Assistant (restart required)",
+          "enable_time_sync": "Automatically synchronise time",
+          "cloud_password": "Cloud Password (Optional)",
+          "extra_arguments": "Extra arguments for ffmpeg (restart required)",
+          "custom_stream": "Custom stream link",
+          "rtsp_transport": "RTSP transport mechanism"
+        },
+        "description": "Modify settings of your Tapo Camera.\n\nUse stream from Home Assistant:\nYes - Longer playback delay, lower CPU usage, allows playback control\nNo - Very short playback delay, higher CPU usage, no playback control"
+      }
+    },
+    "error": {
+      "invalid_stream_auth": "Invalid RTSP stream authentication data",
+      "account_suspended": "Account temporarily suspended, please try again later.\nSee log for more details.",
+      "invalid_auth": "Invalid authentication data",
+      "unknown": "Unknown error",
+      "connection_failed": "Connection failed",
+      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).",
+      "cold_storage_path_does_not_exist": "Cold storage path does not exist",
+      "camera_requires_admin": "Camera requires cloud password for control",
+      "incorrect_peak_value": "Incorrect sound detection peak value.",
+      "incorrect_options_action": "Incorrect action chosen"
+    }
+  }
+}
