@@ -67,7 +67,7 @@
       "invalid_auth": "Données d'authentification invalides.\nAssurez-vous d'avoir créé votre compte tiers via l'application Tapo.\nVous pouvez également tester si ces informations d'identification fonctionnent via le flux rtsp, par exemple avec VLC en utilisant le lien\nrtsp://username:password@IP Address:554/stream1",
       "unknown": "Erreur inconnue",
       "connection_failed": "La connexion a échoué",
-      "invalid_auth_cloud": "Mot de passe cloud invalide.\nAssurez-vous de saisir le mot de passe de votre compte cloud et NON le mot de passe que vous avez créé via les paramètres de la caméro (sauf s'ils sont identiques).\nVous devez saisir le mot de passe que vous avez utilisé avec votre e-mail lors de la connexion à l'application Tapo.\n\nAssurez-vous que la compatibilité tierce est activée dans l'application Tapo (Moi -> Tapo Lab -> Compatibilité tierce - Activé).",
+      "invalid_auth_cloud": "Mot de passe cloud invalide.\nAssurez-vous de saisir le mot de passe de votre compte cloud et NON le mot de passe que vous avez créé via les paramètres de la caméro (sauf s'ils sont identiques).\nVous devez saisir le mot de passe que vous avez utilisé avec votre e-mail lors de la connexion à l'application Tapo.\n\nAssurez-vous que la compatibilité tierce est activée dans l'application Tapo (Moi -> Tapo Lab -> Compatibilité tierce - Activé) et que vous avez essayé les autres solutions proposées par la FAQ https://github.com/JurajNyiri/HomeAssistant-Tapo-Control?tab=readme-ov-file#troubleshooting--faq",
       "cold_storage_path_does_not_exist": "Le chemin de stockage à froid n'existe pas",
       "camera_requires_admin": "Votre caméra nécessite un mot de passe cloud pour le contrôle",
       "already_configured": "Adresse IP déjà configurée",

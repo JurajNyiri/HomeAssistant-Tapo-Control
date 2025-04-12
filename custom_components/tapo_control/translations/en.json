@@ -76,7 +76,7 @@
       "invalid_auth": "Invalid authentication data.\nMake sure you have created your 3rd party account via Tapo app.\nYou can also test if these credentials work via rtsp stream, for example VLC using link\nrtsp://username:password@IP Address:554/stream1",
       "unknown": "Unknown error",
       "connection_failed": "Connection failed",
-      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).",
+      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On) and you have tried the other solutions suggested in the FAQ https://github.com/JurajNyiri/HomeAssistant-Tapo-Control?tab=readme-ov-file#troubleshooting--faq.",
       "cold_storage_path_does_not_exist": "Cold storage path does not exist",
       "camera_requires_admin": "Your camera requires cloud password for control",
       "already_configured": "IP address already configured",
