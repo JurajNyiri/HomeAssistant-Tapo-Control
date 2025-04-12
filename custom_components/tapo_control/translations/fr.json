@@ -21,12 +21,20 @@
           "ip_address": "Addresse IP",
           "control_port": "Port de contrôle"
         },
-        "description": "Enter l'adresse IP de la camera.\n\nAssurez-vous de créer un compte de caméra.\n\nLe compte de la caméra est créé via l'application Tapo à:\nRéglages de l'appareil > Réglages avancés > Compte de la caméra.\n\n\n\nSi vous utilisez des VLAN ou d'autres réseaux avancés, assurez-vous que les ports 443, 554 et 2020 sont ouverts pour la caméra."
+        "description": "Enter l'adresse IP de la camera, de la sonnette de porte ou du carillon.\n\nSi vous ajoutez un carillon, réglez le port sur 80. Si c'est une caméra ou une sonnette de porte, laissez-le sur 443.\n\nSi vous utilisez des VLAN ou d'autres réseaux avancés, assurez-vous que les ports 443, 554 et 2020 sont ouverts pour la caméra. Pour les carillons, le port 80 est requis."
+      },
+      "auth_klap": {
+        "data": {
+          "email": "E-mail",
+          "password": "Mot de Passe"
+        },
+        "description": "Entrez vos identifiants de compte TPLink.\n\nToutes les communications sont entièrement locales."
       },
       "auth": {
         "data": {
           "username": "Nom d'utilisateur",
-          "password": "Mot de Passe"
+          "password": "Mot de Passe",
+          "skip_rtsp": "Ignorer la vérification RTSP; Si cette option est activée, les identifiants ne seront pas vérifiés avec le flux RTSP, et le flux de la caméra pourrait ne pas fonctionner. Ceci est utile si la caméra ne prend pas en charge le flux RTSP mais permet le contrôle. Le flux peut également être indisponible, par exemple, si les enregistrements Tapo Care et les enregistrements sur carte SD sont activés en même temps."
         },
         "description": "Entrez les informations d'identification du compte de la caméra.\n\nLe compte de la caméra est créé via l'application Tapo à:\nRéglages de l'appareil > Réglages avancés > Compte de la caméra"
       },
@@ -60,6 +68,7 @@
       }
     },
     "error": {
+      "skip_rtsp_not_checked": "Entrez à la fois le nom d'utilisateur et le mot de passe, ou laissez vide et activez l'option Ignorer la vérification RTSP.\n Si laissé vide, le flux RTSP ne fonctionnera pas.",
       "invalid_stream_auth": "Données d'authentification de flux RTSP invalides",
       "account_suspended": "Compte temporairement suspendu, veuillez réessayer plus tard.\n Voir le journal pour plus de détails.",
       "not_tapo_device": "L'adresse IP n'est pas un appareil Tapo pris en charge",
