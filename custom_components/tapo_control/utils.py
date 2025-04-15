@@ -744,6 +744,26 @@ def convertBasicInfo(basicInfo):
     return convertedBasicInfo
 
 
+def getIP(data):
+    # KLAP report IP in this function
+    if (
+        "basic_info" in data
+        and data["basic_info"] is not None
+        and "ip" in data["basic_info"]
+    ):
+        return data["basic_info"]["ip"]
+    # cameras report IP in this function
+    elif (
+        "network_ip_info" in data
+        and data["network_ip_info"] is not None
+        and "network" in data["network_ip_info"]
+        and "wan" in data["network_ip_info"]["network"]
+        and "ipaddr" in data["network_ip_info"]["network"]["wan"]
+    ):
+        return data["network_ip_info"]["network"]["wan"]["ipaddr"]
+    return False
+
+
 async def getCamData(hass, controller):
     LOGGER.debug("getCamData")
     data = await hass.async_add_executor_job(controller.getMost)
@@ -1044,6 +1064,12 @@ async def getCamData(hass, controller):
     except Exception:
         night_vision_mode = None
     camData["night_vision_mode"] = night_vision_mode
+
+    try:
+        network_ip_info = data["getDeviceIpAddress"][0]
+    except Exception:
+        network_ip_info = None
+    camData["network_ip_info"] = network_ip_info
 
     try:
         night_vision_capability = data["getNightVisionCapability"][0][
