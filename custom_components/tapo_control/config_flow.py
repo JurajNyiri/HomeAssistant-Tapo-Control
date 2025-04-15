@@ -348,6 +348,8 @@ class FlowHandler(ConfigFlow):
         for entry in self._async_current_entries():
             if entry.data.get(CONF_IP_ADDRESS) == host:
                 return True
+            elif entry.data.get(REPORTED_IP_ADDRESS) == host:
+                return True
         return False
 
     async def async_step_other_options(self, user_input=None):
