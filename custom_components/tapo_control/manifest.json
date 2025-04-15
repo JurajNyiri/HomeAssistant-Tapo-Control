@@ -6,9 +6,9 @@
   "codeowners": [
     "@JurajNyiri"
   ],
-  "version": "6.1.3",
+  "version": "6.1.4",
   "requirements": [
-    "pytapo==3.3.41",
+    "pytapo==3.3.44",
     "python-kasa[speedups]==0.10.2"
   ],
   "dependencies": [

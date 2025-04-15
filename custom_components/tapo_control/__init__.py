@@ -5,6 +5,7 @@ import asyncio
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.device_registry import async_get as device_registry_async_get
 from homeassistant.const import (
     CONF_IP_ADDRESS,
     CONF_USERNAME,
@@ -41,6 +42,7 @@ from .const import (
     MEDIA_SYNC_HOURS,
     MEDIA_VIEW_DAYS_ORDER,
     MEDIA_VIEW_RECORDINGS_ORDER,
+    REPORTED_IP_ADDRESS,
     RTSP_TRANS_PROTOCOLS,
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
@@ -60,6 +62,7 @@ from .utils import (
     getDataForController,
     getEntryStorageFile,
     getHotDirPathForEntry,
+    getIP,
     isUsingHTTPS,
     mediaCleanup,
     registerController,
@@ -290,6 +293,70 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         new[IS_KLAP_DEVICE] = False
 
         hass.config_entries.async_update_entry(config_entry, data=new, version=20)
+
+    if config_entry.version == 20:
+        new = {**config_entry.data}
+        try:
+            host = config_entry.data.get(CONF_IP_ADDRESS)
+            controlPort = config_entry.data.get(CONTROL_PORT)
+            isKlapDevice = config_entry.data.get(IS_KLAP_DEVICE)
+            cloud_password = config_entry.data.get(CLOUD_PASSWORD)
+            username = config_entry.data.get(CONF_USERNAME)
+            password = config_entry.data.get(CONF_PASSWORD)
+            if cloud_password != "":
+                LOGGER.debug("Setting up controller using cloud password.")
+                tapoController = await hass.async_add_executor_job(
+                    registerController,
+                    host,
+                    controlPort,
+                    "admin",
+                    cloud_password,
+                    cloud_password,
+                    "",
+                    None,
+                    isKlapDevice,
+                    hass,
+                )
+            else:
+                LOGGER.debug("Setting up controller using username and password.")
+                tapoController = await hass.async_add_executor_job(
+                    registerController,
+                    host,
+                    controlPort,
+                    username,
+                    password,
+                    "",
+                    "",
+                    None,
+                    isKlapDevice,
+                    hass,
+                )
+            camData = await getCamData(hass, tapoController)
+            reported_ip_address = getIP(camData)
+            LOGGER.debug(f"Detected IP: {reported_ip_address}")
+            new[REPORTED_IP_ADDRESS] = reported_ip_address
+
+            hass.config_entries.async_update_entry(
+                config_entry,
+                data=new,
+                version=21,
+                unique_id=DOMAIN
+                + (reported_ip_address if reported_ip_address else host),
+            )
+
+        except Exception as e:
+            LOGGER.error(
+                "Unable to connect to Tapo: Cameras Control controller: %s", str(e)
+            )
+            if "Invalid authentication data" in str(e):
+                raise ConfigEntryAuthFailed(e)
+            elif "Temporary Suspension:" in str(
+                e
+            ):  # keep retrying to authenticate eventually, or throw
+                # ConfigEntryAuthFailed on invalid auth eventually
+                raise ConfigEntryNotReady
+            # Retry for anything else
+            raise ConfigEntryNotReady
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
