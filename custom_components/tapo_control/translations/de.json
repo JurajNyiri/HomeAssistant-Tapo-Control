@@ -20,7 +20,7 @@
         "data": {
           "cloud_password": "Tapo Account Passwort"
         },
-        "description": "Die Kamera benötigt dein Cloud-Passwort für Aufnahmen.\nDies ist das Passwort, das du zusammen mit deiner E-Mail-Adresse für die Anmeldung in der Tapo-App verwendet hast.\nStelle sicher, dass in der Tapo-App die Kompatibilität mit Drittanbietern aktiviert ist (Ich -> Tapo Labor -> Kompatiblität mit Drittanbietern - Aktiviert).\n\nEin kostenpflichtiges Tapo-Care-Abonnement ist nicht erforderlich.\nSolltest du nicht, du hast dasselbe Passwort für die Cloud und das Kamera-Konto verwendet, sind die Passwörter unterschiedlich.\nDie E-Mail-Adresse ist nicht erforderlich und alle Kommunikation bleibt vollständig lokal.\n\nDu kannst diesen Schritt überspringen, indem du das Passwort leer lässt und es später eingibst, wenn du die Funktion für die Anzeige von Aufnahmen nicht benötigst."
+        "description": "Die Kamera benötigt dein Cloud-Passwort für Aufnahmen.\nDies ist das Passwort, das du zusammen mit deiner E-Mail-Adresse für die Anmeldung in der Tapo-App verwendet hast.\nStelle sicher, dass in der Tapo-App die Kompatibilität mit Drittanbietern aktiviert ist (Ich -> Tapo Labor -> Kompatiblität mit Drittanbietern - Aktiviert).\n\nEin kostenpflichtiges Tapo-Care-Abonnement ist nicht erforderlich.\nSolltest du nicht, du hast dasselbe Passwort für die Cloud und das Kamera-Konto verwendet, sind die Passwörter unterschiedlich.\nDie E-Mail-Adresse ist nicht erforderlich und alle Kommunikation bleibt vollständig lokal."
       },
       "other_options": {
         "data": {
