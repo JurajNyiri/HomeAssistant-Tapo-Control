@@ -376,7 +376,7 @@ async def deleteColdFilesOlderThanMaxSyncTime(hass, entry, extension, folder):
                         )
                         os.remove(filePath)
                 else:
-                    LOGGER.warn(
+                    LOGGER.warning(
                         "[deleteColdFilesOlderThanMaxSyncTime] Ignoring "
                         + filePath
                         + " ("
