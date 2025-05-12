@@ -387,7 +387,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             async with asyncio.timeout(3):
                 await hass.data[DOMAIN][entry.entry_id]["events"].async_stop()
         except TimeoutError:
-            LOGGER.warn("Timed out waiting for onvif connection to close, proceeding.")
+            LOGGER.warning("Timed out waiting for onvif connection to close, proceeding.")
         LOGGER.debug("Events stopped.")
 
     return True
@@ -407,7 +407,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         LOGGER.debug("Deleting cold storage files for entity " + entry_id + "...")
         await deleteDir(hass, coldDirPath)
     else:
-        LOGGER.warn(
+        LOGGER.warning(
             "No cold storage path found for entity"
             + entry_id
             + ". Not deleting anything."
@@ -418,7 +418,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         LOGGER.debug("Deleting hot storage files for entity " + entry_id + "...")
         await deleteDir(hass, hotDirPath)
     else:
-        LOGGER.warn(
+        LOGGER.warning(
             "No hot storage path found for entity"
             + entry_id
             + ". Not deleting anything."
@@ -553,7 +553,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         and motionSensor
                     ):
                         LOGGER.debug(
-                            "Setting up subcription to motion sensor events..."
+                            "Setting up subscription to motion sensor events..."
                         )
                         # retry if subscription to events failed
                         try:
@@ -824,7 +824,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             update_method=async_update_data,
         )
 
-        LOGGER.debug("Retriving initial device data.")
+        LOGGER.debug("Retrieving initial device data.")
 
         camData = await getCamData(hass, tapoController)
         LOGGER.debug("Retrieved initial device data.")
@@ -985,7 +985,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 "device_mgmt"
             ]
             if motionSensor:
-                LOGGER.debug("Seting up motion sensor for the first time.")
+                LOGGER.debug("Setting up motion sensor for the first time.")
                 await setupOnvif(hass, entry)
             else:
                 debugMsg = "Motion sensor is disabled."
