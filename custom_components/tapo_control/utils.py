@@ -1642,8 +1642,15 @@ async def syncTime(hass, entry_id):
                 "Second": adjusted_time.second,
             },
         }
+        LOGGER.debug(
+            "Sending time parameters to " + hass.data[DOMAIN][entry_id]["name"] + ":"
+        )
         LOGGER.debug(time_params)
         await device_mgmt.SetSystemDateAndTime(time_params)
+        LOGGER.debug(
+            "Finished synchronizing time successfully. Setting last time sync to: "
+            + str(now)
+        )
         hass.data[DOMAIN][entry_id]["lastTimeSync"] = now.timestamp()
     else:
         LOGGER.warning(
