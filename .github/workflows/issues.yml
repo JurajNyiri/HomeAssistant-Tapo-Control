@@ -18,7 +18,9 @@ jobs:
       - name: Check issue description for invalid string
         id: check_body
         run: |
-          if [[ "${{ github.event.issue.body }}" == *"cloud password"* ]]; then
+          if [[ "${{ github.event.issue.body }}" == *"Invalid cloud password"* ]]; then
+            echo "contains_invalid_string=true" >> $GITHUB_ENV
+          elif [[ "${{ github.event.issue.body }}" == *"Invalid authentication data. Make sure you have created your 3rd party account via Tapo app."* ]]; then
             echo "contains_invalid_string=true" >> $GITHUB_ENV
           else
             echo "contains_invalid_string=false" >> $GITHUB_ENV
@@ -28,18 +30,8 @@ jobs:
         uses: peter-evans/close-issue@v3
         with:
           comment: |
-            This issue was automatically closed because it is a duplicate.
-            
-            The issue you are searching for:
-            - Is pinned under issues
-            - Has a section in main readme file with big title right at the top
-            - Has 3 red exclamations marks in the title
-            - Contains a workaround both for accounts still working and the ones affected.
-            
-            And a warning was sent a month ago as an update via HACS.
+            This issue was automatically closed because it matches a known [FAQ](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control?tab=readme-ov-file#troubleshooting--faq) solution.
 
-            You can find it at https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/551.
-
-            Please do not post me too comments or any other comment that does not provide any value to the discussion as everyone monitoring it gets notified. If the comments with no value continue maintainer will be forced to lock the issue to contributors only.
+            Note: This action has been done automatically, owner is notified about this issue and if there is a need he will reopen.
           labels: |
             Duplicate

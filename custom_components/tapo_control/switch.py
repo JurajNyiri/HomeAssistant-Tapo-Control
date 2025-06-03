@@ -35,16 +35,28 @@ async def async_setup_entry(
             await entry_storage.async_save({ENABLE_MEDIA_SYNC: False})
             entry_stored_data = await entry_storage.async_load()
 
-        tapoEnableMediaSyncSwitch = TapoEnableMediaSyncSwitch(
-            entry,
-            hass,
-            config_entry,
-            entry_storage,
-            entry_stored_data[ENABLE_MEDIA_SYNC],
-        )
-        if tapoEnableMediaSyncSwitch:
-            LOGGER.debug("Adding TapoEnableMediaSyncSwitch...")
-            switches.append(tapoEnableMediaSyncSwitch)
+        if (
+            "alert_event_types" in entry["camData"]
+            and entry["camData"]["alert_event_types"]
+        ):
+            for alertEventType in entry["camData"]["alert_event_types"]:
+                switches.append(
+                    TapoAlarmEventTypeSwitch(
+                        entry, hass, config_entry, alertEventType["name"]
+                    )
+                )
+
+        if entry["controller"].isKLAP is False:
+            tapoEnableMediaSyncSwitch = TapoEnableMediaSyncSwitch(
+                entry,
+                hass,
+                config_entry,
+                entry_storage,
+                entry_stored_data[ENABLE_MEDIA_SYNC],
+            )
+            if tapoEnableMediaSyncSwitch:
+                LOGGER.debug("Adding TapoEnableMediaSyncSwitch...")
+                switches.append(tapoEnableMediaSyncSwitch)
 
         tapoLensDistortionCorrectionSwitch = await check_and_create(
             entry,
@@ -57,10 +69,8 @@ async def async_setup_entry(
             LOGGER.debug("Adding tapoLensDistortionCorrectionSwitch...")
             switches.append(tapoLensDistortionCorrectionSwitch)
 
-        tapoIndicatorLedSwitch = await check_and_create(
-            entry, hass, TapoIndicatorLedSwitch, "getLED", config_entry
-        )
-        if tapoIndicatorLedSwitch:
+        if "led" in entry["camData"] and entry["camData"]["led"] is not None:
+            tapoIndicatorLedSwitch = TapoIndicatorLedSwitch(entry, hass, config_entry)
             LOGGER.debug("Adding tapoIndicatorLedSwitch...")
             switches.append(tapoIndicatorLedSwitch)
 
@@ -151,7 +161,16 @@ async def async_setup_entry(
             if tapoMicrophoneNoiseCancellationSwitch:
                 LOGGER.debug("Adding tapoMicrophoneNoiseCancellationSwitch...")
                 switches.append(tapoMicrophoneNoiseCancellationSwitch)
-
+        if (
+            "chimeAlarmConfigurations" in entry["camData"]
+            and entry["camData"]["chimeAlarmConfigurations"] is not None
+            and len(entry["camData"]["chimeAlarmConfigurations"]) > 0
+        ):
+            for macAddress in entry["camData"]["chimeAlarmConfigurations"]:
+                tapoChimeRingtoneSwitch = TapoChimeRingtoneSwitch(
+                    entry, hass, config_entry, macAddress
+                )
+                switches.append(tapoChimeRingtoneSwitch)
         if (
             "videoCapability" in entry["camData"]
             and entry["camData"]["videoCapability"] is not None
@@ -228,6 +247,62 @@ class TapoEnableMediaSyncSwitch(TapoSwitchEntity):
         self._attr_extra_state_attributes["storage_path"] = getColdDirPathForEntry(
             self._hass, self._config_entry.entry_id
         )
+
+
+class TapoChimeRingtoneSwitch(TapoSwitchEntity):
+    def __init__(
+        self,
+        entry: dict,
+        hass: HomeAssistant,
+        config_entry,
+        macAddress: str,
+    ):
+        self.macAddress = macAddress
+        TapoSwitchEntity.__init__(
+            self,
+            f"{macAddress} - Chime Ringtone",
+            entry,
+            hass,
+            config_entry,
+            "mdi:bell-ring",
+        )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_on(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setChimeAlarmConfigure, self.macAddress, True
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "on"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_off(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setChimeAlarmConfigure, self.macAddress, False
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "off"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if (
+            not camData
+            or "chimeAlarmConfigurations" not in camData
+            or len(camData["chimeAlarmConfigurations"]) == 0
+            or self.macAddress not in camData["chimeAlarmConfigurations"]
+        ):
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            chimeData = camData["chimeAlarmConfigurations"][self.macAddress]
+            if "on_off" not in chimeData:
+                self._attr_is_on = False
+            else:
+                self._attr_is_on = chimeData["on_off"] == 1
+            self._attr_state = "on" if self._attr_is_on else "off"
 
 
 class TapoHDRSwitch(TapoSwitchEntity):
@@ -532,6 +607,54 @@ class TapoRichNotificationsSwitch(TapoSwitchEntity):
             self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_is_on = camData["rich_notifications"] == "on"
+            self._attr_state = "on" if self._attr_is_on else "off"
+
+
+class TapoAlarmEventTypeSwitch(TapoSwitchEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry, eventType: str):
+        self.eventType = eventType
+        TapoSwitchEntity.__init__(
+            self,
+            f"Trigger alarm on {eventType}",
+            entry,
+            hass,
+            config_entry,
+            "mdi:exclamation",
+        )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_on(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setAlertEventType,
+            self.eventType,
+            True,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "on"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_off(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setAlertEventType,
+            self.eventType,
+            False,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "on"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            if "alert_event_types" in camData and camData["alert_event_types"]:
+                for alertEventType in camData["alert_event_types"]:
+                    if alertEventType["name"] == self.eventType:
+                        self._attr_is_on = alertEventType["enabled"] == "on"
             self._attr_state = "on" if self._attr_is_on else "off"
 
 

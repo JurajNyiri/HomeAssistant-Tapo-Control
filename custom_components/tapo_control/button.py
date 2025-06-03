@@ -8,7 +8,7 @@ from homeassistant.const import STATE_UNAVAILABLE
 
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoButtonEntity
-from .utils import syncTime, check_and_create
+from .utils import syncTime, check_and_create, result_has_error
 
 
 async def async_setup_entry(
@@ -23,7 +23,8 @@ async def async_setup_entry(
         buttons = []
         if not entry["isChild"]:
             buttons.append(TapoRebootButton(entry, hass, config_entry))
-            buttons.append(TapoFormatButton(entry, hass, config_entry))
+            if entry["controller"].isKLAP is False:
+                buttons.append(TapoFormatButton(entry, hass, config_entry))
 
             tapoStartManualAlarmButton = await check_and_create(
                 entry, hass, TapoStartManualAlarmButton, "getAlarm", config_entry
@@ -39,7 +40,7 @@ async def async_setup_entry(
                 LOGGER.debug("Adding tapoStopManualAlarmButton...")
                 buttons.append(tapoStopManualAlarmButton)
 
-            if not entry["isParent"]:
+            if not entry["isParent"] and entry["controller"].isKLAP is False:
                 buttons.append(TapoSyncTimeButton(entry, hass, config_entry))
 
         tapoCalibrateButton = await check_and_create(
@@ -54,6 +55,13 @@ async def async_setup_entry(
         else:
             LOGGER.info("Buttons: Camera does not support movement.")
 
+        if (
+            "chimeAlarmConfigurations" in entry["camData"]
+            and entry["camData"]["chimeAlarmConfigurations"] is not None
+            and len(entry["camData"]["chimeAlarmConfigurations"]) > 0
+        ):
+            buttons.append(TapoChimeRing(entry, hass, config_entry))
+
         return buttons
 
     buttons = await setupEntities(entry)
@@ -62,6 +70,24 @@ async def async_setup_entry(
         buttons.extend(await setupEntities(childDevice))
 
     async_add_entities(buttons)
+
+
+class TapoChimeRing(TapoButtonEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        TapoButtonEntity.__init__(self, "Play Chime", entry, hass, "mdi:home-sound-out")
+
+    async def async_press(self) -> None:
+        type = self._entry["chime_play_type"]
+        volume = self._entry["chime_play_volume"]
+        duration = self._entry["chime_play_duration"]
+
+        await self._hass.async_add_executor_job(
+            self._controller.playAlarm, duration, type, volume
+        )
+
+    @property
+    def entity_category(self):
+        return None
 
 
 class TapoRebootButton(TapoButtonEntity):
@@ -103,6 +129,13 @@ class TapoSyncTimeButton(TapoButtonEntity):
             hass,
             "mdi:timer-sync-outline",
         )
+
+    def updateTapo(self, camData):
+        device_mgmt = self._hass.data[DOMAIN][self._entry_id]["onvifManagement"]
+        if device_mgmt:
+            self._attr_state = None
+        else:
+            self._attr_state = STATE_UNAVAILABLE
 
     async def async_press(self) -> None:
         await syncTime(self._hass, self._entry_id)
@@ -147,11 +180,51 @@ class TapoStartManualAlarmButton(TapoButtonEntity):
         )
 
     async def async_press(self) -> None:
-        await self._hass.async_add_executor_job(self._controller.startManualAlarm)
+        result = False
+        result2 = False
+        try:
+            result = await self._hass.async_add_executor_job(
+                self._controller.startManualAlarm,
+            )
+        except Exception as e:
+            LOGGER.debug(e)
+
+        try:
+            result2 = await self._hass.async_add_executor_job(
+                self._controller.setSirenStatus, True
+            )
+        except Exception as e:
+            LOGGER.debug(e)
+
+        if result_has_error(result) and result_has_error(result2):
+            if self.sirenType is not None:
+                try:
+                    result3 = await self._hass.async_add_executor_job(
+                        self._controller.testUsrDefAudio, self.sirenType, True
+                    )
+                    if result_has_error(result3):
+                        raise Exception("Camera does not support triggering the siren.")
+                except Exception:
+                    raise Exception("Camera does not support triggering the siren.")
+            else:
+                raise Exception("Camera does not support triggering the siren.")
+
+    def updateTapo(self, camData):
+        if not camData or camData["privacy_mode"] == "on":
+            self.camData = STATE_UNAVAILABLE
+        else:
+            if (
+                "alarm_config" in camData
+                and camData["alarm_config"]
+                and "siren_type" in camData["alarm_config"]
+                and camData["alarm_config"]["siren_type"]
+            ):
+                self.sirenType = camData["alarm_config"]["siren_type"]
 
 
 class TapoStopManualAlarmButton(TapoButtonEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self.sirenType = None
         TapoButtonEntity.__init__(
             self,
             "Manual Alarm Stop",
@@ -161,7 +234,47 @@ class TapoStopManualAlarmButton(TapoButtonEntity):
         )
 
     async def async_press(self) -> None:
-        await self._hass.async_add_executor_job(self._controller.stopManualAlarm)
+        result = False
+        result2 = False
+        try:
+            result = await self._hass.async_add_executor_job(
+                self._controller.stopManualAlarm,
+            )
+        except Exception as e:
+            LOGGER.debug(e)
+
+        try:
+            result2 = await self._hass.async_add_executor_job(
+                self._controller.setSirenStatus, False
+            )
+        except Exception as e:
+            LOGGER.debug(e)
+
+        if result_has_error(result) and result_has_error(result2):
+            if self.sirenType is not None:
+                try:
+                    result3 = await self._hass.async_add_executor_job(
+                        self._controller.testUsrDefAudio, self.sirenType, False
+                    )
+                    if result_has_error(result3):
+                        self._attr_available = False
+                        raise Exception("Camera does not support triggering the siren.")
+                except Exception:
+                    raise Exception("Camera does not support triggering the siren.")
+            else:
+                raise Exception("Camera does not support triggering the siren.")
+
+    def updateTapo(self, camData):
+        if not camData or camData["privacy_mode"] == "on":
+            self.camData = STATE_UNAVAILABLE
+        else:
+            if (
+                "alarm_config" in camData
+                and camData["alarm_config"]
+                and "siren_type" in camData["alarm_config"]
+                and camData["alarm_config"]["siren_type"]
+            ):
+                self.sirenType = camData["alarm_config"]["siren_type"]
 
 
 class TapoCalibrateButton(TapoButtonEntity):

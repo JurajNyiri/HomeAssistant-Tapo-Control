@@ -1,17 +1,10 @@
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
+[![GitHub release](https://img.shields.io/github/release/JurajNyiri/HomeAssistant-Tapo-Control.svg)](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/releases/)
+[![HA integration usage](https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=integration%20usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.tapo_control.total)](https://analytics.home-assistant.io/custom_integrations.json)
+
 # HomeAssistant - Tapo: Cameras Control
 
-Custom component - Tapo: Cameras Control - to add Tapo cameras into Home Assistant
-
-## Integration does not work temporarily on firmware build 230921 and higher
-
-TP-Link is currently working on a solution that will fixed this issue. 
-
-If you wish to use this integration, until this issue is resolved, you will need to either:
-
-1. If your camera still works with integration: Block internet access of camera if you are using firmware build 230921 and higher
-2. If your camera no longer works with integration: [Block internet access and factory reset camera](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/blob/main/add_camera_with_new_firmware.md) or [Use older firmware](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/625) than build 230921 and optionally factory reset camera
-
-[Learn more, get latest updates](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/551), [ask a question](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/categories/q-a) or [discuss](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/discussions/categories/discuss).
+Custom component - Tapo: Cameras Control - to add Tapo cameras, doorbells and chimes into Home Assistant
 
 ## Installation
 
@@ -27,21 +20,44 @@ HACS is a community store for Home Assistant. You can install [HACS](https://git
 
 Following target TCP (v)LAN ports **must be open** in firewall for the camera to access your Tapo Camera from Home Assistant:
 
+Chimes:
+
+- 80 - HTTP for control of the camera ([services](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control#services))
+
+Cameras and Doorbells:
+
 - 443 - HTTPS for control of the camera ([services](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control#services))
-- 554 - RTSP to fetch video stream from the camera
-- 2020 - ONVIF to track detected movement via a binary sensor
+- 8800 - Proprietary protocol for video streaming and recordings downloads (if available on device)
+- 554 - RTSP to fetch video stream from the camera (if available on device)
+- 2020 - ONVIF to track detected movement via a binary sensor (if available on device)
 
 **These are not WAN ports, _DO NOT_ OPEN WAN PORTS VIA PORT FORWARDING. You might need to open (v)lan ports _only_ if you know what all of this means.**
 
+### Third-Party Compatibility
+
+Ensure you have Third Party Compatibility turned on in the official Tapo app on your smartphone.
+
+**Tapo App -> Me -> Tapo Lab -> Third-Party Compatibility -> On**
+
+![Image describing how to enable Third-Party Compatibility](img/tapo_third_party.png)
+
+**Note: Version 3.8.103 and later is required.**
+
 ## Usage
 
-Add cameras via Integrations (search for Tapo) in Home Assistant UI. You can also simply click the button below if you have MyHomeAssistant redirects set up.
+Add cameras, doorbells or chimes via Integrations (search for `Tapo: Cameras Control`) in Home Assistant UI. You can also simply click the button below if you have MyHomeAssistant redirects set up.
 
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=tapo_control)
 
-Cameras are also automatically discovered when they are (re)connected to WIFI.
+**Note:** There are other Tapo integrations, make sure you select `Tapo: Cameras Control`. Otherwise you might choose the one for plugs and lights, or the official HA one which has a minimum feature set compared to this integration as of December 2024.
 
-To add multiple cameras, add integration multiple times.
+When integrating Tapo cameras, doorbells and chimes, ensure only ONE integration is used. If multiple are used at the same time it will result in conflicts and instability of connection to camera for all the integrations / services connecting to camera.
+
+If you are adding a chime, set Control Port to 80 instead of 443.
+
+Devices are also automatically discovered when they are (re)connected to WIFI.
+
+To add multiple devices, add integration multiple times.
 
 See [examples for lovelace cards](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/blob/main/examples/EXAMPLES_LOVELACE.md).
 
@@ -49,19 +65,27 @@ See [examples for lovelace cards](https://github.com/JurajNyiri/HomeAssistant-Ta
 
 This custom component creates:
 
+Doorbells, Cameras:
+
 - Camera entities, one for HD and one for SD stream
 - Binary sensor for motion after the motion is detected for the first time
 - Light entity, if the camera supports a floodlight switch
 - Buttons for Calibrate, Format, Manual Alarm start & stop, Moving the camera, Reboot and syncing time
-- Switch entities for Auto track, Flip setting, LED Indicator, Lens Distortion Correction, (Rich) Notifications, Recording, Microphone Mute, Microphone Noise Cancelling, Automatically Upgrade Firmware, HDR mode and Privacy mode
-- Select entities for Automatic Alarm, Light Frequency, Motion Detection, Night Vision, Spotlight Intensity, Alarm Type and Move to Preset
+- Switch entities for Auto track, Flip setting, LED Indicator, Lens Distortion Correction, (Rich) Notifications, Recording, Microphone Mute, Microphone Noise Cancelling, Automatically Upgrade Firmware, HDR mode, Alarm Trigger Event types and Privacy mode
+- Select entities for Automatic Alarm, Light Frequency, Motion Detection, Night Vision, Spotlight Intensity, Alarm Type, Quick Response and Move to Preset
 - Number entity for Movement Angle, Speaker Volume, Microphone Volume, Spotlight Intensity, Siren Volume, Siren Duration and Motion Detection Digital Sensitivity
 - Media Source for browsing and playing recordings stored on camera
 - Sensor entity that reports monitor media sync status
 - Sensor entities for Storage diagnostics
-- And finally 2 tapo_control.\* services to control a camera
 
-Use these services in following service calls.
+Chimes:
+- Number entity for Chime Duration, Chime Volume, Chime Play Duration and Chime Play Volume
+- Switch entity for Chime Ringtone and LED
+- Select entity for Chime Sound Type and Chime Play Type
+- Sensor entities for Network SSID, Signal Level, RSSI
+- Button entity for Reboot and Ringing the chime
+
+Additionally, following services are available for cameras with PTZ:
 
 <details>
   <summary>tapo_control.save_preset</summary>
@@ -93,7 +117,7 @@ Integration is capable of synchronizing recordings for fast playback.
 
 Synchronization is turned off by default, you can browse media stored on camera and request it to be played. However, downloading is rather slow, so it is a good idea to enable media synchronization in background. That way, you will be able to play any synchronized media from camera instantly.
 
-You can enable this setting by navigating to Home Assistant Settings -> Devices and clicking on Configure button next to the Tapo device you wish to turn media synchronization on for. Here, you need to define the number of hours to synchronize. Unless it is specified, synchronization does not run. Here, you are able to also set the storage path where the synchronized recordings will be stored (defaults to /config/.storage/tapo_control).
+You can enable this setting by navigating to `Home Assistant Settings` -> `Devices & services` and clicking the `Tapo: Cameras control` integration. There, click on the `Configure` button next to the Tapo device you wish to turn media synchronization on for, and choose `Configure media`. Here, you need to define the number of hours to synchronize. Unless it is specified, synchronization does not run. Here, you are able to also set the storage path where the synchronized recordings will be stored (defaults to /config/.storage/tapo_control).
 
 Finally, you can turn on, or off switch entity `switch.*_media_sync`.
 
@@ -109,7 +133,7 @@ Motion sensor is added only after a motion is detected for the first time.
 - Make sure the camera has motion detection turned on
 - Make sure the camera has privacy mode turned off
 - Make sure the camera can see you and your movement
-- If you have webhooks enabled, and your Home Assistant internal URL is reachable on HTTP, make sure camera can reach it. 
+- If you have webhooks enabled, and your Home Assistant internal URL is reachable on HTTP, make sure camera can reach it.
 - Make sure you have correct IP set for Home Assistant. Turn on Advanced Mode under `/profile`. Go to `/config/network` and under `Network Adapter` verify correct IP is shown for the device. If it is not correct, under `Home Assistant URL` uncheck `Automatic` next to `Local Network` and set it to `http://<some IP address>:8123`. **DO NOT USE HTTPS**.
 - Certain camera firmwares have pullpoint broken, with only webhooks working. If you are not able to run webhooks because of above (https, or vlan setup), binary sensor will never show up.
 - Try walking in front of the camera
@@ -174,12 +198,15 @@ entity: camera.bedroom_hd
 
 You might be entering incorrect password or are encountering a camera limitation.
 
-See [official Tapo documentation](https://www.tp-link.com/cz/support/faq/2742/)
+- Check logs for any error messages
+- Check that HA can reach the camera on ports 554 and 2020
+
+Finally, most likely issue, see [official Tapo documentation](https://www.tp-link.com/cz/support/faq/2742/)
 
 > **Q3**: Can multiple accounts/devices view the Tapo camera at the same time?
-> 
+>
 > **A**: Currently, each camera can be controlled or managed by only one account on the Tapo App. You can share it with 5 different accounts at most, and these two accounts can only access live view and playback features of the camera.
-> 
+>
 > Each camera also supports up to 2 simultaneous video streams. You could use up to 2 devices to view the live feed of the camera simultaneously using the Tapo App or via RTSP. You may also only view the playback of a camera using one Tapo app at a time.
 
 As well as:
@@ -189,31 +216,31 @@ As well as:
 > **A**: Due to the limited hardware performance of the camera itself, Tapo Care works best with one of the NVR or SD card recordings.
 >
 > If you are using an SD card and Tapo Care at the same time, the NVR(RTSP/ONVIF) will be disabled.
-> 
+>
 > To restart the recording on the NVR, please remove the SD card from the camera.
 
 </details>
 
 <details>
-  <summary>I see error `Invalid cloud password. Invalid cloud password. Make sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same). You need to enter password which you used with your email when signing into the Tapo app.` when I enter correct password</summary>
+  <summary>I see error `Invalid cloud password.`</summary>
 
-  If you are using firmware build 230921 and higher, check issue https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/551.
-
-  Otherwise, try those troubleshooting options:
-
-  1. Make sure that "Two-Step Verification" for login is disabled. Go in the Tapo app > Me > View Account > Login Security > Turn off the "Two-Step Verification".
-  2. Reset your password.
-  3. Make sure your camera can access the internet.
-  4. Reboot your camera a few times.
-  5. Reset the camera. Remove it from your account, do a factory reset, add it back with internet access, add it back to the integration.
+1. Ensure you have Third Party Compatibility turned on in official Tapo app on your smartphone. Tapo App -> Me -> Tapo Lab -> Third-Party Compatibility -> On
+2. Make sure that "Two-Step Verification" for login is disabled. Go in the Tapo app > Me > View Account > Login Security > Turn off the "Two-Step Verification".
+3. Reset your password.
+4. Make sure your camera can access the internet.
+5. Reboot your camera a few times.
+6. Reset the camera. Remove it from your account, do a factory reset, add it back with internet access, add it back to the integration.
+7. Try checking Third-Party Compatibility off and on again and opening the camera via Tapo App.
+8. If all of this fails (unlikely) repeat from step 1, wait a few hours and try again.
 
 </details>
 
 <details>
   <summary>Supported models</summary>
 
-Users reported full functionality with following Tapo Cameras:
+Users reported full functionality with following Tapo Cameras, Doorbells and Chimes:
 
+- TC55
 - TC60
 - TC70
 - C100
@@ -221,6 +248,7 @@ Users reported full functionality with following Tapo Cameras:
 - C120
 - C200
 - C210
+- C211
 - C220
 - C225
 - C310
@@ -228,8 +256,11 @@ Users reported full functionality with following Tapo Cameras:
 - C500
 - C510W
 - C520WS
+- C530WS
+- C720
+- D100C
 
-The integration _should_ work with any other non-battery Tapo Cameras.
+The integration _should_ work with any other non-battery Tapo Camera based devices and chimes.
 
 Battery cameras controlled via HUB are working only for control:
 
@@ -246,20 +277,20 @@ If you had success with some other model, please report it via a new issue.
   <summary>What is webhook when referred to on camera?</summary>
 
 Camera uses ONVIF standard to communicate motion events. This communication can work with 2 ways:
-  
-  1. Pullpoint: Client opens connection to the camera and waits until the camera responds. Camera responds only when there is some event to communicate. After camera responds, client reopens the connection and waits again.
-  2. Webhook: Client tells the camera its URL to receive events at. When an event happens, camera communicates this to the URL client defined.
-  
+
+1. Pullpoint: Client opens connection to the camera and waits until the camera responds. Camera responds only when there is some event to communicate. After camera responds, client reopens the connection and waits again.
+2. Webhook: Client tells the camera its URL to receive events at. When an event happens, camera communicates this to the URL client defined.
+
 Webhooks are the preffered method of communication as they are faster and lighter. That being said;
-  
-  - Webhooks require an HTTP only HA setup because Tapo cameras do not support HTTPS webhooks
-  - Webhooks require a proper base_url to be defined in HA, so that the URL communicated is correct (you can check URL sent by enabling debug logs for homeassistant.onvif)
-  
+
+- Webhooks require an HTTP only HA setup because Tapo cameras do not support HTTPS webhooks
+- Webhooks require a proper base_url to be defined in HA, so that the URL communicated is correct (you can check URL sent by enabling debug logs for homeassistant.onvif)
+
 Points above are automatically determined by this integration and if the HA does not meet the criteria, webhooks are disabled. That being said;
 
-  - There are camera (and/or firmwares) which freeze when both webhooks and pullpoint connection is created, which happens at the start to see if webhooks is supported at all so that communication can fallback back to pullpoint.
-  - There are camera firmwares which have pullpoint broken (1.3.6 C200) and only webhooks work
-  
+- There are camera (and/or firmwares) which freeze when both webhooks and pullpoint connection is created, which happens at the start to see if webhooks is supported at all so that communication can fallback back to pullpoint.
+- There are camera firmwares which have pullpoint broken (1.3.6 C200) and only webhooks work
+
 For webhooks to work, all the user needs to do is make sure he is using HA on HTTP and that the HA is available on the URL communicated.
 
 </details>

@@ -14,18 +14,27 @@
         "data": {
           "cloud_password": "Cloud Password"
         },
-        "description": "Camera requires your cloud password for control.\nThis is the password which you used with your email when signing into the Tapo app.\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
+        "description": "Camera requires your cloud password for control.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
       },
       "ip": {
         "data": {
-          "ip_address": "IP Address"
+          "ip_address": "IP Address",
+          "control_port": "Control Port"
         },
-        "description": "Enter camera IP address.\n\nMake sure to create camera account.\n\nCamera account is created via Tapo app at:\nCamera Settings > Advanced Settings > Camera Account.\n\n\n\nIf you are using vlans, or some other advanced networking, make sure ports 443, 554 and 2020 are opened for camera."
+        "description": "Enter camera, doorbell or chime IP address.\n\nIf you are adding a chime, set port to 80, if camera or doorbell, leave at 443.\n\nIf you are using vlans, or some other advanced networking, make sure ports 443, 554 and 2020 are opened for camera. For chimes, 80 is needed."
+      },
+      "auth_klap": {
+        "data": {
+          "email": "E-mail",
+          "password": "Password"
+        },
+        "description": "Enter your TPLink account credentials.\n\nAll communication is fully local."
       },
       "auth": {
         "data": {
           "username": "Username",
-          "password": "Password"
+          "password": "Password",
+          "skip_rtsp": "Skip RTSP check; If checked, credentials will not be verified against RTSP stream and camera stream might not work. This is useful if camera does not support RTSP stream but allows control. Stream can be also unavailable for example if both Tapo Care recordings and SD card recordings are turned on."
         },
         "description": "Enter camera account credentials.\n\nThis account is created via Tapo app at:\nCamera Settings > Advanced Settings > Camera Account"
       },
@@ -33,13 +42,13 @@
         "data": {
           "cloud_password": "Cloud Password"
         },
-        "description": "Camera requires your cloud password for control.\nThis is the password which you used with your email when signing into the Tapo app.\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
+        "description": "Camera requires your cloud password for control.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
       },
       "auth_optional_cloud": {
         "data": {
           "cloud_password": "Cloud Password"
         },
-        "description": "Camera requires your cloud password for recordings.\nThis is the password which you used with your email when signing into the Tapo app.\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local.\n\nYou can skip this step by leaving password empty and enter password later if you do not need recordings viewing functionality."
+        "description": "Camera requires your cloud password for recordings.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local.\n\nYou can skip this step by leaving password empty and enter password later if you do not need recordings viewing functionality."
       },
       "other_options": {
         "data": {
@@ -59,6 +68,7 @@
       }
     },
     "error": {
+      "skip_rtsp_not_checked": "Enter both username and password, or leave empty and check Skip RTSP check.\n If left empty, RTSP stream will not work.",
       "invalid_stream_auth": "Invalid RTSP stream authentication data",
       "account_suspended": "Account temporarily suspended, please try again later.\n See log for more details.",
       "not_tapo_device": "IP address is not a supported Tapo device",
@@ -66,7 +76,8 @@
       "invalid_auth": "Invalid authentication data.\nMake sure you have created your 3rd party account via Tapo app.\nYou can also test if these credentials work via rtsp stream, for example VLC using link\nrtsp://username:password@IP Address:554/stream1",
       "unknown": "Unknown error",
       "connection_failed": "Connection failed",
-      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.",
+      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On) and you have tried the other solutions suggested in the FAQ https://github.com/JurajNyiri/HomeAssistant-Tapo-Control?tab=readme-ov-file#troubleshooting--faq.",
+      "cold_storage_path_does_not_exist": "Cold storage path does not exist",
       "camera_requires_admin": "Your camera requires cloud password for control",
       "already_configured": "IP address already configured",
       "incorrect_peak_value": "Incorrect sound detection peak value."
@@ -113,6 +124,7 @@
       "auth": {
         "data": {
           "ip_address": "IP Address",
+          "control_port": "Control Port",
           "username": "Username",
           "password": "Password",
           "enable_motion_sensor": "Enable motion sensor",
@@ -133,7 +145,8 @@
       "invalid_auth": "Invalid authentication data",
       "unknown": "Unknown error",
       "connection_failed": "Connection failed",
-      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.",
+      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).",
+      "cold_storage_path_does_not_exist": "Cold storage path does not exist",
       "camera_requires_admin": "Camera requires cloud password for control",
       "incorrect_peak_value": "Incorrect sound detection peak value.",
       "incorrect_options_action": "Incorrect action chosen"

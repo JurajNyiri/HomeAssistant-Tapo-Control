@@ -8,7 +8,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoEntity
-from .utils import check_and_create
+from .utils import check_and_create, result_has_error
 
 
 async def async_setup_entry(
@@ -164,24 +164,3 @@ class TapoSiren(TapoSirenEntity):
         else:
             self._attr_available = True
             self._is_on = camData["alarm_status"] == "on"
-
-
-def result_has_error(result):
-    if (
-        result is not False
-        and "result" in result
-        and "responses" in result["result"]
-        and any(
-            map(
-                lambda x: "error_code" not in x or x["error_code"] == 0,
-                result["result"]["responses"],
-            )
-        )
-    ):
-        return False
-    if result is not False and (
-        "error_code" not in result or result["error_code"] == 0
-    ):
-        return False
-    else:
-        return True
