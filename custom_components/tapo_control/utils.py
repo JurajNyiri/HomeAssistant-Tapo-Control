@@ -1626,9 +1626,7 @@ async def syncTime(hass, entry_id):
         now = dt_util.utcnow()
 
         LOGGER.debug("UTC Home Assistant time: " + str(now))
-        LOGGER.debug(
-            "Local Home Assistant time: " + str(dt_util.as_local(dt_util.utcnow()))
-        )
+        LOGGER.debug("Local Home Assistant time: " + str(dt_util.as_local(now)))
 
         adjustment_hours = timeSyncDST if isDST else timeSyncNDST
         adjusted_time = now + datetime.timedelta(hours=adjustment_hours)
