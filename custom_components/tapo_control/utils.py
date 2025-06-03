@@ -1608,7 +1608,13 @@ async def getLatestFirmwareVersion(hass, config_entry, entry, controller):
 async def syncTime(hass, entry_id):
     device_mgmt = hass.data[DOMAIN][entry_id]["onvifManagement"]
     if device_mgmt:
-        LOGGER.debug("Syncing time for " + entry_id + "...")
+        LOGGER.debug(
+            "Syncing time for "
+            + hass.data[DOMAIN][entry_id]["name"]
+            + ", timezone offset is "
+            + str(hass.data[DOMAIN][entry_id]["timezoneOffset"])
+            + "..."
+        )
         isDST = dt_util.now().dst() != datetime.timedelta(0)
 
         timeSyncDST = int(hass.data[DOMAIN][entry_id][TIME_SYNC_DST])
