@@ -43,6 +43,8 @@ from .const import (
     CONF_CUSTOM_STREAM,
     MEDIA_SYNC_COLD_STORAGE_PATH,
     MEDIA_SYNC_HOURS,
+    TIME_SYNC_DST,
+    TIME_SYNC_NDST,
 )
 
 UUID = uuid.uuid4().hex
@@ -1612,7 +1614,13 @@ async def syncTime(hass, entry_id):
         LOGGER.warning("OK")
         LOGGER.warning("Syncing time for " + entry_id + "...")
         isDST = dt_util.now().dst() != datetime.timedelta(0)
+
+        timeSyncDST = int(hass.data[DOMAIN][entry_id][TIME_SYNC_DST])
+        timeSyncNDST = int(hass.data[DOMAIN][entry_id][TIME_SYNC_NDST])
+
         LOGGER.warning("Is DST: " + str(isDST))
+        LOGGER.warning("DST offset: " + str(timeSyncDST))
+        LOGGER.warning("Non DST offset: " + str(timeSyncNDST))
         now = dt_util.utcnow()
 
         LOGGER.warning(now)
@@ -1624,7 +1632,11 @@ async def syncTime(hass, entry_id):
         time_params.UTCDateTime = {
             "Date": {"Year": now.year, "Month": now.month, "Day": now.day},
             "Time": {
-                "Hour": now.hour if isDST is False else now.hour + 1,
+                "Hour": (
+                    (now.hour + timeSyncNDST)
+                    if isDST is False
+                    else now.hour + timeSyncDST
+                ),
                 "Minute": now.minute,
                 "Second": now.second,
             },

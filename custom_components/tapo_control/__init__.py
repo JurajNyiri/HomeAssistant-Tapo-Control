@@ -468,6 +468,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     cloud_password = entry.data.get(CLOUD_PASSWORD)
     updateIntervalMain = entry.data.get(UPDATE_INTERVAL_MAIN)
     updateIntervalBattery = entry.data.get(UPDATE_INTERVAL_BATTERY)
+    timeSyncDST = entry.data.get(TIME_SYNC_DST)
+    timeSyncNDST = entry.data.get(TIME_SYNC_NDST)
 
     if entry.entry_id not in hass.data[DOMAIN]:
         hass.data[DOMAIN][entry.entry_id] = {}
@@ -858,6 +860,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "setup_retries": 0,
             "reauth_retries": 0,
             "runningMediaSync": False,
+            TIME_SYNC_DST: timeSyncDST,
+            TIME_SYNC_NDST: timeSyncNDST,
             "controller": tapoController,
             "entry": entry,
             "usingCloudPassword": cloud_password != "",

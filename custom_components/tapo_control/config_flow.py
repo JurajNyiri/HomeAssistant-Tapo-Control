@@ -1256,10 +1256,12 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     self.config_entry,
                     data=allConfigData,
                 )
-                self.hass.config_entries.async_update_entry(
-                    self.config_entry,
-                    data=allConfigData,
-                )
+                self.hass.data[DOMAIN][self.config_entry.entry_id][
+                    TIME_SYNC_DST
+                ] = timeSyncDST
+                self.hass.data[DOMAIN][self.config_entry.entry_id][
+                    TIME_SYNC_NDST
+                ] = timeSyncNDST
                 return self.async_create_entry(title="", data=None)
             except Exception as e:
                 errors["base"] = "unknown"
