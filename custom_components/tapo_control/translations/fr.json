@@ -121,6 +121,11 @@
         },
         "description": "Modifier l'intervalle de mise à jour de l'appareil"
       },
+      "time_sync_options": {
+        "data": {
+          "enable_time_sync": "Synchroniser automatiquement l'heure"
+        }
+      },
       "auth": {
         "data": {
           "ip_address": "Addresse IP",
@@ -130,7 +135,6 @@
           "enable_motion_sensor": "Activer le détecteur de mouvement",
           "enable_webhooks": "Activer les webhooks",
           "enable_stream": "Utiliser le flux de Home Assistant (redémarrage requis)",
-          "enable_time_sync": "Synchroniser automatiquement l'heure",
           "cloud_password": "Mot de passe Cloud (facultatif)",
           "extra_arguments": "Arguments supplémentaires pour ffmpeg (redémarrage requis)",
           "custom_stream": "Lien de flux personnalisé",

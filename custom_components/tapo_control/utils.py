@@ -6,7 +6,6 @@ import onvif
 import os
 import shutil
 import socket
-import time
 import urllib.parse
 import uuid
 import requests
@@ -27,11 +26,10 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.ffmpeg import DATA_FFMPEG
 from homeassistant.components.onvif.event import EventManager
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
-from homeassistant.util import slugify
+from homeassistant.util import slugify, dt as dt_util
 
 from .const import (
     BRAND,
-    COLD_DIR_DELETE_TIME,
     CONTROL_PORT,
     ENABLE_MOTION_SENSOR,
     DOMAIN,
@@ -43,6 +41,8 @@ from .const import (
     CONF_CUSTOM_STREAM,
     MEDIA_SYNC_COLD_STORAGE_PATH,
     MEDIA_SYNC_HOURS,
+    TIME_SYNC_DST,
+    TIME_SYNC_NDST,
 )
 
 UUID = uuid.uuid4().hex
@@ -813,6 +813,18 @@ async def getCamData(hass, controller):
     camData["motion_detection_digital_sensitivity"] = (
         motion_detection_digital_sensitivity
     )
+
+    try:
+        dst_data = data["getDstRule"][0]["system"]["dst"]
+    except Exception:
+        dst_data = None
+    camData["dst_data"] = dst_data
+
+    try:
+        clock_data = data["getClockStatus"][0]["system"]["clock_status"]
+    except Exception:
+        clock_data = None
+    camData["clock_data"] = clock_data
 
     try:
         timezone_timezone = data["getTimezone"][0]["system"]["basic"]["timezone"]
@@ -1603,17 +1615,35 @@ async def syncTime(hass, entry_id):
             + str(hass.data[DOMAIN][entry_id]["timezoneOffset"])
             + "..."
         )
-        now = datetime.datetime.utcnow()
+        isDST = dt_util.now().dst() != datetime.timedelta(0)
+
+        timeSyncDST = int(hass.data[DOMAIN][entry_id][TIME_SYNC_DST])
+        timeSyncNDST = int(hass.data[DOMAIN][entry_id][TIME_SYNC_NDST])
+
+        LOGGER.debug("Is DST: " + str(isDST))
+        LOGGER.debug("DST offset: " + str(timeSyncDST))
+        LOGGER.debug("Non DST offset: " + str(timeSyncNDST))
+        now = dt_util.utcnow()
+
+        LOGGER.debug("UTC Home Assistant time: " + str(now))
+        LOGGER.debug("Local Home Assistant time: " + str(dt_util.as_local(now)))
+
+        adjustment_hours = timeSyncDST if isDST else timeSyncNDST
+        adjusted_time = now + datetime.timedelta(hours=adjustment_hours)
 
         time_params = device_mgmt.create_type("SetSystemDateAndTime")
         time_params.DateTimeType = "Manual"
-        time_params.DaylightSavings = True
+        time_params.DaylightSavings = isDST
         time_params.UTCDateTime = {
-            "Date": {"Year": now.year, "Month": now.month, "Day": now.day},
+            "Date": {
+                "Year": adjusted_time.year,
+                "Month": adjusted_time.month,
+                "Day": adjusted_time.day,
+            },
             "Time": {
-                "Hour": (now.hour if time.localtime().tm_isdst == 0 else now.hour + 1),
-                "Minute": now.minute,
-                "Second": now.second,
+                "Hour": adjusted_time.hour,
+                "Minute": adjusted_time.minute,
+                "Second": adjusted_time.second,
             },
         }
         LOGGER.debug(
@@ -1621,12 +1651,11 @@ async def syncTime(hass, entry_id):
         )
         LOGGER.debug(time_params)
         await device_mgmt.SetSystemDateAndTime(time_params)
-        now = datetime.datetime.utcnow().timestamp()
         LOGGER.debug(
             "Finished synchronizing time successfully. Setting last time sync to: "
             + str(now)
         )
-        hass.data[DOMAIN][entry_id]["lastTimeSync"] = now
+        hass.data[DOMAIN][entry_id]["lastTimeSync"] = now.timestamp()
     else:
         LOGGER.warning(
             "Onvif has not been initialized yet, unable to synchronize time."

@@ -53,6 +53,11 @@
   },
   "options": {
     "step": {
+      "time_sync_options": {
+        "data": {
+          "enable_time_sync": "Sincronizar hora automaticamente"
+        }
+      },
       "auth": {
         "data": {
           "ip_address": "Endereço IP",
@@ -61,7 +66,6 @@
           "enable_motion_sensor": "Ativar sensor de movimento",
           "enable_stream": "Utilizar streaming do Home Assistant (requer reinício)",
           "enable_sound_detection": "Ativar deteção de limite de som (requer reinício)",
-          "enable_time_sync": "Sincronizar hora automaticamente",
           "cloud_password": "Palavra-passe de cloud (opcional)",
           "sound_detection_peak": "[Deteção de som] Pico em dB. 0 é muito alto e -100 é baixo.",
           "sound_detection_duration": "[Deteção de som] Quanto tempo o ruído necessita de estar acima do pico para ativar o estado.",

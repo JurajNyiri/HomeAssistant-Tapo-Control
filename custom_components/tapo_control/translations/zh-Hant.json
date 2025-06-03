@@ -112,6 +112,11 @@
         },
         "description": "修改裝置更新間隔"
       },
+      "time_sync_options": {
+        "data": {
+          "enable_time_sync": "自動同步時間"
+        }
+      },
       "auth": {
         "data": {
           "ip_address": "IP位址",
@@ -121,7 +126,6 @@
           "enable_motion_sensor": "啟用動態感測器",
           "enable_webhooks": "啟用 webhooks",
           "enable_stream": "使用 Home Assistant 的串流功能（需要重新啟動）",
-          "enable_time_sync": "自動同步時間",
           "cloud_password": "雲端密碼（可選）",
           "extra_arguments": "FFmpeg 額外參數（需重新啟動）",
           "custom_stream": "自定義串流連結",

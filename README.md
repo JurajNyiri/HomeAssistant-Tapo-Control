@@ -312,6 +312,23 @@ You will need to send the automation actions in sequence instead, possibly with 
 See https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/488 for more information.
 
 </details>
+
+<details>
+  <summary>Time synchronization synchronizes incorrect time</summary>
+
+Due to [unknown root cause](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/307) some cameras behave differently than others when setting time through ONVIF standard and so far no root cause was found. 
+
+Setting time is not possible through the official application and this integration uses an undocumented and unsupported camera functionality through ONVIF standard.
+
+If the time is set incorretly, eg. 1 hour ahead:
+
+1. Ensure correct timezone is set both for Home Assistant and device
+2. If still experiencing issue, navigate to `/config/integrations/integration/tapo_control`
+3. Click on Configure under device you wish to synchronize time for
+4. Select `Configure time synchronization`, Submit
+5. Adjust the time offset either for period of DST, or outside of DST
+
+</details>
   
 ## Have a comment or a suggestion?
 

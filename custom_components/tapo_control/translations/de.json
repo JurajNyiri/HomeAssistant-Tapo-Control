@@ -56,6 +56,11 @@
   },
   "options": {
     "step": {
+      "time_sync_options": {
+        "data": {
+          "enable_time_sync": "Zeit automatisch synchronisieren"
+        }
+      },
       "auth": {
         "data": {
           "ip_address": "IP Adresse",
@@ -63,7 +68,6 @@
           "password": "Passwort",
           "enable_motion_sensor": "Bewegungssensor aktivieren",
           "enable_stream": "Kamera Stream in Home Assistant nutzen (Neustart notwendig)",
-          "enable_time_sync": "Zeit automatisch synchronisieren",
           "enable_sound_detection": "Geräuschsensor aktivieren (Neustart notwendig)",
           "cloud_password": "Tapo Cloud Passwort (optional)",
           "sound_detection_peak": "[Geräuschsensor] Schwellenwert in dB (0 ist laut, -100 ist leise).",

@@ -121,6 +121,14 @@
         },
         "description": "Modify update interval of the device"
       },
+      "time_sync_options": {
+        "data": {
+          "time_sync_dst": "Number of hours to add during DST",
+          "time_sync_ndst": "Number of hours to add outside of DST",
+          "enable_time_sync": "Automatically synchronise time"
+        },
+        "description": "Modify time synchronization options.\n\nIf integration is synchronizing time incorrectly, adjust the default values below with the amount of hours to add, or substract, when synchronizing time."
+      },
       "auth": {
         "data": {
           "ip_address": "IP Address",
@@ -130,7 +138,6 @@
           "enable_motion_sensor": "Enable motion sensor",
           "enable_webhooks": "Enable webhooks",
           "enable_stream": "Use Stream from Home Assistant (restart required)",
-          "enable_time_sync": "Automatically synchronise time",
           "cloud_password": "Cloud Password (Optional)",
           "extra_arguments": "Extra arguments for ffmpeg (restart required)",
           "custom_stream": "Custom stream link",
