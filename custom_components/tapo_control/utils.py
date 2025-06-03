@@ -1646,15 +1646,15 @@ async def syncTime(hass, entry_id):
         await device_mgmt.SetSystemDateAndTime(time_params)
         hass.data[DOMAIN][entry_id]["lastTimeSync"] = now.timestamp()
     else:
-        raise Exception(
-            "Onvif is not set up for the camera (yet?). Ensure motion detection or automatic time sync is enabled and camera can reach Home Assistant via onvif protocol."
+        LOGGER.warning(
+            "Onvif has not been initialized yet, unable to synchronize time."
         )
 
 
 async def setupOnvif(hass, entry):
-    LOGGER.warning("setupOnvif - entry")
+    LOGGER.debug("setupOnvif - entry")
     if hass.data[DOMAIN][entry.entry_id]["eventsDevice"]:
-        LOGGER.warning("Setting up onvif...")
+        LOGGER.debug("Setting up onvif...")
         hass.data[DOMAIN][entry.entry_id]["events"] = EventManager(
             hass,
             hass.data[DOMAIN][entry.entry_id]["eventsDevice"],
@@ -1668,20 +1668,20 @@ async def setupOnvif(hass, entry):
 
 
 async def setupEvents(hass, config_entry):
-    LOGGER.warning("setupEvents - entry")
+    LOGGER.debug("setupEvents - entry")
     shouldUseWebhooks = (
         isUsingHTTPS(hass) is False and config_entry.data.get(ENABLE_WEBHOOKS) is True
     )
-    LOGGER.warning("Using HTTPS: " + str(isUsingHTTPS(hass)))
-    LOGGER.warning(
+    LOGGER.debug("Using HTTPS: " + str(isUsingHTTPS(hass)))
+    LOGGER.debug(
         "Webhook enabled: " + str(config_entry.data.get(ENABLE_WEBHOOKS) is True)
     )
-    LOGGER.warning("Using Webhooks: " + str(shouldUseWebhooks))
+    LOGGER.debug("Using Webhooks: " + str(shouldUseWebhooks))
     if (
         hass.data[DOMAIN][config_entry.entry_id]["events"] is not False
         and not hass.data[DOMAIN][config_entry.entry_id]["events"].started
     ):
-        LOGGER.warning("Setting up events...")
+        LOGGER.debug("Setting up events...")
         events = hass.data[DOMAIN][config_entry.entry_id]["events"]
         onvif_capabilities = await hass.data[DOMAIN][config_entry.entry_id][
             "eventsDevice"
@@ -1690,9 +1690,9 @@ async def setupEvents(hass, config_entry):
         pull_point_support = onvif_capabilities.get("Events", {}).get(
             "WSPullPointSupport"
         )
-        LOGGER.warning("WSPullPointSupport: %s", pull_point_support)
+        LOGGER.debug("WSPullPointSupport: %s", pull_point_support)
         if await events.async_start(pull_point_support is not False, shouldUseWebhooks):
-            LOGGER.warning("Events started.")
+            LOGGER.debug("Events started.")
             if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
                 hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"] = True
                 if hass.data[DOMAIN][config_entry.entry_id]["eventsListener"]:
