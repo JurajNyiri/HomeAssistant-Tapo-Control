@@ -524,7 +524,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             return allEntities
 
         async def async_update_data():
-            LOGGER.warning("async_update_data - entry")
+            LOGGER.debug("async_update_data - entry")
             tapoController = hass.data[DOMAIN][entry.entry_id]["controller"]
             host = entry.data.get(CONF_IP_ADDRESS)
             username = entry.data.get(CONF_USERNAME)
@@ -539,7 +539,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
             # motion detection retries
             if motionSensor or enableTimeSync:
-                LOGGER.warning("Motion sensor or time sync is enabled.")
+                LOGGER.debug("Motion sensor or time sync is enabled.")
                 if (
                     not hass.data[DOMAIN][entry.entry_id]["isChild"]
                     and not hass.data[DOMAIN][entry.entry_id]["isParent"]
@@ -549,12 +549,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         or not hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
                     ):
                         # retry if connection to onvif failed
-                        LOGGER.warning("Setting up subscription to motion sensor...")
+                        LOGGER.debug("Setting up subscription to motion sensor...")
                         onvifDevice = await initOnvifEvents(
                             hass, host, username, password
                         )
                         if onvifDevice:
-                            LOGGER.warning(onvifDevice)
+                            LOGGER.debug(onvifDevice)
                             hass.data[DOMAIN][entry.entry_id]["eventsDevice"] = (
                                 onvifDevice["device"]
                             )
@@ -853,7 +853,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         currentTS = dt.as_timestamp(dt.now())
         timezoneOffset = cameraTS - currentTS
 
-        LOGGER.warning(f"Timezone offset is {timezoneOffset}.")
+        LOGGER.debug(f"Timezone offset is {timezoneOffset}.")
 
         LOGGER.debug("Setting up entry data.")
         hass.data[DOMAIN][entry.entry_id] = {
