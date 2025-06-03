@@ -35,9 +35,13 @@ IS_KLAP_DEVICE = "is_klap_device"
 REPORTED_IP_ADDRESS = "reported_ip_address"
 UPDATE_INTERVAL_MAIN = "update_interval_main"
 UPDATE_INTERVAL_BATTERY = "update_interval_battery"
-
 UPDATE_INTERVAL_MAIN_DEFAULT = 30
 UPDATE_INTERVAL_BATTERY_DEFAULT = 60 * 10
+
+TIME_SYNC_DST = "time_sync_dst"
+TIME_SYNC_NDST = "time_sync_ndst"
+TIME_SYNC_DST_DEFAULT = 1
+TIME_SYNC_NDST_DEFAULT = 0
 
 MEDIA_VIEW_DAYS_ORDER = "media_view_days_order"
 MEDIA_VIEW_RECORDINGS_ORDER = "media_view_recordings_order"

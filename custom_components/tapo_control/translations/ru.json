@@ -103,6 +103,11 @@
         },
         "description": "Настройте синхронизацию медиа записей"
       },
+      "time_sync_options": {
+        "data": {
+          "enable_time_sync": "Автоматическая синхронизация времени"
+        }
+      },
       "auth": {
         "data": {
           "ip_address": "IP-адрес",
@@ -111,7 +116,6 @@
           "enable_motion_sensor": "Включить датчик движения",
           "enable_webhooks": "Включить webhook",
           "enable_stream": "Использовать поток из Home Assistant (требуется перезапуск)",
-          "enable_time_sync": "Автоматическая синхронизация времени",
           "cloud_password": "Пароль от облака (необязательно)",
           "extra_arguments": "Дополнительные аргументы для ffmpeg (требуется перезапуск)",
           "custom_stream": "Ссылка на пользовательский поток",

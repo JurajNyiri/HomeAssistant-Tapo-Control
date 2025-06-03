@@ -50,6 +50,10 @@ from .const import (
     CONF_RTSP_TRANSPORT,
     RTSP_TRANS_PROTOCOLS,
     TAPO_PREFIXES,
+    TIME_SYNC_DST,
+    TIME_SYNC_DST_DEFAULT,
+    TIME_SYNC_NDST,
+    TIME_SYNC_NDST_DEFAULT,
     UPDATE_INTERVAL_BATTERY_DEFAULT,
     UPDATE_INTERVAL_MAIN,
     UPDATE_INTERVAL_BATTERY,
@@ -61,7 +65,7 @@ from .const import (
 class FlowHandler(ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 21
+    VERSION = 22
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -1037,6 +1041,8 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     return await self.async_step_media()
                 elif nextAction == "Configure update interval":
                     return await self.async_step_update_interval()
+                elif nextAction == "Configure time synchronization":
+                    return await self.async_step_time_sync_options()
                 elif nextAction == "Configure sound sensor":
                     return await self.async_step_sound_sensor()
                 elif nextAction == "Help me debug motion sensor":
@@ -1058,6 +1064,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                         "options": [
                             "Configure device",
                             "Configure update interval",
+                            "Configure time synchronization",
                             "Configure sound sensor",
                             "Configure media",
                             # "Help me debug motion sensor",
@@ -1207,6 +1214,72 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     vol.Required(
                         UPDATE_INTERVAL_BATTERY,
                         description={"suggested_value": updateIntervalBattery},
+                    ): int,
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_time_sync_options(self, user_input=None):
+        """Manage the Tapo options."""
+        LOGGER.debug(
+            "[%s] Opened Tapo options - time sync options",
+            self.config_entry.data[CONF_IP_ADDRESS],
+        )
+        errors = {}
+        enable_time_sync = self.config_entry.data[ENABLE_TIME_SYNC]
+        timeSyncDST = self.config_entry.data[TIME_SYNC_DST]
+        timeSyncNDST = self.config_entry.data[TIME_SYNC_NDST]
+
+        allConfigData = {**self.config_entry.data}
+        if user_input is not None:
+            try:
+                if ENABLE_TIME_SYNC in user_input:
+                    enable_time_sync = user_input[ENABLE_TIME_SYNC]
+                else:
+                    enable_time_sync = False
+
+                if TIME_SYNC_DST in user_input:
+                    timeSyncDST = user_input[TIME_SYNC_DST]
+                else:
+                    timeSyncDST = TIME_SYNC_DST_DEFAULT
+
+                if TIME_SYNC_NDST in user_input:
+                    timeSyncNDST = user_input[TIME_SYNC_NDST]
+                else:
+                    timeSyncNDST = TIME_SYNC_NDST_DEFAULT
+
+                allConfigData[ENABLE_TIME_SYNC] = enable_time_sync
+                allConfigData[TIME_SYNC_DST] = timeSyncDST
+                allConfigData[TIME_SYNC_NDST] = timeSyncNDST
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry,
+                    data=allConfigData,
+                )
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry,
+                    data=allConfigData,
+                )
+                return self.async_create_entry(title="", data=None)
+            except Exception as e:
+                errors["base"] = "unknown"
+                LOGGER.error(e)
+
+        return self.async_show_form(
+            step_id="time_sync_options",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        ENABLE_TIME_SYNC,
+                        description={"suggested_value": enable_time_sync},
+                    ): bool,
+                    vol.Optional(
+                        TIME_SYNC_DST,
+                        description={"suggested_value": timeSyncDST},
+                    ): int,
+                    vol.Optional(
+                        TIME_SYNC_NDST,
+                        description={"suggested_value": timeSyncNDST},
                     ): int,
                 }
             ),
@@ -1400,11 +1473,6 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     enable_stream = user_input[ENABLE_STREAM]
                 else:
                     enable_stream = False
-
-                if ENABLE_TIME_SYNC in user_input:
-                    enable_time_sync = user_input[ENABLE_TIME_SYNC]
-                else:
-                    enable_time_sync = False
 
                 if CONF_CUSTOM_STREAM in user_input:
                     custom_stream = user_input[CONF_CUSTOM_STREAM]
@@ -1660,10 +1728,6 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     vol.Optional(
                         ENABLE_WEBHOOKS,
                         description={"suggested_value": enable_webhooks},
-                    ): bool,
-                    vol.Optional(
-                        ENABLE_TIME_SYNC,
-                        description={"suggested_value": enable_time_sync},
                     ): bool,
                     vol.Optional(
                         ENABLE_STREAM,

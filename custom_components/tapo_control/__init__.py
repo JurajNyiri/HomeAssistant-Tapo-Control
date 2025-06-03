@@ -47,6 +47,10 @@ from .const import (
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
     SOUND_DETECTION_RESET,
+    TIME_SYNC_DST,
+    TIME_SYNC_DST_DEFAULT,
+    TIME_SYNC_NDST,
+    TIME_SYNC_NDST_DEFAULT,
     TIME_SYNC_PERIOD,
     UPDATE_CHECK_PERIOD,
     PYTAPO_REQUIRED_VERSION,
@@ -358,6 +362,13 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
             # Retry for anything else
             raise ConfigEntryNotReady
 
+    if config_entry.version == 21:
+        new = {**config_entry.data}
+        new[TIME_SYNC_DST] = TIME_SYNC_DST_DEFAULT
+        new[TIME_SYNC_NDST] = TIME_SYNC_NDST_DEFAULT
+
+        hass.config_entries.async_update_entry(config_entry, data=new, version=22)
+
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
     return True
@@ -387,7 +398,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             async with asyncio.timeout(3):
                 await hass.data[DOMAIN][entry.entry_id]["events"].async_stop()
         except TimeoutError:
-            LOGGER.warning("Timed out waiting for onvif connection to close, proceeding.")
+            LOGGER.warning(
+                "Timed out waiting for onvif connection to close, proceeding."
+            )
         LOGGER.debug("Events stopped.")
 
     return True

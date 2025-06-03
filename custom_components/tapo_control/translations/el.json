@@ -121,6 +121,11 @@
         },
         "description": "Τροποποίηση μεσοδιαστήματος ενημερώσεων στη συσκευή"
       },
+      "time_sync_options": {
+        "data": {
+          "enable_time_sync": "Αυτόματος συγχρονισμός ώρας"
+        }
+      },
       "auth": {
         "data": {
           "ip_address": "Διεύθυνση IP",
@@ -130,7 +135,6 @@
           "enable_motion_sensor": "Ενεργοποίηση αισθητήρα κίνησης",
           "enable_webhooks": "Ενεργοποίηση webhooks",
           "enable_stream": "Χρήση Ροής από το Home Assistant (απαιτείται επανεκκίνηση)",
-          "enable_time_sync": "Αυτόματος συγχρονισμός ώρας",
           "cloud_password": "Κωδικός Cloud (Προαιρετικά)",
           "extra_arguments": "Επιπλέον ρυθμίσεις για το ffmpeg (απαιτείται επανεκκίνηση)",
           "custom_stream": "Προσαρμοσμένος σύνδεσμος ροής",
