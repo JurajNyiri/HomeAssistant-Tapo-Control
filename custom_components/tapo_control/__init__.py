@@ -937,7 +937,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                                 else:
                                                     LOGGER.warning(err)
                                             except Exception as err:
-                                                hass.data[DOMAIN][entry.entry_id]["runningMediaSync"] = False
+                                                hass.data[DOMAIN][entry.entry_id][
+                                                    "runningMediaSync"
+                                                ] = False
                                                 LOGGER.error(err)
                             else:
                                 LOGGER.debug(

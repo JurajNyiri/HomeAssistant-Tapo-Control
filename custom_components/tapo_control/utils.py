@@ -25,7 +25,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.ffmpeg import DATA_FFMPEG
 from homeassistant.components.onvif.event import EventManager
 from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
-from homeassistant.util import slugify
+from homeassistant.util import slugify, dt as dt_util
 
 from .const import (
     BRAND,
@@ -1434,25 +1434,40 @@ async def syncTime(hass, entry_id):
     if device_mgmt:
         LOGGER.warning("OK")
         LOGGER.warning("Syncing time for " + entry_id + "...")
-        LOGGER.warning("Is DST: " + str(time.localtime().tm_isdst))
-        now = datetime.datetime.utcnow()
+        isDST = dt_util.now().dst() != datetime.timedelta(0)
+        LOGGER.warning("Is DST: " + str(isDST))
+        now = dt_util.utcnow()
+
+        LOGGER.warning(now)
+        LOGGER.warning(dt_util.as_local(dt_util.utcnow()))
 
         time_params = device_mgmt.create_type("SetSystemDateAndTime")
         time_params.DateTimeType = "Manual"
-        time_params.DaylightSavings = time.localtime().tm_isdst == 1
+        time_params.DaylightSavings = isDST
         time_params.UTCDateTime = {
             "Date": {"Year": now.year, "Month": now.month, "Day": now.day},
             "Time": {
-                "Hour": now.hour if time.localtime().tm_isdst == 0 else now.hour + 1,
+                "Hour": now.hour if isDST is False else now.hour + 1,
                 "Minute": now.minute,
                 "Second": now.second,
             },
         }
         LOGGER.warning(time_params)
         await device_mgmt.SetSystemDateAndTime(time_params)
-        hass.data[DOMAIN][entry_id][
-            "lastTimeSync"
-        ] = datetime.datetime.utcnow().timestamp()
+        hass.data[DOMAIN][entry_id]["lastTimeSync"] = now.timestamp()
+
+        tapoController = hass.data[DOMAIN][entry_id]["controller"]
+        cameraTime = await hass.async_add_executor_job(tapoController.getTime)
+        cameraTS = cameraTime["system"]["clock_status"]["seconds_from_1970"]
+        currentTS = dt_util.as_local(dt_util.utcnow()).timestamp()
+        timezoneOffset = cameraTS - currentTS
+
+        LOGGER.warning(f"Timezone offset is {timezoneOffset}.")
+        LOGGER.warning(
+            "Camera time reported after sync: "
+            + str(cameraTime["system"]["clock_status"]["local_time"])
+        )
+
     else:
         raise Exception(
             "Onvif is not set up for the camera (yet?). Ensure motion detection or automatic time sync is enabled and camera can reach Home Assistant via onvif protocol."
