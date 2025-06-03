@@ -322,10 +322,11 @@ Setting time is not possible through the official application and this integrati
 
 If the time is set incorretly, eg. 1 hour ahead:
 
-1. Navigate to `/config/integrations/integration/tapo_control`
-2. Click on Configure under device you wish to synchronize time for
-3. Select `Configure time synchronization`, Submit
-4. Adjust the time offset either for period of DST, or outside of DST
+1. Ensure correct timezone is set both for Home Assistant and device
+2. If still experiencing issue, navigate to `/config/integrations/integration/tapo_control`
+3. Click on Configure under device you wish to synchronize time for
+4. Select `Configure time synchronization`, Submit
+5. Adjust the time offset either for period of DST, or outside of DST
 
 </details>
   
