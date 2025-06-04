@@ -1,3 +1,4 @@
+import json
 from homeassistant.core import HomeAssistant
 
 from homeassistant.components.number import RestoreNumber
@@ -649,8 +650,29 @@ class TapoSpotlightIntensity(TapoNumberEntity):
         LOGGER.debug("TapoSpotlightIntensity - init - start")
         self._attr_min_value = 1
         self._attr_native_min_value = 1
-        self._attr_max_value = 100
-        self._attr_native_max_value = int(entry["camData"]["smartwtl_digital_level"])
+
+        if "supplement_lamp_type" in entry["camData"]["nightVisionCapability"]:
+            if (
+                "white_lamp"
+                in entry["camData"]["nightVisionCapability"]["supplement_lamp_type"]
+            ):
+                self._attr_max_value = int(entry["camData"]["smartwtl_digital_level"])
+                self._attr_native_max_value = int(
+                    entry["camData"]["smartwtl_digital_level"]
+                )
+            elif (
+                "infrared_lamp"
+                in entry["camData"]["nightVisionCapability"]["supplement_lamp_type"]
+            ):
+                self._attr_max_value = 5
+                self._attr_native_max_value = 5
+            else:
+                self._attr_max_value = 100
+                self._attr_native_max_value = 100
+                LOGGER.warning(
+                    "Unexpected supplement lamp types detected. Report this to https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues. Types: "
+                    + json.dumps(entry["camData"]["nightVisionCapability"])
+                )
         self._attr_step = 1
         self._hass = hass
         self._attr_native_value = entry["camData"]["whitelampConfigIntensity"]
