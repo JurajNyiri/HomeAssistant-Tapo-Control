@@ -1056,6 +1056,12 @@ async def getCamData(hass, controller):
     camData["lens_distrotion_correction"] = lens_distrotion_correction
 
     try:
+        ldcStyle = data["getLdc"][0]["image"]["common"]["style"]
+    except Exception:
+        ldcStyle = None
+    camData["ldcStyle"] = ldcStyle
+
+    try:
         light_frequency_mode = data["getLdc"][0]["image"]["common"]["light_freq_mode"]
     except Exception:
         light_frequency_mode = None

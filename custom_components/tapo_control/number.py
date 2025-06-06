@@ -651,28 +651,28 @@ class TapoSpotlightIntensity(TapoNumberEntity):
         self._attr_min_value = 1
         self._attr_native_min_value = 1
 
-        if "supplement_lamp_type" in entry["camData"]["nightVisionCapability"]:
-            if (
-                "white_lamp"
-                in entry["camData"]["nightVisionCapability"]["supplement_lamp_type"]
-            ):
+        if "ldcStyle" in entry["camData"] and entry["camData"]["ldcStyle"]:
+            if entry["camData"]["ldcStyle"] == "standard":
+                LOGGER.debug(
+                    "Determining maximum range for TapoSpotlightIntensity: standard"
+                )
+                self._attr_max_value = 5
+                self._attr_native_max_value = 5
+            else:
+                LOGGER.debug(
+                    "Determining maximum range for TapoSpotlightIntensity: "
+                    + entry["camData"]["ldcStyle"]
+                )
                 self._attr_max_value = int(entry["camData"]["smartwtl_digital_level"])
                 self._attr_native_max_value = int(
                     entry["camData"]["smartwtl_digital_level"]
                 )
-            elif (
-                "infrared_lamp"
-                in entry["camData"]["nightVisionCapability"]["supplement_lamp_type"]
-            ):
-                self._attr_max_value = 5
-                self._attr_native_max_value = 5
-            else:
-                self._attr_max_value = 100
-                self._attr_native_max_value = 100
-                LOGGER.warning(
-                    "Unexpected supplement lamp types detected. Report this to https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues. Types: "
-                    + json.dumps(entry["camData"]["nightVisionCapability"])
-                )
+        else:
+            LOGGER.debug(
+                "Determining maximum range for TapoSpotlightIntensity: Default to 100 because of missing style."
+            )
+            self._attr_max_value = 100
+            self._attr_native_max_value = 100
         self._attr_step = 1
         self._hass = hass
         self._attr_native_value = entry["camData"]["whitelampConfigIntensity"]
