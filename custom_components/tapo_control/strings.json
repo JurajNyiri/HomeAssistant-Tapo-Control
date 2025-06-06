@@ -119,7 +119,7 @@
           "update_interval_main": "Minimum update interval when powered from mains",
           "update_interval_battery": "Minimum update interval when powered by solar or battery"
         },
-        "description": "Modify update interval of the device"
+        "description": "Modify update interval of the device (in seconds)"
       },
       "time_sync_options": {
         "data": {
