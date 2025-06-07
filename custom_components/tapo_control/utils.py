@@ -391,7 +391,6 @@ async def mediaCleanup(hass, entry):
 
     ts = datetime.datetime.utcnow().timestamp()
     hass.data[DOMAIN][entry_id]["lastMediaCleanup"] = ts
-    coldDirPath = getColdDirPathForEntry(hass, entry_id)
     hotDirPath = getHotDirPathForEntry(hass, entry_id)
 
     # clean cache files from old HA instance
@@ -1436,6 +1435,14 @@ async def getCamData(hass, controller):
     except Exception:
         speakerVolume = None
     camData["speakerVolume"] = speakerVolume
+
+    try:
+        record_audio = (
+            data["getAudioConfig"][0]["audio_config"]["record_audio"]["enabled"] == "on"
+        )
+    except Exception:
+        record_audio = None
+    camData["record_audio"] = record_audio
 
     try:
         autoUpgradeEnabled = data["getFirmwareAutoUpgradeConfig"][0]["auto_upgrade"][

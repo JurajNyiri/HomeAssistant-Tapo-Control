@@ -74,6 +74,14 @@ async def async_setup_entry(
             LOGGER.debug("Adding tapoIndicatorLedSwitch...")
             switches.append(tapoIndicatorLedSwitch)
 
+        if (
+            "record_audio" in entry["camData"]
+            and entry["camData"]["record_audio"] is not None
+        ):
+            tapoRecordAudioSwitch = TapoRecordAudioSwitch(entry, hass, config_entry)
+            LOGGER.debug("Adding tapoRecordAudioSwitch...")
+            switches.append(tapoRecordAudioSwitch)
+
         tapoFlipSwitch = await check_and_create(
             entry, hass, TapoFlipSwitch, "getImageFlipVertical", config_entry
         )
@@ -745,6 +753,43 @@ class TapoPrivacySwitch(TapoSwitchEntity):
     @property
     def entity_category(self):
         return None
+
+
+class TapoRecordAudioSwitch(TapoSwitchEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        TapoSwitchEntity.__init__(
+            self, "Record Audio", entry, hass, config_entry, "mdi:microphone"
+        )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_on(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setRecordAudio,
+            True,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "on"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_off(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setRecordAudio,
+            False,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "off"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            self._attr_is_on = camData["record_audio"]
+            self._attr_state = "on" if self._attr_is_on else "off"
 
 
 class TapoIndicatorLedSwitch(TapoSwitchEntity):
