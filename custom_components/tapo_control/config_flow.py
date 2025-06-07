@@ -458,6 +458,8 @@ class FlowHandler(ConfigFlow):
                     UPDATE_INTERVAL_MAIN: UPDATE_INTERVAL_MAIN_DEFAULT,
                     UPDATE_INTERVAL_BATTERY: UPDATE_INTERVAL_BATTERY_DEFAULT,
                     IS_KLAP_DEVICE: False,
+                    TIME_SYNC_DST: TIME_SYNC_DST_DEFAULT,
+                    TIME_SYNC_NDST: TIME_SYNC_NDST_DEFAULT,
                 },
             )
 
