@@ -93,6 +93,18 @@ async def async_setup_entry(
             switches.append(tapoDiagnoseModeSwitch)
 
         if (
+            "smart_track_config" in entry["camData"]
+            and entry["camData"]["smart_track_config"] is not None
+            and isinstance(entry["camData"]["smart_track_config"], dict)
+        ):
+            for smartTrackType in entry["camData"]["smart_track_config"]:
+                tapoSmartTrackType = TapoSmartTrackSwitch(
+                    entry, hass, config_entry, smartTrackType
+                )
+                LOGGER.debug("Adding tapoCoverSwitch " + smartTrackType + "...")
+                switches.append(tapoSmartTrackType)
+
+        if (
             "cover_config" in entry["camData"]
             and entry["camData"]["cover_config"] is not None
             and "enabled" in entry["camData"]["cover_config"]
@@ -773,6 +785,60 @@ class TapoPrivacySwitch(TapoSwitchEntity):
     @property
     def entity_category(self):
         return None
+
+
+class TapoSmartTrackSwitch(TapoSwitchEntity):
+    def __init__(
+        self, entry: dict, hass: HomeAssistant, config_entry, typeOfSmartTrack: str
+    ):
+        self.typeOfSmartTrack = typeOfSmartTrack
+
+        entityName = typeOfSmartTrack
+        if entityName.endswith("_enabled"):
+            entityName = entityName[:-8]  # Remove "_enabled"
+        entityName = entityName.capitalize()
+        TapoSwitchEntity.__init__(
+            self,
+            "Smart Track - " + entityName,
+            entry,
+            hass,
+            config_entry,
+            "mdi:eye-lock",
+        )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_on(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setSmartTrackConfig,
+            self.typeOfSmartTrack,
+            True,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "on"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_off(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setSmartTrackConfig,
+            self.typeOfSmartTrack,
+            False,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "off"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if not camData:
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            self._attr_is_on = (
+                camData["smart_track_config"][self.typeOfSmartTrack] == "on"
+            )
+            self._attr_state = "on" if self._attr_is_on else "off"
 
 
 class TapoCoverSwitch(TapoSwitchEntity):

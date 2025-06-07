@@ -1095,6 +1095,14 @@ async def getCamData(hass, controller):
     camData["cover_config"] = cover_config
 
     try:
+        smart_track_config = data["getSmartTrackConfig"][0]["smart_track"][
+            "smart_track_info"
+        ]
+    except Exception:
+        smart_track_config = None
+    camData["smart_track_config"] = smart_track_config
+
+    try:
         network_ip_info = data["getDeviceIpAddress"][0]
     except Exception:
         network_ip_info = None
