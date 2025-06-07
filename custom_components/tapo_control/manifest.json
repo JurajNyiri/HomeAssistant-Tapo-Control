@@ -35,5 +35,6 @@
     {
       "hostname": "h[0-9][0-9][0-9]*_*"
     }
-  ]
+  ],
+  "loggers": ["custom_components.tapo_control"]
 }
