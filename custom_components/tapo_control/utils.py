@@ -391,7 +391,6 @@ async def mediaCleanup(hass, entry):
 
     ts = datetime.datetime.utcnow().timestamp()
     hass.data[DOMAIN][entry_id]["lastMediaCleanup"] = ts
-    coldDirPath = getColdDirPathForEntry(hass, entry_id)
     hotDirPath = getHotDirPathForEntry(hass, entry_id)
 
     # clean cache files from old HA instance
@@ -1084,6 +1083,26 @@ async def getCamData(hass, controller):
     camData["night_vision_mode"] = night_vision_mode
 
     try:
+        diagnose_mode = data["getDiagnoseMode"][0]["system"]["sys"]
+    except Exception:
+        diagnose_mode = None
+    camData["diagnose_mode"] = diagnose_mode
+
+    try:
+        cover_config = data["getCoverConfig"][0]["cover"]["cover"]
+    except Exception:
+        cover_config = None
+    camData["cover_config"] = cover_config
+
+    try:
+        smart_track_config = data["getSmartTrackConfig"][0]["smart_track"][
+            "smart_track_info"
+        ]
+    except Exception:
+        smart_track_config = None
+    camData["smart_track_config"] = smart_track_config
+
+    try:
         network_ip_info = data["getDeviceIpAddress"][0]
     except Exception:
         network_ip_info = None
@@ -1436,6 +1455,14 @@ async def getCamData(hass, controller):
     except Exception:
         speakerVolume = None
     camData["speakerVolume"] = speakerVolume
+
+    try:
+        record_audio = (
+            data["getAudioConfig"][0]["audio_config"]["record_audio"]["enabled"] == "on"
+        )
+    except Exception:
+        record_audio = None
+    camData["record_audio"] = record_audio
 
     try:
         autoUpgradeEnabled = data["getFirmwareAutoUpgradeConfig"][0]["auto_upgrade"][
