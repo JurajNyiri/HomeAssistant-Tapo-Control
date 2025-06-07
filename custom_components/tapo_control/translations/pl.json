@@ -1,0 +1,162 @@
+{
+  "title": "Tapo: sterowanie kamerami",
+  "config": {
+    "flow_title": "Tapo: sterowanie kamerami {name}",
+    "step": {
+      "reauth_confirm_stream": {
+        "data": {
+          "username": "Konto kamery – nazwa użytkownika",
+          "password": "Konto kamery – hasło"
+        },
+        "description": "Twoje hasło(a) zostało zmienione. Wprowadź aktualne.\n\nKonto kamery zakłada się w aplikacji Tapo:\nUstawienia kamery → Ustawienia zaawansowane → Konto kamery.\n\nMożesz sprawdzić poprawność danych, łącząc się ze strumieniem RTSP, np. w VLC:\nrtsp://nazwa_uzytkownika:haslo@ADRES_IP:554/stream1"
+      },
+      "reauth_confirm_cloud": {
+        "data": {
+          "cloud_password": "Hasło do chmury"
+        },
+        "description": "Kamera wymaga hasła do chmury, aby można było nią sterować.\nTo hasło do konta TP-Link w chmurze (tego samego, którego używasz z adresem e-mail podczas logowania w aplikacji Tapo).\nUpewnij się, że w aplikacji Tapo włączona jest Kompatybilność z usługami zewnętrznymi (Ja → Tapo Lab → Kompatybilność z usługami zewnętrznymi – Włączone).\n\nPłatna subskrypcja Tapo Care nie jest wymagana.\nJeżeli hasła do chmury i do konta kamery są różne, podaj tutaj tylko to pierwsze.\nPodawanie adresu e-mail nie jest potrzebne; cała komunikacja pozostaje w pełni lokalna."
+      },
+      "ip": {
+        "data": {
+          "ip_address": "Adres IP",
+          "control_port": "Port sterowania"
+        },
+        "description": "Podaj adres IP kamery, dzwonka lub gonga.\n\nJeśli dodajesz gong, ustaw port 80; w przypadku kamery lub dzwonka pozostaw 443.\n\nKorzystając z VLAN-ów albo innej zaawansowanej konfiguracji sieci, upewnij się, że porty 443, 554 oraz 2020 są otwarte dla kamery. Dla gongów wystarcza 80."
+      },
+      "auth_klap": {
+        "data": {
+          "email": "E-mail",
+          "password": "Hasło"
+        },
+        "description": "Wprowadź dane logowania do konta TP-Link.\n\nCała komunikacja pozostaje w pełni lokalna."
+      },
+      "auth": {
+        "data": {
+          "username": "Nazwa użytkownika",
+          "password": "Hasło",
+          "skip_rtsp": "Pomiń weryfikację RTSP; jeżeli zaznaczone, poświadczenia nie zostaną sprawdzone względem strumienia RTSP i może on nie działać. Przydatne, gdy kamera nie obsługuje RTSP, lecz umożliwia sterowanie. Strumień bywa też niedostępny, gdy jednocześnie aktywne są nagrania Tapo Care i na kartę SD."
+        },
+        "description": "Wprowadź dane konta kamery.\n\nKonto zakłada się w aplikacji Tapo:\nUstawienia kamery → Ustawienia zaawansowane → Konto kamery."
+      },
+      "auth_cloud_password": {
+        "data": {
+          "cloud_password": "Hasło do chmury"
+        },
+        "description": "Kamera wymaga hasła do chmury, aby można było nią sterować.\nTo hasło do konta TP-Link w chmurze (tego samego, którego używasz z adresem e-mail podczas logowania w aplikacji Tapo).\nUpewnij się, że w aplikacji Tapo włączona jest Kompatybilność z usługami zewnętrznymi (Ja → Tapo Lab → Kompatybilność z usługami zewnętrznymi – Włączone).\n\nPłatna subskrypcja Tapo Care nie jest wymagana.\nJeżeli hasła do chmury i do konta kamery są różne, podaj tutaj tylko to pierwsze.\nPodawanie adresu e-mail nie jest potrzebne; cała komunikacja pozostaje w pełni lokalna."
+      },
+      "auth_optional_cloud": {
+        "data": {
+          "cloud_password": "Hasło do chmury"
+        },
+        "description": "Kamera wymaga hasła do chmury w celu dostępu do nagrań.\nTo hasło do konta TP-Link w chmurze (tego samego, którego używasz z adresem e-mail podczas logowania w aplikacji Tapo).\nUpewnij się, że w aplikacji Tapo włączona jest Kompatybilność z usługami zewnętrznymi (Ja → Tapo Lab → Kompatybilność z usługami zewnętrznymi – Włączone).\n\nPłatna subskrypcja Tapo Care nie jest wymagana.\nJeżeli hasła do chmury i do konta kamery są różne, podaj tutaj tylko to pierwsze.\nPodawanie adresu e-mail nie jest potrzebne; cała komunikacja pozostaje w pełni lokalna.\n\nMożesz pominąć ten krok, pozostawiając pole hasła puste, i uzupełnić je później, jeśli nie potrzebujesz dostępu do nagrań."
+      },
+      "other_options": {
+        "data": {
+          "enable_motion_sensor": "Włącz sensor ruchu",
+          "enable_webhooks": "Włącz webhooki",
+          "enable_time_sync": "Automatyczna synchronizacja czasu",
+          "enable_stream": "Użyj strumienia z Home Assistant (wymagany restart)",
+          "enable_sound_detection": "Włącz detekcję dźwięku (wymagany restart)",
+          "sound_detection_peak": "[Detekcja dźwięku] Próg szczytu w dB (0 = bardzo głośno, −100 = cicho)",
+          "sound_detection_duration": "[Detekcja dźwięku] Czas, przez jaki hałas musi przekraczać próg, aby wyzwolić stan",
+          "sound_detection_reset": "[Detekcja dźwięku] Czas resetu stanu po zaniku hałasu",
+          "extra_arguments": "Dodatkowe argumenty dla ffmpeg (wymagany restart)",
+          "custom_stream": "Niestandardowy link do strumienia",
+          "rtsp_transport": "Mechanizm transportu RTSP"
+        },
+        "description": "Prawie gotowe!\nZostało kilka ostatnich opcji…"
+      }
+    },
+    "error": {
+      "skip_rtsp_not_checked": "Wprowadź nazwę użytkownika i hasło lub pozostaw oba pola puste i zaznacz „Pomiń weryfikację RTSP”.\nGdy pola są puste, strumień RTSP nie będzie działać.",
+      "invalid_stream_auth": "Nieprawidłowe dane logowania do strumienia RTSP",
+      "account_suspended": "Konto tymczasowo zawieszone; spróbuj ponownie później.\nSprawdź dzienniki po więcej informacji.",
+      "not_tapo_device": "Adres IP nie jest obsługiwanym urządzeniem Tapo",
+      "ports_closed": "Port 443, 554 lub 2020 jest zamknięty",
+      "invalid_auth": "Nieprawidłowe dane logowania.\nUpewnij się, że założyłeś konto zewnętrzne w aplikacji Tapo.\nMożesz również sprawdzić dane, łącząc się ze strumieniem RTSP, np. w VLC:\nrtsp://nazwa_uzytkownika:haslo@ADRES_IP:554/stream1",
+      "unknown": "Nieznany błąd",
+      "connection_failed": "Nie udało się połączyć",
+      "invalid_auth_cloud": "Nieprawidłowe hasło do chmury.\nUpewnij się, że podajesz hasło do konta w chmurze, a NIE hasło utworzone w ustawieniach kamery (chyba że są takie same).\nTo musi być hasło używane z adresem e-mail podczas logowania w aplikacji Tapo.\n\nSprawdź, czy w aplikacji Tapo jest włączona Kompatybilność z usługami zewnętrznymi (Ja → Tapo Lab → Kompatybilność z usługami zewnętrznymi – Włączone) i przejrzyj pozostałe wskazówki z FAQ: https://github.com/JurajNyiri/HomeAssistant-Tapo-Control?tab=readme-ov-file#troubleshooting--faq.",
+      "cold_storage_path_does_not_exist": "Ścieżka cold storage nie istnieje",
+      "camera_requires_admin": "Twoja kamera wymaga hasła do chmury do sterowania",
+      "already_configured": "Adres IP jest już skonfigurowany",
+      "incorrect_peak_value": "Nieprawidłowa wartość progu detekcji dźwięku."
+    },
+    "abort": {
+      "already_configured": "Adres IP jest już skonfigurowany",
+      "not_tapo_device": "Wykryte urządzenie nie jest kamerą Tapo",
+      "reauth_successful": "Ponowna autoryzacja zakończona sukcesem."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "tapo_config_action": "Akcja"
+        },
+        "description": "Co chcesz zrobić?"
+      },
+      "sound_sensor": {
+        "data": {
+          "enable_sound_detection": "Włącz detekcję dźwięku (wymagany restart)",
+          "sound_detection_peak": "[Detekcja dźwięku] Próg szczytu w dB (0 = bardzo głośno, −100 = cicho)",
+          "sound_detection_duration": "[Detekcja dźwięku] Czas, przez jaki hałas musi przekraczać próg, aby wyzwolić stan",
+          "sound_detection_reset": "[Detekcja dźwięku] Czas resetu stanu po zaniku hałasu"
+        },
+        "description": "Skonfiguruj sensor detekcji hałasu"
+      },
+      "media": {
+        "data": {
+          "media_view_days_order": "Kolejność dni w Przeglądarce multimediów",
+          "media_view_recordings_order": "Kolejność nagrań w Przeglądarce multimediów",
+          "media_sync_hours": "Liczba godzin do synchronizacji",
+          "media_sync_cold_storage_path": "[Wymaga restartu] Ścieżka cold storage"
+        },
+        "description": "Zmień ustawienia synchronizacji nagrań"
+      },
+      "update_interval": {
+        "data": {
+          "update_interval_main": "Minimalny interwał aktualizacji przy zasilaniu z sieci",
+          "update_interval_battery": "Minimalny interwał aktualizacji przy zasilaniu z baterii lub solara"
+        },
+        "description": "Zmień interwał aktualizacji urządzenia (w sekundach)"
+      },
+      "time_sync_options": {
+        "data": {
+          "time_sync_dst": "Liczba godzin do dodania w czasie DST",
+          "time_sync_ndst": "Liczba godzin do dodania poza DST",
+          "enable_time_sync": "Automatyczna synchronizacja czasu"
+        },
+        "description": "Dostosuj synchronizację czasu.\n\nJeżeli integracja ustawia czas nieprawidłowo, zwiększ lub zmniejsz poniższe wartości o liczbę godzin, którą należy dodać lub odjąć."
+      },
+      "auth": {
+        "data": {
+          "ip_address": "Adres IP",
+          "control_port": "Port sterowania",
+          "username": "Nazwa użytkownika",
+          "password": "Hasło",
+          "enable_motion_sensor": "Włącz sensor ruchu",
+          "enable_webhooks": "Włącz webhooki",
+          "enable_stream": "Użyj strumienia z Home Assistant (wymagany restart)",
+          "cloud_password": "Hasło do chmury (opcjonalnie)",
+          "extra_arguments": "Dodatkowe argumenty dla ffmpeg (wymagany restart)",
+          "custom_stream": "Niestandardowy link do strumienia",
+          "rtsp_transport": "Mechanizm transportu RTSP"
+        },
+        "description": "Zmień ustawienia swojej kamery Tapo.\n\nUżyj strumienia z Home Assistant:\nTak – dłuższe opóźnienie odtwarzania, mniejsze użycie CPU, możliwość sterowania odtwarzaniem\nNie – bardzo krótkie opóźnienie odtwarzania, większe użycie CPU, brak sterowania odtwarzaniem"
+      }
+    },
+    "error": {
+      "invalid_stream_auth": "Nieprawidłowe dane logowania do strumienia RTSP",
+      "account_suspended": "Konto tymczasowo zawieszone; spróbuj ponownie później.\nSprawdź dzienniki po więcej informacji.",
+      "invalid_auth": "Nieprawidłowe dane logowania",
+      "unknown": "Nieznany błąd",
+      "connection_failed": "Nie udało się połączyć",
+      "invalid_auth_cloud": "Nieprawidłowe hasło do chmury.\nUpewnij się, że podajesz hasło do konta w chmurze, a NIE hasło utworzone w ustawieniach kamery (chyba że są takie same).\nTo musi być hasło używane z adresem e-mail podczas logowania w aplikacji Tapo.\n\nSprawdź, czy w aplikacji Tapo jest włączona Kompatybilność z usługami zewnętrznymi (Ja → Tapo Lab → Kompatybilność z usługami zewnętrznymi – Włączone).",
+      "cold_storage_path_does_not_exist": "Ścieżka cold storage nie istnieje",
+      "camera_requires_admin": "Kamera wymaga hasła do chmury do sterowania",
+      "incorrect_peak_value": "Nieprawidłowa wartość progu detekcji dźwięku.",
+      "incorrect_options_action": "Wybrano nieprawidłową akcję"
+    }
+  }
+}
