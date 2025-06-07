@@ -1089,6 +1089,12 @@ async def getCamData(hass, controller):
     camData["diagnose_mode"] = diagnose_mode
 
     try:
+        cover_config = data["getCoverConfig"][0]["cover"]["cover"]
+    except Exception:
+        cover_config = None
+    camData["cover_config"] = cover_config
+
+    try:
         network_ip_info = data["getDeviceIpAddress"][0]
     except Exception:
         network_ip_info = None
