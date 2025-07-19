@@ -228,7 +228,8 @@ class TapoCamEntity(Camera):
     # --------------------------------------------------------------------------- #
     async def handle_async_mjpeg_stream(self, request):
         """Serve MJPEG generated from the live in‑memory pipe."""
-        LOGGER.warning("MJPEG ⟶ request")
+        LOGGER.warning("TODO")
+        raise Exception("temp TODO")
 
         # 1 ── make sure the Streamer (pipe backend) is running
         await self._ensure_pipe()
