@@ -55,6 +55,7 @@ async def async_setup_entry(
     if (
         len(config_entry.data[CONF_USERNAME]) > 0
         and len(config_entry.data[CONF_PASSWORD]) > 0
+        and False  # TODO REFACTOR ME
     ):
         hdStream = TapoCamEntity(hass, config_entry, entry, True)
         sdStream = TapoCamEntity(hass, config_entry, entry, False)
@@ -62,6 +63,10 @@ async def async_setup_entry(
         entry["entities"].append({"entity": hdStream, "entry": entry})
         entry["entities"].append({"entity": sdStream, "entry": entry})
         async_add_entities([hdStream, sdStream])
+    elif True:  # TODO REFACTOR ME
+        hdStream = TapoCamEntity(hass, config_entry, entry, True)
+        entry["entities"].append({"entity": hdStream, "entry": entry})
+        async_add_entities([hdStream])
 
 
 class TapoCamEntity(Camera):
