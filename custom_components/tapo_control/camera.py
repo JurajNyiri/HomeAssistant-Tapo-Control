@@ -223,55 +223,45 @@ class TapoCamEntity(Camera):
         LOGGER.warning("async_camera_image 5")
         return jpeg
 
-    # --------------------------------------------------------------------------- #
-    # 2.  Continuous MJPEG stream via the pipe
-    # --------------------------------------------------------------------------- #
     async def handle_async_mjpeg_stream(self, request):
-        """Serve MJPEG generated from the live in‑memory pipe."""
-        LOGGER.warning("TODO")
-        raise Exception("temp TODO")
+        """Serve a live MJPEG preview built on‑the‑fly from the Tapo TS pipe."""
 
-        # 1 ── make sure the Streamer (pipe backend) is running
-        await self._ensure_pipe()
-        fd = self._stream_fd
+        LOGGER.warning("MJPEG ⟶ request")
+
+        # ── 1.  Start a *short‑lived* Streamer instance in pipe‑only mode ──────
+        streamer = Streamer(
+            self._controller,
+            callbackFunction=lambda *_: None,  # silence low‑level spam
+            mode="pipe",
+            includeAudio=False,  # video only for MJPEG
+        )
+        info = await streamer.start()
+        fd: int = info["read_fd"]
         os.set_inheritable(fd, True)
         LOGGER.warning("MJPEG ⟶ using pipe fd %s", fd)
 
-        # 2 ── FFmpeg command
+        # ── 2.  Spawn FFmpeg: TS → MJPEG (multipart) ───────────────────────────
         ff_cmd = [
             self._ffmpeg.binary,
             "-loglevel",
-            "warning",  # drop per‑packet spam
+            "info",  # see what happens, but not too chatty
             "-hide_banner",
-            # robust TS input settings
-            "-fflags",
-            "+discardcorrupt+igndts",
-            "-err_detect",
-            "ignore_err",
             "-probesize",
-            "5M",  # look at up to 5 MB
+            "256k",
             "-analyzeduration",
-            "5000000",  # …or 5 s before deciding
-            "-use_wallclock_as_timestamps",
-            "1",
+            "500000",  # 0.5 s is plenty for a TS preview
             "-i",
-            f"pipe:{fd}",  # INPUT (live TS)
-            # select the video stream only
-            "-map",
-            "0:v:0",
-            "-an",  # ignore audio completely
-            # transcode to MJPEG
+            f"pipe:{fd}",  # INPUT: live TS from the Streamer
             "-c:v",
             "mjpeg",
             "-q:v",
-            "5",  # quality 2…31 (lower=better)
+            "5",  # 2‑31 (lower = better quality)
             "-f",
-            "mjpeg",
-            "pipe:1",  # OUTPUT (multipart‑JPEG)
+            "mpjpeg",  # ***multipart*** MJPEG for browsers
+            "pipe:1",  # OUTPUT to stdout
         ]
         LOGGER.warning("MJPEG ⟶ ffmpeg cmd: %s", " ".join(ff_cmd))
 
-        # 3 ── spawn FFmpeg with our FD kept open
         proc = await asyncio.create_subprocess_exec(
             *ff_cmd,
             stdout=asyncio.subprocess.PIPE,
@@ -280,29 +270,29 @@ class TapoCamEntity(Camera):
         )
         LOGGER.warning("MJPEG ⟶ ffmpeg PID %s", proc.pid)
 
-        # async task that logs only the first few stderr lines
-        async def _brief_stderr(stream):
-            for _ in range(40):  # ~ first two seconds
-                line = await stream.readline()
-                if not line:
-                    break
-                LOGGER.warning("MJPEG ffmpeg: %s", line.decode().rstrip())
+        # mirror FFmpeg stderr into the HA log (useful for debugging)
+        asyncio.create_task(self._log_stream(proc.stderr, prefix="MJPEG ffmpeg"))
 
-        asyncio.create_task(_brief_stderr(proc.stderr))
-
-        # 4 ── proxy MJPEG to the frontend
         try:
+            # proxy stdout (multipart MJPEG) directly to the client
             return await async_aiohttp_proxy_stream(
                 self.hass,
                 request,
                 proc.stdout,
-                self._ffmpeg.ffmpeg_stream_content_type,
+                self._ffmpeg.ffmpeg_stream_content_type,  # correct MIME header
             )
         finally:
-            LOGGER.warning("MJPEG ⟶ closing ffmpeg")
+            LOGGER.warning("MJPEG ⟶ shutting ffmpeg / streamer")
             if proc.returncode is None:
                 proc.kill()
                 await proc.wait()
+            await streamer.stop_hls()  # terminates the internal tasks
+            info["streamProcess"].cancel()  # extra safety – no dangling task
+
+    async def _log_stream(self, stream: asyncio.StreamReader, *, prefix=""):
+        """Helper: mirror every stderr line into HA log."""
+        async for line in stream:
+            LOGGER.warning("%s: %s", prefix, line.decode().rstrip())
 
     async def async_update(self) -> None:
         await self._coordinator.async_request_refresh()
