@@ -174,7 +174,6 @@ class TapoCamEntity(Camera):
     async def async_camera_image(
         self, width: int | None = None, height: int | None = None
     ):
-        LOGGER.warning("async_camera_image")
         """Return a single JPEG made from a fresh in‑memory preview."""
         # ── 1.  Spin‑up a short‑lived Streamer in pipe mode ────────────────
         streamer = Streamer(
@@ -187,7 +186,6 @@ class TapoCamEntity(Camera):
         fd = info["read_fd"]
         os.set_inheritable(fd, True)
 
-        LOGGER.warning("async_camera_image 2")
         # ── 2.  Run FFmpeg to capture exactly one frame ────────────────────
         ff_cmd = [
             self._ffmpeg.binary,
@@ -214,13 +212,10 @@ class TapoCamEntity(Camera):
             pass_fds=(fd,),
         )
         jpeg, _ = await proc.communicate()
-        LOGGER.warning("async_camera_image 3")
 
         # ── 3.  Clean‑up ───────────────────────────────────────────────────
         await streamer.stop_hls()  # stops internal tasks + ffmpeg
-        LOGGER.warning("async_camera_image 4")
         info["streamProcess"].cancel()  # just in case
-        LOGGER.warning("async_camera_image 5")
         return jpeg
 
     async def handle_async_mjpeg_stream(self, request):
@@ -297,11 +292,62 @@ class TapoCamEntity(Camera):
     async def async_update(self) -> None:
         await self._coordinator.async_request_refresh()
 
-    async def stream_source(self):
-        await self._ensure_pipe()
-        # FFmpeg & PyAV understand "pipe:<fd>"
-        # return f"pipe:{self._stream_fd}"
-        return getStreamSource(self._config_entry, self._hdstream)
+    async def _ensure_av_pipe(self) -> None:
+        """Guarantee that a Streamer delivering **video + audio** TS is
+        alive and expose its read‑FD in ``self._stream_fd``."""
+
+        LOGGER.warning("_ensure_av_pipe() called")
+
+        # If we already have a running Streamer with audio – reuse it
+        if self._streamer and self._streamer.running:
+            LOGGER.warning("_ensure_av_pipe → already running (fd=%s)", self._stream_fd)
+            return
+
+        # Otherwise tear down anything old (e.g. video‑only preview Streamer)
+        if self._streamer:
+            LOGGER.warning("_ensure_av_pipe → stopping previous Streamer")
+            await self._streamer.stop_hls()
+            if self._stream_task:
+                self._stream_task.cancel()
+
+        # Launch fresh Streamer in *pipe* mode with audio enabled
+        LOGGER.warning("_ensure_av_pipe → launching NEW Streamer (audio=on)")
+        self._streamer = Streamer(
+            self._controller,
+            callbackFunction=lambda *_: None,  # keep low‑level logs quiet
+            mode="pipe",
+            includeAudio=False,  # *** A/V ***
+        )
+        info = await self._streamer.start()
+
+        # Expose its pipe FD so HA’s stream worker can read from it
+        self._stream_fd: int = info["read_fd"]
+        os.set_inheritable(self._stream_fd, True)
+        self._stream_task = info["streamProcess"]
+
+        LOGGER.warning(
+            "_ensure_av_pipe → ready (fd=%s, task=%s)",
+            self._stream_fd,
+            self._stream_task,
+        )
+
+    async def stream_source(self) -> str | None:
+        """Return an FFmpeg‑compatible URL for HA’s stream worker.
+
+        If **Enable Stream** is OFF we fall back to the original RTSP/HLS URL.
+        Otherwise we hand HA a ``pipe:<fd>`` that carries live TS with audio.
+        """
+
+        LOGGER.warning(
+            "stream_source() requested  (enable_stream=%s)", self._enable_stream
+        )
+
+        # --- live pipe path ---------------------------------------------
+        await self._ensure_av_pipe()
+
+        source = f"pipe:{self._stream_fd}"
+        LOGGER.warning("stream_source → returning  %s", source)
+        return source
 
     def updateTapo(self, camData):
         LOGGER.debug("updateTapo - camera")
