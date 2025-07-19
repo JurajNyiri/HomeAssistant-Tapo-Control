@@ -174,49 +174,54 @@ class TapoCamEntity(Camera):
     async def async_camera_image(
         self, width: int | None = None, height: int | None = None
     ):
-        """Return one JPEG from the live in‑memory stream."""
-        if True:
-            await self._ensure_pipe()
-            LOGGER.warning("async_camera_image")
-            fd = self._stream_fd
-            os.set_inheritable(fd, True)
+        LOGGER.warning("async_camera_image")
+        """Return a single JPEG made from a fresh in‑memory preview."""
+        # ── 1.  Spin‑up a short‑lived Streamer in pipe mode ────────────────
+        streamer = Streamer(
+            self._controller,
+            callbackFunction=lambda *_: None,
+            mode="pipe",
+            includeAudio=False,
+        )
+        info = await streamer.start()
+        fd = info["read_fd"]
+        os.set_inheritable(fd, True)
 
-            ff_cmd = [
-                self._ffmpeg.binary,
-                "-loglevel",
-                "quiet",
-                "-probesize",
-                "32",
-                "-analyzeduration",
-                "0",
-                "-i",
-                f"pipe:{fd}",
-                "-frames:v",
-                "1",  # grab a single frame
-                "-f",
-                "image2",
-                "-q:v",
-                "2",  # high quality
-                "pipe:1",
-            ]
+        LOGGER.warning("async_camera_image 2")
+        # ── 2.  Run FFmpeg to capture exactly one frame ────────────────────
+        ff_cmd = [
+            self._ffmpeg.binary,
+            "-loglevel",
+            "error",
+            "-probesize",
+            "256k",
+            "-analyzeduration",
+            "500000",
+            "-i",
+            f"pipe:{fd}",
+            "-frames:v",
+            "1",
+            "-f",
+            "image2",
+            "-q:v",
+            "2",
+            "pipe:1",
+        ]
+        proc = await asyncio.create_subprocess_exec(
+            *ff_cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+            pass_fds=(fd,),
+        )
+        jpeg, _ = await proc.communicate()
+        LOGGER.warning("async_camera_image 3")
 
-            proc = await asyncio.create_subprocess_exec(
-                *ff_cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.DEVNULL,
-                pass_fds=(fd,),
-            )
-            jpeg, _ = await proc.communicate()
-            return jpeg  # bytes, HA will serve it
-        else:
-            # legacy path (RTSP / HLS)
-            ff = ImageFrame(self._ffmpeg.binary)
-            url = getStreamSource(self._config_entry, self._hdstream)
-            return await asyncio.shield(
-                ff.get_image(
-                    url, output_format=IMAGE_JPEG, extra_cmd=self._extra_arguments
-                )
-            )
+        # ── 3.  Clean‑up ───────────────────────────────────────────────────
+        await streamer.stop_hls()  # stops internal tasks + ffmpeg
+        LOGGER.warning("async_camera_image 4")
+        info["streamProcess"].cancel()  # just in case
+        LOGGER.warning("async_camera_image 5")
+        return jpeg
 
     # --------------------------------------------------------------------------- #
     # 2.  Continuous MJPEG stream via the pipe
