@@ -3,6 +3,7 @@ import asyncio
 from haffmpeg.camera import CameraMjpeg
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from typing import Callable
+from .pytapo.media_stream.streamer import Streamer
 
 from homeassistant.const import STATE_UNAVAILABLE, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
@@ -89,12 +90,39 @@ class TapoCamEntity(Camera):
         self._is_cam_entity = True
         self._is_noise_sensor = False
 
+        self._streamer: Streamer | None = None
+        self._stream_fd: int | None = None
+        self._stream_task: asyncio.Task | None = None
+
         self.updateTapo(entry["camData"])
+
+    async def _ensure_pipe(self):
+        LOGGER.warning("TEST1")
+        if self._streamer and self._streamer.running:
+            return
+
+        LOGGER.warning("TEST2")
+        self._streamer = Streamer(
+            self._controller,
+            callbackFunction=lambda s: LOGGER.debug(s["ffmpegLog"]),
+            mode="pipe",
+            includeAudio=True,
+        )
+
+        LOGGER.warning("TEST3")
+        info = await self._streamer.start()  # async, returns dict
+        LOGGER.warning("TEST4")
+        self._stream_fd = info["read_fd"]
+        self._stream_task = info["streamProcess"]
 
     async def async_added_to_hass(self) -> None:
         self._enabled = True
 
     async def async_will_remove_from_hass(self) -> None:
+        if self._streamer:
+            await self._streamer.stop_hls()
+        if self._stream_task:
+            self._stream_task.cancel()
         self._enabled = False
 
     @property
@@ -175,6 +203,9 @@ class TapoCamEntity(Camera):
         await self._coordinator.async_request_refresh()
 
     async def stream_source(self):
+        await self._ensure_pipe()
+        # FFmpeg & PyAV understand "pipe:<fd>"
+        # return f"pipe:{self._stream_fd}"
         return getStreamSource(self._config_entry, self._hdstream)
 
     def updateTapo(self, camData):
