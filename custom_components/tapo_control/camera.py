@@ -105,25 +105,6 @@ class TapoCamEntity(Camera):
     def debugLog(self, msg):
         LOGGER.debug(msg)
 
-    async def _ensure_pipe(self):
-        LOGGER.warning("_ensure_pipe")
-        if self._streamer and self._streamer.running:
-            LOGGER.warning("running")
-            return
-
-        self._streamer = Streamer(
-            self._controller,
-            callbackFunction=self.debugLog,
-            mode="pipe",  # ← switch to pipe
-            outputDirectory="/config/videos/",
-            includeAudio=True,  # or follow user option
-        )
-        info = await self._streamer.start()
-        self._stream_fd = info["read_fd"]
-        LOGGER.warning("Creating " + str(self._stream_fd))
-        os.set_inheritable(self._stream_fd, True)  # good practice
-        self._stream_task = info["streamProcess"]
-
     async def async_added_to_hass(self) -> None:
         self._enabled = True
 
@@ -183,8 +164,6 @@ class TapoCamEntity(Camera):
         # ── 1.  Spin‑up a short‑lived Streamer in pipe mode ────────────────
         streamer = Streamer(
             self._controller,
-            callbackFunction=lambda *_: None,
-            mode="pipe",
             includeAudio=False,
         )
         info = await streamer.start()
@@ -231,8 +210,6 @@ class TapoCamEntity(Camera):
         # ── 1.  Start a *short‑lived* Streamer instance in pipe‑only mode ──────
         streamer = Streamer(
             self._controller,
-            callbackFunction=lambda *_: None,  # silence low‑level spam
-            mode="pipe",
             includeAudio=False,  # video only for MJPEG
         )
         info = await streamer.start()
@@ -319,8 +296,6 @@ class TapoCamEntity(Camera):
         LOGGER.warning("_ensure_av_pipe → launching NEW Streamer (audio=on)")
         self._streamer = Streamer(
             self._controller,
-            callbackFunction=lambda *_: None,  # keep low‑level logs quiet
-            mode="pipe",
             includeAudio=False,  # *** A/V ***
         )
         info = await self._streamer.start()
