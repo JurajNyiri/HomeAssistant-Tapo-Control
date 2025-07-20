@@ -129,7 +129,7 @@ class TapoCamEntity(Camera):
 
     async def async_will_remove_from_hass(self) -> None:
         if self._streamer:
-            await self._streamer.stop_hls()
+            await self._streamer.stop()
         if self._stream_task:
             self._stream_task.cancel()
         self._enabled = False
@@ -219,7 +219,7 @@ class TapoCamEntity(Camera):
         jpeg, _ = await proc.communicate()
 
         # ── 3.  Clean‑up ───────────────────────────────────────────────────
-        await streamer.stop_hls()  # stops internal tasks + ffmpeg
+        await streamer.stop()  # stops internal tasks + ffmpeg
         info["streamProcess"].cancel()  # just in case
         return jpeg
 
@@ -286,7 +286,7 @@ class TapoCamEntity(Camera):
             if proc.returncode is None:
                 proc.kill()
                 await proc.wait()
-            await streamer.stop_hls()  # terminates the internal tasks
+            await streamer.stop()  # terminates the internal tasks
             info["streamProcess"].cancel()  # extra safety – no dangling task
 
     async def _log_stream(self, stream: asyncio.StreamReader, *, prefix=""):
@@ -311,7 +311,7 @@ class TapoCamEntity(Camera):
         # Otherwise tear down anything old (e.g. video‑only preview Streamer)
         if self._streamer:
             LOGGER.warning("_ensure_av_pipe → stopping previous Streamer")
-            await self._streamer.stop_hls()
+            await self._streamer.stop()
             if self._stream_task:
                 self._stream_task.cancel()
 
