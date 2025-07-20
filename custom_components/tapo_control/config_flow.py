@@ -819,20 +819,18 @@ class FlowHandler(ConfigFlow):
                         self.tapoHost,
                     )
                     cloud_password = user_input[CLOUD_PASSWORD]
-                    tapoController = await self.hass.async_add_executor_job(
+                    await self.hass.async_add_executor_job(
                         registerController,
                         self.tapoHost,
                         self.tapoControlPort,
                         "admin",
                         cloud_password,
                     )
-                    camData = await getCamData(self.hass, tapoController)
                     LOGGER.debug(
                         "[ADD DEVICE][%s] Cloud password works for control.",
                         self.tapoHost,
                     )
                     self.tapoCloudPassword = cloud_password
-                    self.reportedIPAddress = getIP(camData)
                     return await self.async_step_other_options()
                 except Exception as e:
                     if "Failed to establish a new connection" in str(e):
@@ -950,7 +948,7 @@ class FlowHandler(ConfigFlow):
                             "[ADD DEVICE][%s] Testing control of camera using Camera Account.",
                             host,
                         )
-                        await self.hass.async_add_executor_job(
+                        tapoController = await self.hass.async_add_executor_job(
                             registerController,
                             host,
                             controlPort,
@@ -961,6 +959,9 @@ class FlowHandler(ConfigFlow):
                             "[ADD DEVICE][%s] Camera Account works for control.",
                             host,
                         )
+
+                        camData = await getCamData(self.hass, tapoController)
+                        self.reportedIPAddress = getIP(camData)
                     except Exception as e:
                         if str(e) == "Invalid authentication data":
                             LOGGER.debug(
