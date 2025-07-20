@@ -69,11 +69,15 @@ async def async_setup_entry(
         hasRTSPEntities = True
         async_add_entities([hdStream, sdStream])
 
-    directStream = TapoDirectCamEntity(
+    directStreamHD = TapoDirectCamEntity(
         hass, config_entry, entry, True, enabledByDefault=not hasRTSPEntities
     )
-    entry["entities"].append({"entity": directStream, "entry": entry})
-    async_add_entities([directStream])
+    directStreamSD = TapoDirectCamEntity(
+        hass, config_entry, entry, False, enabledByDefault=False
+    )
+    entry["entities"].append({"entity": directStreamHD, "entry": entry})
+    entry["entities"].append({"entity": directStreamSD, "entry": entry})
+    async_add_entities([directStreamHD, directStreamSD])
 
 
 class TapoCamEntity(Camera):
@@ -344,6 +348,11 @@ class TapoDirectCamEntity(TapoCamEntity):
     ):
         super().__init__(hass, config_entry, entry, HDStream, True)
 
+        if HDStream:
+            self._directQuality = "HD"
+        else:
+            self._directQuality = "VGA"
+
         self._HAstream: Stream | None = None
         self._streamer: Streamer | None = None
         self._stream_fd: int | None = None
@@ -368,6 +377,7 @@ class TapoDirectCamEntity(TapoCamEntity):
         streamer = Streamer(
             self._controller,
             includeAudio=False,
+            quality=self._directQuality,
         )
         info = await streamer.start()
         fd = info["read_fd"]
@@ -408,6 +418,7 @@ class TapoDirectCamEntity(TapoCamEntity):
         streamer = Streamer(
             self._controller,
             includeAudio=False,
+            quality=self._directQuality,
         )
         info = await streamer.start()
         fd: int = info["read_fd"]
@@ -485,6 +496,7 @@ class TapoDirectCamEntity(TapoCamEntity):
         self._streamer = Streamer(
             self._controller,
             includeAudio=False,
+            quality=self._directQuality,
         )
         info = await self._streamer.start()
 
