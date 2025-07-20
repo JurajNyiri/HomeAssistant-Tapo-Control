@@ -19,6 +19,9 @@ from homeassistant.helpers.aiohttp_client import async_aiohttp_proxy_stream
 from homeassistant.helpers.config_validation import boolean
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.util import slugify
+from homeassistant.components.stream import (
+    Stream,
+)
 
 from .const import (
     CONF_RTSP_TRANSPORT,
@@ -95,6 +98,7 @@ class TapoCamEntity(Camera):
         self._attr_should_poll = True
         self._is_cam_entity = True
         self._is_noise_sensor = False
+        self._HAstream: Stream | None = None
 
         self._streamer: Streamer | None = None
         self._stream_fd: int | None = None
@@ -107,6 +111,7 @@ class TapoCamEntity(Camera):
 
     async def async_added_to_hass(self) -> None:
         self._enabled = True
+        await super().async_added_to_hass()
 
     async def async_will_remove_from_hass(self) -> None:
         if self._streamer:
@@ -274,34 +279,36 @@ class TapoCamEntity(Camera):
     async def async_update(self) -> None:
         await self._coordinator.async_request_refresh()
 
-    async def _ensure_av_pipe(self) -> None:
-        """Guarantee that a Streamer delivering **video + audio** TS is
-        alive and expose its read‑FD in ``self._stream_fd``."""
-
+    async def _ensure_av_pipe(self, newStream=False) -> None:
         LOGGER.warning("_ensure_av_pipe() called")
 
-        # If we already have a running Streamer with audio – reuse it
-        if self._streamer and self._streamer.running:
+        if self._streamer and self._streamer.running and not newStream:
             LOGGER.warning("_ensure_av_pipe → already running (fd=%s)", self._stream_fd)
             return
 
-        # Otherwise tear down anything old (e.g. video‑only preview Streamer)
         if self._streamer:
             LOGGER.warning("_ensure_av_pipe → stopping previous Streamer")
-            await self._streamer.stop()
-            if self._stream_task:
-                self._stream_task.cancel()
+            try:
+                await self._streamer.stop()
+                if self._stream_task:
+                    self._stream_task.cancel()
+            except ConnectionRefusedError as err:
+                LOGGER.warning(err)
+                pass
 
-        # Launch fresh Streamer in *pipe* mode with audio enabled
-        LOGGER.warning("_ensure_av_pipe → launching NEW Streamer (audio=on)")
+        LOGGER.warning("_ensure_av_pipe → launching NEW Streamer")
         self._streamer = Streamer(
             self._controller,
-            includeAudio=False,  # *** A/V ***
+            includeAudio=False,
         )
         info = await self._streamer.start()
 
-        # Expose its pipe FD so HA’s stream worker can read from it
         self._stream_fd: int = info["read_fd"]
+
+        if self._HAstream is not None:
+            newSource = await self.stream_source()
+            self._HAstream.update_source(newSource)
+
         os.set_inheritable(self._stream_fd, True)
         self._stream_task = info["streamProcess"]
 
@@ -312,22 +319,21 @@ class TapoCamEntity(Camera):
         )
 
     async def stream_source(self) -> str | None:
-        """Return an FFmpeg‑compatible URL for HA’s stream worker.
-
-        If **Enable Stream** is OFF we fall back to the original RTSP/HLS URL.
-        Otherwise we hand HA a ``pipe:<fd>`` that carries live TS with audio.
-        """
-
-        LOGGER.warning(
-            "stream_source() requested  (enable_stream=%s)", self._enable_stream
-        )
-
-        # --- live pipe path ---------------------------------------------
-        await self._ensure_av_pipe()
-
         source = f"pipe:{self._stream_fd}"
         LOGGER.warning("stream_source → returning  %s", source)
         return source
+
+    async def async_create_stream(self) -> Stream | None:
+        await self._ensure_av_pipe()
+        self._HAstream = await super().async_create_stream()
+        self._HAstream.set_update_callback(self._on_stream_state)
+
+        return self._HAstream
+
+    def _on_stream_state(self):
+        if not self._HAstream.available:
+            LOGGER.warning("%s: HA stream unavailable – restarting", self.entity_id)
+            asyncio.create_task(self._ensure_av_pipe(newStream=True))
 
     def updateTapo(self, camData):
         LOGGER.debug("updateTapo - camera")
