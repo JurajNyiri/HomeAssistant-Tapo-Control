@@ -1,11 +1,11 @@
 import datetime
 import hashlib
 import asyncio
+from aiohttp import ClientError
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.device_registry import async_get as device_registry_async_get
 from homeassistant.const import (
     CONF_IP_ADDRESS,
     CONF_USERNAME,
@@ -397,7 +397,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         try:
             async with asyncio.timeout(3):
                 await hass.data[DOMAIN][entry.entry_id]["events"].async_stop()
-        except TimeoutError:
+        except (asyncio.TimeoutError, ClientError):
             LOGGER.warning(
                 "Timed out waiting for onvif connection to close, proceeding."
             )
