@@ -359,7 +359,6 @@ class TapoDirectCamEntity(TapoCamEntity):
         self._stream_task: asyncio.Task | None = None
         self._enabled_by_default = enabledByDefault
 
-    # Disable entity by default if RTSP is enabled
     @property
     def entity_registry_enabled_default(self) -> bool:
         return self._enabled_by_default
