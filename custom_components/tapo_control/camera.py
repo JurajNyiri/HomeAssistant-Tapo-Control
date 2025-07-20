@@ -453,7 +453,7 @@ class TapoDirectCamEntity(TapoCamEntity):
                 self._ffmpeg.ffmpeg_stream_content_type,
             )
         finally:
-            LOGGER.warning("Direct MJPEG: shutting ffmpeg / streamer")
+            LOGGER.debug("Direct MJPEG: shutting ffmpeg / streamer")
             if proc.returncode is None:
                 proc.kill()
                 await proc.wait()
