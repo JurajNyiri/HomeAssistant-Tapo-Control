@@ -55,21 +55,25 @@ async def async_setup_entry(
         "delete_preset",
     )
 
+    hasRTSPEntities = False
+
     if (
         len(config_entry.data[CONF_USERNAME]) > 0
         and len(config_entry.data[CONF_PASSWORD]) > 0
-        and False  # TODO REFACTOR ME
     ):
-        hdStream = TapoCamEntity(hass, config_entry, entry, True)
-        sdStream = TapoCamEntity(hass, config_entry, entry, False)
+        hdStream = TapoRTSPCamEntity(hass, config_entry, entry, True)
+        sdStream = TapoRTSPCamEntity(hass, config_entry, entry, False)
 
         entry["entities"].append({"entity": hdStream, "entry": entry})
         entry["entities"].append({"entity": sdStream, "entry": entry})
+        hasRTSPEntities = True
         async_add_entities([hdStream, sdStream])
-    elif True:  # TODO REFACTOR ME
-        hdStream = TapoDirectCamEntity(hass, config_entry, entry, True)
-        entry["entities"].append({"entity": hdStream, "entry": entry})
-        async_add_entities([hdStream])
+
+    directStream = TapoDirectCamEntity(
+        hass, config_entry, entry, True, enabledByDefault=not hasRTSPEntities
+    )
+    entry["entities"].append({"entity": directStream, "entry": entry})
+    async_add_entities([directStream])
 
 
 class TapoCamEntity(Camera):
@@ -79,6 +83,7 @@ class TapoCamEntity(Camera):
         config_entry: dict,
         entry: dict,
         HDStream: boolean,
+        directStream: boolean,
     ):
         super().__init__()
         self.stream_options[CONF_RTSP_TRANSPORT] = config_entry.data.get(
@@ -91,6 +96,7 @@ class TapoCamEntity(Camera):
         self._hass = hass
         self._enabled = False
         self._hdstream = HDStream
+        self._directStream = directStream
         self._extra_arguments = config_entry.data.get(CONF_EXTRA_ARGUMENTS)
         self._enable_stream = config_entry.data.get(ENABLE_STREAM)
         self._attr_extra_state_attributes = entry["camData"]["basic_info"]
@@ -123,6 +129,8 @@ class TapoCamEntity(Camera):
             name += " HD Stream"
         else:
             name += " SD Stream"
+        if self._directStream:
+            name += " (Direct)"
         return name
 
     @property
@@ -132,7 +140,7 @@ class TapoCamEntity(Camera):
         else:
             streamType = "sd"
         return slugify(
-            f"{self._attr_extra_state_attributes['mac']}_{streamType}_tapo_control"
+            f"{self._attr_extra_state_attributes['mac']}_{streamType}{"_direct" if self._directStream else ""}_tapo_control"
         )
 
     @property
@@ -158,7 +166,7 @@ class TapoCamEntity(Camera):
         return await super().async_create_stream()
 
     def updateTapo(self, camData):
-        LOGGER.warning("updateTapo - camera")
+        LOGGER.debug("updateTapo - camera")
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
@@ -279,7 +287,7 @@ class TapoCamEntity(Camera):
                 LOGGER.error("Preset " + preset + " does not exist.")
 
 
-class TapoDirectCamEntity(TapoCamEntity):
+class TapoRTSPCamEntity(TapoCamEntity):
     def __init__(
         self,
         hass: HomeAssistant,
@@ -287,15 +295,65 @@ class TapoDirectCamEntity(TapoCamEntity):
         entry: dict,
         HDStream: boolean,
     ):
-        super().__init__(hass, config_entry, entry, HDStream)
+        super().__init__(hass, config_entry, entry, HDStream, False)
+
+    async def async_camera_image(self, width=None, height=None):
+        LOGGER.debug("async_camera_image - camera")
+        ffmpeg = ImageFrame(self._ffmpeg.binary)
+        streaming_url = getStreamSource(self._config_entry, self._hdstream)
+        image = await asyncio.shield(
+            ffmpeg.get_image(
+                streaming_url,
+                output_format=IMAGE_JPEG,
+                extra_cmd=self._extra_arguments,
+            )
+        )
+        return image
+
+    async def handle_async_mjpeg_stream(self, request):
+        LOGGER.debug("handle_async_mjpeg_stream - camera")
+        streaming_url = getStreamSource(self._config_entry, self._hdstream)
+        stream = CameraMjpeg(self._ffmpeg.binary)
+        await stream.open_camera(
+            streaming_url,
+            extra_cmd=self._extra_arguments,
+        )
+        try:
+            stream_reader = await stream.get_reader()
+            return await async_aiohttp_proxy_stream(
+                self.hass,
+                request,
+                stream_reader,
+                self._ffmpeg.ffmpeg_stream_content_type,
+            )
+        finally:
+            await stream.close()
+
+    async def stream_source(self):
+        return getStreamSource(self._config_entry, self._hdstream)
+
+
+class TapoDirectCamEntity(TapoCamEntity):
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        config_entry: dict,
+        entry: dict,
+        HDStream: boolean,
+        enabledByDefault: boolean,
+    ):
+        super().__init__(hass, config_entry, entry, HDStream, True)
 
         self._HAstream: Stream | None = None
         self._streamer: Streamer | None = None
         self._stream_fd: int | None = None
         self._stream_task: asyncio.Task | None = None
+        self._enabled_by_default = enabledByDefault
 
-    def debugLog(self, msg):
-        LOGGER.debug(msg)
+    # Disable entity by default if RTSP is enabled
+    @property
+    def entity_registry_enabled_default(self) -> bool:
+        return self._enabled_by_default
 
     async def async_will_remove_from_hass(self) -> None:
         if self._streamer:
@@ -307,8 +365,6 @@ class TapoDirectCamEntity(TapoCamEntity):
     async def async_camera_image(
         self, width: int | None = None, height: int | None = None
     ):
-        """Return a single JPEG made from a fresh in‑memory preview."""
-        # ── 1.  Spin‑up a short‑lived Streamer in pipe mode ────────────────
         streamer = Streamer(
             self._controller,
             includeAudio=False,
@@ -317,7 +373,6 @@ class TapoDirectCamEntity(TapoCamEntity):
         fd = info["read_fd"]
         os.set_inheritable(fd, True)
 
-        # ── 2.  Run FFmpeg to capture exactly one frame ────────────────────
         ff_cmd = [
             self._ffmpeg.binary,
             "-loglevel",
@@ -344,47 +399,41 @@ class TapoDirectCamEntity(TapoCamEntity):
         )
         jpeg, _ = await proc.communicate()
 
-        # ── 3.  Clean‑up ───────────────────────────────────────────────────
-        await streamer.stop()  # stops internal tasks + ffmpeg
-        info["streamProcess"].cancel()  # just in case
+        await streamer.stop()
+        info["streamProcess"].cancel()
         return jpeg
 
     async def handle_async_mjpeg_stream(self, request):
-        """Serve a live MJPEG preview built on‑the‑fly from the Tapo TS pipe."""
-
-        LOGGER.warning("MJPEG ⟶ request")
-
-        # ── 1.  Start a *short‑lived* Streamer instance in pipe‑only mode ──────
+        LOGGER.debug("Direct MJPEG: request")
         streamer = Streamer(
             self._controller,
-            includeAudio=False,  # video only for MJPEG
+            includeAudio=False,
         )
         info = await streamer.start()
         fd: int = info["read_fd"]
         os.set_inheritable(fd, True)
-        LOGGER.warning("MJPEG ⟶ using pipe fd %s", fd)
+        LOGGER.debug("Direct MJPEG: using pipe fd %s", fd)
 
-        # ── 2.  Spawn FFmpeg: TS → MJPEG (multipart) ───────────────────────────
         ff_cmd = [
             self._ffmpeg.binary,
             "-loglevel",
-            "info",  # see what happens, but not too chatty
+            "info",
             "-hide_banner",
             "-probesize",
             "256k",
             "-analyzeduration",
-            "500000",  # 0.5 s is plenty for a TS preview
+            "500000",
             "-i",
-            f"pipe:{fd}",  # INPUT: live TS from the Streamer
+            f"pipe:{fd}",
             "-c:v",
             "mjpeg",
             "-q:v",
-            "5",  # 2‑31 (lower = better quality)
+            "5",
             "-f",
-            "mpjpeg",  # ***multipart*** MJPEG for browsers
-            "pipe:1",  # OUTPUT to stdout
+            "mpjpeg",
+            "pipe:1",
         ]
-        LOGGER.warning("MJPEG ⟶ ffmpeg cmd: %s", " ".join(ff_cmd))
+        LOGGER.debug("Direct MJPEG: ffmpeg cmd: %s", " ".join(ff_cmd))
 
         proc = await asyncio.create_subprocess_exec(
             *ff_cmd,
@@ -392,41 +441,38 @@ class TapoDirectCamEntity(TapoCamEntity):
             stderr=asyncio.subprocess.PIPE,
             pass_fds=(fd,),
         )
-        LOGGER.warning("MJPEG ⟶ ffmpeg PID %s", proc.pid)
+        LOGGER.debug("Direct MJPEG: ffmpeg PID %s", proc.pid)
 
-        # mirror FFmpeg stderr into the HA log (useful for debugging)
-        asyncio.create_task(self._log_stream(proc.stderr, prefix="MJPEG ffmpeg"))
+        asyncio.create_task(self._log_stream(proc.stderr, prefix="Direct MJPEG ffmpeg"))
 
         try:
-            # proxy stdout (multipart MJPEG) directly to the client
             return await async_aiohttp_proxy_stream(
                 self.hass,
                 request,
                 proc.stdout,
-                self._ffmpeg.ffmpeg_stream_content_type,  # correct MIME header
+                self._ffmpeg.ffmpeg_stream_content_type,
             )
         finally:
-            LOGGER.warning("MJPEG ⟶ shutting ffmpeg / streamer")
+            LOGGER.warning("Direct MJPEG: shutting ffmpeg / streamer")
             if proc.returncode is None:
                 proc.kill()
                 await proc.wait()
-            await streamer.stop()  # terminates the internal tasks
-            info["streamProcess"].cancel()  # extra safety – no dangling task
+            await streamer.stop()
+            info["streamProcess"].cancel()
 
     async def _log_stream(self, stream: asyncio.StreamReader, *, prefix=""):
-        """Helper: mirror every stderr line into HA log."""
         async for line in stream:
-            LOGGER.warning("%s: %s", prefix, line.decode().rstrip())
+            LOGGER.debug("%s: %s", prefix, line.decode().rstrip())
 
     async def _ensure_av_pipe(self, newStream=False) -> None:
-        LOGGER.warning("_ensure_av_pipe() called")
+        LOGGER.debug("_ensure_av_pipe() called")
 
         if self._streamer and self._streamer.running and not newStream:
-            LOGGER.warning("_ensure_av_pipe → already running (fd=%s)", self._stream_fd)
+            LOGGER.debug("_ensure_av_pipe: already running (fd=%s)", self._stream_fd)
             return
 
         if self._streamer:
-            LOGGER.warning("_ensure_av_pipe → stopping previous Streamer")
+            LOGGER.debug("_ensure_av_pipe: stopping previous Streamer")
             try:
                 await self._streamer.stop()
                 if self._stream_task:
@@ -435,7 +481,7 @@ class TapoDirectCamEntity(TapoCamEntity):
                 LOGGER.warning(err)
                 pass
 
-        LOGGER.warning("_ensure_av_pipe → launching NEW Streamer")
+        LOGGER.debug("_ensure_av_pipe: launching NEW Streamer")
         self._streamer = Streamer(
             self._controller,
             includeAudio=False,
@@ -451,15 +497,15 @@ class TapoDirectCamEntity(TapoCamEntity):
         os.set_inheritable(self._stream_fd, True)
         self._stream_task = info["streamProcess"]
 
-        LOGGER.warning(
-            "_ensure_av_pipe → ready (fd=%s, task=%s)",
+        LOGGER.debug(
+            "_ensure_av_pipe: ready (fd=%s, task=%s)",
             self._stream_fd,
             self._stream_task,
         )
 
     async def stream_source(self) -> str | None:
         source = f"pipe:{self._stream_fd}"
-        LOGGER.warning("stream_source → returning  %s", source)
+        LOGGER.debug("stream_source: returning  %s", source)
         return source
 
     async def async_create_stream(self) -> Stream | None:
@@ -471,5 +517,5 @@ class TapoDirectCamEntity(TapoCamEntity):
 
     def _on_stream_state(self):
         if not self._HAstream.available:
-            LOGGER.warning("%s: HA stream unavailable – restarting", self.entity_id)
+            LOGGER.debug("%s: HA stream unavailable: restarting", self.entity_id)
             asyncio.create_task(self._ensure_av_pipe(newStream=True))
