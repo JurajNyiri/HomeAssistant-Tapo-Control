@@ -55,29 +55,33 @@ async def async_setup_entry(
         "delete_preset",
     )
 
-    hasRTSPEntities = False
+    async def setupEntities(entry):
+        hasRTSPEntities = False
+        if (
+            len(config_entry.data[CONF_USERNAME]) > 0
+            and len(config_entry.data[CONF_PASSWORD]) > 0
+        ):
+            hdStream = TapoRTSPCamEntity(hass, config_entry, entry, True)
+            sdStream = TapoRTSPCamEntity(hass, config_entry, entry, False)
 
-    if (
-        len(config_entry.data[CONF_USERNAME]) > 0
-        and len(config_entry.data[CONF_PASSWORD]) > 0
-    ):
-        hdStream = TapoRTSPCamEntity(hass, config_entry, entry, True)
-        sdStream = TapoRTSPCamEntity(hass, config_entry, entry, False)
+            entry["entities"].append({"entity": hdStream, "entry": entry})
+            entry["entities"].append({"entity": sdStream, "entry": entry})
+            hasRTSPEntities = True
+            async_add_entities([hdStream, sdStream])
 
-        entry["entities"].append({"entity": hdStream, "entry": entry})
-        entry["entities"].append({"entity": sdStream, "entry": entry})
-        hasRTSPEntities = True
-        async_add_entities([hdStream, sdStream])
+        directStreamHD = TapoDirectCamEntity(
+            hass, config_entry, entry, True, enabledByDefault=not hasRTSPEntities
+        )
+        directStreamSD = TapoDirectCamEntity(
+            hass, config_entry, entry, False, enabledByDefault=False
+        )
+        entry["entities"].append({"entity": directStreamHD, "entry": entry})
+        entry["entities"].append({"entity": directStreamSD, "entry": entry})
+        async_add_entities([directStreamHD, directStreamSD])
 
-    directStreamHD = TapoDirectCamEntity(
-        hass, config_entry, entry, True, enabledByDefault=not hasRTSPEntities
-    )
-    directStreamSD = TapoDirectCamEntity(
-        hass, config_entry, entry, False, enabledByDefault=False
-    )
-    entry["entities"].append({"entity": directStreamHD, "entry": entry})
-    entry["entities"].append({"entity": directStreamSD, "entry": entry})
-    async_add_entities([directStreamHD, directStreamSD])
+    await setupEntities(entry)
+    for childDevice in entry["childDevices"]:
+        await setupEntities(childDevice)
 
 
 class TapoCamEntity(Camera):
@@ -474,6 +478,9 @@ class TapoDirectCamEntity(TapoCamEntity):
         async for line in stream:
             LOGGER.debug("%s: %s", prefix, line.decode().rstrip())
 
+    def logFunction(self, data):
+        LOGGER.warning(data)
+
     async def _ensure_av_pipe(self, newStream=False) -> None:
         LOGGER.debug("_ensure_av_pipe() called")
 
@@ -487,7 +494,7 @@ class TapoDirectCamEntity(TapoCamEntity):
                 await self._streamer.stop()
                 if self._stream_task:
                     self._stream_task.cancel()
-            except ConnectionRefusedError as err:
+            except Exception as err:
                 LOGGER.warning(err)
                 pass
 
@@ -496,6 +503,7 @@ class TapoDirectCamEntity(TapoCamEntity):
             self._controller,
             includeAudio=False,
             quality=self._directQuality,
+            logFunction=self.logFunction,
         )
         info = await self._streamer.start()
 

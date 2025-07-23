@@ -919,12 +919,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         if tapoController.isKLAP is False:
             LOGGER.debug("Controller is not KLAP device.")
-            if camData["childDevices"] is False or camData["childDevices"] is None:
-                LOGGER.debug("Setting up camera entities.")
-                await hass.async_create_task(
-                    hass.config_entries.async_forward_entry_setups(entry, ["camera"])
-                )
-            else:
+            if not (
+                camData["childDevices"] is False or camData["childDevices"] is None
+            ):
                 LOGGER.debug("Device is a parent.")
                 hass.data[DOMAIN][entry.entry_id]["isParent"] = True
                 for childDevice in camData["childDevices"]["child_device_list"]:
@@ -973,6 +970,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             "isParent": False,
                         }
                     )
+            LOGGER.debug("Setting up camera entities.")
+            await hass.async_create_task(
+                hass.config_entries.async_forward_entry_setups(entry, ["camera"])
+            )
 
         LOGGER.debug("Setting up entities.")
         await hass.async_create_task(
