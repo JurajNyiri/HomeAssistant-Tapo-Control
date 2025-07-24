@@ -81,8 +81,8 @@ from .utils import (
     getRecordings,
     scheduleAll,
 )
-from .pytapo import Tapo
-from .pytapo.version import PYTAPO_VERSION
+from pytapo import Tapo
+from pytapo.version import PYTAPO_VERSION
 
 from homeassistant.helpers.event import async_track_time_interval
 from datetime import timedelta
