@@ -445,12 +445,8 @@ async def mediaCleanup(hass, entry, deviceData):
         hass, entry_id, deviceData, ".jpg", "thumbs"
     )
 
-    await deleteColdFilesOlderThanMaxSyncTime(
-        hass, entry, deviceData, ".mp4", "videos", childID=childID
-    )
-    await deleteColdFilesOlderThanMaxSyncTime(
-        hass, entry, deviceData, ".jpg", "thumbs", childID=childID
-    )
+    await deleteColdFilesOlderThanMaxSyncTime(hass, entry, deviceData, ".mp4", "videos")
+    await deleteColdFilesOlderThanMaxSyncTime(hass, entry, deviceData, ".jpg", "thumbs")
 
     # Delete everything other than HOT_DIR_DELETE_TIME seconds from hot storage
     LOGGER.debug(
