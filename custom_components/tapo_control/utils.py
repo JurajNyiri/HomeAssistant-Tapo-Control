@@ -180,6 +180,9 @@ def getHotDirPathForEntry(hass: HomeAssistant, entry_id: str):
 
 async def getRecordings(hass, entryData, tapoController, date):
     LOGGER.debug("Getting recordings for date " + date + "...")
+    childID = ""
+    if entryData["isChild"]:
+        childID = entryData["camData"]["basic_info"]["dev_id"]
     recordingsForDay = await hass.async_add_executor_job(
         tapoController.getRecordings, date
     )
@@ -187,7 +190,8 @@ async def getRecordings(hass, entryData, tapoController, date):
         for recording in recordingsForDay:
             for recordingKey in recording:
                 entryData["mediaScanResult"][
-                    str(recording[recordingKey]["startTime"])
+                    ((childID + "-") if childID != "" else "")
+                    + str(recording[recordingKey]["startTime"])
                     + "-"
                     + str(recording[recordingKey]["endTime"])
                 ] = True
@@ -234,7 +238,8 @@ async def findMedia(hass, entryData, entry):
                         childID=childID,
                     )
                     mediaScanResult[
-                        str(recording[recordingKey]["startTime"])
+                        ((childID + "-") if childID != "" else "")
+                        + str(recording[recordingKey]["startTime"])
                         + "-"
                         + str(recording[recordingKey]["endTime"])
                     ] = True
@@ -270,7 +275,9 @@ async def processDownload(
             startDate: startDate,
             endDate: endDate,
         }
-    mediaScanName = str(startDate) + "-" + str(endDate)
+    mediaScanName = (
+        ((childID + "-") if childID != "" else "") + str(startDate) + "-" + str(endDate)
+    )
     if mediaScanName not in entryData["mediaScanResult"]:
         entryData["mediaScanResult"][mediaScanName] = True
 
@@ -300,8 +307,10 @@ async def generateThumb(hass, entry_id, startDate: int, endDate: int, childID=""
 
 
 # todo: findMedia needs to run periodically because of this function!!!
-async def deleteFilesNoLongerPresentInCamera(hass, entry_id, extension, folder):
-    if hass.data[DOMAIN][entry_id]["initialMediaScanDone"] is True:
+async def deleteFilesNoLongerPresentInCamera(
+    hass, entry_id, entryData, extension, folder, childID=""
+):
+    if entryData["initialMediaScanDone"] is True:
         coldDirPath = getColdDirPathForEntry(hass, entry_id)
         if os.path.exists(coldDirPath + "/" + folder + "/"):
             listDirFiles = await hass.async_add_executor_job(
@@ -310,15 +319,25 @@ async def deleteFilesNoLongerPresentInCamera(hass, entry_id, extension, folder):
             for f in listDirFiles:
                 fileName = f.replace(extension, "")
                 filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
-                if fileName not in hass.data[DOMAIN][entry_id]["mediaScanResult"]:
-                    LOGGER.debug(
+                LOGGER.warning(fileName)
+                LOGGER.warning(entryData["mediaScanResult"])
+                if (
+                    (entryData["isChild"] is False and fileName.count("-") == 1)
+                    or (
+                        (entryData["isChild"] is True and fileName.count("-") == 2)
+                        and childID in fileName
+                    )
+                    and fileName not in entryData["mediaScanResult"]
+                ):
+
+                    LOGGER.warning(
                         "[deleteFilesNoLongerPresentInCamera] Removing "
                         + filePath
                         + " ("
                         + fileName
                         + ")..."
                     )
-                    hass.data[DOMAIN][entry_id]["downloadedStreams"].pop(
+                    entryData["downloadedStreams"].pop(
                         fileName,
                         None,
                     )
@@ -395,12 +414,17 @@ async def mediaCleanup(hass, entry, entryData, childID=""):
         + ", child ID:'"
         + childID
         + "..."
-    )  ##TODO
-    # await deleteFilesNotIncluding(hass, hotDirPath + "/videos/", UUID)
-    # await deleteFilesNotIncluding(hass, hotDirPath + "/thumbs/", UUID)
+    )
 
-    # await deleteFilesNoLongerPresentInCamera(hass, entry_id, ".mp4", "videos")
-    # await deleteFilesNoLongerPresentInCamera(hass, entry_id, ".jpg", "thumbs")
+    await deleteFilesNotIncluding(hass, hotDirPath + "/videos/", UUID)
+    await deleteFilesNotIncluding(hass, hotDirPath + "/thumbs/", UUID)
+
+    await deleteFilesNoLongerPresentInCamera(
+        hass, entry_id, entryData, ".mp4", "videos", childID=childID
+    )
+    await deleteFilesNoLongerPresentInCamera(
+        hass, entry_id, entryData, ".jpg", "thumbs", childID=childID
+    )
 
     # await deleteColdFilesOlderThanMaxSyncTime(hass, entry, ".mp4", "videos")
     # await deleteColdFilesOlderThanMaxSyncTime(hass, entry, ".jpg", "thumbs")
