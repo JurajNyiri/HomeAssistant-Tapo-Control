@@ -207,7 +207,7 @@ def getEntryStorageFile(config_entry):
 # todo: findMedia needs to run periodically
 async def findMedia(hass, entryData, entry):
     entry_id = entry.entry_id
-    LOGGER.warning(
+    LOGGER.debug(
         "Finding media for " + entryData["camData"]["basic_info"]["device_name"] + "..."
     )
     entryData["initialMediaScanDone"] = False
@@ -220,11 +220,11 @@ async def findMedia(hass, entryData, entry):
     mediaScanResult = {}
     for searchResult in recordingsList:
         for key in searchResult:
-            LOGGER.warning(f"Getting media for day {searchResult[key]['date']}...")
+            LOGGER.debug(f"Getting media for day {searchResult[key]['date']}...")
             recordingsForDay = await getRecordings(
                 hass, entryData, tapoController, searchResult[key]["date"]
             )
-            LOGGER.warning(
+            LOGGER.debug(
                 f"Looping through recordings for day {searchResult[key]['date']}..."
             )
             for recording in recordingsForDay:
@@ -319,8 +319,6 @@ async def deleteFilesNoLongerPresentInCamera(
             for f in listDirFiles:
                 fileName = f.replace(extension, "")
                 filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
-                LOGGER.warning(fileName)
-                LOGGER.warning(entryData["mediaScanResult"])
                 if (
                     (entryData["isChild"] is False and fileName.count("-") == 1)
                     or (
@@ -329,8 +327,7 @@ async def deleteFilesNoLongerPresentInCamera(
                     )
                     and fileName not in entryData["mediaScanResult"]
                 ):
-
-                    LOGGER.warning(
+                    LOGGER.debug(
                         "[deleteFilesNoLongerPresentInCamera] Removing "
                         + filePath
                         + " ("
@@ -371,21 +368,12 @@ async def deleteColdFilesOlderThanMaxSyncTime(
                     (entryData["isChild"] is True and fileName.count("-") == 2)
                     and childID in fileName
                 ):
-                    LOGGER.warning(
-                        (entryData["isChild"] is False and fileName.count("-") == 1)
-                    )
-                    LOGGER.warning("or")
-                    LOGGER.warning(
-                        (entryData["isChild"] is True and fileName.count("-") == 2)
-                    )
-                    LOGGER.warning("and")
-                    LOGGER.warning(childID in fileName)
                     endTS = int(fileName.split("-")[len(splitFileName) - 1])
                     last_modified = os.stat(filePath).st_mtime
                     if (endTS < (int(ts) - (int(mediaSyncTime) + timeCorrection))) and (
                         ts - last_modified > int(mediaSyncTime)
                     ):
-                        LOGGER.warning(
+                        LOGGER.debug(
                             "[deleteColdFilesOlderThanMaxSyncTime] Removing "
                             + filePath
                             + " ("
@@ -429,7 +417,7 @@ async def mediaCleanup(hass, entry, deviceData):
     hotDirPath = getHotDirPathForEntry(hass, entry_id)
 
     # clean cache files from old HA instance
-    LOGGER.warning(
+    LOGGER.debug(
         "Removing cache files from old HA instances for entity "
         + entry_id
         + ", child ID:'"
@@ -455,7 +443,7 @@ async def mediaCleanup(hass, entry, deviceData):
     )
 
     # Delete everything other than HOT_DIR_DELETE_TIME seconds from hot storage
-    LOGGER.warning(
+    LOGGER.debug(
         "Deleting hot storage files older than "
         + str(HOT_DIR_DELETE_TIME)
         + " seconds for entity "
@@ -464,8 +452,8 @@ async def mediaCleanup(hass, entry, deviceData):
         + childID
         + "..."
     )
-    # await deleteFilesOlderThan(hass, hotDirPath + "/videos/", HOT_DIR_DELETE_TIME)
-    # await deleteFilesOlderThan(hass, hotDirPath + "/thumbs/", HOT_DIR_DELETE_TIME)
+    await deleteFilesOlderThan(hass, hotDirPath + "/videos/", HOT_DIR_DELETE_TIME)
+    await deleteFilesOlderThan(hass, hotDirPath + "/thumbs/", HOT_DIR_DELETE_TIME)
 
 
 async def deleteDir(hass, dirPath):
@@ -509,7 +497,7 @@ def processDownloadStatus(
     recordingCount: int = False,
 ):
     def processUpdate(status):
-        LOGGER.warning(status)
+        LOGGER.debug(status)
         if isinstance(status, str):
             entryData["downloadProgress"] = status
         else:
