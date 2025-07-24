@@ -1119,14 +1119,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                     )
                                 )
                             ):
-                                LOGGER.debug("getRecordings -1")
+                                LOGGER.warning("getRecordings -1")
                                 recordingsForDay = await getRecordings(
                                     hass,
-                                    entry.entry_id,
+                                    hass.data[DOMAIN][entry.entry_id],
                                     tapoController,
                                     searchResult[key]["date"],
                                 )
-                                LOGGER.debug("getRecordings -2")
+                                LOGGER.warning("getRecordings -2")
                                 totalRecordingsToDownload = 0
                                 for recording in recordingsForDay:
                                     for recordingKey in recording:
@@ -1147,7 +1147,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                                 ][ENABLE_MEDIA_SYNC]
                                                 if enableMediaSync:
                                                     LOGGER.debug("getRecording -1")
-                                                    await getRecording(
+                                                    await getRecording(  # TODO modify to work with child
                                                         hass,
                                                         tapoController,
                                                         entry.entry_id,

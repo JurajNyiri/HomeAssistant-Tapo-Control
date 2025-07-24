@@ -249,6 +249,7 @@ async def findMedia(hass, entryData, entry):
                         )
     entryData["mediaScanResult"] = mediaScanResult
     entryData["initialMediaScanDone"] = True
+
     await mediaCleanup(hass, entry, entryData=entryData, childID=childID)
 
 
@@ -520,7 +521,9 @@ async def getHotFile(
     folder: str,
     childID="",
 ):
-    coldFilePath = getColdFile(hass, entry_id, startDate, endDate, folder)
+    coldFilePath = getColdFile(
+        hass, entry_id, startDate, endDate, folder, childID=childID
+    )
     hotDirPath = getHotDirPathForEntry(hass, entry_id)
     extension = pathlib.Path(coldFilePath).suffix
     fileNameEncrypted = getFileName(startDate, endDate, True, childID=childID)

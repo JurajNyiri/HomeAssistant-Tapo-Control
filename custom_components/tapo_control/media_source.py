@@ -319,15 +319,13 @@ class TapoMediaSource(MediaSource):
                             build_identifier(
                                 {
                                     **query,
-                                    "title": childDevice["camData"]["basic_info"][
-                                        "device_name"
-                                    ],
+                                    "title": childDevice["name"],
                                     "childID": childDevice["camData"]["basic_info"][
                                         "dev_id"
                                     ],
                                 }
                             ),
-                            childDevice["camData"]["basic_info"]["device_name"],
+                            childDevice["name"],
                             False,
                             True,
                         )
