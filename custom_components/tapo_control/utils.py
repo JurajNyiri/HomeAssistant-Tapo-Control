@@ -210,7 +210,7 @@ def getEntryStorageFile(config_entry, child_id):
 # todo: findMedia needs to run periodically
 async def findMedia(hass, entryData, entry):
     entry_id = entry.entry_id
-    LOGGER.warning("Finding media for " + entryData["name"] + "...")
+    LOGGER.debug("Finding media for " + entryData["name"] + "...")
     entryData["initialMediaScanDone"] = False
     childID = ""
     if entryData["isChild"]:
@@ -253,7 +253,7 @@ async def findMedia(hass, entryData, entry):
                             recording[recordingKey]["endTime"],
                             childID=childID,
                         )
-    LOGGER.warning("Found media for " + entryData["name"] + ".")
+    LOGGER.debug("Found media for " + entryData["name"] + ".")
     entryData["mediaScanResult"] = mediaScanResult
     entryData["initialMediaScanDone"] = True
 
@@ -1933,14 +1933,14 @@ def isCacheSupported(check_function, rawData):
 
 
 async def scheduleAll(hass, device, entry, mediaSync):
-    LOGGER.warning("scheduleAll for " + device["name"] + " called.")
+    LOGGER.debug("scheduleAll for " + device["name"] + " called.")
     if device["mediaSyncAvailable"]:
         if (
             device["initialMediaScanDone"] is True
             and device["mediaSyncScheduled"] is False
         ):
             device["mediaSyncScheduled"] = True
-            LOGGER.warning("scheduling media sync")
+            LOGGER.debug("Scheduling media sync")
             callback = partial(mediaSync, entry=entry, device=device)
 
             entry.async_on_unload(
@@ -1951,7 +1951,7 @@ async def scheduleAll(hass, device, entry, mediaSync):
                 )
             )
         elif device["initialMediaScanRunning"] is False:
-            LOGGER.warning("media scan running")
+            LOGGER.debug("Media scan running")
             device["initialMediaScanRunning"] = True
             try:
                 await hass.async_add_executor_job(

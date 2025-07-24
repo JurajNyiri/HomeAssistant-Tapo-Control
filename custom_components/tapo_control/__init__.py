@@ -787,7 +787,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 ts - hass.data[DOMAIN][entry.entry_id]["lastMediaCleanup"]
                 > MEDIA_CLEANUP_PERIOD
             ):
-                LOGGER.warning(
+                LOGGER.debug(
                     "Initiating media cleanup for "
                     + hass.data[DOMAIN][entry.entry_id]["name"]
                     + "..."
@@ -796,7 +796,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             if hass.data[DOMAIN][entry.entry_id]["isParent"]:
                 for child in hass.data[DOMAIN][entry.entry_id]["childDevices"]:
                     if ts - child["lastMediaCleanup"] > MEDIA_CLEANUP_PERIOD:
-                        LOGGER.warning(
+                        LOGGER.debug(
                             "Initiating media cleanup for " + child["name"] + "..."
                         )
                         await mediaCleanup(hass, entry, child)
@@ -1024,17 +1024,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         # todo move to utils
         async def mediaSync(now, entry, device):
-            LOGGER.warning("mediaSync")
+            LOGGER.debug("mediaSync")
             device["mediaSyncRanOnce"] = True
             enableMediaSync = device[ENABLE_MEDIA_SYNC]
             mediaSyncHours = entry.data.get(MEDIA_SYNC_HOURS)
-            LOGGER.warning("mediaSync - 2")
+            LOGGER.debug("mediaSync - 2")
 
             if mediaSyncHours == "":
                 mediaSyncTime = False
             else:
                 mediaSyncTime = (int(mediaSyncHours) * 60 * 60) + timeCorrection
-            LOGGER.warning("mediaSync - 3")
+            LOGGER.debug("mediaSync - 3")
             if (
                 enableMediaSync
                 and entry.entry_id in hass.data[DOMAIN]
@@ -1043,22 +1043,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 and device["isDownloadingStream"]
                 is False  # prevent breaking user manual upload
             ):
-                LOGGER.warning("Running media sync for " + device["name"] + "...")
+                LOGGER.debug("Running media sync for " + device["name"] + "...")
                 device["runningMediaSync"] = True
                 try:
                     tapoController: Tapo = device["controller"]
-                    LOGGER.warning("getRecordingsList -1")
+                    LOGGER.debug("getRecordingsList -1")
                     recordingsList = await hass.async_add_executor_job(
                         tapoController.getRecordingsList
                     )
-                    LOGGER.warning("getRecordingsList -2")
+                    LOGGER.debug("getRecordingsList -2")
 
                     ts = datetime.datetime.utcnow().timestamp()
                     for searchResult in recordingsList:
                         for key in searchResult:
-                            LOGGER.warning("inside for - 1")
+                            LOGGER.debug("inside for - 1")
                             enableMediaSync = device[ENABLE_MEDIA_SYNC]
-                            LOGGER.warning("inside for - 2")
+                            LOGGER.debug("inside for - 2")
                             if enableMediaSync and (
                                 (mediaSyncTime is False)
                                 or (
@@ -1073,14 +1073,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                     )
                                 )
                             ):
-                                LOGGER.warning("getRecordings -1")
+                                LOGGER.debug("getRecordings -1")
                                 recordingsForDay = await getRecordings(
                                     hass,
                                     device,
                                     tapoController,
                                     searchResult[key]["date"],
                                 )
-                                LOGGER.warning("getRecordings -2")
+                                LOGGER.debug("getRecordings -2")
                                 totalRecordingsToDownload = 0
                                 for recording in recordingsForDay:
                                     for recordingKey in recording:
@@ -1100,7 +1100,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                                     ENABLE_MEDIA_SYNC
                                                 ]
                                                 if enableMediaSync:
-                                                    LOGGER.warning("getRecording -1")
+                                                    LOGGER.debug("getRecording -1")
                                                     await getRecording(
                                                         hass,
                                                         tapoController,
@@ -1116,9 +1116,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                                         recordingCount,
                                                         totalRecordingsToDownload,
                                                     )
-                                                    LOGGER.warning("getRecording -2")
+                                                    LOGGER.debug("getRecording -2")
                                                 else:
-                                                    LOGGER.warning(
+                                                    LOGGER.debug(
                                                         f"Media sync disabled (inside getRecording): {enableMediaSync}"
                                                     )
                                             except Unresolvable as err:
@@ -1133,7 +1133,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                                 device["runningMediaSync"] = False
                                                 LOGGER.error(err)
                             else:
-                                LOGGER.warning(
+                                LOGGER.debug(
                                     f"Media sync ignoring {searchResult[key]["date"]}. Media sync: {enableMediaSync}."
                                 )
                 except Exception as err:
@@ -1141,7 +1141,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 LOGGER.debug("runningMediaSync -false")
                 device["runningMediaSync"] = False
             else:
-                LOGGER.warning(
+                LOGGER.debug(
                     f"Media sync for {device["name"]} disabled (inside mediaSync): {enableMediaSync}"
                 )
 
