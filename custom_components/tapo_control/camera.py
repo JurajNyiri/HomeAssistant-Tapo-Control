@@ -430,42 +430,18 @@ class TapoDirectCamEntity(TapoCamEntity):
             self._controller,
             includeAudio=False,
             quality=self._directQuality,
+            logFunction=self.logFunction,
+            mode="pipe",
+            ff_args={
+                "-c:v": "mjpeg",
+                "-f": "mpjpeg",
+                "-vsync": "0",
+            },
         )
         info = await streamer.start()
-        fd: int = info["read_fd"]
-        os.set_inheritable(fd, True)
-        LOGGER.debug("Direct MJPEG: using pipe fd %s", fd)
+        proc = info["ffmpegProcess"]
 
-        ff_cmd = [
-            self._ffmpeg.binary,
-            "-loglevel",
-            "info",
-            "-hide_banner",
-            "-probesize",
-            "256k",
-            "-analyzeduration",
-            "500000",
-            "-i",
-            f"pipe:{fd}",
-            "-c:v",
-            "mjpeg",
-            "-q:v",
-            "5",
-            "-f",
-            "mpjpeg",
-            "pipe:1",
-        ]
-        LOGGER.debug("Direct MJPEG: ffmpeg cmd: %s", " ".join(ff_cmd))
-
-        proc = await asyncio.create_subprocess_exec(
-            *ff_cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            pass_fds=(fd,),
-        )
         LOGGER.debug("Direct MJPEG: ffmpeg PID %s", proc.pid)
-
-        asyncio.create_task(self._log_stream(proc.stderr, prefix="Direct MJPEG ffmpeg"))
 
         try:
             return await async_aiohttp_proxy_stream(
