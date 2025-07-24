@@ -251,7 +251,6 @@ async def findMedia(hass, entryData, entry):
                             entryData,
                             recording[recordingKey]["startTime"],
                             recording[recordingKey]["endTime"],
-                            childID=childID,
                         )
     LOGGER.debug("Found media for " + entryData["name"] + ".")
     entryData["mediaScanResult"] = mediaScanResult
@@ -261,8 +260,11 @@ async def findMedia(hass, entryData, entry):
 
 
 async def processDownload(
-    hass, entry_id: int, entryData: dict, startDate: int, endDate: int, childID=""
+    hass, entry_id: int, entryData: dict, startDate: int, endDate: int
 ):
+    childID = ""
+    if entryData["isChild"]:
+        childID = entryData["camData"]["basic_info"]["dev_id"]
     filePath = getFileName(startDate, endDate, False, childID=childID)
 
     coldFilePath = getColdFile(
@@ -310,8 +312,11 @@ async def generateThumb(hass, entry_id, startDate: int, endDate: int, childID=""
 
 # todo: findMedia needs to run periodically because of this function!!!
 async def deleteFilesNoLongerPresentInCamera(
-    hass, entry_id, entryData, extension, folder, childID=""
+    hass, entry_id, entryData, extension, folder
 ):
+    childID = ""
+    if entryData["isChild"]:
+        childID = entryData["camData"]["basic_info"]["dev_id"]
     if entryData["initialMediaScanDone"] is True:
         coldDirPath = getColdDirPathForEntry(hass, entry_id)
         if os.path.exists(coldDirPath + "/" + folder + "/"):
@@ -344,8 +349,11 @@ async def deleteFilesNoLongerPresentInCamera(
 
 
 async def deleteColdFilesOlderThanMaxSyncTime(
-    hass, entry, entryData, extension, folder, childID=""
+    hass, entry, entryData, extension, folder
 ):
+    childID = ""
+    if entryData["isChild"]:
+        childID = entryData["camData"]["basic_info"]["dev_id"]
     entry_id = entry.entry_id
     mediaSyncHours = entry.data.get(MEDIA_SYNC_HOURS)
 
@@ -431,10 +439,10 @@ async def mediaCleanup(hass, entry, deviceData):
     await deleteFilesNotIncluding(hass, hotDirPath + "/thumbs/", UUID)
 
     await deleteFilesNoLongerPresentInCamera(
-        hass, entry_id, deviceData, ".mp4", "videos", childID=childID
+        hass, entry_id, deviceData, ".mp4", "videos"
     )
     await deleteFilesNoLongerPresentInCamera(
-        hass, entry_id, deviceData, ".jpg", "thumbs", childID=childID
+        hass, entry_id, deviceData, ".jpg", "thumbs"
     )
 
     await deleteColdFilesOlderThanMaxSyncTime(
@@ -662,9 +670,7 @@ async def getRecording(
             },
         )
 
-    await processDownload(
-        hass, entry_id, entryData, startDate, endDate, childID=childID
-    )
+    await processDownload(hass, entry_id, entryData, startDate, endDate)
 
     return coldFilePath
 
