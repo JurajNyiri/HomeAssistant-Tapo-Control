@@ -1079,7 +1079,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             ):
                                 LOGGER.debug("getRecordings -1")
                                 recordingsForDay = await getRecordings(
-                                    hass, entry.entry_id, searchResult[key]["date"]
+                                    hass,
+                                    entry.entry_id,
+                                    tapoController,
+                                    searchResult[key]["date"],
                                 )
                                 LOGGER.debug("getRecordings -2")
                                 totalRecordingsToDownload = 0

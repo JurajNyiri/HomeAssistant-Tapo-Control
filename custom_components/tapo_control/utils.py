@@ -13,7 +13,7 @@ import base64
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from pytapo.media_stream.downloader import Downloader
+from .pytapo.media_stream.downloader import Downloader
 from homeassistant.components.media_source.error import Unresolvable
 
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
@@ -178,8 +178,7 @@ def getHotDirPathForEntry(hass: HomeAssistant, entry_id: str):
     return hotDirPath.rstrip("/")
 
 
-async def getRecordings(hass, entry_id, date):
-    tapoController: Tapo = hass.data[DOMAIN][entry_id]["controller"]
+async def getRecordings(hass, entry_id, tapoController, date):
     LOGGER.debug("Getting recordings for date " + date + "...")
     recordingsForDay = await hass.async_add_executor_job(
         tapoController.getRecordings, date
@@ -214,7 +213,7 @@ async def findMedia(hass, entry):
         for key in searchResult:
             LOGGER.debug(f"Getting media for day {searchResult[key]['date']}...")
             recordingsForDay = await getRecordings(
-                hass, entry_id, searchResult[key]["date"]
+                hass, entry_id, tapoController, searchResult[key]["date"]
             )
             LOGGER.debug(
                 f"Looping through recordings for day {searchResult[key]['date']}..."
@@ -540,6 +539,8 @@ async def getRecording(
     totalRecordingCount: int = False,
 ) -> str:
     timeCorrection = await hass.async_add_executor_job(tapo.getTimeCorrection)
+    startDate = int(startDate)
+    endDate = int(endDate)
 
     coldDirPath = getColdDirPathForEntry(hass, entry_id)
     downloadUID = getFileName(startDate, endDate, False)
