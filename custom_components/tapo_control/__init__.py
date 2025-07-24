@@ -786,7 +786,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 ts - hass.data[DOMAIN][entry.entry_id]["lastMediaCleanup"]
                 > MEDIA_CLEANUP_PERIOD
             ):
-                await mediaCleanup(hass, entry)
+                # await mediaCleanup(hass, entry)
+                LOGGER.warning("TODOOOOO")
+                pass
 
             if (
                 hass.is_running
@@ -808,15 +810,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"]
                     is False
                 ):
+                    LOGGER.warning("media scan running")
                     hass.data[DOMAIN][entry.entry_id]["initialMediaScanRunning"] = True
                     try:
                         await hass.async_add_executor_job(
                             tapoController.getRecordingsList
                         )
                         hass.async_create_background_task(
-                            findMedia(hass, entry), "findMedia"
+                            findMedia(hass, hass.data[DOMAIN][entry.entry_id], entry),
+                            "findMedia",
                         )
                     except Exception as err:
+                        LOGGER.warning(err)
                         hass.data[DOMAIN][entry.entry_id]["initialMediaScanDone"] = True
                         hass.data[DOMAIN][entry.entry_id]["mediaSyncAvailable"] = False
                         enableMediaSync = hass.data[DOMAIN][entry.entry_id][
@@ -829,6 +834,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         else:
                             LOGGER.info(errMsg)
                             LOGGER.info(err)
+
+                    if hass.data[DOMAIN][entry.entry_id]["isParent"]:
+                        for child in hass.data[DOMAIN][entry.entry_id]["childDevices"]:
+                            try:
+                                childController = child["controller"]
+                                await hass.async_add_executor_job(
+                                    childController.getRecordingsList
+                                )
+                                hass.async_create_background_task(
+                                    findMedia(hass, child, entry), "findMedia"
+                                )
+                            except Exception as err:
+                                LOGGER.warning(err)
+                                child["initialMediaScanDone"] = True
+                                child["mediaSyncAvailable"] = False
+                                enableMediaSync = child[ENABLE_MEDIA_SYNC]
+                                errMsg = "Disabling media sync as there was error returned from getRecordingsList. Do you have SD card inserted?"
+                                if enableMediaSync:
+                                    LOGGER.warning(errMsg)
+                                    LOGGER.warning(err)
+                                else:
+                                    LOGGER.info(errMsg)
+                                    LOGGER.info(err)
 
         LOGGER.debug("Setting up data update coordinator.")
 
@@ -947,6 +975,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         {
                             "controller": tapoChildController,
                             "coordinator": tapoCoordinator,
+                            "usingCloudPassword": cloud_password != "",
+                            "timezoneOffset": hass.data[DOMAIN][entry.entry_id][
+                                "timezoneOffset"
+                            ],
                             "camData": childCamData,
                             "lastTimeSync": 0,
                             "lastMediaCleanup": 0,
@@ -954,6 +986,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             "lastFirmwareCheck": 0,
                             "latestFirmwareVersion": False,
                             "motionSensorCreated": False,
+                            "isDownloadingStream": False,
+                            "downloadedStreams": {},  # keeps track of all videos downloaded
+                            "downloadProgress": False,
+                            "initialMediaScanDone": False,
+                            ENABLE_MEDIA_SYNC: None,
+                            "mediaSyncScheduled": False,
+                            "mediaSyncRanOnce": False,
+                            "mediaSyncAvailable": True,
+                            "initialMediaScanRunning": False,
+                            "mediaScanResult": {},  # keeps track of all videos currently on camera
                             "entities": [],
                             "name": childCamData["basic_info"]["device_alias"],
                             "childDevices": [],
@@ -961,9 +1003,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             "isRunningOnBattery": (
                                 True
                                 if (
-                                    "basic_info" in camData
-                                    and "power" in camData["basic_info"]
-                                    and camData["basic_info"]["power"] == "BATTERY"
+                                    "basic_info" in childCamData
+                                    and "power" in childCamData["basic_info"]
+                                    and childCamData["basic_info"]["power"] == "BATTERY"
                                 )
                                 else False
                             ),

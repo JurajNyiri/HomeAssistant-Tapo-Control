@@ -178,7 +178,7 @@ def getHotDirPathForEntry(hass: HomeAssistant, entry_id: str):
     return hotDirPath.rstrip("/")
 
 
-async def getRecordings(hass, entry_id, tapoController, date):
+async def getRecordings(hass, entryData, tapoController, date):
     LOGGER.debug("Getting recordings for date " + date + "...")
     recordingsForDay = await hass.async_add_executor_job(
         tapoController.getRecordings, date
@@ -186,7 +186,7 @@ async def getRecordings(hass, entry_id, tapoController, date):
     if recordingsForDay is not None:
         for recording in recordingsForDay:
             for recordingKey in recording:
-                hass.data[DOMAIN][entry_id]["mediaScanResult"][
+                entryData["mediaScanResult"][
                     str(recording[recordingKey]["startTime"])
                     + "-"
                     + str(recording[recordingKey]["endTime"])
@@ -201,21 +201,26 @@ def getEntryStorageFile(config_entry):
 
 
 # todo: findMedia needs to run periodically
-async def findMedia(hass, entry):
+async def findMedia(hass, entryData, entry):
     entry_id = entry.entry_id
-    LOGGER.debug("Finding media...")
-    hass.data[DOMAIN][entry_id]["initialMediaScanDone"] = False
-    tapoController: Tapo = hass.data[DOMAIN][entry_id]["controller"]
+    LOGGER.warning(
+        "Finding media for " + entryData["camData"]["basic_info"]["device_name"] + "..."
+    )
+    entryData["initialMediaScanDone"] = False
+    childID = ""
+    if entryData["isChild"]:
+        childID = entryData["camData"]["basic_info"]["dev_id"]
+    tapoController: Tapo = entryData["controller"]
 
     recordingsList = await hass.async_add_executor_job(tapoController.getRecordingsList)
     mediaScanResult = {}
     for searchResult in recordingsList:
         for key in searchResult:
-            LOGGER.debug(f"Getting media for day {searchResult[key]['date']}...")
+            LOGGER.warning(f"Getting media for day {searchResult[key]['date']}...")
             recordingsForDay = await getRecordings(
-                hass, entry_id, tapoController, searchResult[key]["date"]
+                hass, entryData, tapoController, searchResult[key]["date"]
             )
-            LOGGER.debug(
+            LOGGER.warning(
                 f"Looping through recordings for day {searchResult[key]['date']}..."
             )
             for recording in recordingsForDay:
@@ -226,6 +231,7 @@ async def findMedia(hass, entry):
                         recording[recordingKey]["startTime"],
                         recording[recordingKey]["endTime"],
                         "videos",
+                        childID=childID,
                     )
                     mediaScanResult[
                         str(recording[recordingKey]["startTime"])
@@ -236,64 +242,47 @@ async def findMedia(hass, entry):
                         await processDownload(
                             hass,
                             entry_id,
+                            entryData,
                             recording[recordingKey]["startTime"],
                             recording[recordingKey]["endTime"],
+                            childID=childID,
                         )
-    hass.data[DOMAIN][entry_id]["mediaScanResult"] = mediaScanResult
-    hass.data[DOMAIN][entry_id]["initialMediaScanDone"] = True
-    await mediaCleanup(hass, entry)
+    entryData["mediaScanResult"] = mediaScanResult
+    entryData["initialMediaScanDone"] = True
+    await mediaCleanup(hass, entry, entryData=entryData, childID=childID)
 
 
-async def processDownload(hass, entry_id: int, startDate: int, endDate: int):
-    filePath = getFileName(
-        startDate,
-        endDate,
-        False,
-    )
+async def processDownload(
+    hass, entry_id: int, entryData: dict, startDate: int, endDate: int, childID=""
+):
+    filePath = getFileName(startDate, endDate, False, childID=childID)
 
     coldFilePath = getColdFile(
-        hass,
-        entry_id,
-        startDate,
-        endDate,
-        "videos",
+        hass, entry_id, startDate, endDate, "videos", childID=childID
     )
 
     if not os.path.exists(coldFilePath):
         raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
 
-    if filePath not in hass.data[DOMAIN][entry_id]["downloadedStreams"]:
-        hass.data[DOMAIN][entry_id]["downloadedStreams"][filePath] = {
+    if filePath not in entryData["downloadedStreams"]:
+        entryData["downloadedStreams"][filePath] = {
             startDate: startDate,
             endDate: endDate,
         }
     mediaScanName = str(startDate) + "-" + str(endDate)
-    if mediaScanName not in hass.data[DOMAIN][entry_id]["mediaScanResult"]:
-        hass.data[DOMAIN][entry_id]["mediaScanResult"][mediaScanName] = True
+    if mediaScanName not in entryData["mediaScanResult"]:
+        entryData["mediaScanResult"][mediaScanName] = True
 
-    await generateThumb(
-        hass,
-        entry_id,
-        startDate,
-        endDate,
-    )
+    await generateThumb(hass, entry_id, startDate, endDate, childID=childID)
 
 
-async def generateThumb(hass, entry_id, startDate: int, endDate: int):
+async def generateThumb(hass, entry_id, startDate: int, endDate: int, childID=""):
     filePathThumb = getColdFile(
-        hass,
-        entry_id,
-        startDate,
-        endDate,
-        "thumbs",
+        hass, entry_id, startDate, endDate, "thumbs", childID=childID
     )
     if not os.path.exists(filePathThumb):
         filePathVideo = getColdFile(
-            hass,
-            entry_id,
-            startDate,
-            endDate,
-            "videos",
+            hass, entry_id, startDate, endDate, "videos", childID=childID
         )
         _ffmpeg = hass.data[DATA_FFMPEG]
         ffmpeg = ImageFrame(_ffmpeg.binary)
@@ -384,37 +373,49 @@ async def deleteColdFilesOlderThanMaxSyncTime(hass, entry, extension, folder):
                     )
 
 
-async def mediaCleanup(hass, entry):
+async def mediaCleanup(hass, entry, entryData, childID=""):
     entry_id = entry.entry_id
-    LOGGER.debug("Initiating media cleanup for entity " + entry_id + "...")
+    LOGGER.debug(
+        "Initiating media cleanup for entity "
+        + entry_id
+        + ", child ID:'"
+        + childID
+        + "'..."
+    )
 
     ts = datetime.datetime.utcnow().timestamp()
-    hass.data[DOMAIN][entry_id]["lastMediaCleanup"] = ts
+    entryData["lastMediaCleanup"] = ts
     hotDirPath = getHotDirPathForEntry(hass, entry_id)
 
     # clean cache files from old HA instance
-    LOGGER.debug(
-        "Removing cache files from old HA instances for entity " + entry_id + "..."
-    )
-    await deleteFilesNotIncluding(hass, hotDirPath + "/videos/", UUID)
-    await deleteFilesNotIncluding(hass, hotDirPath + "/thumbs/", UUID)
+    LOGGER.warning(
+        "Removing cache files from old HA instances for entity "
+        + entry_id
+        + ", child ID:'"
+        + childID
+        + "..."
+    )  ##TODO
+    # await deleteFilesNotIncluding(hass, hotDirPath + "/videos/", UUID)
+    # await deleteFilesNotIncluding(hass, hotDirPath + "/thumbs/", UUID)
 
-    await deleteFilesNoLongerPresentInCamera(hass, entry_id, ".mp4", "videos")
-    await deleteFilesNoLongerPresentInCamera(hass, entry_id, ".jpg", "thumbs")
+    # await deleteFilesNoLongerPresentInCamera(hass, entry_id, ".mp4", "videos")
+    # await deleteFilesNoLongerPresentInCamera(hass, entry_id, ".jpg", "thumbs")
 
-    await deleteColdFilesOlderThanMaxSyncTime(hass, entry, ".mp4", "videos")
-    await deleteColdFilesOlderThanMaxSyncTime(hass, entry, ".jpg", "thumbs")
+    # await deleteColdFilesOlderThanMaxSyncTime(hass, entry, ".mp4", "videos")
+    # await deleteColdFilesOlderThanMaxSyncTime(hass, entry, ".jpg", "thumbs")
 
     # Delete everything other than HOT_DIR_DELETE_TIME seconds from hot storage
-    LOGGER.debug(
+    LOGGER.warning(
         "Deleting hot storage files older than "
         + str(HOT_DIR_DELETE_TIME)
         + " seconds for entity "
         + entry_id
+        + ", child ID:'"
+        + childID
         + "..."
     )
-    await deleteFilesOlderThan(hass, hotDirPath + "/videos/", HOT_DIR_DELETE_TIME)
-    await deleteFilesOlderThan(hass, hotDirPath + "/thumbs/", HOT_DIR_DELETE_TIME)
+    # await deleteFilesOlderThan(hass, hotDirPath + "/videos/", HOT_DIR_DELETE_TIME)
+    # await deleteFilesOlderThan(hass, hotDirPath + "/thumbs/", HOT_DIR_DELETE_TIME)
 
 
 async def deleteDir(hass, dirPath):
@@ -477,18 +478,30 @@ def processDownloadStatus(
     return processUpdate
 
 
-def getFileName(startDate: int, endDate: int, encrypted=False):
+def getFileName(startDate: int, endDate: int, encrypted=False, childID=""):
     if encrypted:
-        return hashlib.md5((str(startDate) + str(endDate)).encode()).hexdigest()
+        return hashlib.md5(
+            (str(childID) + str(startDate) + str(endDate)).encode()
+        ).hexdigest()
     else:
-        return str(startDate) + "-" + str(endDate)
+        return (
+            ((str(childID) + "-") if childID != "" else "")
+            + str(startDate)
+            + "-"
+            + str(endDate)
+        )
 
 
 def getColdFile(
-    hass: HomeAssistant, entry_id: str, startDate: int, endDate: int, folder: str
+    hass: HomeAssistant,
+    entry_id: str,
+    startDate: int,
+    endDate: int,
+    folder: str,
+    childID="",
 ):
     coldDirPath = getColdDirPathForEntry(hass, entry_id)
-    fileName = getFileName(startDate, endDate, False)
+    fileName = getFileName(startDate, endDate, False, childID=childID)
 
     if folder == "videos":
         extension = ".mp4"
@@ -500,16 +513,17 @@ def getColdFile(
 
 
 async def getHotFile(
-    hass: HomeAssistant, entry_id: str, startDate: int, endDate: int, folder: str
+    hass: HomeAssistant,
+    entry_id: str,
+    startDate: int,
+    endDate: int,
+    folder: str,
+    childID="",
 ):
     coldFilePath = getColdFile(hass, entry_id, startDate, endDate, folder)
     hotDirPath = getHotDirPathForEntry(hass, entry_id)
     extension = pathlib.Path(coldFilePath).suffix
-    fileNameEncrypted = getFileName(
-        startDate,
-        endDate,
-        True,
-    )
+    fileNameEncrypted = getFileName(startDate, endDate, True, childID=childID)
     hotFilePath = f"{hotDirPath}/{folder}/{fileNameEncrypted}{UUID}{extension}"
 
     if not os.path.exists(hotFilePath):
@@ -520,9 +534,16 @@ async def getHotFile(
 
 
 async def getWebFile(
-    hass: HomeAssistant, entry_id: str, startDate: int, endDate: int, folder: str
+    hass: HomeAssistant,
+    entry_id: str,
+    startDate: int,
+    endDate: int,
+    folder: str,
+    childID="",
 ):
-    hotFilePath = await getHotFile(hass, entry_id, startDate, endDate, folder)
+    hotFilePath = await getHotFile(
+        hass, entry_id, startDate, endDate, folder, childID=childID
+    )
     fileWebPath = hotFilePath[hotFilePath.index("/www/") + 5 :]  # remove ./www/
 
     return f"/local/{fileWebPath}"
@@ -532,20 +553,24 @@ async def getRecording(
     hass: HomeAssistant,
     tapo: Tapo,
     entry_id: str,
+    entryData: dict,
     date: str,
     startDate: int,
     endDate: int,
     recordingCount: int = False,
     totalRecordingCount: int = False,
+    childID: str = "",
 ) -> str:
     timeCorrection = await hass.async_add_executor_job(tapo.getTimeCorrection)
     startDate = int(startDate)
     endDate = int(endDate)
 
     coldDirPath = getColdDirPathForEntry(hass, entry_id)
-    downloadUID = getFileName(startDate, endDate, False)
+    downloadUID = getFileName(startDate, endDate, False, childID=childID)
 
-    coldFilePath = getColdFile(hass, entry_id, startDate, endDate, "videos")
+    coldFilePath = getColdFile(
+        hass, entry_id, startDate, endDate, "videos", childID=childID
+    )
     if not os.path.exists(coldFilePath):
         # this NEEDS to happen otherwise camera does not send data!
         allRecordings = await hass.async_add_executor_job(tapo.getRecordings, date)
@@ -561,7 +586,7 @@ async def getRecording(
             downloadUID + ".mp4",
         )
 
-        hass.data[DOMAIN][entry_id]["isDownloadingStream"] = True
+        entryData["isDownloadingStream"] = True
         downloadedFile = await downloader.downloadFile(
             processDownloadStatus(
                 hass,
@@ -575,7 +600,7 @@ async def getRecording(
                 recordingCount if recordingCount is not False else False,
             )
         )
-        hass.data[DOMAIN][entry_id]["isDownloadingStream"] = False
+        entryData["isDownloadingStream"] = False
         if downloadedFile["currentAction"] == "Recording in progress":
             raise Unresolvable("Recording is currently in progress.")
 
@@ -590,10 +615,7 @@ async def getRecording(
         )
 
     await processDownload(
-        hass,
-        entry_id,
-        startDate,
-        endDate,
+        hass, entry_id, entryData, startDate, endDate, childID=childID
     )
 
     return coldFilePath

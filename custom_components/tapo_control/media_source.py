@@ -80,33 +80,44 @@ class TapoMediaSource(MediaSource):
                 date = query["date"]
                 startDate = query["startDate"]
                 endDate = query["endDate"]
+                childID = ""
                 isParent = self.hass.data[DOMAIN][entry]["isParent"]
+                device = self.hass.data[DOMAIN][entry]
+
+                if isParent is True:
+                    childID = query["childID"]
+                    for child in self.hass.data[DOMAIN][entry]["childDevices"]:
+                        if child["camData"]["basic_info"]["dev_id"] == childID:
+                            device = child
+                            break
+
+                tapoController: Tapo = device["controller"]
+
                 if (
-                    self.hass.data[DOMAIN][entry]["isDownloadingStream"]
-                    and getFileName(startDate, endDate, False)
-                    not in self.hass.data[DOMAIN][entry]["downloadedStreams"]
+                    device["isDownloadingStream"]
+                    and getFileName(startDate, endDate, False, childID=childID)
+                    not in device["downloadedStreams"]
                 ):
                     raise Unresolvable(
                         "Already downloading a recording, please try again later."
                     )
-                tapoController: Tapo = self.hass.data[DOMAIN][entry]["controller"]
-
-                if isParent is True:
-                    childID = query["childID"]
-                    childrenDevice = None
-                    for child in self.hass.data[DOMAIN][entry]["childDevices"]:
-                        if child["camData"]["basic_info"]["dev_id"] == childID:
-                            childrenDevice = child
-                            break
-                    tapoController: Tapo = childrenDevice["controller"]
 
                 LOGGER.debug(startDate)
                 LOGGER.debug(endDate)
 
                 await getRecording(
-                    self.hass, tapoController, entry, date, startDate, endDate
+                    self.hass,
+                    tapoController,
+                    entry,
+                    device,
+                    date,
+                    startDate,
+                    endDate,
+                    childID=childID,
                 )
-                url = await getWebFile(self.hass, entry, startDate, endDate, "videos")
+                url = await getWebFile(
+                    self.hass, entry, startDate, endDate, "videos", childID=childID
+                )
                 LOGGER.debug(url)
             except Exception as e:
                 LOGGER.error(e)
@@ -116,26 +127,24 @@ class TapoMediaSource(MediaSource):
         else:
             raise Unresolvable("Unexpected path.")
 
-    async def generateVideosForDate(self, query, title, entry, date, tapoController):
+    async def generateVideosForDate(self, query, title, entry, date, device):
+        tapoController = device["controller"]
+        childID = ""
+        if "childID" in query:
+            childID = query["childID"]
         media_view_recordings_order = self.hass.data[DOMAIN][entry]["entry"].data.get(
             MEDIA_VIEW_RECORDINGS_ORDER
         )
-        if self.hass.data[DOMAIN][entry]["initialMediaScanDone"] is False:
+        if device["initialMediaScanDone"] is False:
             raise Unresolvable(
                 "Initial local media scan still running, please try again later."
             )
-        recordingsForDay = await getRecordings(self.hass, entry, tapoController, date)
+        recordingsForDay = await getRecordings(self.hass, device, tapoController, date)
         videoNames = []
         for searchResult in recordingsForDay:
             for key in searchResult:
-                startTS = (
-                    searchResult[key]["startTime"]
-                    - self.hass.data[DOMAIN][entry]["timezoneOffset"]
-                )
-                endTS = (
-                    searchResult[key]["endTime"]
-                    - self.hass.data[DOMAIN][entry]["timezoneOffset"]
-                )
+                startTS = searchResult[key]["startTime"] - device["timezoneOffset"]
+                endTS = searchResult[key]["endTime"] - device["timezoneOffset"]
                 startDate = dt.as_local(dt.utc_from_timestamp(startTS))
                 endDate = dt.as_local(dt.utc_from_timestamp(endTS))
                 videoName = (
@@ -157,15 +166,18 @@ class TapoMediaSource(MediaSource):
 
         dateChildren = []
         for data in videoNames:
-            fileName = getFileName(data["startDate"], data["endDate"], False)
+            fileName = getFileName(
+                data["startDate"], data["endDate"], False, childID=childID
+            )
             thumbLink = None
-            if fileName in self.hass.data[DOMAIN][entry]["downloadedStreams"]:
+            if fileName in device["downloadedStreams"]:
                 thumbLink = await getWebFile(
                     self.hass,
                     entry,
                     data["startDate"],
                     data["endDate"],
                     "thumbs",
+                    childID=childID,
                 )
 
             dateChildren.append(
@@ -189,16 +201,17 @@ class TapoMediaSource(MediaSource):
             build_identifier(query), title, False, True, children=dateChildren
         )
 
-    async def generateDates(self, query, title, entry, tapoController):
+    async def generateDates(self, query, title, entry, device):
+        tapoController = device["controller"]
         media_view_days_order = self.hass.data[DOMAIN][entry]["entry"].data.get(
             MEDIA_VIEW_DAYS_ORDER
         )
-        if self.hass.data[DOMAIN][entry]["initialMediaScanDone"] is False:
+        if device["initialMediaScanDone"] is False:
             raise Unresolvable(
                 "Initial local media scan still running, please try again later."
             )
 
-        if self.hass.data[DOMAIN][entry]["usingCloudPassword"] is False:
+        if device["usingCloudPassword"] is False:
             raise Unresolvable(
                 "Cloud password is required in order to play recordings.\nSet cloud password inside Settings > Devices & Services > Tapo: Cameras Control > Configure."
             )
@@ -280,23 +293,21 @@ class TapoMediaSource(MediaSource):
             entry = query["entry"]
             isParent = self.hass.data[DOMAIN][entry]["isParent"]
             title = query["title"]
-            tapoController: Tapo = self.hass.data[DOMAIN][entry]["controller"]
+            device = self.hass.data[DOMAIN][entry]
             if isParent is True:
                 if "childID" in query:
                     childID = query["childID"]
-                    childrenDevice = None
                     for child in self.hass.data[DOMAIN][entry]["childDevices"]:
                         if child["camData"]["basic_info"]["dev_id"] == childID:
-                            childrenDevice = child
+                            device = child
                             break
-                    tapoController: Tapo = childrenDevice["controller"]
 
             if "date" in query:
                 return await self.generateVideosForDate(
-                    query, title, entry, query["date"], tapoController
+                    query, title, entry, query["date"], device
                 )
             elif isParent is False or (isParent is True and "childID" in query):
-                return await self.generateDates(query, title, entry, tapoController)
+                return await self.generateDates(query, title, entry, device)
             elif isParent is True:
                 return self.generateView(
                     build_identifier(query),
