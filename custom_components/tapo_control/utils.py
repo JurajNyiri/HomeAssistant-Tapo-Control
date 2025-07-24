@@ -314,12 +314,15 @@ async def generateThumb(hass, entry_id, startDate: int, endDate: int, childID=""
 async def deleteFilesNoLongerPresentInCamera(
     hass, entry_id, entryData, extension, folder
 ):
+    LOGGER.debug("deleteFilesNoLongerPresentInCamera")
     childID = ""
     if entryData["isChild"]:
         childID = entryData["camData"]["basic_info"]["dev_id"]
     if entryData["initialMediaScanDone"] is True:
+        LOGGER.debug("deleteFilesNoLongerPresentInCamera - Initial scanning done.")
         coldDirPath = getColdDirPathForEntry(hass, entry_id)
         if os.path.exists(coldDirPath + "/" + folder + "/"):
+            LOGGER.debug("deleteFilesNoLongerPresentInCamera - path exists")
             listDirFiles = await hass.async_add_executor_job(
                 os.listdir, coldDirPath + "/" + folder + "/"
             )
@@ -332,8 +335,7 @@ async def deleteFilesNoLongerPresentInCamera(
                         (entryData["isChild"] is True and fileName.count("-") == 2)
                         and childID in fileName
                     )
-                    and fileName not in entryData["mediaScanResult"]
-                ):
+                ) and fileName not in entryData["mediaScanResult"]:
                     LOGGER.debug(
                         "[deleteFilesNoLongerPresentInCamera] Removing "
                         + filePath
