@@ -6,7 +6,7 @@
 
 Custom component - Tapo: Cameras Control - to add Tapo cameras, doorbells and chimes into Home Assistant
 
-⭐ Now also exposing a stream for cameras that have no RTSP or ONVIF capabilities.
+⭐ Now also exposing a stream for devices that have no RTSP or ONVIF capabilities.
 
 ## Installation
 
