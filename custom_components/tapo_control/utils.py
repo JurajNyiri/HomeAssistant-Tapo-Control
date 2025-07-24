@@ -255,7 +255,7 @@ async def findMedia(hass, entryData, entry):
     entryData["mediaScanResult"] = mediaScanResult
     entryData["initialMediaScanDone"] = True
 
-    await mediaCleanup(hass, entry, entryData=entryData, childID=childID)
+    await mediaCleanup(hass, entry, entryData)
 
 
 async def processDownload(
@@ -344,13 +344,15 @@ async def deleteFilesNoLongerPresentInCamera(
                     os.remove(filePath)
 
 
-async def deleteColdFilesOlderThanMaxSyncTime(hass, entry, extension, folder):
+async def deleteColdFilesOlderThanMaxSyncTime(
+    hass, entry, entryData, extension, folder, childID=""
+):
     entry_id = entry.entry_id
     mediaSyncHours = entry.data.get(MEDIA_SYNC_HOURS)
 
     if mediaSyncHours != "":
         coldDirPath = getColdDirPathForEntry(hass, entry_id)
-        tapoController: Tapo = hass.data[DOMAIN][entry_id]["controller"]
+        tapoController: Tapo = entryData["controller"]
         timeCorrection = await hass.async_add_executor_job(
             tapoController.getTimeCorrection
         )
@@ -365,26 +367,40 @@ async def deleteColdFilesOlderThanMaxSyncTime(hass, entry, extension, folder):
                 fileName = f.replace(extension, "")
                 filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
                 splitFileName = fileName.split("-")
-                if len(splitFileName) == 2:
-                    endTS = int(fileName.split("-")[1])
+                if (entryData["isChild"] is False and fileName.count("-") == 1) or (
+                    (entryData["isChild"] is True and fileName.count("-") == 2)
+                    and childID in fileName
+                ):
+                    LOGGER.warning(
+                        (entryData["isChild"] is False and fileName.count("-") == 1)
+                    )
+                    LOGGER.warning("or")
+                    LOGGER.warning(
+                        (entryData["isChild"] is True and fileName.count("-") == 2)
+                    )
+                    LOGGER.warning("and")
+                    LOGGER.warning(childID in fileName)
+                    endTS = int(fileName.split("-")[len(splitFileName) - 1])
                     last_modified = os.stat(filePath).st_mtime
                     if (endTS < (int(ts) - (int(mediaSyncTime) + timeCorrection))) and (
                         ts - last_modified > int(mediaSyncTime)
                     ):
-                        LOGGER.debug(
+                        LOGGER.warning(
                             "[deleteColdFilesOlderThanMaxSyncTime] Removing "
                             + filePath
                             + " ("
                             + fileName
-                            + ")..."
+                            + ") because it's older than "
+                            + str(mediaSyncTime)
+                            + " seconds..."
                         )
-                        hass.data[DOMAIN][entry_id]["downloadedStreams"].pop(
+                        entryData["downloadedStreams"].pop(
                             fileName,
                             None,
                         )
                         os.remove(filePath)
                 else:
-                    LOGGER.warning(
+                    LOGGER.debug(
                         "[deleteColdFilesOlderThanMaxSyncTime] Ignoring "
                         + filePath
                         + " ("
@@ -393,8 +409,13 @@ async def deleteColdFilesOlderThanMaxSyncTime(hass, entry, extension, folder):
                     )
 
 
-async def mediaCleanup(hass, entry, entryData, childID=""):
+async def mediaCleanup(hass, entry, deviceData):
     entry_id = entry.entry_id
+
+    childID = ""
+    if deviceData["isChild"]:
+        childID = deviceData["camData"]["basic_info"]["dev_id"]
+
     LOGGER.debug(
         "Initiating media cleanup for entity "
         + entry_id
@@ -404,7 +425,7 @@ async def mediaCleanup(hass, entry, entryData, childID=""):
     )
 
     ts = datetime.datetime.utcnow().timestamp()
-    entryData["lastMediaCleanup"] = ts
+    deviceData["lastMediaCleanup"] = ts
     hotDirPath = getHotDirPathForEntry(hass, entry_id)
 
     # clean cache files from old HA instance
@@ -420,14 +441,18 @@ async def mediaCleanup(hass, entry, entryData, childID=""):
     await deleteFilesNotIncluding(hass, hotDirPath + "/thumbs/", UUID)
 
     await deleteFilesNoLongerPresentInCamera(
-        hass, entry_id, entryData, ".mp4", "videos", childID=childID
+        hass, entry_id, deviceData, ".mp4", "videos", childID=childID
     )
     await deleteFilesNoLongerPresentInCamera(
-        hass, entry_id, entryData, ".jpg", "thumbs", childID=childID
+        hass, entry_id, deviceData, ".jpg", "thumbs", childID=childID
     )
 
-    # await deleteColdFilesOlderThanMaxSyncTime(hass, entry, ".mp4", "videos")
-    # await deleteColdFilesOlderThanMaxSyncTime(hass, entry, ".jpg", "thumbs")
+    await deleteColdFilesOlderThanMaxSyncTime(
+        hass, entry, deviceData, ".mp4", "videos", childID=childID
+    )
+    await deleteColdFilesOlderThanMaxSyncTime(
+        hass, entry, deviceData, ".jpg", "thumbs", childID=childID
+    )
 
     # Delete everything other than HOT_DIR_DELETE_TIME seconds from hot storage
     LOGGER.warning(
@@ -478,13 +503,17 @@ async def deleteFilesNotIncluding(hass: HomeAssistant, dirPath, includingString)
 
 
 def processDownloadStatus(
-    hass, entry_id, date: str, allRecordingsCount: int, recordingCount: int = False
+    entryData,
+    date: str,
+    allRecordingsCount: int,
+    recordingCount: int = False,
 ):
     def processUpdate(status):
+        LOGGER.warning(status)
         if isinstance(status, str):
-            hass.data[DOMAIN][entry_id]["downloadProgress"] = status
+            entryData["downloadProgress"] = status
         else:
-            hass.data[DOMAIN][entry_id]["downloadProgress"] = (
+            entryData["downloadProgress"] = (
                 status["currentAction"]
                 + " "
                 + date
@@ -616,8 +645,7 @@ async def getRecording(
         entryData["isDownloadingStream"] = True
         downloadedFile = await downloader.downloadFile(
             processDownloadStatus(
-                hass,
-                entry_id,
+                entryData,
                 date,
                 (
                     len(allRecordings)

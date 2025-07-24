@@ -786,9 +786,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 ts - hass.data[DOMAIN][entry.entry_id]["lastMediaCleanup"]
                 > MEDIA_CLEANUP_PERIOD
             ):
-                # await mediaCleanup(hass, entry)
-                LOGGER.warning("TODOOOOO")
-                pass
+                LOGGER.warning(
+                    "Initiating media cleanup for "
+                    + hass.data[DOMAIN][entry.entry_id]["name"]
+                    + "..."
+                )
+                await mediaCleanup(hass, entry, hass.data[DOMAIN][entry.entry_id])
+            if hass.data[DOMAIN][entry.entry_id]["isParent"]:
+                for child in hass.data[DOMAIN][entry.entry_id]["childDevices"]:
+                    if ts - child["lastMediaCleanup"] > MEDIA_CLEANUP_PERIOD:
+                        LOGGER.warning(
+                            "Initiating media cleanup for " + child["name"] + "..."
+                        )
+                        await mediaCleanup(hass, entry, child)
 
             if (
                 hass.is_running
