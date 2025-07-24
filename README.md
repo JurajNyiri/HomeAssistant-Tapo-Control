@@ -123,7 +123,7 @@ You can enable this setting by navigating to `Home Assistant Settings` -> `Devic
 
 Finally, you can turn on, or off switch entity `switch.*_media_sync`.
 
-**Notice:**: Recordings are deleted after the number of hours you have chosen to synchronize passes, once both the actual recording time and the file modified time is older than the number of hours set.
+**Notice:** Recordings are deleted after the number of hours you have chosen to synchronize passes, once both the actual recording time and the file modified time is older than the number of hours set.
 
 ## Troubleshooting | FAQ
 
