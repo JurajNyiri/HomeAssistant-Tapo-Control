@@ -69,7 +69,7 @@ This custom component creates:
 
 Doorbells, Cameras:
 
-- Up to 4 camera entities: HD and SD, using RTSP standard or TP-Link proprietary video protocol
+- Up to 4 camera entities: HD and SD, using RTSP standard or TP-Link proprietary video protocol. If you choose to use direct entities, it is recommended to disable `Use Stream from Home Assistant` in options for the best performance and battery life.
 - Binary sensor for motion after the motion is detected for the first time
 - Light entity, if the camera supports a floodlight switch
 - Buttons for Calibrate, Format, Manual Alarm start & stop, Moving the camera, Reboot and syncing time
