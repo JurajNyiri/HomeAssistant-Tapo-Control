@@ -21,7 +21,12 @@ async def async_setup_entry(
     switches = []
 
     async def setupEntities(entry):
-        entry_storage = Store(hass, version=1, key=getEntryStorageFile(config_entry))
+        childID = ""
+        if entry["isChild"]:
+            childID = entry["camData"]["basic_info"]["dev_id"]
+        entry_storage = Store(
+            hass, version=1, key=getEntryStorageFile(config_entry, childID)
+        )
         entry_stored_data = await entry_storage.async_load()
         switches = []
         tapoPrivacySwitch = await check_and_create(
@@ -269,16 +274,16 @@ class TapoEnableMediaSyncSwitch(TapoSwitchEntity):
         )
         self._entry_storage = entry_storage
         self._attr_state = "on" if savedValue else "off"
-        hass.data[DOMAIN][config_entry.entry_id][ENABLE_MEDIA_SYNC] = savedValue
+        entry[ENABLE_MEDIA_SYNC] = savedValue
 
     async def async_turn_on(self) -> None:
         await self._entry_storage.async_save({ENABLE_MEDIA_SYNC: True})
-        self._hass.data[DOMAIN][self._config_entry.entry_id][ENABLE_MEDIA_SYNC] = True
+        self._entry[ENABLE_MEDIA_SYNC] = True
         self._attr_state = "on"
 
     async def async_turn_off(self) -> None:
         await self._entry_storage.async_save({ENABLE_MEDIA_SYNC: False})
-        self._hass.data[DOMAIN][self._config_entry.entry_id][ENABLE_MEDIA_SYNC] = False
+        self._entry[ENABLE_MEDIA_SYNC] = False
         self._attr_state = "off"
 
     def updateTapo(self, camData):

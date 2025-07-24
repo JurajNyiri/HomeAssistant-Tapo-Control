@@ -106,14 +106,7 @@ class TapoMediaSource(MediaSource):
                 LOGGER.debug(endDate)
 
                 await getRecording(
-                    self.hass,
-                    tapoController,
-                    entry,
-                    device,
-                    date,
-                    startDate,
-                    endDate,
-                    childID=childID,
+                    self.hass, tapoController, entry, device, date, startDate, endDate
                 )
                 url = await getWebFile(
                     self.hass, entry, startDate, endDate, "videos", childID=childID

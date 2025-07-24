@@ -11,6 +11,8 @@ import uuid
 import requests
 import base64
 
+from functools import partial
+from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from .pytapo.media_stream.downloader import Downloader
@@ -31,6 +33,7 @@ from homeassistant.util import slugify, dt as dt_util
 from .const import (
     BRAND,
     CONTROL_PORT,
+    ENABLE_MEDIA_SYNC,
     ENABLE_MOTION_SENSOR,
     DOMAIN,
     ENABLE_WEBHOOKS,
@@ -200,16 +203,14 @@ async def getRecordings(hass, entryData, tapoController, date):
     return recordingsForDay
 
 
-def getEntryStorageFile(config_entry):
-    return f"tapo_control_{config_entry.entry_id}"
+def getEntryStorageFile(config_entry, child_id):
+    return f"tapo_control_{config_entry.entry_id}{child_id}"
 
 
 # todo: findMedia needs to run periodically
 async def findMedia(hass, entryData, entry):
     entry_id = entry.entry_id
-    LOGGER.debug(
-        "Finding media for " + entryData["camData"]["basic_info"]["device_name"] + "..."
-    )
+    LOGGER.warning("Finding media for " + entryData["name"] + "...")
     entryData["initialMediaScanDone"] = False
     childID = ""
     if entryData["isChild"]:
@@ -252,6 +253,7 @@ async def findMedia(hass, entryData, entry):
                             recording[recordingKey]["endTime"],
                             childID=childID,
                         )
+    LOGGER.warning("Found media for " + entryData["name"] + ".")
     entryData["mediaScanResult"] = mediaScanResult
     entryData["initialMediaScanDone"] = True
 
@@ -603,11 +605,14 @@ async def getRecording(
     endDate: int,
     recordingCount: int = False,
     totalRecordingCount: int = False,
-    childID: str = "",
 ) -> str:
     timeCorrection = await hass.async_add_executor_job(tapo.getTimeCorrection)
     startDate = int(startDate)
     endDate = int(endDate)
+
+    childID = ""
+    if entryData["isChild"]:
+        childID = entryData["camData"]["basic_info"]["dev_id"]
 
     coldDirPath = getColdDirPathForEntry(hass, entry_id)
     downloadUID = getFileName(startDate, endDate, False, childID=childID)
@@ -1925,6 +1930,48 @@ def isCacheSupported(check_function, rawData):
                     f"Capability {check_function} (mapped to:{function}) cached but not supported."
                 )
     return False
+
+
+async def scheduleAll(hass, device, entry, mediaSync):
+    LOGGER.warning("scheduleAll for " + device["name"] + " called.")
+    if device["mediaSyncAvailable"]:
+        if (
+            device["initialMediaScanDone"] is True
+            and device["mediaSyncScheduled"] is False
+        ):
+            device["mediaSyncScheduled"] = True
+            LOGGER.warning("scheduling media sync")
+            callback = partial(mediaSync, entry=entry, device=device)
+
+            entry.async_on_unload(
+                async_track_time_interval(
+                    hass,
+                    callback,
+                    datetime.timedelta(seconds=60),
+                )
+            )
+        elif device["initialMediaScanRunning"] is False:
+            LOGGER.warning("media scan running")
+            device["initialMediaScanRunning"] = True
+            try:
+                await hass.async_add_executor_job(
+                    device["controller"].getRecordingsList
+                )
+                hass.async_create_background_task(
+                    findMedia(hass, device, entry),
+                    "findMedia",
+                )
+            except Exception as err:
+                device["initialMediaScanDone"] = True
+                device["mediaSyncAvailable"] = False
+                enableMediaSync = device[ENABLE_MEDIA_SYNC]
+                errMsg = "Disabling media sync as there was error returned from getRecordingsList. Do you have SD card inserted?"
+                if enableMediaSync:
+                    LOGGER.warning(errMsg)
+                    LOGGER.warning(device["name"] + ": " + str(err))
+                else:
+                    LOGGER.info(errMsg)
+                    LOGGER.info(device["name"] + ": " + str(err))
 
 
 async def check_and_create(entry, hass, cls, check_function, config_entry):
