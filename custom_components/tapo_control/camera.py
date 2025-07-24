@@ -383,40 +383,23 @@ class TapoDirectCamEntity(TapoCamEntity):
             self._controller,
             includeAudio=False,
             quality=self._directQuality,
+            logFunction=self.logFunction,
+            ff_args={
+                "-frames:v": "1",
+                "-f": "image2pipe",
+                "-c:v": "mjpeg",
+                "-vsync": "0",
+            },
         )
         LOGGER.debug("async_camera_image - Starting streamer")
         info = await streamer.start()
-        fd = info["read_fd"]
-        os.set_inheritable(fd, True)
 
-        LOGGER.debug("async_camera_image - Starting ffmpeg")
-        ff_cmd = [
-            self._ffmpeg.binary,
-            "-loglevel",
-            "error",
-            "-probesize",
-            "256k",
-            "-analyzeduration",
-            "500000",
-            "-i",
-            f"pipe:{fd}",
-            "-frames:v",
-            "1",
-            "-f",
-            "image2",
-            "-q:v",
-            "2",
-            "pipe:1",
-        ]
-        LOGGER.debug(ff_cmd)
-        proc = await asyncio.create_subprocess_exec(
-            *ff_cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL,
-            pass_fds=(fd,),
-        )
-        LOGGER.debug("async_camera_image - Processing output")
-        jpeg, _ = await proc.communicate()
+        proc = info["ffmpegProcess"]
+
+        LOGGER.debug("Direct MJPEG: ffmpeg PID %s", proc.pid)
+
+        jpeg = await proc.stdout.read()
+        await proc.wait()
 
         LOGGER.debug("async_camera_image - Stopping streamer")
         await streamer.stop()
@@ -431,7 +414,6 @@ class TapoDirectCamEntity(TapoCamEntity):
             includeAudio=False,
             quality=self._directQuality,
             logFunction=self.logFunction,
-            mode="pipe",
             ff_args={
                 "-c:v": "mjpeg",
                 "-f": "mpjpeg",
