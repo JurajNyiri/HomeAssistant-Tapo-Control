@@ -31,6 +31,9 @@ from .utils import (
 
 from pytapo import Tapo
 
+import json
+from urllib.parse import urlencode, urlparse, parse_qsl
+
 
 async def async_get_media_source(hass: HomeAssistant) -> TapoMediaSource:
     """Set up Radio Browser media source."""
@@ -40,6 +43,20 @@ async def async_get_media_source(hass: HomeAssistant) -> TapoMediaSource:
     entry = hass.config_entries.async_entries(DOMAIN)[0]
 
     return TapoMediaSource(hass, entry)
+
+
+def build_identifier(
+    params: dict[str, str | list[str]] = None, base: str = DOMAIN
+) -> str:
+    if params is None:
+        return f"{base}"
+    query = urlencode(params, doseq=True)
+    return f"{base}/?{query}"
+
+
+def parse_identifier(identifier: str) -> dict[str, str]:
+    query = urlparse(identifier).query
+    return dict(parse_qsl(query, keep_blank_values=True))
 
 
 class TapoMediaSource(MediaSource):
@@ -55,29 +72,45 @@ class TapoMediaSource(MediaSource):
 
     async def async_resolve_media(self, item: MediaSourceItem) -> PlayMedia:
         path = item.identifier.split("/")
-        if len(path) == 5:
+        if len(path) == 2:
             try:
-                entry = path[1]
-                date = path[2]
-                startDate = int(path[3])
-                endDate = int(path[4])
+                query = parse_identifier(path[1])
+                LOGGER.debug(query)
+                entry = query["entry"]
+                date = query["date"]
+                startDate = query["startDate"]
+                endDate = query["endDate"]
+                childID = ""
+                isParent = self.hass.data[DOMAIN][entry]["isParent"]
+                device = self.hass.data[DOMAIN][entry]
+
+                if isParent is True:
+                    childID = query["childID"]
+                    for child in self.hass.data[DOMAIN][entry]["childDevices"]:
+                        if child["camData"]["basic_info"]["dev_id"] == childID:
+                            device = child
+                            break
+
+                tapoController: Tapo = device["controller"]
+
                 if (
-                    self.hass.data[DOMAIN][entry]["isDownloadingStream"]
-                    and getFileName(startDate, endDate, False)
-                    not in self.hass.data[DOMAIN][entry]["downloadedStreams"]
+                    device["isDownloadingStream"]
+                    and getFileName(startDate, endDate, False, childID=childID)
+                    not in device["downloadedStreams"]
                 ):
                     raise Unresolvable(
                         "Already downloading a recording, please try again later."
                     )
-                tapoController: Tapo = self.hass.data[DOMAIN][entry]["controller"]
 
                 LOGGER.debug(startDate)
                 LOGGER.debug(endDate)
 
                 await getRecording(
-                    self.hass, tapoController, entry, date, startDate, endDate
+                    self.hass, tapoController, entry, device, date, startDate, endDate
                 )
-                url = await getWebFile(self.hass, entry, startDate, endDate, "videos")
+                url = await getWebFile(
+                    self.hass, entry, startDate, endDate, "videos", childID=childID
+                )
                 LOGGER.debug(url)
             except Exception as e:
                 LOGGER.error(e)
@@ -85,176 +118,212 @@ class TapoMediaSource(MediaSource):
 
             return PlayMedia(url, "video/mp4")
         else:
-            raise Unresolvable("Incorrect path.")
+            raise Unresolvable("Unexpected path.")
+
+    async def generateVideosForDate(self, query, title, entry, date, device):
+        tapoController = device["controller"]
+        childID = ""
+        if "childID" in query:
+            childID = query["childID"]
+        media_view_recordings_order = self.hass.data[DOMAIN][entry]["entry"].data.get(
+            MEDIA_VIEW_RECORDINGS_ORDER
+        )
+        if device["initialMediaScanDone"] is False:
+            raise Unresolvable(
+                "Initial local media scan still running, please try again later."
+            )
+        recordingsForDay = await getRecordings(self.hass, device, tapoController, date)
+        videoNames = []
+        for searchResult in recordingsForDay:
+            for key in searchResult:
+                startTS = searchResult[key]["startTime"] - device["timezoneOffset"]
+                endTS = searchResult[key]["endTime"] - device["timezoneOffset"]
+                startDate = dt.as_local(dt.utc_from_timestamp(startTS))
+                endDate = dt.as_local(dt.utc_from_timestamp(endTS))
+                videoName = (
+                    f"{startDate.strftime('%H:%M:%S')} - {endDate.strftime('%H:%M:%S')}"
+                )
+                videoNames.append(
+                    {
+                        "name": videoName,
+                        "startDate": searchResult[key]["startTime"],
+                        "endDate": searchResult[key]["endTime"],
+                    }
+                )
+
+        videoNames = sorted(
+            videoNames,
+            key=lambda x: x["startDate"],
+            reverse=(True if media_view_recordings_order == "Descending" else False),
+        )
+
+        dateChildren = []
+        for data in videoNames:
+            fileName = getFileName(
+                data["startDate"], data["endDate"], False, childID=childID
+            )
+            thumbLink = None
+            if fileName in device["downloadedStreams"]:
+                thumbLink = await getWebFile(
+                    self.hass,
+                    entry,
+                    data["startDate"],
+                    data["endDate"],
+                    "thumbs",
+                    childID=childID,
+                )
+
+            dateChildren.append(
+                self.generateView(
+                    build_identifier(
+                        {
+                            **query,
+                            "title": data["name"],
+                            "startDate": data["startDate"],
+                            "endDate": data["endDate"],
+                        }
+                    ),
+                    data["name"],
+                    True,
+                    False,
+                    thumbnail=thumbLink,
+                )
+            )
+
+        return self.generateView(
+            build_identifier(query), title, False, True, children=dateChildren
+        )
+
+    async def generateDates(self, query, title, entry, device):
+        tapoController = device["controller"]
+        media_view_days_order = self.hass.data[DOMAIN][entry]["entry"].data.get(
+            MEDIA_VIEW_DAYS_ORDER
+        )
+        if device["initialMediaScanDone"] is False:
+            raise Unresolvable(
+                "Initial local media scan still running, please try again later."
+            )
+
+        if device["usingCloudPassword"] is False:
+            raise Unresolvable(
+                "Cloud password is required in order to play recordings.\nSet cloud password inside Settings > Devices & Services > Tapo: Cameras Control > Configure."
+            )
+        recordingsList = await self.hass.async_add_executor_job(
+            tapoController.getRecordingsList
+        )
+        recordingsDates = []
+        for searchResult in recordingsList:
+            for key in searchResult:
+                recordingsDates.append(searchResult[key]["date"])
+
+        recordingsDates.sort(
+            reverse=True if media_view_days_order == "Descending" else False
+        )
+
+        return self.generateView(
+            build_identifier(query),
+            title,
+            False,
+            True,
+            children=[
+                self.generateView(
+                    build_identifier({**query, "title": date, "date": date}),
+                    date,
+                    False,
+                    True,
+                )
+                for date in recordingsDates
+            ],
+        )
+
+    def generateView(
+        self, identifier, title, can_play, can_expand, thumbnail=None, children=None
+    ):
+        return BrowseMediaSource(
+            domain=DOMAIN,
+            identifier=identifier,
+            media_class=MediaClass.DIRECTORY,
+            media_content_type=MediaType.VIDEO,
+            title=title,
+            can_play=can_play,
+            can_expand=can_expand,
+            thumbnail=thumbnail,
+            children_media_class=MediaClass.DIRECTORY,
+            children=children,
+        )
 
     async def async_browse_media(
         self,
         item: MediaSourceItem,
     ) -> BrowseMediaSource:
         if item.identifier is None:
-            return BrowseMediaSource(
-                domain=DOMAIN,
-                identifier="tapo",
-                media_class=MediaClass.DIRECTORY,
-                media_content_type=MediaType.VIDEO,
-                title=self.name,
-                can_play=False,
-                can_expand=True,
-                children_media_class=MediaClass.DIRECTORY,
+            return self.generateView(
+                build_identifier(),
+                self.name,
+                False,
+                True,
                 children=[
-                    BrowseMediaSource(
-                        domain=DOMAIN,
-                        identifier=f"tapo/{entry}",
-                        media_class=MediaClass.DIRECTORY,
-                        media_content_type=MediaType.VIDEO,
-                        title=self.hass.data[DOMAIN][entry]["name"],
-                        can_play=False,
-                        can_expand=True,
+                    self.generateView(
+                        build_identifier(
+                            {
+                                "entry": entry,
+                                "title": self.hass.data[DOMAIN][entry]["name"],
+                            }
+                        ),
+                        self.hass.data[DOMAIN][entry]["name"],
+                        False,
+                        True,
                     )
                     for entry in self.hass.data[DOMAIN]
                 ],
             )
         else:
             path = item.identifier.split("/")
-            if len(path) == 2:
-                entry = path[1]
-                media_view_days_order = self.hass.data[DOMAIN][entry]["entry"].data.get(
-                    MEDIA_VIEW_DAYS_ORDER
-                )
-                if self.hass.data[DOMAIN][entry]["initialMediaScanDone"] is False:
-                    raise Unresolvable(
-                        "Initial local media scan still running, please try again later."
-                    )
+            if len(path) != 2:
+                raise Exception("Incorrect path, try navigating from Media again.")
 
-                if self.hass.data[DOMAIN][entry]["usingCloudPassword"] is False:
-                    raise Unresolvable(
-                        "Cloud password is required in order to play recordings.\nSet cloud password inside Settings > Devices & Services > Tapo: Cameras Control > Configure."
-                    )
-                tapoController: Tapo = self.hass.data[DOMAIN][entry]["controller"]
-                recordingsList = await self.hass.async_add_executor_job(
-                    tapoController.getRecordingsList
-                )
-                recordingsDates = []
-                for searchResult in recordingsList:
-                    for key in searchResult:
-                        recordingsDates.append(searchResult[key]["date"])
+            query = parse_identifier(path[1])
+            entry = query["entry"]
+            isParent = self.hass.data[DOMAIN][entry]["isParent"]
+            title = query["title"]
+            device = self.hass.data[DOMAIN][entry]
+            if isParent is True:
+                if "childID" in query:
+                    childID = query["childID"]
+                    for child in self.hass.data[DOMAIN][entry]["childDevices"]:
+                        if child["camData"]["basic_info"]["dev_id"] == childID:
+                            device = child
+                            break
 
-                recordingsDates.sort(
-                    reverse=True if media_view_days_order == "Descending" else False
+            if "date" in query:
+                return await self.generateVideosForDate(
+                    query, title, entry, query["date"], device
                 )
-                return BrowseMediaSource(
-                    domain=DOMAIN,
-                    identifier=f"tapo/{entry}",
-                    media_class=MediaClass.DIRECTORY,
-                    media_content_type=MediaType.VIDEO,
-                    title=self.hass.data[DOMAIN][entry]["name"],
-                    can_play=False,
-                    can_expand=True,
-                    children_media_class=MediaClass.DIRECTORY,
+            elif isParent is False or (isParent is True and "childID" in query):
+                return await self.generateDates(query, title, entry, device)
+            elif isParent is True:
+                return self.generateView(
+                    build_identifier(query),
+                    self.hass.data[DOMAIN][entry]["name"],
+                    False,
+                    True,
                     children=[
-                        BrowseMediaSource(
-                            domain=DOMAIN,
-                            identifier=f"tapo/{entry}/{date}",
-                            media_class=MediaClass.DIRECTORY,
-                            media_content_type=MediaType.VIDEO,
-                            title=date,
-                            can_play=False,
-                            can_expand=True,
+                        self.generateView(
+                            build_identifier(
+                                {
+                                    **query,
+                                    "title": childDevice["name"],
+                                    "childID": childDevice["camData"]["basic_info"][
+                                        "dev_id"
+                                    ],
+                                }
+                            ),
+                            childDevice["name"],
+                            False,
+                            True,
                         )
-                        for date in recordingsDates
+                        for childDevice in self.hass.data[DOMAIN][entry]["childDevices"]
                     ],
                 )
-            elif len(path) == 3:
-                entry = path[1]
-
-                media_view_recordings_order = self.hass.data[DOMAIN][entry][
-                    "entry"
-                ].data.get(MEDIA_VIEW_RECORDINGS_ORDER)
-                if self.hass.data[DOMAIN][entry]["initialMediaScanDone"] is False:
-                    raise Unresolvable(
-                        "Initial local media scan still running, please try again later."
-                    )
-                date = path[2]
-                tapoController: Tapo = self.hass.data[DOMAIN][entry]["controller"]
-                recordingsForDay = await getRecordings(self.hass, entry, date)
-                videoNames = []
-                for searchResult in recordingsForDay:
-                    for key in searchResult:
-                        startTS = (
-                            searchResult[key]["startTime"]
-                            - self.hass.data[DOMAIN][entry]["timezoneOffset"]
-                        )
-                        endTS = (
-                            searchResult[key]["endTime"]
-                            - self.hass.data[DOMAIN][entry]["timezoneOffset"]
-                        )
-                        startDate = dt.as_local(dt.utc_from_timestamp(startTS))
-                        endDate = dt.as_local(dt.utc_from_timestamp(endTS))
-                        videoName = f"{startDate.strftime('%H:%M:%S')} - {endDate.strftime('%H:%M:%S')}"
-                        videoNames.append(
-                            {
-                                "name": videoName,
-                                "startDate": searchResult[key]["startTime"],
-                                "endDate": searchResult[key]["endTime"],
-                            }
-                        )
-
-                videoNames = sorted(
-                    videoNames,
-                    key=lambda x: x["startDate"],
-                    reverse=(
-                        True if media_view_recordings_order == "Descending" else False
-                    ),
-                )
-
-                dateChildren = []
-                for data in videoNames:
-                    fileName = getFileName(data["startDate"], data["endDate"], False)
-                    if fileName in self.hass.data[DOMAIN][entry]["downloadedStreams"]:
-                        thumbLink = await getWebFile(
-                            self.hass,
-                            entry,
-                            data["startDate"],
-                            data["endDate"],
-                            "thumbs",
-                        )
-
-                        dateChildren.append(
-                            BrowseMediaSource(
-                                domain=DOMAIN,
-                                identifier=f"tapo/{entry}/{date}/{data['startDate']}/{data['endDate']}",
-                                media_class=MediaClass.VIDEO,
-                                media_content_type=MediaType.VIDEO,
-                                thumbnail=thumbLink,
-                                title=data["name"],
-                                can_play=True,
-                                can_expand=False,
-                            )
-                        )
-                    else:
-                        dateChildren.append(
-                            BrowseMediaSource(
-                                domain=DOMAIN,
-                                identifier=f"tapo/{entry}/{date}/{data['startDate']}/{data['endDate']}",
-                                media_class=MediaClass.VIDEO,
-                                media_content_type=MediaType.VIDEO,
-                                title=data["name"],
-                                can_play=True,
-                                can_expand=False,
-                            )
-                        )
-
-                return BrowseMediaSource(
-                    domain=DOMAIN,
-                    identifier=f"tapo/{entry}/",
-                    media_class=MediaClass.DIRECTORY,
-                    media_content_type=MediaType.VIDEO,
-                    title=f"{self.hass.data[DOMAIN][entry]['name']} - {date}",
-                    can_play=False,
-                    can_expand=True,
-                    children_media_class=MediaClass.DIRECTORY,
-                    children=dateChildren,
-                )
-
             else:
-                LOGGER.error("Not implemented")
+                raise Exception("Unexpected path.")

@@ -6,6 +6,8 @@
 
 Custom component - Tapo: Cameras Control - to add Tapo cameras, doorbells and chimes into Home Assistant
 
+⭐ Now also exposing a stream for devices that have no RTSP or ONVIF capabilities.
+
 ## Installation
 
 Copy contents of custom_components/tapo_control/ to custom_components/tapo_control/ in your Home Assistant config folder.
@@ -41,7 +43,7 @@ Ensure you have Third Party Compatibility turned on in the official Tapo app on 
 
 ![Image describing how to enable Third-Party Compatibility](img/tapo_third_party.png)
 
-**Note: Version 3.8.103 and later is required.**
+Note: Version 3.8.103 and later is required.
 
 ## Usage
 
@@ -67,7 +69,7 @@ This custom component creates:
 
 Doorbells, Cameras:
 
-- Camera entities, one for HD and one for SD stream
+- Up to 4 camera entities: HD and SD, using RTSP standard or TP-Link proprietary video protocol. If you choose to use direct entities, it is recommended to disable `Use Stream from Home Assistant` in options for the best performance and battery life.
 - Binary sensor for motion after the motion is detected for the first time
 - Light entity, if the camera supports a floodlight switch
 - Buttons for Calibrate, Format, Manual Alarm start & stop, Moving the camera, Reboot and syncing time
@@ -121,10 +123,37 @@ You can enable this setting by navigating to `Home Assistant Settings` -> `Devic
 
 Finally, you can turn on, or off switch entity `switch.*_media_sync`.
 
-**Notice:**: Recordings are deleted after the number of hours you have chosen to synchronize passes, once both the actual recording time and the file modified time is older than the number of hours set.
+**Notice:** Recordings are deleted after the number of hours you have chosen to synchronize passes, once both the actual recording time and the file modified time is older than the number of hours set.
 
 ## Troubleshooting | FAQ
 
+<details>
+  <summary>Which stream to use?</summary>
+
+This integration exposes 4 different camera entities:
+
+- HD Stream
+- SD Stream
+- HD Stream (Direct)
+- SD Stream (Direct)
+
+Direct streams use proprietary TP-Link streaming protocol. Non-direct ones use standard RTSP protocol.
+
+### Why use the Direct streams?
+
+1. If you have a device which does not have RTSP functionality, it is the only way. This includes battery devices, solar devices, as well as devices working through a hub.
+2. If you have used up [all your RTSP streams](https://www.tp-link.com/cz/support/faq/2742/) and/or your RTSP streams are unstable in Home Assistant.
+3. Direct streams are _extremely_ fast to load and have less than a half a second delay in stream* (_*make sure to DISABLE `Use Stream from Home Assistant (restart required)` in integration options for the fastest experience_). Under the hood, the new streams are a binary stream of data "straight to your browser", with no unnecessary translations or overhead.
+
+### Why not use the Direct streams?
+
+If you have an option to use RTSP, it is recommended to stick with RTSP streams.
+
+1. Direct streams take a bit more CPU resources since the device running this integration is now handling the binary stream directly, instead of camera exposing a standardized RTSP stream.
+2. Direct streams cannot be used with webrtc card, or go2rtc.
+3. RTSP streams are very fast with almost no delay using the [webrtc](https://github.com/AlexxIT/WebRTC) Home Assistant camera card
+
+</details>
 <details>
   <summary>Binary sensor for motion doesn't show up or work</summary>
 
@@ -259,15 +288,12 @@ Users reported full functionality with following Tapo Cameras, Doorbells and Chi
 - C530WS
 - C720
 - D100C
-
-The integration _should_ work with any other non-battery Tapo Camera based devices and chimes.
-
-Battery cameras controlled via HUB are working only for control:
-
 - D230
 - C420
 - C420S2
 - TC85
+
+The integration _should_ work with any other Tapo Camera based devices and chimes.
 
 If you had success with some other model, please report it via a new issue.
 
