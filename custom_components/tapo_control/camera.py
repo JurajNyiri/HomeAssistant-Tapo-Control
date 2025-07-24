@@ -69,15 +69,16 @@ async def async_setup_entry(
             hasRTSPEntities = True
             async_add_entities([hdStream, sdStream])
 
-        directStreamHD = TapoDirectCamEntity(
-            hass, config_entry, entry, True, enabledByDefault=not hasRTSPEntities
-        )
-        directStreamSD = TapoDirectCamEntity(
-            hass, config_entry, entry, False, enabledByDefault=False
-        )
-        entry["entities"].append({"entity": directStreamHD, "entry": entry})
-        entry["entities"].append({"entity": directStreamSD, "entry": entry})
-        async_add_entities([directStreamHD, directStreamSD])
+        if not entry["isParent"]:
+            directStreamHD = TapoDirectCamEntity(
+                hass, config_entry, entry, True, enabledByDefault=not hasRTSPEntities
+            )
+            directStreamSD = TapoDirectCamEntity(
+                hass, config_entry, entry, False, enabledByDefault=False
+            )
+            entry["entities"].append({"entity": directStreamHD, "entry": entry})
+            entry["entities"].append({"entity": directStreamSD, "entry": entry})
+            async_add_entities([directStreamHD, directStreamSD])
 
     await setupEntities(entry)
     for childDevice in entry["childDevices"]:
