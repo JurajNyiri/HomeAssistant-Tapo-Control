@@ -272,6 +272,7 @@ Users reported full functionality with following Tapo Cameras, Doorbells and Chi
 - TC55
 - TC60
 - TC70
+- TC85
 - C100
 - C110
 - C120
@@ -282,6 +283,9 @@ Users reported full functionality with following Tapo Cameras, Doorbells and Chi
 - C225
 - C310
 - C320WS
+- C410
+- C420
+- C420S2
 - C500
 - C510W
 - C520WS
@@ -289,9 +293,7 @@ Users reported full functionality with following Tapo Cameras, Doorbells and Chi
 - C720
 - D100C
 - D230
-- C420
-- C420S2
-- TC85
+- D235
 
 The integration _should_ work with any other Tapo Camera based devices and chimes.
 
