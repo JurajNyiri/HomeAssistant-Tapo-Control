@@ -24,11 +24,11 @@ Following target TCP (v)LAN ports **must be open** in firewall for the camera to
 
 Chimes:
 
-- 80 - HTTP for control of the camera ([services](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control#services))
+- 80 - HTTP for control of the camera ([services](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control#quick-start))
 
 Cameras and Doorbells:
 
-- 443 - HTTPS for control of the camera ([services](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control#services))
+- 443 - HTTPS for control of the camera ([services](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control#quick-start))
 - 8800 - Proprietary protocol for video streaming and recordings downloads (if available on device)
 - 554 - RTSP to fetch video stream from the camera (if available on device)
 - 2020 - ONVIF to track detected movement via a binary sensor (if available on device)
