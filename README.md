@@ -159,6 +159,8 @@ If you have an option to use RTSP, it is recommended to stick with RTSP streams.
 
 Motion sensor is added only after a motion is detected for the first time.
 
+It also requires ONVIF support on the device. If the device is not exposing Onvif interface (most likely if it is battery or solar powered), motion events will not work.
+
 - Make sure the camera has motion detection turned on
 - Make sure the camera has privacy mode turned off
 - Make sure the camera can see you and your movement
@@ -298,6 +300,8 @@ Users reported full functionality with following Tapo Cameras, Doorbells and Chi
 The integration _should_ work with any other Tapo Camera based devices and chimes.
 
 If you had success with some other model, please report it via a new issue.
+
+Note: If the device is not exposing Onvif interface (most likely if it is battery or solar powered), motion events will not work.
 
 </details>
 
