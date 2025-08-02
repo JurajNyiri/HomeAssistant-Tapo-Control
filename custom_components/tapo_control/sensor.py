@@ -300,10 +300,11 @@ class TapoHDDSensor(TapoSensorEntity):
                 if hdd["disk_name"] == self._sensor_name:
                     state = hdd[self._sensor_property]
         if "space" in self._sensor_property and (
-            match := re.search(r"[-+]?\d*\.?\d+", state)
+            match := re.search(r'\A\s*([+-]?\d+(?:\.\d+)?)\s*(.*?)\s*\Z', state)
         ):
-            value = match.group()
-            if (unit := state.replace(value, "")) in UnitOfInformation:
+            value = match[1]
+            unit = match[2]
+            if unit and unit in UnitOfInformation:
                 self._attr_device_class = SensorDeviceClass.DATA_SIZE
                 self._attr_native_unit_of_measurement = UnitOfInformation(unit)
                 self._attr_suggested_unit_of_measurement = UnitOfInformation.GIGABYTES
