@@ -300,7 +300,7 @@ class TapoHDDSensor(TapoSensorEntity):
                 if hdd["disk_name"] == self._sensor_name:
                     state = hdd[self._sensor_property]
         if "space" in self._sensor_property and (
-            match := re.search(r'\A\s*([+-]?\d+(?:\.\d+)?)\s*(.*?)\s*\Z', state)
+            match := re.search(r'\A\s*([+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+)))\s*(.*?)\s*\Z', state)
         ):
             value = match[1]
             unit = match[2]
