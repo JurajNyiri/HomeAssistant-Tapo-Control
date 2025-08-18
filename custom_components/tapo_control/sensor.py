@@ -307,7 +307,7 @@ class TapoHDDSensor(TapoSensorEntity):
             match := __class__._state_parser.search(state)
         ):
             unit = match["unit"]
-            if unit and unit in UnitOfInformation:
+            if unit in UnitOfInformation:
                 self._attr_device_class = SensorDeviceClass.DATA_SIZE
                 self._attr_native_unit_of_measurement = UnitOfInformation(unit)
                 self._attr_suggested_unit_of_measurement = UnitOfInformation.GIGABYTES
