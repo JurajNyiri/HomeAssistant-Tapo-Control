@@ -1,9 +1,16 @@
 name: Autocloser
+
 on:
   issues:
     types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   autoclose:
+    name: Autoclose template-mismatched issues
     runs-on: ubuntu-latest
     steps:
       - name: Autoclose issues that did not follow issue template
@@ -12,21 +19,25 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           issue-close-message: "@${issue.user.login} this issue was automatically closed because it did not follow the [Bug Report](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new?assignees=&labels=bug&template=bug_report.yml) or [Feature Request](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new?assignees=JurajNyiri&labels=enhancement&template=feature_request.md&title=Feature+Request%3A) template."
           issue-pattern: ".*Camera has all attributes filled out in developer tools.*|.*Is your feature request related to a problem.*"
+
   autoclose-cloud-token:
+    name: Autoclose known FAQ matches
     runs-on: ubuntu-latest
     steps:
-      - name: Check issue description for invalid string
+      - name: Check issue description for known FAQ strings
         id: check_body
-        run: |
-          if [[ "${{ github.event.issue.body }}" == *"Invalid cloud password"* ]]; then
-            echo "contains_invalid_string=true" >> $GITHUB_ENV
-          elif [[ "${{ github.event.issue.body }}" == *"Invalid authentication data. Make sure you have created your 3rd party account via Tapo app."* ]]; then
-            echo "contains_invalid_string=true" >> $GITHUB_ENV
-          else
-            echo "contains_invalid_string=false" >> $GITHUB_ENV
-          fi
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            const body = context.payload.issue?.body || "";
+            const s1 = "Invalid cloud password";
+            const s2 = "Invalid authentication data. Make sure you have created your 3rd party account via Tapo app.";
+            const matched = body.includes(s1) || body.includes(s2);
+            core.setOutput("contains_invalid_string", matched ? "true" : "false");
+
       - name: Close Issue - comment
-        if: env.contains_invalid_string == 'true'
+        if: steps.check_body.outputs.contains_invalid_string == 'true'
         uses: peter-evans/close-issue@v3
         with:
           comment: |

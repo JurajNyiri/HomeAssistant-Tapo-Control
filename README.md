@@ -274,6 +274,7 @@ Users reported full functionality with following Tapo Cameras, Doorbells and Chi
 - TC55
 - TC60
 - TC70
+- TC82
 - TC85
 - C100
 - C110
