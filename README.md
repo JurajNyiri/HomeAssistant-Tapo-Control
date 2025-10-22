@@ -14,7 +14,7 @@ Copy contents of custom_components/tapo_control/ to custom_components/tapo_contr
 
 ## Installation using HACS
 
-HACS is a community store for Home Assistant. You can install [HACS](https://github.com/custom-components/hacs) and then install Tapo: Camera Control from the HACS store.
+HACS is a community store for Home Assistant. You can install [HACS](https://github.com/custom-components/hacs) and then install Tapo: Cameras Control from the HACS store.
 
 ## Requirements
 
