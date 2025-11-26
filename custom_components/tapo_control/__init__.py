@@ -393,6 +393,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         ],
     )
 
+    if "udp_monitor" in hass.data[DOMAIN][entry.entry_id]:
+        await hass.data[DOMAIN][entry.entry_id]["udp_monitor"].async_stop()
+
     if hass.data[DOMAIN][entry.entry_id]["events"]:
         LOGGER.debug("Stopping events...")
         try:

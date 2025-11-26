@@ -1,3 +1,6 @@
+import asyncio
+import socket
+
 from typing import Optional
 
 from homeassistant.core import HomeAssistant, callback
@@ -14,12 +17,11 @@ from homeassistant.components.ffmpeg import (
     get_ffmpeg_manager,
 )
 
-from homeassistant.const import STATE_ON, STATE_OFF
+from homeassistant.const import STATE_ON, STATE_OFF, CONF_IP_ADDRESS
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.util.enum import try_parse_enum
 from homeassistant.helpers.entity import EntityCategory
-
 from .const import (
     BRAND,
     DOMAIN,
@@ -33,6 +35,59 @@ from .utils import build_device_info, getStreamSource
 from .tapo.entities import TapoBinarySensorEntity
 
 import haffmpeg.sensor as ffmpeg_sensor
+
+# temp definition
+UDP_PORT = 20005
+
+
+class _TapoUdpProtocol(asyncio.DatagramProtocol):
+    def __init__(self, device_ip: str | None):
+        super().__init__()
+        self._device_ip = device_ip
+
+    def datagram_received(self, data: bytes, addr):
+        ip, port = addr
+        # If device_ip is known, filter on it; otherwise log all packets.
+        if self._device_ip is None or ip == self._device_ip:
+            LOGGER.warning(
+                "Tapo UDP broadcast received from %s:%s on port %s",
+                ip,
+                port,
+                UDP_PORT,
+            )
+
+
+class TapoUdpMonitor:
+    """Background UDP listener for Tapo device broadcasts."""
+
+    def __init__(self, hass: HomeAssistant, device_ip: str):
+        self._hass = hass
+        self._device_ip = device_ip
+        self._transport: asyncio.DatagramTransport | None = None
+
+    async def async_start(self):
+        """Start listening on UDP_PORT for broadcasts."""
+        loop = asyncio.get_running_loop()
+
+        # local_addr=("0.0.0.0", UDP_PORT) listens on all interfaces
+        self._transport, _ = await loop.create_datagram_endpoint(
+            lambda: _TapoUdpProtocol(self._device_ip),
+            local_addr=("0.0.0.0", UDP_PORT),
+            allow_broadcast=True,
+        )
+
+        LOGGER.warning(
+            "TapoUdpMonitor started on UDP port %s for device IP %s",
+            UDP_PORT,
+            self._device_ip,
+        )
+
+    async def async_stop(self):
+        """Stop listening."""
+        if self._transport is not None:
+            self._transport.close()
+            self._transport = None
+            LOGGER.debug("TapoUdpMonitor stopped")
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -51,6 +106,10 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     if binarySensors:
         async_add_entities(binarySensors)
+
+    udp_monitor = TapoUdpMonitor(hass, config_entry.data.get(CONF_IP_ADDRESS))
+    await udp_monitor.async_start()
+    hass.data[DOMAIN][config_entry.entry_id]["udp_monitor"] = udp_monitor
 
     return True
 
