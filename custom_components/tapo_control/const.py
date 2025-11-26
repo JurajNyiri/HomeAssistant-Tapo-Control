@@ -9,6 +9,7 @@ CONTROL_PORT = "control_port"
 PYTAPO_REQUIRED_VERSION = "3.3.51"
 DOMAIN = "tapo_control"
 BRAND = "TP-Link"
+DOORBELL_UDP_PORT = 20005
 ALARM_MODE = "alarm_mode"
 PRESET = "preset"
 LIGHT = "light"
