@@ -695,21 +695,24 @@ async def isRtspStreamWorking(
     username = urllib.parse.quote_plus(username)
     password = urllib.parse.quote_plus(password)
 
-    if stream:
-        streaming_url = f"rtsp://{host}:554/{stream}"
-        if username or password:
-            streaming_url = f"rtsp://{username}:{password}@{host}:554/{stream}"
-    elif not streaming_url:
-        streaming_url = f"rtsp://{host}:554/stream1"
-        if username or password:
-            streaming_url = f"rtsp://{username}:{password}@{host}:554/stream1"
+    stream_path = stream or "stream1"
+    auth = f"{username}:{password}@" if username or password else ""
+    streaming_url = f"rtsp://{auth}{host}:554/{stream_path}"
+
+    safe_streaming_url = streaming_url
+    if username:
+        safe_streaming_url = safe_streaming_url.replace(
+            username, "HIDDEN_USERNAME"
+        )
+    if password:
+        safe_streaming_url = safe_streaming_url.replace(
+            password, "HIDDEN_PASSWORD"
+        )
 
     LOGGER.debug(
         "[isRtspStreamWorking][%s] Getting image from %s.",
         host,
-        streaming_url.replace(username, "HIDDEN_USERNAME").replace(
-            password, "HIDDEN_PASSWORD"
-        ),
+        safe_streaming_url,
     )
     image = await asyncio.shield(
         ffmpeg.get_image(
