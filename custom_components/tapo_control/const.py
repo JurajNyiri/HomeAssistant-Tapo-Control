@@ -6,7 +6,7 @@ from datetime import timedelta
 from homeassistant.helpers import config_validation as cv
 
 CONTROL_PORT = "control_port"
-PYTAPO_REQUIRED_VERSION = "3.3.52"
+PYTAPO_REQUIRED_VERSION = "3.3.53"
 DOMAIN = "tapo_control"
 BRAND = "TP-Link"
 DOORBELL_UDP_PORT = 20005
@@ -69,6 +69,9 @@ ENABLE_TIME_SYNC = "enable_time_sync"
 LOGGER = logging.getLogger("custom_components." + DOMAIN)
 
 TIME_SYNC_PERIOD = 3600
+RECORDINGS_UNAVAILABLE_MESSAGE = (
+    "Recordings are unavailable. Insert an SD card into the camera and try again."
+)
 MEDIA_CLEANUP_PERIOD = 10 * 60
 UPDATE_CHECK_PERIOD = 86400
 
