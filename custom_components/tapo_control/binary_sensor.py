@@ -114,18 +114,26 @@ class TapoUdpMonitor:
         """Start listening on DOORBELL_UDP_PORT for broadcasts."""
         loop = asyncio.get_running_loop()
 
-        # local_addr=("0.0.0.0", DOORBELL_UDP_PORT) listens on all interfaces
-        self._transport, _ = await loop.create_datagram_endpoint(
-            lambda: _TapoUdpProtocol(self, self._device_ip),
-            local_addr=("0.0.0.0", DOORBELL_UDP_PORT),
-            allow_broadcast=True,
-        )
+        try:
+            self._transport, _ = await loop.create_datagram_endpoint(
+                lambda: _TapoUdpProtocol(self, self._device_ip),
+                local_addr=("0.0.0.0", DOORBELL_UDP_PORT),
+                allow_broadcast=True,
+                reuse_port=True,
+            )
 
-        LOGGER.warning(
-            "TapoUdpMonitor started on UDP port %s for device IP %s",
-            DOORBELL_UDP_PORT,
-            self._device_ip,
-        )
+            LOGGER.warning(
+                "TapoUdpMonitor started on UDP port %s for device IP %s",
+                DOORBELL_UDP_PORT,
+                self._device_ip,
+            )
+        except OSError as err:
+            LOGGER.warning(
+                "TapoUdpMonitor could not bind UDP port %s (already in use?): %s. "
+                "UDP doorbell pulses will be disabled.",
+                DOORBELL_UDP_PORT,
+                err,
+            )
 
     async def async_stop(self):
         """Stop listening."""
