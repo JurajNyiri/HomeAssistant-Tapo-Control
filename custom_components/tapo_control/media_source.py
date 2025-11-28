@@ -8,6 +8,7 @@ TODO:
 from __future__ import annotations
 
 
+import asyncio
 from homeassistant.components.media_player import MediaClass, MediaType
 from homeassistant.components.media_source.error import Unresolvable
 from homeassistant.components.media_source.models import (
@@ -82,6 +83,53 @@ class TapoMediaSource(MediaSource):
         self.hass = hass
         self.entry = entry
 
+    def _build_notification_id(self, entry_id: str, child_id: str) -> str:
+        suffix = child_id if child_id else "root"
+        return f"{DOMAIN}_recording_download_{entry_id}_{suffix}"
+
+    def _schedule_notification(self, coro):
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = None
+
+        if running_loop and running_loop == self.hass.loop:
+            self.hass.async_create_task(coro)
+        else:
+            asyncio.run_coroutine_threadsafe(coro, self.hass.loop)
+
+    def _create_progress_notifier(self, notification_id: str, title: str):
+        def notifier(message: str):
+            self._schedule_notification(
+                self._async_create_download_notification(
+                    notification_id, title, message
+                )
+            )
+
+        return notifier
+
+    async def _async_create_download_notification(
+        self, notification_id: str, title: str, message: str
+    ) -> None:
+        await self.hass.services.async_call(
+            "persistent_notification",
+            "create",
+            {
+                "title": title,
+                "message": message,
+                "notification_id": notification_id,
+            },
+            blocking=False,
+        )
+
+    async def _async_dismiss_download_notification(self, notification_id: str) -> None:
+        await self.hass.services.async_call(
+            "persistent_notification",
+            "dismiss",
+            {"notification_id": notification_id},
+            blocking=False,
+        )
+
     def _get_entry_data(self, entry_id: str) -> dict:
         """Return entry data or raise a user facing error if setup is incomplete."""
         entry_data = self.hass.data.get(DOMAIN, {}).get(entry_id)
@@ -126,13 +174,38 @@ class TapoMediaSource(MediaSource):
                 LOGGER.debug(startDate)
                 LOGGER.debug(endDate)
 
-                await getRecording(
-                    self.hass, tapoController, entry, device, date, startDate, endDate
+                notification_id = self._build_notification_id(entry, childID)
+                notifier_title = f"{device['name']} recording download"
+                progress_notifier = self._create_progress_notifier(
+                    notification_id, notifier_title
                 )
-                url = await getWebFile(
-                    self.hass, entry, startDate, endDate, "videos", childID=childID
-                )
-                LOGGER.debug(url)
+                progress_notifier("Preparing recording download...")
+                try:
+                    await getRecording(
+                        self.hass,
+                        tapoController,
+                        entry,
+                        device,
+                        date,
+                        startDate,
+                        endDate,
+                        progress_callback=progress_notifier,
+                    )
+                    url = await getWebFile(
+                        self.hass,
+                        entry,
+                        startDate,
+                        endDate,
+                        "videos",
+                        childID=childID,
+                    )
+                    LOGGER.debug(url)
+                except Exception as e:
+                    progress_notifier(f"Download failed: {e}")
+                    LOGGER.error(e)
+                    raise Unresolvable(e)
+                else:
+                    await self._async_dismiss_download_notification(notification_id)
             except Exception as e:
                 LOGGER.error(e)
                 raise Unresolvable(e)

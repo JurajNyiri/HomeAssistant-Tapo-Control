@@ -10,6 +10,7 @@ import urllib.parse
 import uuid
 import requests
 import base64
+from typing import Callable, Optional
 
 from functools import partial
 from homeassistant.helpers.event import async_track_time_interval
@@ -503,13 +504,15 @@ def processDownloadStatus(
     date: str,
     allRecordingsCount: int,
     recordingCount: int = False,
+    progress_callback: Optional[Callable[[str], None]] = None,
 ):
     def processUpdate(status):
         LOGGER.debug(status)
+        message = ""
         if isinstance(status, str):
-            entryData["downloadProgress"] = status
+            message = status
         else:
-            entryData["downloadProgress"] = (
+            message = (
                 status["currentAction"]
                 + " "
                 + date
@@ -524,6 +527,10 @@ def processDownloadStatus(
                     else ""
                 )
             )
+
+        entryData["downloadProgress"] = message
+        if progress_callback is not None:
+            progress_callback(message)
 
     return processUpdate
 
@@ -611,6 +618,7 @@ async def getRecording(
     endDate: int,
     recordingCount: int = False,
     totalRecordingCount: int = False,
+    progress_callback: Optional[Callable[[str], None]] = None,
 ) -> str:
     timeCorrection = await hass.async_add_executor_job(tapo.getTimeCorrection)
     startDate = int(startDate)
@@ -642,21 +650,30 @@ async def getRecording(
         )
 
         entryData["isDownloadingStream"] = True
-        downloadedFile = await downloader.downloadFile(
-            processDownloadStatus(
-                entryData,
-                date,
-                (
-                    len(allRecordings)
-                    if totalRecordingCount is False
-                    else totalRecordingCount
-                ),
-                recordingCount if recordingCount is not False else False,
+        try:
+            downloadedFile = await downloader.downloadFile(
+                processDownloadStatus(
+                    entryData,
+                    date,
+                    (
+                        len(allRecordings)
+                        if totalRecordingCount is False
+                        else totalRecordingCount
+                    ),
+                    recordingCount if recordingCount is not False else False,
+                    progress_callback=progress_callback,
+                )
             )
-        )
-        entryData["isDownloadingStream"] = False
+        finally:
+            entryData["isDownloadingStream"] = False
+
         if downloadedFile["currentAction"] == "Recording in progress":
             raise Unresolvable("Recording is currently in progress.")
+
+        completion_message = "Finished download"
+        entryData["downloadProgress"] = completion_message
+        if progress_callback is not None:
+            progress_callback(completion_message)
 
         hass.bus.fire(
             "tapo_control_media_downloaded",
