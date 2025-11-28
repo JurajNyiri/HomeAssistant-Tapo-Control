@@ -125,6 +125,27 @@ Finally, you can turn on, or off switch entity `switch.*_media_sync`.
 
 **Notice:** Recordings are deleted after the number of hours you have chosen to synchronize passes, once both the actual recording time and the file modified time is older than the number of hours set.
 
+### Media download event
+
+Whenever a recording is downloaded (either because you requested playback or media sync picked it up), the integration fires a Home Assistant event `tapo_control_media_downloaded` with data:
+
+- `entry_id`: Config entry id of the device
+- `startDate` / `endDate`: Recording start/end timestamps (UTC, in seconds)
+- `filePath`: Full path to the downloaded mp4 in cold storage
+
+Example automation trigger:
+
+```yaml
+trigger:
+  - platform: event
+    event_type: tapo_control_media_downloaded
+action:
+  - service: notify.mobile_app_phone
+    data:
+      message: >
+        New Tapo recording from {{ trigger.event.data.startDate | timestamp_local }}
+```
+
 ## Troubleshooting | FAQ
 
 <details>

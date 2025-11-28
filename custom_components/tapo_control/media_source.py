@@ -20,7 +20,13 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt
 
-from .const import DOMAIN, LOGGER, MEDIA_VIEW_DAYS_ORDER, MEDIA_VIEW_RECORDINGS_ORDER
+from .const import (
+    DOMAIN,
+    LOGGER,
+    MEDIA_VIEW_DAYS_ORDER,
+    MEDIA_VIEW_RECORDINGS_ORDER,
+    RECORDINGS_UNAVAILABLE_MESSAGE,
+)
 
 from .utils import (
     getRecording,
@@ -63,6 +69,12 @@ class TapoMediaSource(MediaSource):
     """Provide Radio stations as media sources."""
 
     name = "Tapo: Recordings"
+
+    def _map_recordings_exception(self, err: Exception) -> str:
+        err_msg = str(err)
+        if "-71105" in err_msg:
+            return RECORDINGS_UNAVAILABLE_MESSAGE
+        return "Unable to retrieve recordings, please try again later."
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         """Initialize CameraMediaSource."""
@@ -132,7 +144,18 @@ class TapoMediaSource(MediaSource):
             raise Unresolvable(
                 "Initial local media scan still running, please try again later."
             )
-        recordingsForDay = await getRecordings(self.hass, device, tapoController, date)
+        try:
+            recordingsForDay = await getRecordings(
+                self.hass, device, tapoController, date
+            )
+        except Exception as err:
+            LOGGER.error(
+                "Unable to fetch recordings for %s on %s: %s",
+                device["name"],
+                date,
+                err,
+            )
+            raise Unresolvable(self._map_recordings_exception(err)) from err
         videoNames = []
         for searchResult in recordingsForDay:
             for key in searchResult:
@@ -208,9 +231,15 @@ class TapoMediaSource(MediaSource):
             raise Unresolvable(
                 "Cloud password is required in order to play recordings.\nSet cloud password inside Settings > Devices & Services > Tapo: Cameras Control > Configure."
             )
-        recordingsList = await self.hass.async_add_executor_job(
-            tapoController.getRecordingsList
-        )
+        try:
+            recordingsList = await self.hass.async_add_executor_job(
+                tapoController.getRecordingsList
+            )
+        except Exception as err:
+            LOGGER.error(
+                "Unable to fetch recordings list for %s: %s", device["name"], err
+            )
+            raise Unresolvable(self._map_recordings_exception(err)) from err
         recordingsDates = []
         for searchResult in recordingsList:
             for key in searchResult:
