@@ -98,7 +98,7 @@ class TapoNoiseBinarySensor(TapoBinarySensorEntity):
         self._hass.data[DOMAIN][self._config_entry.entry_id][
             "noiseSensorStarted"
         ] = True
-        LOGGER.debug(getStreamSource(self._config_entry, False))
+        LOGGER.debug(getStreamSource(self._config_entry, "stream2"))
         LOGGER.debug(
             str(self._sound_detection_duration)
             + ","
@@ -107,7 +107,7 @@ class TapoNoiseBinarySensor(TapoBinarySensorEntity):
             + str(self._sound_detection_peak),
         )
         await self._noiseSensor.open_sensor(
-            input_source=getStreamSource(self._config_entry, False),
+            input_source=getStreamSource(self._config_entry, "stream2"),
             extra_cmd="-nostats",
         )
 

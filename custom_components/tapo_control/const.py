@@ -25,7 +25,10 @@ AUTO_TRACK_MODE = "auto_track_mode"
 CLOUD_PASSWORD = "cloud_password"
 DEFAULT_SCAN_INTERVAL = 10
 SCAN_INTERVAL = timedelta(seconds=5)
-CONF_CUSTOM_STREAM = "custom_stream"
+CONF_CUSTOM_STREAM_HD = "custom_stream_hd"
+CONF_CUSTOM_STREAM_SD = "custom_stream_sd"
+CONF_CUSTOM_STREAM_6 = "custom_stream6"
+CONF_CUSTOM_STREAM_7 = "custom_stream7"
 CONF_SKIP_RTSP = "skip_rtsp"
 
 ENABLE_MOTION_SENSOR = "enable_motion_sensor"
@@ -63,6 +66,8 @@ SOUND_DETECTION_DURATION = "sound_detection_duration"
 SOUND_DETECTION_RESET = "sound_detection_reset"
 
 ENABLE_TIME_SYNC = "enable_time_sync"
+HAS_STREAM_6 = "has_stream6"
+HAS_STREAM_7 = "has_stream7"
 
 LOGGER = logging.getLogger("custom_components." + DOMAIN)
 

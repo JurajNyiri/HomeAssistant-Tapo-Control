@@ -61,7 +61,10 @@
           "sound_detection_duration": "[Détection sonore] Combien de temps le bruit doit-il dépasser le pic pour déclencher l'état.",
           "sound_detection_reset": "[Détection sonore] Le temps de réinitialisation de l'état après qu'aucun nouveau bruit n'a dépassé le pic.",
           "extra_arguments": "Arguments supplémentaires pour ffmpeg (redémarrage requis)",
-          "custom_stream": "Lien de flux personnalisé",
+          "custom_stream_hd": "Lien de flux personnalisé (HD)",
+          "custom_stream_sd": "Lien de flux personnalisé (SD)",
+          "custom_stream6": "Lien de flux personnalisé (téléobjectif HD)",
+          "custom_stream7": "Lien de flux personnalisé (téléobjectif SD)",
           "rtsp_transport": "Mécanisme de transport RTSP"
         },
         "description": "Presque terminé!\nEncore quelques options finales..."
@@ -137,7 +140,10 @@
           "enable_stream": "Utiliser le flux de Home Assistant (redémarrage requis)",
           "cloud_password": "Mot de passe Cloud (facultatif)",
           "extra_arguments": "Arguments supplémentaires pour ffmpeg (redémarrage requis)",
-          "custom_stream": "Lien de flux personnalisé",
+          "custom_stream_hd": "Lien de flux personnalisé (HD)",
+          "custom_stream_sd": "Lien de flux personnalisé (SD)",
+          "custom_stream6": "Lien de flux personnalisé (téléobjectif HD)",
+          "custom_stream7": "Lien de flux personnalisé (téléobjectif SD)",
           "rtsp_transport": "Mécanisme de transport RTSP"
         },
         "description": "Modifier les paramètres de votre caméra Tapo.\n\nUtiliser le flux de Home Assistant:\nOui - Délai de lecture plus long, utilisation réduite du processeur, permet le contrôle de la lecture\nNon - Délai de lecture très court, utilisation plus élevée du processeur, aucun contrôle de lecture"
