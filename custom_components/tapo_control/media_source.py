@@ -128,7 +128,9 @@ class TapoMediaSource(MediaSource):
             blocking=False,
         )
 
-    def _build_progress_notifier(self, notification_id: str, header: str):
+    def _build_progress_notifier(
+        self, notification_id: str, main_title: str, sub_title: str
+    ):
         def notifier(
             message: str,
             progress: Optional[float] = None,
@@ -142,12 +144,12 @@ class TapoMediaSource(MediaSource):
                 )
 
             full_message = (
-                f"{header}\n{friendly_message}\n\n"
+                f"{sub_title}\n{friendly_message}\n\n"
                 "Download runs in the background; check this notification for progress."
             )
             self._schedule_notification(
                 self._async_create_download_notification(
-                    notification_id, header, full_message
+                    notification_id, main_title, full_message
                 )
             )
 
@@ -280,9 +282,11 @@ class TapoMediaSource(MediaSource):
                 # If we need to fetch the clip, do it in the background and guide the user.
                 if fileName not in device["downloadedStreams"]:
                     notification_id = self._build_notification_id(entry, childID)
-                    notifier_title = f"{device['name']} - Downloading recording"
+                    clip_label = self._format_clip_label(int(startDate), int(endDate))
+                    main_title = f"{device['name']}: Downloading..."
+                    sub_title = f"{device['name']} - {clip_label}"
                     progress_notifier = self._build_progress_notifier(
-                        notification_id, notifier_title
+                        notification_id, main_title, sub_title
                     )
                     progress_notifier(
                         "Starting download. This runs in the background; the player will open when ready."
