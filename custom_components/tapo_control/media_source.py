@@ -162,12 +162,83 @@ class TapoMediaSource(MediaSource):
             )
         return entry_data
 
-    def _ensure_browse_allowed(self, device: dict) -> None:
-        """Prevent media browsing only during manual downloads."""
-        if device.get("isDownloadingStream") and not device.get("runningMediaSync"):
-            raise Unresolvable(
-                "A recording download is in progress. Track progress in notifications and try again once it finishes."
+    def _manual_download_active(self, device: dict) -> bool:
+        """Return True when a user-triggered download is running (not media sync)."""
+        return bool(
+            device.get("isDownloadingStream") and not device.get("runningMediaSync")
+        )
+
+    def _local_date_key(self, ts_utc: int, tz_offset: int) -> str:
+        """Return YYYY-MM-DD string for a timestamp adjusted by timezone offset."""
+        local_dt = dt.as_local(dt.utc_from_timestamp(ts_utc - tz_offset))
+        return local_dt.strftime("%Y-%m-%d")
+
+    def _parse_download_meta(
+        self, meta: dict, file_key: str
+    ) -> tuple[int | None, int | None]:
+        """Extract start/end timestamps from stored download metadata."""
+        if not isinstance(meta, dict):
+            LOGGER.debug(
+                "[media_source] Skipping downloaded entry %s: metadata not a dict (%s)",
+                file_key,
+                meta,
             )
+            return None, None
+
+        if "startDate" in meta and "endDate" in meta:
+            try:
+                return int(meta["startDate"]), int(meta["endDate"])
+            except Exception:
+                LOGGER.debug(
+                    "[media_source] Skipping downloaded entry %s: invalid start/end in metadata %s",
+                    file_key,
+                    meta,
+                )
+                return None, None
+
+        # Legacy form: keys are timestamps (and values mirror keys).
+        numeric_vals = []
+        for key, val in meta.items():
+            for candidate in (key, val):
+                try:
+                    numeric_vals.append(int(candidate))
+                except Exception:
+                    continue
+
+        if len(numeric_vals) >= 2:
+            numeric_vals = sorted(set(numeric_vals))
+            return numeric_vals[0], numeric_vals[-1]
+
+        LOGGER.debug(
+            "[media_source] Skipping downloaded entry %s due to unrecognized metadata: %s",
+            file_key,
+            meta,
+        )
+        return None, None
+
+    def _get_downloaded_recordings_for_device(
+        self, device: dict, date_key: str | None = None
+    ):
+        """Return downloaded recordings metadata filtered by optional date key."""
+        results = []
+        tz_offset = device.get("timezoneOffset", 0)
+        for file_key, meta in device.get("downloadedStreams", {}).items():
+            start_ts, end_ts = self._parse_download_meta(meta, file_key)
+            if start_ts is None or end_ts is None:
+                continue
+
+            computed_key = self._local_date_key(start_ts, tz_offset)
+            if date_key and computed_key not in (date_key, date_key.replace("-", "")):
+                continue
+
+            results.append(
+                {
+                    "startDate": start_ts,
+                    "endDate": end_ts,
+                    "date_key": self._local_date_key(start_ts, tz_offset),
+                }
+            )
+        return results
 
     async def async_resolve_media(self, item: MediaSourceItem) -> PlayMedia:
         path = item.identifier.split("/")
@@ -209,8 +280,7 @@ class TapoMediaSource(MediaSource):
                 # If we need to fetch the clip, do it in the background and guide the user.
                 if fileName not in device["downloadedStreams"]:
                     notification_id = self._build_notification_id(entry, childID)
-                    clip_label = self._format_clip_label(int(startDate), int(endDate))
-                    notifier_title = f"{device['name']} - {clip_label}"
+                    notifier_title = f"{device['name']} - Downloading recording"
                     progress_notifier = self._build_progress_notifier(
                         notification_id, notifier_title
                     )
@@ -286,24 +356,25 @@ class TapoMediaSource(MediaSource):
             raise Unresolvable(
                 "Initial local media scan still running, please try again later."
             )
-        self._ensure_browse_allowed(device)
-        try:
-            recordingsForDay = await getRecordings(
-                self.hass, device, tapoController, date
-            )
-        except Exception as err:
-            LOGGER.error(
-                "Unable to fetch recordings for %s on %s: %s",
-                device["name"],
-                date,
-                err,
-            )
-            raise Unresolvable(self._map_recordings_exception(err)) from err
+        manual_download = self._manual_download_active(device)
+
         videoNames = []
-        for searchResult in recordingsForDay:
-            for key in searchResult:
-                startTS = searchResult[key]["startTime"] - device["timezoneOffset"]
-                endTS = searchResult[key]["endTime"] - device["timezoneOffset"]
+        if manual_download:
+            # Use already downloaded clips only to avoid bricking the manual download.
+            LOGGER.debug(
+                "[media_source] Manual download active, using cached clips only for date %s; downloadedStreams keys: %s",
+                date,
+                list(device.get("downloadedStreams", {}).keys()),
+            )
+            downloaded = self._get_downloaded_recordings_for_device(
+                device, date_key=date
+            )
+            LOGGER.debug(
+                "[media_source] Filtered cached clips for %s: %s", date, downloaded
+            )
+            for item in downloaded:
+                startTS = item["startDate"] - device["timezoneOffset"]
+                endTS = item["endDate"] - device["timezoneOffset"]
                 startDate = dt.as_local(dt.utc_from_timestamp(startTS))
                 endDate = dt.as_local(dt.utc_from_timestamp(endTS))
                 videoName = (
@@ -312,10 +383,51 @@ class TapoMediaSource(MediaSource):
                 videoNames.append(
                     {
                         "name": videoName,
-                        "startDate": searchResult[key]["startTime"],
-                        "endDate": searchResult[key]["endTime"],
+                        "startDate": item["startDate"],
+                        "endDate": item["endDate"],
                     }
                 )
+            if not videoNames:
+                LOGGER.debug(
+                    "[media_source] No cached clips found for %s while manual download active. Returning to dates list.",
+                    date,
+                )
+                parent_query = {
+                    k: v
+                    for k, v in query.items()
+                    if k not in ("date", "startDate", "endDate", "title")
+                }
+                parent_query["title"] = device.get("name", title)
+                return await self.generateDates(
+                    parent_query, parent_query["title"], entry, device
+                )
+        else:
+            try:
+                recordingsForDay = await getRecordings(
+                    self.hass, device, tapoController, date
+                )
+            except Exception as err:
+                LOGGER.error(
+                    "Unable to fetch recordings for %s on %s: %s",
+                    device["name"],
+                    date,
+                    err,
+                )
+                raise Unresolvable(self._map_recordings_exception(err)) from err
+            for searchResult in recordingsForDay:
+                for key in searchResult:
+                    startTS = searchResult[key]["startTime"] - device["timezoneOffset"]
+                    endTS = searchResult[key]["endTime"] - device["timezoneOffset"]
+                    startDate = dt.as_local(dt.utc_from_timestamp(startTS))
+                    endDate = dt.as_local(dt.utc_from_timestamp(endTS))
+                    videoName = f"{startDate.strftime('%H:%M:%S')} - {endDate.strftime('%H:%M:%S')}"
+                    videoNames.append(
+                        {
+                            "name": videoName,
+                            "startDate": searchResult[key]["startTime"],
+                            "endDate": searchResult[key]["endTime"],
+                        }
+                    )
 
         videoNames = sorted(
             videoNames,
@@ -369,25 +481,43 @@ class TapoMediaSource(MediaSource):
             raise Unresolvable(
                 "Initial local media scan still running, please try again later."
             )
-        self._ensure_browse_allowed(device)
+        manual_download = self._manual_download_active(device)
 
-        if device["usingCloudPassword"] is False:
-            raise Unresolvable(
-                "Cloud password is required in order to play recordings.\nSet cloud password inside Settings > Devices & Services > Tapo: Cameras Control > Configure."
+        if manual_download:
+            downloaded = self._get_downloaded_recordings_for_device(device)
+            recordingsDates = list(
+                {item["date_key"] for item in downloaded if "date_key" in item}
             )
-        try:
-            recordingsList = await self.hass.async_add_executor_job(
-                tapoController.getRecordingsList
-            )
-        except Exception as err:
-            LOGGER.error(
-                "Unable to fetch recordings list for %s: %s", device["name"], err
-            )
-            raise Unresolvable(self._map_recordings_exception(err)) from err
-        recordingsDates = []
-        for searchResult in recordingsList:
-            for key in searchResult:
-                recordingsDates.append(searchResult[key]["date"])
+            if not recordingsDates:
+                LOGGER.debug(
+                    "[media_source] No cached dates available while manual download active."
+                )
+                # Show an empty list instead of a placeholder/error.
+                return self.generateView(
+                    build_identifier(query),
+                    title,
+                    False,
+                    True,
+                    children=[],
+                )
+        else:
+            if device["usingCloudPassword"] is False:
+                raise Unresolvable(
+                    "Cloud password is required in order to play recordings.\nSet cloud password inside Settings > Devices & Services > Tapo: Cameras Control > Configure."
+                )
+            try:
+                recordingsList = await self.hass.async_add_executor_job(
+                    tapoController.getRecordingsList
+                )
+            except Exception as err:
+                LOGGER.error(
+                    "Unable to fetch recordings list for %s: %s", device["name"], err
+                )
+                raise Unresolvable(self._map_recordings_exception(err)) from err
+            recordingsDates = []
+            for searchResult in recordingsList:
+                for key in searchResult:
+                    recordingsDates.append(searchResult[key]["date"])
 
         recordingsDates.sort(
             reverse=True if media_view_days_order == "Descending" else False
