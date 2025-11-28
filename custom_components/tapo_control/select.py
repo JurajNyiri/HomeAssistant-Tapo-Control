@@ -1,6 +1,7 @@
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from homeassistant.helpers.restore_state import RestoreEntity
@@ -1203,8 +1204,17 @@ class TapoMoveToPresetSelect(TapoSelectEntity):
                 foundKey = key
                 break
         if foundKey:
-            await self.hass.async_add_executor_job(self._controller.setPreset, foundKey)
-            self._attr_current_option = None
+            try:
+                await self.hass.async_add_executor_job(
+                    self._controller.setPreset, foundKey
+                )
+                self._attr_current_option = None
+            except Exception as err:
+                # Convert camera error to HomeAssistantError so scripts with
+                # continue_on_error can handle it gracefully.
+                raise HomeAssistantError(
+                    f"Unable to move camera to preset {option}: {err}"
+                ) from err
         else:
             LOGGER.error(f"Preset {option} does not exist.")
 
