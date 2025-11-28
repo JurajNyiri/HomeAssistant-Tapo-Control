@@ -43,6 +43,7 @@ from .const import (
     MEDIA_VIEW_RECORDINGS_ORDER,
     MEDIA_VIEW_RECORDINGS_ORDER_OPTIONS,
     REPORTED_IP_ADDRESS,
+    DOORBELL_UDP_DISCOVERED,
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
     SOUND_DETECTION_RESET,
@@ -65,7 +66,7 @@ from .const import (
 class FlowHandler(ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 22
+    VERSION = 23
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -460,6 +461,7 @@ class FlowHandler(ConfigFlow):
                     IS_KLAP_DEVICE: False,
                     TIME_SYNC_DST: TIME_SYNC_DST_DEFAULT,
                     TIME_SYNC_NDST: TIME_SYNC_NDST_DEFAULT,
+                    DOORBELL_UDP_DISCOVERED: False,
                 },
             )
 

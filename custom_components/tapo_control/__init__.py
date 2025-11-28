@@ -43,6 +43,7 @@ from .const import (
     MEDIA_VIEW_DAYS_ORDER,
     MEDIA_VIEW_RECORDINGS_ORDER,
     REPORTED_IP_ADDRESS,
+    DOORBELL_UDP_DISCOVERED,
     RTSP_TRANS_PROTOCOLS,
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
@@ -369,6 +370,11 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         new[TIME_SYNC_NDST] = TIME_SYNC_NDST_DEFAULT
 
         hass.config_entries.async_update_entry(config_entry, data=new, version=22)
+
+    if config_entry.version == 22:
+        new = {**config_entry.data}
+        new.setdefault(DOORBELL_UDP_DISCOVERED, False)
+        hass.config_entries.async_update_entry(config_entry, data=new, version=23)
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 

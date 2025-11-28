@@ -24,6 +24,7 @@ from .const import (
     DOMAIN,
     LOGGER,
     ENABLE_SOUND_DETECTION,
+    DOORBELL_UDP_DISCOVERED,
     DOORBELL_UDP_PORT,
     SOUND_DETECTION_PEAK,
     SOUND_DETECTION_DURATION,
@@ -71,6 +72,7 @@ class TapoUdpMonitor:
         entry: dict,
         config_entry: ConfigEntry,
         async_add_entities,
+        sensor_precreated: bool,
     ):
         self._hass = hass
         self._device_ip = device_ip
@@ -80,6 +82,13 @@ class TapoUdpMonitor:
         self._transport: asyncio.DatagramTransport | None = None
         self._binary_sensor: TapoUdpBinarySensor | None = None
         self._turn_off_task: asyncio.Task | None = None
+        self._sensor_marked_seen = bool(
+            self._config_entry.data.get(DOORBELL_UDP_DISCOVERED)
+        )
+        if sensor_precreated:
+            self._hass.async_create_task(
+                self.async_ensure_sensor_created(reason="precreate on startup")
+            )
 
     def handle_datagram(self):
         """Schedule handling of an incoming UDP packet."""
@@ -87,11 +96,7 @@ class TapoUdpMonitor:
 
     async def _async_handle_datagram(self):
         """Create the sensor on first packet and pulse it on subsequent packets."""
-        if self._binary_sensor is None:
-            self._binary_sensor = TapoUdpBinarySensor(
-                self._entry, self._hass, self._config_entry
-            )
-            self._async_add_entities([self._binary_sensor])
+        await self.async_ensure_sensor_created(reason="incoming UDP packet")
 
         if self._turn_off_task:
             self._turn_off_task.cancel()
@@ -109,6 +114,28 @@ class TapoUdpMonitor:
             return
         finally:
             self._turn_off_task = None
+
+    async def async_ensure_sensor_created(self, reason: str | None = None):
+        if self._binary_sensor is None:
+            LOGGER.debug(
+                "Creating doorbell UDP binary sensor (%s)",
+                reason or "no reason provided",
+            )
+            self._binary_sensor = TapoUdpBinarySensor(
+                self._entry, self._hass, self._config_entry
+            )
+            self._async_add_entities([self._binary_sensor])
+            await self._async_mark_sensor_seen()
+
+    async def _async_mark_sensor_seen(self):
+        if self._sensor_marked_seen:
+            return
+
+        self._sensor_marked_seen = True
+        new_data = {**self._config_entry.data, DOORBELL_UDP_DISCOVERED: True}
+        self._hass.config_entries.async_update_entry(
+            self._config_entry, data=new_data
+        )
 
     async def async_start(self):
         """Start listening on DOORBELL_UDP_PORT for broadcasts."""
@@ -177,12 +204,15 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     if binarySensors:
         async_add_entities(binarySensors)
 
+    precreate_udp_sensor = bool(config_entry.data.get(DOORBELL_UDP_DISCOVERED))
+
     udp_monitor = TapoUdpMonitor(
         hass,
         config_entry.data.get(CONF_IP_ADDRESS),
         entry,
         config_entry,
         async_add_entities,
+        precreate_udp_sensor,
     )
     await udp_monitor.async_start()
     hass.data[DOMAIN][config_entry.entry_id]["udp_monitor"] = udp_monitor
