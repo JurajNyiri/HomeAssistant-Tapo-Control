@@ -504,11 +504,13 @@ def processDownloadStatus(
     date: str,
     allRecordingsCount: int,
     recordingCount: int = False,
-    progress_callback: Optional[Callable[[str], None]] = None,
+    progress_callback: Optional[Callable[[str, Optional[float], Optional[float]], None]] = None,
 ):
     def processUpdate(status):
         LOGGER.debug(status)
         message = ""
+        current = None
+        total = None
         if isinstance(status, str):
             message = status
         else:
@@ -527,10 +529,12 @@ def processDownloadStatus(
                     else ""
                 )
             )
+            current = status.get("progress")
+            total = status.get("total")
 
         entryData["downloadProgress"] = message
         if progress_callback is not None:
-            progress_callback(message)
+            progress_callback(message, current, total)
 
     return processUpdate
 
@@ -618,7 +622,7 @@ async def getRecording(
     endDate: int,
     recordingCount: int = False,
     totalRecordingCount: int = False,
-    progress_callback: Optional[Callable[[str], None]] = None,
+    progress_callback: Optional[Callable[[str, Optional[float], Optional[float]], None]] = None,
 ) -> str:
     timeCorrection = await hass.async_add_executor_job(tapo.getTimeCorrection)
     startDate = int(startDate)
@@ -673,7 +677,7 @@ async def getRecording(
         completion_message = "Finished download"
         entryData["downloadProgress"] = completion_message
         if progress_callback is not None:
-            progress_callback(completion_message)
+            progress_callback(completion_message, None, None)
 
         hass.bus.fire(
             "tapo_control_media_downloaded",

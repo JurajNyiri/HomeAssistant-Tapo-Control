@@ -9,6 +9,7 @@ from __future__ import annotations
 
 
 import asyncio
+from typing import Optional
 from homeassistant.components.media_player import MediaClass, MediaType
 from homeassistant.components.media_source.error import Unresolvable
 from homeassistant.components.media_source.models import (
@@ -83,6 +84,13 @@ class TapoMediaSource(MediaSource):
         self.hass = hass
         self.entry = entry
 
+    def _format_clip_label(self, start_ts: int, end_ts: int) -> str:
+        start_dt = dt.as_local(dt.utc_from_timestamp(int(start_ts)))
+        end_dt = dt.as_local(dt.utc_from_timestamp(int(end_ts)))
+        return (
+            f"{start_dt.strftime('%Y-%m-%d %H:%M:%S')} - {end_dt.strftime('%H:%M:%S')}"
+        )
+
     def _build_notification_id(self, entry_id: str, child_id: str) -> str:
         suffix = child_id if child_id else "root"
         return f"{DOMAIN}_recording_download_{entry_id}_{suffix}"
@@ -97,16 +105,6 @@ class TapoMediaSource(MediaSource):
             self.hass.async_create_task(coro)
         else:
             asyncio.run_coroutine_threadsafe(coro, self.hass.loop)
-
-    def _create_progress_notifier(self, notification_id: str, title: str):
-        def notifier(message: str):
-            self._schedule_notification(
-                self._async_create_download_notification(
-                    notification_id, title, message
-                )
-            )
-
-        return notifier
 
     async def _async_create_download_notification(
         self, notification_id: str, title: str, message: str
@@ -130,6 +128,31 @@ class TapoMediaSource(MediaSource):
             blocking=False,
         )
 
+    def _build_progress_notifier(self, notification_id: str, header: str):
+        def notifier(
+            message: str,
+            progress: Optional[float] = None,
+            total: Optional[float] = None,
+        ):
+            friendly_message = message
+            if progress is not None and total is not None and total > 0:
+                percent = round((float(progress) / float(total)) * 100)
+                friendly_message = (
+                    f"Downloading... {percent}% ({round(progress)} / {round(total)})"
+                )
+
+            full_message = (
+                f"{header}\n{friendly_message}\n\n"
+                "Download runs in the background; check this notification for progress."
+            )
+            self._schedule_notification(
+                self._async_create_download_notification(
+                    notification_id, header, full_message
+                )
+            )
+
+        return notifier
+
     def _get_entry_data(self, entry_id: str) -> dict:
         """Return entry data or raise a user facing error if setup is incomplete."""
         entry_data = self.hass.data.get(DOMAIN, {}).get(entry_id)
@@ -138,6 +161,13 @@ class TapoMediaSource(MediaSource):
                 "Camera setup has not finished yet. Recordings will be available once the device is connected."
             )
         return entry_data
+
+    def _ensure_browse_allowed(self, device: dict) -> None:
+        """Prevent media browsing only during manual downloads."""
+        if device.get("isDownloadingStream") and not device.get("runningMediaSync"):
+            raise Unresolvable(
+                "A recording download is in progress. Track progress in notifications and try again once it finishes."
+            )
 
     async def async_resolve_media(self, item: MediaSourceItem) -> PlayMedia:
         path = item.identifier.split("/")
@@ -174,23 +204,56 @@ class TapoMediaSource(MediaSource):
                 LOGGER.debug(startDate)
                 LOGGER.debug(endDate)
 
-                notification_id = self._build_notification_id(entry, childID)
-                notifier_title = f"{device['name']} recording download"
-                progress_notifier = self._create_progress_notifier(
-                    notification_id, notifier_title
-                )
-                progress_notifier("Preparing recording download...")
-                try:
-                    await getRecording(
-                        self.hass,
-                        tapoController,
-                        entry,
-                        device,
-                        date,
-                        startDate,
-                        endDate,
-                        progress_callback=progress_notifier,
+                fileName = getFileName(startDate, endDate, False, childID=childID)
+
+                # If we need to fetch the clip, do it in the background and guide the user.
+                if fileName not in device["downloadedStreams"]:
+                    notification_id = self._build_notification_id(entry, childID)
+                    clip_label = self._format_clip_label(int(startDate), int(endDate))
+                    notifier_title = f"{device['name']} - {clip_label}"
+                    progress_notifier = self._build_progress_notifier(
+                        notification_id, notifier_title
                     )
+                    progress_notifier(
+                        "Starting download. This runs in the background; the player will open when ready."
+                    )
+
+                    async def _download_and_prepare():
+                        try:
+                            await getRecording(
+                                self.hass,
+                                tapoController,
+                                entry,
+                                device,
+                                date,
+                                startDate,
+                                endDate,
+                                progress_callback=progress_notifier,
+                            )
+                            # Prepare hot path so the next click can play instantly.
+                            await getWebFile(
+                                self.hass,
+                                entry,
+                                startDate,
+                                endDate,
+                                "videos",
+                                childID=childID,
+                            )
+                        except Exception as err:
+                            progress_notifier(f"Download failed: {err}")
+                            LOGGER.error(err)
+                        else:
+                            await self._async_dismiss_download_notification(
+                                notification_id
+                            )
+
+                    self.hass.async_create_task(_download_and_prepare())
+                    raise Unresolvable(
+                        "Recording download started in the background. Track progress in notifications, then try again once it finishes."
+                    )
+
+                # Already downloaded: return the playable URL.
+                try:
                     url = await getWebFile(
                         self.hass,
                         entry,
@@ -201,11 +264,8 @@ class TapoMediaSource(MediaSource):
                     )
                     LOGGER.debug(url)
                 except Exception as e:
-                    progress_notifier(f"Download failed: {e}")
                     LOGGER.error(e)
                     raise Unresolvable(e)
-                else:
-                    await self._async_dismiss_download_notification(notification_id)
             except Exception as e:
                 LOGGER.error(e)
                 raise Unresolvable(e)
@@ -226,6 +286,7 @@ class TapoMediaSource(MediaSource):
             raise Unresolvable(
                 "Initial local media scan still running, please try again later."
             )
+        self._ensure_browse_allowed(device)
         try:
             recordingsForDay = await getRecordings(
                 self.hass, device, tapoController, date
@@ -308,6 +369,7 @@ class TapoMediaSource(MediaSource):
             raise Unresolvable(
                 "Initial local media scan still running, please try again later."
             )
+        self._ensure_browse_allowed(device)
 
         if device["usingCloudPassword"] is False:
             raise Unresolvable(
