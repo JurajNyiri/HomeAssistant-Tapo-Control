@@ -500,7 +500,23 @@ async def deleteFilesNotIncluding(hass: HomeAssistant, dirPath, includingString)
                 os.remove(filePath)
 
 
+async def async_update_sync_sensors(hass: HomeAssistant, entry_id: str, device: dict):
+    """Force an immediate update of media sync sensors for the given device."""
+    if DOMAIN not in hass.data or entry_id not in hass.data[DOMAIN]:
+        return
+    for entity in hass.data[DOMAIN][entry_id]["entities"]:
+        if (
+            entity["entry"] is device
+            and entity["entity"].__class__.__name__ == "TapoSyncSensor"
+        ):
+            entity["entity"].updateTapo(None)
+            # async_write_ha_state is sync for non-entity_component updates; do not await.
+            entity["entity"].async_write_ha_state()
+
+
 def processDownloadStatus(
+    hass: HomeAssistant,
+    entry_id: str,
     entryData,
     date: str,
     allRecordingsCount: int,
@@ -536,8 +552,12 @@ def processDownloadStatus(
             total = status.get("total")
 
         entryData["downloadProgress"] = message
+        entryData["lastMediaSyncActivity"] = datetime.datetime.utcnow().timestamp()
         if progress_callback is not None:
             progress_callback(message, current, total)
+        hass.async_create_task(
+            async_update_sync_sensors(hass, entry_id, entryData)
+        )
 
     return processUpdate
 
@@ -665,6 +685,8 @@ async def getRecording(
         try:
             downloadedFile = await downloader.downloadFile(
                 processDownloadStatus(
+                    hass,
+                    entry_id,
                     entryData,
                     date,
                     all_recordings_count,
@@ -1716,6 +1738,23 @@ async def update_listener(hass, entry):
         ]
         if motionSensor:
             await setupOnvif(hass, entry)
+
+    # Ensure media sync settings (hours/enable) propagate immediately.
+    if DOMAIN in hass.data and entry.entry_id in hass.data[DOMAIN]:
+        now_ts = datetime.datetime.utcnow().timestamp()
+        entry_data = hass.data[DOMAIN][entry.entry_id]
+        devices = [entry_data]
+        if entry_data.get("isParent"):
+            devices.extend(entry_data.get("childDevices", []))
+        for device in devices:
+            device["lastMediaSyncActivity"] = now_ts
+            if not device.get(ENABLE_MEDIA_SYNC):
+                device["runningMediaSync"] = False
+                device["downloadProgress"] = "Disabled"
+            hass.async_create_task(
+                async_update_sync_sensors(hass, entry.entry_id, device)
+            )
+        await hass.data[DOMAIN][entry.entry_id]["coordinator"].async_request_refresh()
 
 
 async def getLatestFirmwareVersion(hass, config_entry, entry, controller):

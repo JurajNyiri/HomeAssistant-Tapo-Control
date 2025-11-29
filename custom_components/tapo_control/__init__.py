@@ -42,6 +42,7 @@ from .const import (
     MEDIA_SYNC_HOURS,
     MEDIA_VIEW_DAYS_ORDER,
     MEDIA_VIEW_RECORDINGS_ORDER,
+    MEDIA_SYNC_WATCHDOG_SECONDS,
     REPORTED_IP_ADDRESS,
     DOORBELL_UDP_DISCOVERED,
     RTSP_TRANS_PROTOCOLS,
@@ -81,6 +82,7 @@ from .utils import (
     findMedia,
     getRecordings,
     scheduleAll,
+    async_update_sync_sensors,
 )
 from pytapo import Tapo
 from pytapo.version import PYTAPO_VERSION
@@ -547,6 +549,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 enableTimeSync = False
             ts = datetime.datetime.utcnow().timestamp()
 
+            async def _check_media_sync_watchdog(device):
+                last_activity = device.get("lastMediaSyncActivity", 0)
+                if (
+                    device.get("runningMediaSync")
+                    and device.get(ENABLE_MEDIA_SYNC)
+                    and last_activity
+                    and ts - last_activity > MEDIA_SYNC_WATCHDOG_SECONDS
+                ):
+                    device["runningMediaSync"] = False
+                    device["mediaSyncStallCount"] = device.get(
+                        "mediaSyncStallCount", 0
+                    ) + 1
+                    device["downloadProgress"] = "Recovered after stall"
+                    device["lastMediaSyncActivity"] = ts
+                    hass.async_create_task(
+                        async_update_sync_sensors(hass, entry.entry_id, device)
+                    )
+
             # motion detection retries
             if motionSensor or enableTimeSync:
                 LOGGER.debug("Motion sensor or time sync is enabled.")
@@ -792,6 +812,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         "updateEntity"
                     ].async_schedule_update_ha_state(True)
 
+            # media sync watchdog for main and child devices
+            await _check_media_sync_watchdog(hass.data[DOMAIN][entry.entry_id])
+            if hass.data[DOMAIN][entry.entry_id]["isParent"]:
+                for child in hass.data[DOMAIN][entry.entry_id]["childDevices"]:
+                    await _check_media_sync_watchdog(child)
+
             if (
                 ts - hass.data[DOMAIN][entry.entry_id]["lastMediaCleanup"]
                 > MEDIA_CLEANUP_PERIOD
@@ -893,6 +919,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "isDownloadingStream": False,
             "downloadedStreams": {},  # keeps track of all videos downloaded
             "downloadProgress": False,
+            "lastMediaSyncStart": 0,
+            "lastMediaSyncActivity": 0,
+            "lastMediaSyncSuccess": 0,
+            "mediaSyncStallCount": 0,
             "initialMediaScanDone": False,
             ENABLE_MEDIA_SYNC: None,
             "mediaSyncScheduled": False,
@@ -950,6 +980,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             "isDownloadingStream": False,
                             "downloadedStreams": {},  # keeps track of all videos downloaded
                             "downloadProgress": False,
+                            "lastMediaSyncStart": 0,
+                            "lastMediaSyncActivity": 0,
+                            "lastMediaSyncSuccess": 0,
+                            "mediaSyncStallCount": 0,
                             "initialMediaScanDone": False,
                             ENABLE_MEDIA_SYNC: None,
                             "mediaSyncScheduled": False,
@@ -1054,6 +1088,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             ):
                 LOGGER.debug("Running media sync for " + device["name"] + "...")
                 device["runningMediaSync"] = True
+                device["lastMediaSyncStart"] = datetime.datetime.utcnow().timestamp()
+                device["lastMediaSyncActivity"] = device["lastMediaSyncStart"]
+                device["downloadProgress"] = "Starting"
+                await async_update_sync_sensors(hass, entry.entry_id, device)
                 try:
                     tapoController: Tapo = device["controller"]
                     LOGGER.debug("getRecordingsList -1")
@@ -1126,6 +1164,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                                         totalRecordingsToDownload,
                                                     )
                                                     LOGGER.debug("getRecording -2")
+                                                    device["lastMediaSyncActivity"] = (
+                                                        datetime.datetime.utcnow().timestamp()
+                                                    )
                                                 else:
                                                     LOGGER.debug(
                                                         f"Media sync disabled (inside getRecording): {enableMediaSync}"
@@ -1145,10 +1186,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                 LOGGER.debug(
                                     f"Media sync ignoring {searchResult[key]["date"]}. Media sync: {enableMediaSync}."
                                 )
+                    device["lastMediaSyncSuccess"] = (
+                        datetime.datetime.utcnow().timestamp()
+                    )
                 except Exception as err:
                     LOGGER.error(err)
-                LOGGER.debug("runningMediaSync -false")
-                device["runningMediaSync"] = False
+                finally:
+                    LOGGER.debug("runningMediaSync -false")
+                    device["runningMediaSync"] = False
+                    device["downloadProgress"] = False
+                    await async_update_sync_sensors(hass, entry.entry_id, device)
             else:
                 LOGGER.debug(
                     f"Media sync for {device["name"]} disabled (inside mediaSync): {enableMediaSync}"
