@@ -647,7 +647,7 @@ class FlowHandler(ConfigFlow):
                     )
                     camData = await getCamData(self.hass, tapoController)
                     reported_ip_address = getIP(camData)
-                    LOGGER.warning(
+                    LOGGER.debug(
                         "[ADD DEVICE][%s] KLAP Account works for control.",
                         host,
                     )
