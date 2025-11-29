@@ -133,9 +133,7 @@ class TapoUdpMonitor:
 
         self._sensor_marked_seen = True
         new_data = {**self._config_entry.data, DOORBELL_UDP_DISCOVERED: True}
-        self._hass.config_entries.async_update_entry(
-            self._config_entry, data=new_data
-        )
+        self._hass.config_entries.async_update_entry(self._config_entry, data=new_data)
 
     async def async_start(self):
         """Start listening on DOORBELL_UDP_PORT for broadcasts."""
@@ -149,7 +147,7 @@ class TapoUdpMonitor:
                 reuse_port=True,
             )
 
-            LOGGER.warning(
+            LOGGER.debug(
                 "TapoUdpMonitor started on UDP port %s for device IP %s",
                 DOORBELL_UDP_PORT,
                 self._device_ip,
@@ -190,6 +188,8 @@ class _TapoUdpProtocol(asyncio.DatagramProtocol):
 async def async_setup_entry(hass, config_entry, async_add_entities):
     LOGGER.debug("Setting up binary sensor for motion.")
     entry = hass.data[DOMAIN][config_entry.entry_id]
+    model = entry.get("camData", {}).get("basic_info", {}).get("device_model")
+    is_doorbell_model = isinstance(model, str) and model.upper().startswith("D")
 
     hass.data[DOMAIN][config_entry.entry_id]["eventsListener"] = EventsListener(
         async_add_entities, hass, config_entry
@@ -204,18 +204,24 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     if binarySensors:
         async_add_entities(binarySensors)
 
-    precreate_udp_sensor = bool(config_entry.data.get(DOORBELL_UDP_DISCOVERED))
+    if is_doorbell_model:
+        precreate_udp_sensor = bool(config_entry.data.get(DOORBELL_UDP_DISCOVERED))
 
-    udp_monitor = TapoUdpMonitor(
-        hass,
-        config_entry.data.get(CONF_IP_ADDRESS),
-        entry,
-        config_entry,
-        async_add_entities,
-        precreate_udp_sensor,
-    )
-    await udp_monitor.async_start()
-    hass.data[DOMAIN][config_entry.entry_id]["udp_monitor"] = udp_monitor
+        udp_monitor = TapoUdpMonitor(
+            hass,
+            config_entry.data.get(CONF_IP_ADDRESS),
+            entry,
+            config_entry,
+            async_add_entities,
+            precreate_udp_sensor,
+        )
+        await udp_monitor.async_start()
+        hass.data[DOMAIN][config_entry.entry_id]["udp_monitor"] = udp_monitor
+    else:
+        LOGGER.debug(
+            "Skipping doorbell UDP binary sensor setup; device model (%s) is not a doorbell.",
+            model,
+        )
 
     return True
 
