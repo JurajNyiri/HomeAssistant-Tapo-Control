@@ -190,6 +190,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     entry = hass.data[DOMAIN][config_entry.entry_id]
     model = entry.get("camData", {}).get("basic_info", {}).get("device_model")
     is_doorbell_model = isinstance(model, str) and model.upper().startswith("D")
+    child_models = [
+        child.get("camData", {}).get("basic_info", {}).get("device_model")
+        for child in entry.get("childDevices", [])
+    ]
+    has_doorbell_child = any(
+        isinstance(child_model, str) and child_model.upper().startswith("D")
+        for child_model in child_models
+    )
+    is_child_device = bool(entry.get("isChild"))
+    device_ip = config_entry.data.get(CONF_IP_ADDRESS)
 
     hass.data[DOMAIN][config_entry.entry_id]["eventsListener"] = EventsListener(
         async_add_entities, hass, config_entry
@@ -204,7 +214,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     if binarySensors:
         async_add_entities(binarySensors)
 
-    if is_doorbell_model:
+    if (is_doorbell_model or has_doorbell_child) and not is_child_device:
         precreate_udp_sensor = bool(config_entry.data.get(DOORBELL_UDP_DISCOVERED))
 
         udp_monitor = TapoUdpMonitor(
@@ -219,8 +229,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         hass.data[DOMAIN][config_entry.entry_id]["udp_monitor"] = udp_monitor
     else:
         LOGGER.debug(
-            "Skipping doorbell UDP binary sensor setup; device model (%s) is not a doorbell.",
+            "Skipping doorbell UDP binary sensor setup; model=%s, child_models=%s, is_child=%s, Parent IP=%s",
             model,
+            child_models,
+            is_child_device,
+            device_ip,
         )
 
     return True
