@@ -171,6 +171,10 @@ class TapoMediaSource(MediaSource):
             device.get("isDownloadingStream") and not device.get("runningMediaSync")
         )
 
+    def _any_download_active(self, device: dict) -> bool:
+        """Return True when a download is running."""
+        return bool(device.get("isDownloadingStream"))
+
     def _local_date_key(self, ts_utc: int, tz_offset: int) -> str:
         """Return YYYY-MM-DD string for a timestamp adjusted by timezone offset."""
         local_dt = dt.as_local(dt.utc_from_timestamp(ts_utc - tz_offset))
@@ -368,7 +372,7 @@ class TapoMediaSource(MediaSource):
             raise Unresolvable(
                 "Initial local media scan still running, please try again later."
             )
-        cached_only = self._manual_download_active(device)
+        cached_only = self._any_download_active(device)
         downloaded = self._get_downloaded_recordings_for_device(device, date_key=date)
 
         def _add_clip(target: dict, start_ts: int, end_ts: int):
@@ -484,7 +488,7 @@ class TapoMediaSource(MediaSource):
             raise Unresolvable(
                 "Initial local media scan still running, please try again later."
             )
-        cached_only = self._manual_download_active(device)
+        cached_only = self._any_download_active(device)
 
         if cached_only:
             downloaded = self._get_downloaded_recordings_for_device(device)
