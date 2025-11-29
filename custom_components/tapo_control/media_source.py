@@ -288,7 +288,7 @@ class TapoMediaSource(MediaSource):
                         notification_id, main_title, sub_title
                     )
                     progress_notifier(
-                        "Starting download. This runs in the background; the player will open when ready."
+                        "Starting download. Track progress in notifications, then try again once it finishes."
                     )
 
                     async def _download_and_prepare():
