@@ -504,7 +504,9 @@ def processDownloadStatus(
     date: str,
     allRecordingsCount: int,
     recordingCount: int = False,
-    progress_callback: Optional[Callable[[str, Optional[float], Optional[float]], None]] = None,
+    progress_callback: Optional[
+        Callable[[str, Optional[float], Optional[float]], None]
+    ] = None,
 ):
     def processUpdate(status):
         LOGGER.debug(status)
@@ -622,7 +624,9 @@ async def getRecording(
     endDate: int,
     recordingCount: int = False,
     totalRecordingCount: int = False,
-    progress_callback: Optional[Callable[[str, Optional[float], Optional[float]], None]] = None,
+    progress_callback: Optional[
+        Callable[[str, Optional[float], Optional[float]], None]
+    ] = None,
 ) -> str:
     timeCorrection = await hass.async_add_executor_job(tapo.getTimeCorrection)
     startDate = int(startDate)
@@ -641,12 +645,6 @@ async def getRecording(
     if not os.path.exists(coldFilePath):
         # this NEEDS to happen otherwise camera does not send data!
         allRecordings = await hass.async_add_executor_job(tapo.getRecordings, date)
-        if allRecordings is None:
-            LOGGER.debug(
-                "[getRecording] No recordings returned for %s; treating as empty list to continue download.",
-                date,
-            )
-            allRecordings = []
         all_recordings_count = (
             len(allRecordings) if totalRecordingCount is False else totalRecordingCount
         )

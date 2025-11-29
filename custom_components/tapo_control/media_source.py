@@ -311,7 +311,7 @@ class TapoMediaSource(MediaSource):
                                 tapoController,
                                 entry,
                                 device,
-                                date,
+                                self._normalize_camera_date(date),
                                 startDate,
                                 endDate,
                                 progress_callback=progress_notifier,
@@ -405,15 +405,6 @@ class TapoMediaSource(MediaSource):
                 recordingsForDay = await getRecordings(
                     self.hass, device, tapoController, camera_date
                 )
-                if not recordingsForDay and camera_date != date:
-                    LOGGER.debug(
-                        "[media_source] No recordings returned for %s, retrying with raw date %s",
-                        camera_date,
-                        date,
-                    )
-                    recordingsForDay = await getRecordings(
-                        self.hass, device, tapoController, date
-                    )
             except Exception as err:
                 LOGGER.error(
                     "Unable to fetch recordings for %s on %s: %s",
@@ -432,7 +423,7 @@ class TapoMediaSource(MediaSource):
                         searchResult[key]["endTime"],
                     )
 
-        # Merge in cached clips so a refresh after download still shows items.
+        # Merge in cached clips
         for item in downloaded:
             _add_clip(clips, item["startDate"], item["endDate"])
 
@@ -499,7 +490,7 @@ class TapoMediaSource(MediaSource):
                 LOGGER.debug(
                     "[media_source] No cached dates available while in cached-only mode."
                 )
-                # Show an empty list instead of a placeholder/error.
+                # Show an empty list
                 return self.generateView(
                     build_identifier(query),
                     title,
