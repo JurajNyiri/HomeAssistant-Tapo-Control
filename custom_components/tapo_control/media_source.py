@@ -9,7 +9,7 @@ from __future__ import annotations
 
 
 import asyncio
-from typing import Optional
+from typing import Optional, Coroutine
 from homeassistant.components.media_player import MediaClass, MediaType
 from homeassistant.components.media_source.error import Unresolvable
 from homeassistant.components.media_source.models import (
@@ -20,6 +20,7 @@ from homeassistant.components.media_source.models import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.util import dt
 
 from .const import (
@@ -83,6 +84,26 @@ class TapoMediaSource(MediaSource):
         super().__init__(DOMAIN)
         self.hass = hass
         self.entry = entry
+        self._background_tasks: set[asyncio.Task] = set()
+        self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._async_handle_stop)
+
+    async def _async_handle_stop(self, _event) -> None:
+        """Cancel background media downloads on shutdown."""
+        if not self._background_tasks:
+            return
+        tasks = list(self._background_tasks)
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    def _create_background_task(self, coro: Coroutine) -> None:
+        """Track long-running tasks so they can be cancelled on shutdown."""
+        task = self.hass.async_create_task(coro)
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
+        return task
 
     def _format_clip_label(self, start_ts: int, end_ts: int) -> str:
         start_dt = dt.as_local(dt.utc_from_timestamp(int(start_ts)))
@@ -326,7 +347,7 @@ class TapoMediaSource(MediaSource):
                                 notification_id
                             )
 
-                    self.hass.async_create_task(_download_and_prepare())
+                    self._create_background_task(_download_and_prepare())
                     raise Unresolvable(
                         "Recording download started in the background. Track progress in notifications, then try again once it finishes."
                     )
