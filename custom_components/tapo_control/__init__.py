@@ -43,6 +43,7 @@ from .const import (
     MEDIA_VIEW_DAYS_ORDER,
     MEDIA_VIEW_RECORDINGS_ORDER,
     REPORTED_IP_ADDRESS,
+    DOORBELL_UDP_DISCOVERED,
     RTSP_TRANS_PROTOCOLS,
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
@@ -370,6 +371,11 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
         hass.config_entries.async_update_entry(config_entry, data=new, version=22)
 
+    if config_entry.version == 22:
+        new = {**config_entry.data}
+        new.setdefault(DOORBELL_UDP_DISCOVERED, False)
+        hass.config_entries.async_update_entry(config_entry, data=new, version=23)
+
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
     return True
@@ -392,6 +398,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             "update",
         ],
     )
+
+    if "udp_monitor" in hass.data[DOMAIN][entry.entry_id]:
+        await hass.data[DOMAIN][entry.entry_id]["udp_monitor"].async_stop()
 
     if hass.data[DOMAIN][entry.entry_id]["events"]:
         LOGGER.debug("Stopping events...")
