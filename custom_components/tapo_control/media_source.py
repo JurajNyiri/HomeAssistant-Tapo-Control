@@ -244,6 +244,10 @@ class TapoMediaSource(MediaSource):
                 }
             )
         return results
+    
+    def _normalize_camera_date(self, date: str) -> str:
+        """Camera API expects dates without dashes."""
+        return date.replace("-", "")
 
     async def async_resolve_media(self, item: MediaSourceItem) -> PlayMedia:
         path = item.identifier.split("/")
@@ -364,42 +368,49 @@ class TapoMediaSource(MediaSource):
                 "Initial local media scan still running, please try again later."
             )
         cached_only = self._manual_download_active(device)
+        downloaded = self._get_downloaded_recordings_for_device(
+            device, date_key=date
+        )
 
-        videoNames = []
+        def _add_clip(target: dict, start_ts: int, end_ts: int):
+            start_local = dt.as_local(
+                dt.utc_from_timestamp(start_ts - device["timezoneOffset"])
+            )
+            end_local = dt.as_local(
+                dt.utc_from_timestamp(end_ts - device["timezoneOffset"])
+            )
+            target[(start_ts, end_ts)] = {
+                "name": f"{start_local.strftime('%H:%M:%S')} - {end_local.strftime('%H:%M:%S')}",
+                "startDate": start_ts,
+                "endDate": end_ts,
+            }
+
+        # Collect clips keyed by (start, end) to merge camera data with cached items.
+        clips: dict[tuple[int, int], dict] = {}
+
         if cached_only:
-            # Use already downloaded clips only to avoid bricking the manual download.
             LOGGER.debug(
                 "[media_source] Using cached clips only for date %s; manual_download=%s; downloadedStreams keys: %s",
                 date,
                 cached_only,
                 list(device.get("downloadedStreams", {}).keys()),
             )
-            downloaded = self._get_downloaded_recordings_for_device(
-                device, date_key=date
-            )
-            LOGGER.debug(
-                "[media_source] Filtered cached clips for %s: %s", date, downloaded
-            )
-            for item in downloaded:
-                startTS = item["startDate"] - device["timezoneOffset"]
-                endTS = item["endDate"] - device["timezoneOffset"]
-                startDate = dt.as_local(dt.utc_from_timestamp(startTS))
-                endDate = dt.as_local(dt.utc_from_timestamp(endTS))
-                videoName = (
-                    f"{startDate.strftime('%H:%M:%S')} - {endDate.strftime('%H:%M:%S')}"
-                )
-                videoNames.append(
-                    {
-                        "name": videoName,
-                        "startDate": item["startDate"],
-                        "endDate": item["endDate"],
-                    }
-                )
         else:
+            recordingsForDay = []
+            camera_date = self._normalize_camera_date(date)
             try:
                 recordingsForDay = await getRecordings(
-                    self.hass, device, tapoController, date
+                    self.hass, device, tapoController, camera_date
                 )
+                if not recordingsForDay and camera_date != date:
+                    LOGGER.debug(
+                        "[media_source] No recordings returned for %s, retrying with raw date %s",
+                        camera_date,
+                        date,
+                    )
+                    recordingsForDay = await getRecordings(
+                        self.hass, device, tapoController, date
+                    )
             except Exception as err:
                 LOGGER.error(
                     "Unable to fetch recordings for %s on %s: %s",
@@ -407,24 +418,23 @@ class TapoMediaSource(MediaSource):
                     date,
                     err,
                 )
-                raise Unresolvable(self._map_recordings_exception(err)) from err
+                recordingsForDay = []
+                if not downloaded:
+                    raise Unresolvable(self._map_recordings_exception(err)) from err
             for searchResult in recordingsForDay:
                 for key in searchResult:
-                    startTS = searchResult[key]["startTime"] - device["timezoneOffset"]
-                    endTS = searchResult[key]["endTime"] - device["timezoneOffset"]
-                    startDate = dt.as_local(dt.utc_from_timestamp(startTS))
-                    endDate = dt.as_local(dt.utc_from_timestamp(endTS))
-                    videoName = f"{startDate.strftime('%H:%M:%S')} - {endDate.strftime('%H:%M:%S')}"
-                    videoNames.append(
-                        {
-                            "name": videoName,
-                            "startDate": searchResult[key]["startTime"],
-                            "endDate": searchResult[key]["endTime"],
-                        }
+                    _add_clip(
+                        clips,
+                        searchResult[key]["startTime"],
+                        searchResult[key]["endTime"],
                     )
 
+        # Merge in cached clips so a refresh after download still shows items.
+        for item in downloaded:
+            _add_clip(clips, item["startDate"], item["endDate"])
+
         videoNames = sorted(
-            videoNames,
+            clips.values(),
             key=lambda x: x["startDate"],
             reverse=(True if media_view_recordings_order == "Descending" else False),
         )

@@ -641,6 +641,15 @@ async def getRecording(
     if not os.path.exists(coldFilePath):
         # this NEEDS to happen otherwise camera does not send data!
         allRecordings = await hass.async_add_executor_job(tapo.getRecordings, date)
+        if allRecordings is None:
+            LOGGER.debug(
+                "[getRecording] No recordings returned for %s; treating as empty list to continue download.",
+                date,
+            )
+            allRecordings = []
+        all_recordings_count = (
+            len(allRecordings) if totalRecordingCount is False else totalRecordingCount
+        )
         downloader = Downloader(
             tapo,
             startDate,
@@ -659,11 +668,7 @@ async def getRecording(
                 processDownloadStatus(
                     entryData,
                     date,
-                    (
-                        len(allRecordings)
-                        if totalRecordingCount is False
-                        else totalRecordingCount
-                    ),
+                    all_recordings_count,
                     recordingCount if recordingCount is not False else False,
                     progress_callback=progress_callback,
                 )
