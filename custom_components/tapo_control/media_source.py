@@ -236,10 +236,16 @@ class TapoMediaSource(MediaSource):
                 }
             )
         return results
-
+    
     def _normalize_camera_date(self, date: str) -> str:
         """Camera API expects dates without dashes."""
         return date.replace("-", "")
+
+    def _display_date(self, date: str) -> str:
+        """Return date as YYYY-MM-DD for UI."""
+        if len(date) == 8 and date.isdigit():
+            return f"{date[0:4]}-{date[4:6]}-{date[6:8]}"
+        return date
 
     async def async_resolve_media(self, item: MediaSourceItem) -> PlayMedia:
         path = item.identifier.split("/")
@@ -508,6 +514,16 @@ class TapoMediaSource(MediaSource):
             reverse=True if media_view_days_order == "Descending" else False
         )
 
+        # Normalize display to YYYY-MM-DD and deduplicate while preserving order.
+        seen_dates = set()
+        normalized_dates = []
+        for d in recordingsDates:
+            display_d = self._display_date(d)
+            if display_d in seen_dates:
+                continue
+            seen_dates.add(display_d)
+            normalized_dates.append(display_d)
+
         return self.generateView(
             build_identifier(query),
             title,
@@ -520,7 +536,7 @@ class TapoMediaSource(MediaSource):
                     False,
                     True,
                 )
-                for date in recordingsDates
+                for date in normalized_dates
             ],
         )
 
