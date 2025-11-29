@@ -133,9 +133,7 @@ class TapoUdpMonitor:
 
         self._sensor_marked_seen = True
         new_data = {**self._config_entry.data, DOORBELL_UDP_DISCOVERED: True}
-        self._hass.config_entries.async_update_entry(
-            self._config_entry, data=new_data
-        )
+        self._hass.config_entries.async_update_entry(self._config_entry, data=new_data)
 
     async def async_start(self):
         """Start listening on DOORBELL_UDP_PORT for broadcasts."""
@@ -149,7 +147,7 @@ class TapoUdpMonitor:
                 reuse_port=True,
             )
 
-            LOGGER.warning(
+            LOGGER.debug(
                 "TapoUdpMonitor started on UDP port %s for device IP %s",
                 DOORBELL_UDP_PORT,
                 self._device_ip,
