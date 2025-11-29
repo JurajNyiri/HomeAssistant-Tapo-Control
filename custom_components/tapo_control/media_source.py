@@ -224,14 +224,17 @@ class TapoMediaSource(MediaSource):
         """Return downloaded recordings metadata filtered by optional date key."""
         results = []
         tz_offset = device.get("timezoneOffset", 0)
+        normalized_filter = date_key.replace("-", "") if date_key else None
         for file_key, meta in device.get("downloadedStreams", {}).items():
             start_ts, end_ts = self._parse_download_meta(meta, file_key)
             if start_ts is None or end_ts is None:
                 continue
 
             computed_key = self._local_date_key(start_ts, tz_offset)
-            if date_key and computed_key not in (date_key, date_key.replace("-", "")):
-                continue
+            if normalized_filter:
+                computed_normalized = computed_key.replace("-", "")
+                if computed_normalized != normalized_filter:
+                    continue
 
             results.append(
                 {
@@ -360,14 +363,15 @@ class TapoMediaSource(MediaSource):
             raise Unresolvable(
                 "Initial local media scan still running, please try again later."
             )
-        manual_download = self._manual_download_active(device)
+        cached_only = self._manual_download_active(device)
 
         videoNames = []
-        if manual_download:
+        if cached_only:
             # Use already downloaded clips only to avoid bricking the manual download.
             LOGGER.debug(
-                "[media_source] Manual download active, using cached clips only for date %s; downloadedStreams keys: %s",
+                "[media_source] Using cached clips only for date %s; manual_download=%s; downloadedStreams keys: %s",
                 date,
+                cached_only,
                 list(device.get("downloadedStreams", {}).keys()),
             )
             downloaded = self._get_downloaded_recordings_for_device(
@@ -390,20 +394,6 @@ class TapoMediaSource(MediaSource):
                         "startDate": item["startDate"],
                         "endDate": item["endDate"],
                     }
-                )
-            if not videoNames:
-                LOGGER.debug(
-                    "[media_source] No cached clips found for %s while manual download active. Returning to dates list.",
-                    date,
-                )
-                parent_query = {
-                    k: v
-                    for k, v in query.items()
-                    if k not in ("date", "startDate", "endDate", "title")
-                }
-                parent_query["title"] = device.get("name", title)
-                return await self.generateDates(
-                    parent_query, parent_query["title"], entry, device
                 )
         else:
             try:
@@ -485,16 +475,16 @@ class TapoMediaSource(MediaSource):
             raise Unresolvable(
                 "Initial local media scan still running, please try again later."
             )
-        manual_download = self._manual_download_active(device)
+        cached_only = self._manual_download_active(device)
 
-        if manual_download:
+        if cached_only:
             downloaded = self._get_downloaded_recordings_for_device(device)
             recordingsDates = list(
                 {item["date_key"] for item in downloaded if "date_key" in item}
             )
             if not recordingsDates:
                 LOGGER.debug(
-                    "[media_source] No cached dates available while manual download active."
+                    "[media_source] No cached dates available while in cached-only mode."
                 )
                 # Show an empty list instead of a placeholder/error.
                 return self.generateView(
