@@ -276,9 +276,10 @@ async def processDownload(
         raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
 
     if filePath not in entryData["downloadedStreams"]:
+        # Store download metadata in a consistent format for media browsing.
         entryData["downloadedStreams"][filePath] = {
-            startDate: startDate,
-            endDate: endDate,
+            "startDate": startDate,
+            "endDate": endDate,
         }
     mediaScanName = (
         ((childID + "-") if childID != "" else "") + str(startDate) + "-" + str(endDate)

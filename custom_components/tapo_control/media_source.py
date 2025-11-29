@@ -203,19 +203,6 @@ class TapoMediaSource(MediaSource):
                 )
                 return None, None
 
-        # Legacy form: keys are timestamps (and values mirror keys).
-        numeric_vals = []
-        for key, val in meta.items():
-            for candidate in (key, val):
-                try:
-                    numeric_vals.append(int(candidate))
-                except Exception:
-                    continue
-
-        if len(numeric_vals) >= 2:
-            numeric_vals = sorted(set(numeric_vals))
-            return numeric_vals[0], numeric_vals[-1]
-
         LOGGER.debug(
             "[media_source] Skipping downloaded entry %s due to unrecognized metadata: %s",
             file_key,
