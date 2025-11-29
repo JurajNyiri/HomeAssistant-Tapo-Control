@@ -145,7 +145,8 @@ class TapoMediaSource(MediaSource):
 
             full_message = (
                 f"{sub_title}\n{friendly_message}\n\n"
-                "Download runs in the background; check this notification for progress."
+                "Download runs in the background; check this notification for progress.\n\n"
+                "When browsing during downloading, only downloaded recordings are visible."
             )
             self._schedule_notification(
                 self._async_create_download_notification(
@@ -244,7 +245,7 @@ class TapoMediaSource(MediaSource):
                 }
             )
         return results
-    
+
     def _normalize_camera_date(self, date: str) -> str:
         """Camera API expects dates without dashes."""
         return date.replace("-", "")
@@ -368,9 +369,7 @@ class TapoMediaSource(MediaSource):
                 "Initial local media scan still running, please try again later."
             )
         cached_only = self._manual_download_active(device)
-        downloaded = self._get_downloaded_recordings_for_device(
-            device, date_key=date
-        )
+        downloaded = self._get_downloaded_recordings_for_device(device, date_key=date)
 
         def _add_clip(target: dict, start_ts: int, end_ts: int):
             start_local = dt.as_local(
