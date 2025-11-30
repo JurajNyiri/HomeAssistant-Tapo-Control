@@ -28,7 +28,10 @@ from .const import (
     CONTROL_PORT,
     ENABLE_MEDIA_SYNC,
     ENABLE_SOUND_DETECTION,
-    CONF_CUSTOM_STREAM,
+    CONF_CUSTOM_STREAM_HD,
+    CONF_CUSTOM_STREAM_SD,
+    CONF_CUSTOM_STREAM_6,
+    CONF_CUSTOM_STREAM_7,
     ENABLE_WEBHOOKS,
     IS_KLAP_DEVICE,
     LOGGER,
@@ -49,6 +52,8 @@ from .const import (
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
     SOUND_DETECTION_RESET,
+    HAS_STREAM_6,
+    HAS_STREAM_7,
     TIME_SYNC_DST,
     TIME_SYNC_DST_DEFAULT,
     TIME_SYNC_NDST,
@@ -73,6 +78,7 @@ from .utils import (
     mediaCleanup,
     registerController,
     getCamData,
+    isRtspStreamWorking,
     setupOnvif,
     setupEvents,
     update_listener,
@@ -156,7 +162,7 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
     if config_entry.version == 7:
         new = {**config_entry.data}
-        new[CONF_CUSTOM_STREAM] = ""
+        new["custom_stream"] = ""
 
         config_entry.data = {**new}
 
@@ -377,6 +383,56 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         new = {**config_entry.data}
         new.setdefault(DOORBELL_UDP_DISCOVERED, False)
         hass.config_entries.async_update_entry(config_entry, data=new, version=23)
+
+    if config_entry.version == 23:
+        new = {**config_entry.data}
+        host = new.get(CONF_IP_ADDRESS)
+        username = new.get(CONF_USERNAME, "")
+        password = new.get(CONF_PASSWORD, "")
+        legacy_custom_stream = new.get("custom_stream", "")
+        new[CONF_CUSTOM_STREAM_HD] = new.get(
+            CONF_CUSTOM_STREAM_HD, legacy_custom_stream
+        )
+        new[CONF_CUSTOM_STREAM_SD] = new.get(
+            CONF_CUSTOM_STREAM_SD, legacy_custom_stream
+        )
+        new[CONF_CUSTOM_STREAM_6] = new.get(CONF_CUSTOM_STREAM_6, "")
+        new[CONF_CUSTOM_STREAM_7] = new.get(CONF_CUSTOM_STREAM_7, "")
+        if "custom_stream" in new:
+            del new["custom_stream"]
+
+        if host and (username or password):
+            new[HAS_STREAM_6] = False
+            new[HAS_STREAM_7] = False
+            try:
+                new[HAS_STREAM_6] = await isRtspStreamWorking(
+                    hass, host, username, password, stream="stream6"
+                )
+            except Exception as err:
+                LOGGER.debug(
+                    "Migration stream probe for stream6 on %s failed: %s",
+                    host,
+                    err,
+                )
+            try:
+                new[HAS_STREAM_7] = await isRtspStreamWorking(
+                    hass, host, username, password, stream="stream7"
+                )
+            except Exception as err:
+                LOGGER.debug(
+                    "Migration stream probe for stream7 on %s failed: %s",
+                    host,
+                    err,
+                )
+        else:
+            LOGGER.debug(
+                "Migration stream probe skipped due to missing RTSP credentials for %s",
+                host,
+            )
+            new[HAS_STREAM_6] = False
+            new[HAS_STREAM_7] = False
+
+        hass.config_entries.async_update_entry(config_entry, data=new, version=24)
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 

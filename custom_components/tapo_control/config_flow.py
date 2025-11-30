@@ -47,7 +47,12 @@ from .const import (
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
     SOUND_DETECTION_RESET,
-    CONF_CUSTOM_STREAM,
+    CONF_CUSTOM_STREAM_HD,
+    CONF_CUSTOM_STREAM_SD,
+    CONF_CUSTOM_STREAM_6,
+    CONF_CUSTOM_STREAM_7,
+    HAS_STREAM_6,
+    HAS_STREAM_7,
     CONF_RTSP_TRANSPORT,
     RTSP_TRANS_PROTOCOLS,
     TAPO_PREFIXES,
@@ -66,7 +71,11 @@ from .const import (
 class FlowHandler(ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 23
+    VERSION = 24
+
+    def __init__(self):
+        self.tapoHasStream6 = False
+        self.tapoHasStream7 = False
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -104,7 +113,6 @@ class FlowHandler(ConfigFlow):
         errors = {}
         tapoHost = self.reauth_entry.data[CONF_IP_ADDRESS]
         controlPort = self.reauth_entry.data[CONTROL_PORT]
-        custom_stream = self.reauth_entry.data[CONF_CUSTOM_STREAM]
         cloud_password = self.reauth_entry.data[CLOUD_PASSWORD]
         username = self.reauth_entry.data[CONF_USERNAME]
         password = self.reauth_entry.data[CONF_PASSWORD]
@@ -117,7 +125,7 @@ class FlowHandler(ConfigFlow):
                     tapoHost,
                 )
                 rtspStreamWorks = await isRtspStreamWorking(
-                    self.hass, tapoHost, username, password, custom_stream
+                    self.hass, tapoHost, username, password
                 )
                 if not rtspStreamWorks:
                     LOGGER.debug(
@@ -357,6 +365,31 @@ class FlowHandler(ConfigFlow):
                 return True
         return False
 
+    async def _detect_additional_streams(self, host, username, password):
+        for stream, attr in (
+            ("stream6", "tapoHasStream6"),
+            ("stream7", "tapoHasStream7"),
+        ):
+            try:
+                stream_supported = await isRtspStreamWorking(
+                    self.hass, host, username, password, stream=stream
+                )
+                setattr(self, attr, stream_supported)
+                LOGGER.debug(
+                    "[ADD DEVICE][%s] Probe for %s returned %s.",
+                    host,
+                    stream,
+                    stream_supported,
+                )
+            except Exception as err:
+                setattr(self, attr, False)
+                LOGGER.debug(
+                    "[ADD DEVICE][%s] Probe for %s failed: %s",
+                    host,
+                    stream,
+                    err,
+                )
+
     async def async_step_other_options(self, user_input=None):
         """Enter and process final options"""
         errors = {}
@@ -369,7 +402,6 @@ class FlowHandler(ConfigFlow):
         sound_detection_duration = 1
         sound_detection_reset = 10
         extra_arguments = ""
-        custom_stream = ""
         rtsp_transport = RTSP_TRANS_PROTOCOLS[0]
         if user_input is not None:
             LOGGER.debug(
@@ -400,10 +432,6 @@ class FlowHandler(ConfigFlow):
                 sound_detection_peak = user_input[SOUND_DETECTION_PEAK]
             else:
                 sound_detection_peak = -30
-            if CONF_CUSTOM_STREAM in user_input:
-                custom_stream = user_input[CONF_CUSTOM_STREAM]
-            else:
-                custom_stream = ""
             if SOUND_DETECTION_DURATION in user_input:
                 sound_detection_duration = user_input[SOUND_DETECTION_DURATION]
             else:
@@ -448,13 +476,18 @@ class FlowHandler(ConfigFlow):
                     CONF_USERNAME: username,
                     CONF_PASSWORD: password,
                     CLOUD_PASSWORD: cloud_password,
+                    HAS_STREAM_6: self.tapoHasStream6,
+                    HAS_STREAM_7: self.tapoHasStream7,
                     REPORTED_IP_ADDRESS: self.reportedIPAddress,
                     ENABLE_SOUND_DETECTION: enable_sound_detection,
                     SOUND_DETECTION_PEAK: sound_detection_peak,
                     SOUND_DETECTION_DURATION: sound_detection_duration,
                     SOUND_DETECTION_RESET: sound_detection_reset,
                     CONF_EXTRA_ARGUMENTS: extra_arguments,
-                    CONF_CUSTOM_STREAM: custom_stream,
+                    CONF_CUSTOM_STREAM_HD: "",
+                    CONF_CUSTOM_STREAM_SD: "",
+                    CONF_CUSTOM_STREAM_6: "",
+                    CONF_CUSTOM_STREAM_7: "",
                     CONF_RTSP_TRANSPORT: rtsp_transport,
                     UPDATE_INTERVAL_MAIN: UPDATE_INTERVAL_MAIN_DEFAULT,
                     UPDATE_INTERVAL_BATTERY: UPDATE_INTERVAL_BATTERY_DEFAULT,
@@ -508,10 +541,6 @@ class FlowHandler(ConfigFlow):
                     vol.Optional(
                         CONF_EXTRA_ARGUMENTS,
                         description={"suggested_value": extra_arguments},
-                    ): str,
-                    vol.Optional(
-                        CONF_CUSTOM_STREAM,
-                        description={"suggested_value": custom_stream},
                     ): str,
                     vol.Optional(
                         CONF_RTSP_TRANSPORT,
@@ -660,7 +689,10 @@ class FlowHandler(ConfigFlow):
                         SOUND_DETECTION_DURATION: 1,
                         SOUND_DETECTION_RESET: 10,
                         CONF_EXTRA_ARGUMENTS: "",
-                        CONF_CUSTOM_STREAM: "",
+                        CONF_CUSTOM_STREAM_HD: "",
+                        CONF_CUSTOM_STREAM_SD: "",
+                        CONF_CUSTOM_STREAM_6: "",
+                        CONF_CUSTOM_STREAM_7: "",
                         CONF_RTSP_TRANSPORT: "tcp",
                         UPDATE_INTERVAL_MAIN: UPDATE_INTERVAL_MAIN_DEFAULT,
                         UPDATE_INTERVAL_BATTERY: UPDATE_INTERVAL_BATTERY_DEFAULT,
@@ -939,6 +971,9 @@ class FlowHandler(ConfigFlow):
                             LOGGER.debug(
                                 "[ADD DEVICE][%s] RTSP stream works.",
                                 host,
+                            )
+                            await self._detect_additional_streams(
+                                host, username, password
                             )
 
                     self.tapoUsername = username
@@ -1398,7 +1433,10 @@ class TapoOptionsFlowHandler(OptionsFlow):
         enable_stream = self.config_entry.data[ENABLE_STREAM]
         enable_time_sync = self.config_entry.data[ENABLE_TIME_SYNC]
         extra_arguments = self.config_entry.data[CONF_EXTRA_ARGUMENTS]
-        custom_stream = self.config_entry.data[CONF_CUSTOM_STREAM]
+        custom_stream_hd = self.config_entry.data.get(CONF_CUSTOM_STREAM_HD, "")
+        custom_stream_sd = self.config_entry.data.get(CONF_CUSTOM_STREAM_SD, "")
+        custom_stream6 = self.config_entry.data.get(CONF_CUSTOM_STREAM_6, "")
+        custom_stream7 = self.config_entry.data.get(CONF_CUSTOM_STREAM_7, "")
         rtsp_transport = self.config_entry.data[CONF_RTSP_TRANSPORT]
         ip_address = self.config_entry.data[CONF_IP_ADDRESS]
         controlPort = self.config_entry.data[CONTROL_PORT]
@@ -1481,10 +1519,25 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 else:
                     enable_stream = False
 
-                if CONF_CUSTOM_STREAM in user_input:
-                    custom_stream = user_input[CONF_CUSTOM_STREAM]
+                if CONF_CUSTOM_STREAM_HD in user_input:
+                    custom_stream_hd = user_input[CONF_CUSTOM_STREAM_HD]
                 else:
-                    custom_stream = ""
+                    custom_stream_hd = ""
+
+                if CONF_CUSTOM_STREAM_SD in user_input:
+                    custom_stream_sd = user_input[CONF_CUSTOM_STREAM_SD]
+                else:
+                    custom_stream_sd = ""
+
+                if CONF_CUSTOM_STREAM_6 in user_input:
+                    custom_stream6 = user_input[CONF_CUSTOM_STREAM_6]
+                else:
+                    custom_stream6 = ""
+
+                if CONF_CUSTOM_STREAM_7 in user_input:
+                    custom_stream7 = user_input[CONF_CUSTOM_STREAM_7]
+                else:
+                    custom_stream7 = ""
 
                 if CONF_EXTRA_ARGUMENTS in user_input:
                     extra_arguments = user_input[CONF_EXTRA_ARGUMENTS]
@@ -1509,9 +1562,8 @@ class TapoOptionsFlowHandler(OptionsFlow):
                         "[%s] Testing RTSP stream.",
                         ip_address,
                     )
-
                     rtspStreamWorks = await isRtspStreamWorking(
-                        self.hass, ip_address, username, password, custom_stream
+                        self.hass, ip_address, username, password
                     )
                     if not rtspStreamWorks:
                         LOGGER.debug(
@@ -1668,7 +1720,10 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 allConfigData[CLOUD_PASSWORD] = cloud_password
                 allConfigData[ENABLE_TIME_SYNC] = enable_time_sync
                 allConfigData[CONF_EXTRA_ARGUMENTS] = extra_arguments
-                allConfigData[CONF_CUSTOM_STREAM] = custom_stream
+                allConfigData[CONF_CUSTOM_STREAM_HD] = custom_stream_hd
+                allConfigData[CONF_CUSTOM_STREAM_SD] = custom_stream_sd
+                allConfigData[CONF_CUSTOM_STREAM_6] = custom_stream6
+                allConfigData[CONF_CUSTOM_STREAM_7] = custom_stream7
                 allConfigData[CONF_RTSP_TRANSPORT] = rtsp_transport
                 allConfigData[CONTROL_PORT] = controlPort
                 self.hass.config_entries.async_update_entry(
@@ -1745,8 +1800,20 @@ class TapoOptionsFlowHandler(OptionsFlow):
                         description={"suggested_value": extra_arguments},
                     ): str,
                     vol.Optional(
-                        CONF_CUSTOM_STREAM,
-                        description={"suggested_value": custom_stream},
+                        CONF_CUSTOM_STREAM_HD,
+                        description={"suggested_value": custom_stream_hd},
+                    ): str,
+                    vol.Optional(
+                        CONF_CUSTOM_STREAM_SD,
+                        description={"suggested_value": custom_stream_sd},
+                    ): str,
+                    vol.Optional(
+                        CONF_CUSTOM_STREAM_6,
+                        description={"suggested_value": custom_stream6},
+                    ): str,
+                    vol.Optional(
+                        CONF_CUSTOM_STREAM_7,
+                        description={"suggested_value": custom_stream7},
                     ): str,
                     vol.Optional(
                         CONF_RTSP_TRANSPORT,

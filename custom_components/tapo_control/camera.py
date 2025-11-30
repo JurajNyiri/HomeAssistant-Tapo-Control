@@ -16,7 +16,6 @@ from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS, DATA_FFMPEG
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.aiohttp_client import async_aiohttp_proxy_stream
-from homeassistant.helpers.config_validation import boolean
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.util import slugify
 from homeassistant.components.stream import (
@@ -34,6 +33,10 @@ from .const import (
     LOGGER,
     NAME,
     BRAND,
+    HAS_STREAM_6,
+    HAS_STREAM_7,
+    CONF_CUSTOM_STREAM_6,
+    CONF_CUSTOM_STREAM_7,
 )
 from .utils import build_device_info, getStreamSource
 
@@ -61,20 +64,60 @@ async def async_setup_entry(
             len(config_entry.data[CONF_USERNAME]) > 0
             and len(config_entry.data[CONF_PASSWORD]) > 0
         ):
-            hdStream = TapoRTSPCamEntity(hass, config_entry, entry, True)
-            sdStream = TapoRTSPCamEntity(hass, config_entry, entry, False)
+            hdStream = TapoRTSPCamEntity(hass, config_entry, entry, "stream1")
+            sdStream = TapoRTSPCamEntity(hass, config_entry, entry, "stream2")
 
             entry["entities"].append({"entity": hdStream, "entry": entry})
             entry["entities"].append({"entity": sdStream, "entry": entry})
             hasRTSPEntities = True
             async_add_entities([hdStream, sdStream])
+            telephotoEntities = []
+            has_stream6 = config_entry.data.get(HAS_STREAM_6) or bool(
+                config_entry.data.get(CONF_CUSTOM_STREAM_6)
+            )
+            has_stream7 = config_entry.data.get(HAS_STREAM_7) or bool(
+                config_entry.data.get(CONF_CUSTOM_STREAM_7)
+            )
+            if not entry["isChild"] and has_stream6:
+                telephotoEntities.append(
+                    TapoRTSPCamEntity(
+                        hass,
+                        config_entry,
+                        entry,
+                        stream="stream6",
+                        stream_label="Telephoto HD",
+                        stream_unique_id="telephoto_hd",
+                    )
+                )
+            if not entry["isChild"] and has_stream7:
+                telephotoEntities.append(
+                    TapoRTSPCamEntity(
+                        hass,
+                        config_entry,
+                        entry,
+                        stream="stream7",
+                        stream_label="Telephoto SD",
+                        stream_unique_id="telephoto_sd",
+                    )
+                )
+            if len(telephotoEntities) > 0:
+                hasRTSPEntities = True
+                for telephotoEntity in telephotoEntities:
+                    entry["entities"].append(
+                        {"entity": telephotoEntity, "entry": entry}
+                    )
+                async_add_entities(telephotoEntities)
 
         if not entry["isParent"]:
             directStreamHD = TapoDirectCamEntity(
-                hass, config_entry, entry, True, enabledByDefault=not hasRTSPEntities
+                hass,
+                config_entry,
+                entry,
+                "stream1",
+                enabledByDefault=not hasRTSPEntities,
             )
             directStreamSD = TapoDirectCamEntity(
-                hass, config_entry, entry, False, enabledByDefault=False
+                hass, config_entry, entry, "stream2", enabledByDefault=False
             )
             entry["entities"].append({"entity": directStreamHD, "entry": entry})
             entry["entities"].append({"entity": directStreamSD, "entry": entry})
@@ -91,8 +134,10 @@ class TapoCamEntity(Camera):
         hass: HomeAssistant,
         config_entry: dict,
         entry: dict,
-        HDStream: boolean,
-        directStream: boolean,
+        directStream: bool,
+        stream: str = "stream1",
+        stream_label: str | None = None,
+        stream_unique_id: str | None = None,
     ):
         super().__init__()
         self.stream_options[CONF_RTSP_TRANSPORT] = config_entry.data.get(
@@ -104,8 +149,19 @@ class TapoCamEntity(Camera):
         self._config_entry = config_entry
         self._hass = hass
         self._enabled = False
-        self._hdstream = HDStream
         self._directStream = directStream
+        self._stream_id = stream
+        default_labels = {
+            "stream1": ("HD", "hd"),
+            "stream2": ("SD", "sd"),
+            "stream6": ("Telephoto HD", "telephoto_hd"),
+            "stream7": ("Telephoto SD", "telephoto_sd"),
+        }
+        fallback_label, fallback_uid = default_labels.get(
+            stream, (stream.upper(), stream)
+        )
+        self._stream_label = stream_label or fallback_label
+        self._stream_unique_id = stream_unique_id or fallback_uid
         self._extra_arguments = config_entry.data.get(CONF_EXTRA_ARGUMENTS)
         self._enable_stream = config_entry.data.get(ENABLE_STREAM)
         self._attr_extra_state_attributes = entry["camData"]["basic_info"]
@@ -134,22 +190,15 @@ class TapoCamEntity(Camera):
     @property
     def name(self) -> str:
         name = self._attr_extra_state_attributes["device_alias"]
-        if self._hdstream:
-            name += " HD Stream"
-        else:
-            name += " SD Stream"
+        name += f" {self._stream_label} Stream"
         if self._directStream:
             name += " (Direct)"
         return name
 
     @property
     def unique_id(self) -> str:
-        if self._hdstream:
-            streamType = "hd"
-        else:
-            streamType = "sd"
         return slugify(
-            f"{self._attr_extra_state_attributes['mac']}_{streamType}{"_direct" if self._directStream else ""}_tapo_control"
+            f"{self._attr_extra_state_attributes['mac']}_{self._stream_unique_id}{'_direct' if self._directStream else ''}_tapo_control"
         )
 
     @property
@@ -302,14 +351,27 @@ class TapoRTSPCamEntity(TapoCamEntity):
         hass: HomeAssistant,
         config_entry: dict,
         entry: dict,
-        HDStream: boolean,
+        stream: str,
+        stream_label: str | None = None,
+        stream_unique_id: str | None = None,
     ):
-        super().__init__(hass, config_entry, entry, HDStream, False)
+        super().__init__(
+            hass,
+            config_entry,
+            entry,
+            False,
+            stream,
+            stream_label,
+            stream_unique_id,
+        )
 
     async def async_camera_image(self, width=None, height=None):
         LOGGER.debug("async_camera_image - camera")
         ffmpeg = ImageFrame(self._ffmpeg.binary)
-        streaming_url = getStreamSource(self._config_entry, self._hdstream)
+        streaming_url = getStreamSource(
+            self._config_entry,
+            self._stream_id,
+        )
         image = await asyncio.shield(
             ffmpeg.get_image(
                 streaming_url,
@@ -321,7 +383,10 @@ class TapoRTSPCamEntity(TapoCamEntity):
 
     async def handle_async_mjpeg_stream(self, request):
         LOGGER.debug("handle_async_mjpeg_stream - camera")
-        streaming_url = getStreamSource(self._config_entry, self._hdstream)
+        streaming_url = getStreamSource(
+            self._config_entry,
+            self._stream_id,
+        )
         stream = CameraMjpeg(self._ffmpeg.binary)
         await stream.open_camera(
             streaming_url,
@@ -339,7 +404,10 @@ class TapoRTSPCamEntity(TapoCamEntity):
             await stream.close()
 
     async def stream_source(self):
-        return getStreamSource(self._config_entry, self._hdstream)
+        return getStreamSource(
+            self._config_entry,
+            self._stream_id,
+        )
 
 
 class TapoDirectCamEntity(TapoCamEntity):
@@ -348,12 +416,12 @@ class TapoDirectCamEntity(TapoCamEntity):
         hass: HomeAssistant,
         config_entry: dict,
         entry: dict,
-        HDStream: boolean,
-        enabledByDefault: boolean,
+        stream: str,
+        enabledByDefault: bool,
     ):
-        super().__init__(hass, config_entry, entry, HDStream, True)
+        super().__init__(hass, config_entry, entry, True, stream)
 
-        if HDStream:
+        if stream in ("stream1"):
             self._directQuality = "HD"
         else:
             self._directQuality = "VGA"

@@ -61,7 +61,10 @@
           "sound_detection_duration": "[Detekcja dźwięku] Czas, przez jaki hałas musi przekraczać próg, aby wyzwolić stan",
           "sound_detection_reset": "[Detekcja dźwięku] Czas resetu stanu po zaniku hałasu",
           "extra_arguments": "Dodatkowe argumenty dla ffmpeg (wymagany restart)",
-          "custom_stream": "Niestandardowy link do strumienia",
+          "custom_stream_hd": "Niestandardowy strumień (HD)",
+          "custom_stream_sd": "Niestandardowy strumień (SD)",
+          "custom_stream6": "Niestandardowy strumień (teleobiektyw HD)",
+          "custom_stream7": "Niestandardowy strumień (teleobiektyw SD)",
           "rtsp_transport": "Mechanizm transportu RTSP"
         },
         "description": "Prawie gotowe!\nZostało kilka ostatnich opcji…"
@@ -140,7 +143,10 @@
           "enable_stream": "Użyj strumienia z Home Assistant (wymagany restart)",
           "cloud_password": "Hasło do chmury (opcjonalnie)",
           "extra_arguments": "Dodatkowe argumenty dla ffmpeg (wymagany restart)",
-          "custom_stream": "Niestandardowy link do strumienia",
+          "custom_stream_hd": "Niestandardowy strumień (HD)",
+          "custom_stream_sd": "Niestandardowy strumień (SD)",
+          "custom_stream6": "Niestandardowy strumień (teleobiektyw HD)",
+          "custom_stream7": "Niestandardowy strumień (teleobiektyw SD)",
           "rtsp_transport": "Mechanizm transportu RTSP"
         },
         "description": "Zmień ustawienia swojej kamery Tapo.\n\nUżyj strumienia z Home Assistant:\nTak – dłuższe opóźnienie odtwarzania, mniejsze użycie CPU, możliwość sterowania odtwarzaniem\nNie – bardzo krótkie opóźnienie odtwarzania, większe użycie CPU, brak sterowania odtwarzaniem"

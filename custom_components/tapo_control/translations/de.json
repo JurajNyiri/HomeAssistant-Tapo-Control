@@ -32,7 +32,10 @@
           "sound_detection_duration": "[Geräuschsensor] Zeitintervall über dem Schwellenwert, nach dem der Sensor ausgelöst wird.",
           "sound_detection_reset": "[Geräuschsensor] Zeitintervall unter dem Schwellenwert, nach dem der Sensor zurückgesetzt wird.",
           "extra_arguments": "Extra FFmpeg Parameter (Neustart notwendig)",
-          "custom_stream": "Benutzerdefinierter Stream-Link",
+          "custom_stream_hd": "Benutzerdefinierter Stream-Link (HD)",
+          "custom_stream_sd": "Benutzerdefinierter Stream-Link (SD)",
+          "custom_stream6": "Benutzerdefinierter Stream-Link (Teleobjektiv HD)",
+          "custom_stream7": "Benutzerdefinierter Stream-Link (Teleobjektiv SD)",
           "rtsp_transport": "RTSP-Transportmechanismus"
         },
         "description": "Fast geschafft!\nNur noch ein paar letzte Einstellungen..."
@@ -74,7 +77,10 @@
           "sound_detection_duration": "[Geräuschsensor] Zeitintervall über dem Schwellenwert, nach dem der Sensor ausgelöst wird.",
           "sound_detection_reset": "[Geräuschsensor] Zeitintervall unter dem Schwellenwert, nach dem der Sensor zurückgesetzt wird.",
           "extra_arguments": "Extra FFmpeg Parameter (Neustart notwendig)",
-          "custom_stream": "Benutzerdefinierter Stream-Link",
+          "custom_stream_hd": "Benutzerdefinierter Stream-Link (HD)",
+          "custom_stream_sd": "Benutzerdefinierter Stream-Link (SD)",
+          "custom_stream6": "Benutzerdefinierter Stream-Link (Teleobjektiv HD)",
+          "custom_stream7": "Benutzerdefinierter Stream-Link (Teleobjektiv SD)",
           "rtsp_transport": "RTSP-Transportmechanismus"
         },
         "description": "Passe die Einstellungen deiner Tapo-Kamera an.\n\nVerwende den Stream von Home Assistant:\nJa - Längere Wiedergabeverzögerung, geringere CPU-Auslastung, ermöglicht Wiedergabesteuerung.\nNein - Sehr kurze Wiedergabeverzögerung, höhere CPU-Auslastung, keine Wiedergabesteuerung."

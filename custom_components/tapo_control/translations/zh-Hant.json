@@ -53,7 +53,10 @@
           "sound_detection_duration": "[聲音檢測] 噪音需要超過峰值多長時間才會觸發狀態。",
           "sound_detection_reset": "[聲音檢測] 在沒有新的噪音超過峰值時，重置狀態的時間。",
           "extra_arguments": "FFmpeg 額外參數（需重新啟動）",
-          "custom_stream": "自定義串流連結",
+          "custom_stream_hd": "自定義串流連結（HD）",
+          "custom_stream_sd": "自定義串流連結（SD）",
+          "custom_stream6": "自定義串流連結（長焦 HD）",
+          "custom_stream7": "自定義串流連結（長焦 SD）",
           "rtsp_transport": "RTSP 傳輸機制"
         },
         "description": "快完成了！\n只剩最後一步了！"
@@ -128,7 +131,10 @@
           "enable_stream": "使用 Home Assistant 的串流功能（需要重新啟動）",
           "cloud_password": "雲端密碼（可選）",
           "extra_arguments": "FFmpeg 額外參數（需重新啟動）",
-          "custom_stream": "自定義串流連結",
+          "custom_stream_hd": "自定義串流連結（HD）",
+          "custom_stream_sd": "自定義串流連結（SD）",
+          "custom_stream6": "自定義串流連結（長焦 HD）",
+          "custom_stream7": "自定義串流連結（長焦 SD）",
           "rtsp_transport": "RTSP 傳輸機制"
         },
         "description": "修改您的 Tapo 攝影機設定\n\n使用 Home Assistant 的串流:\nYes - 播放延遲較長，CPU 使用率較低，允許播放控制。\nNo - 播放延遲非常短，CPU 使用率較高，不允許播放控制。"
