@@ -41,7 +41,10 @@ from .const import (
     LOGGER,
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
-    CONF_CUSTOM_STREAM,
+    CONF_CUSTOM_STREAM_HD,
+    CONF_CUSTOM_STREAM_SD,
+    CONF_CUSTOM_STREAM_6,
+    CONF_CUSTOM_STREAM_7,
     MEDIA_SYNC_COLD_STORAGE_PATH,
     MEDIA_SYNC_HOURS,
     TIME_SYNC_DST,
@@ -63,21 +66,25 @@ def isUsingHTTPS(hass):
     return URL(base_url).scheme == "https"
 
 
-def getStreamSource(entry, hdStream):
-    custom_stream = entry.data.get(CONF_CUSTOM_STREAM)
+def getStreamSource(entry, stream):
+    custom_stream_hd = entry.data.get(CONF_CUSTOM_STREAM_HD, "")
+    custom_stream_sd = entry.data.get(CONF_CUSTOM_STREAM_SD, "")
+    telephoto_custom_stream6 = entry.data.get(CONF_CUSTOM_STREAM_6, "")
+    telephoto_custom_stream7 = entry.data.get(CONF_CUSTOM_STREAM_7, "")
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
     host = entry.data.get(CONF_IP_ADDRESS)
-    if custom_stream != "":
-        return custom_stream
-
-    if hdStream:
-        streamType = "stream1"
-    else:
-        streamType = "stream2"
+    if stream == "stream6" and telephoto_custom_stream6:
+        return telephoto_custom_stream6
+    if stream == "stream7" and telephoto_custom_stream7:
+        return telephoto_custom_stream7
+    if stream == "stream1" and custom_stream_hd:
+        return custom_stream_hd
+    if stream == "stream2" and custom_stream_sd:
+        return custom_stream_sd
     username = urllib.parse.quote_plus(username)
     password = urllib.parse.quote_plus(password)
-    streamURL = f"rtsp://{username}:{password}@{host}:554/{streamType}"
+    streamURL = f"rtsp://{username}:{password}@{host}:554/{stream}"
     return streamURL
 
 
@@ -677,7 +684,9 @@ def areCameraPortsOpened(host, controlPort=443):
     return isOpen(host, int(controlPort)) and isOpen(host, 554) and isOpen(host, 2020)
 
 
-async def isRtspStreamWorking(hass, host, username, password, full_url=""):
+async def isRtspStreamWorking(
+    hass, host, username, password, stream: str | None = None
+):
     LOGGER.debug("[isRtspStreamWorking][%s] Testing RTSP stream.", host)
     _ffmpeg = hass.data[DATA_FFMPEG]
     LOGGER.debug("[isRtspStreamWorking][%s] Creating image frame.", host)
@@ -686,18 +695,24 @@ async def isRtspStreamWorking(hass, host, username, password, full_url=""):
     username = urllib.parse.quote_plus(username)
     password = urllib.parse.quote_plus(password)
 
-    streaming_url = full_url
-    if full_url == "":
-        streaming_url = f"rtsp://{host}:554/stream1"
-        if username != "" and password != "":
-            streaming_url = f"rtsp://{username}:{password}@{host}:554/stream1"
+    stream_path = stream or "stream1"
+    auth = f"{username}:{password}@" if username or password else ""
+    streaming_url = f"rtsp://{auth}{host}:554/{stream_path}"
+
+    safe_streaming_url = streaming_url
+    if username:
+        safe_streaming_url = safe_streaming_url.replace(
+            username, "HIDDEN_USERNAME"
+        )
+    if password:
+        safe_streaming_url = safe_streaming_url.replace(
+            password, "HIDDEN_PASSWORD"
+        )
 
     LOGGER.debug(
         "[isRtspStreamWorking][%s] Getting image from %s.",
         host,
-        streaming_url.replace(username, "HIDDEN_USERNAME").replace(
-            password, "HIDDEN_PASSWORD"
-        ),
+        safe_streaming_url,
     )
     image = await asyncio.shield(
         ffmpeg.get_image(
