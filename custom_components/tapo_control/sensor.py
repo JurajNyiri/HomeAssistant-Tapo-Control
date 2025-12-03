@@ -13,6 +13,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN, ENABLE_MEDIA_SYNC, LOGGER
 from .tapo.entities import TapoSensorEntity
@@ -329,6 +330,7 @@ class TapoSyncSensor(TapoSensorEntity):
             None,
             None,
         )
+        self._attr_extra_state_attributes = {}
 
     async def async_update(self) -> None:
         """Update the entity."""
@@ -336,15 +338,12 @@ class TapoSyncSensor(TapoSensorEntity):
 
     def updateTapo(self, camData: dict | None) -> None:
         """Update the entity."""
-        enable_media_sync = self._hass.data[DOMAIN][self._config_entry.entry_id][
-            ENABLE_MEDIA_SYNC
-        ]
-        runningMediaSync = self._hass.data[DOMAIN][self._config_entry.entry_id][
-            "runningMediaSync"
-        ]
+        device = self._entry
+        data = device
+        enable_media_sync = device[ENABLE_MEDIA_SYNC]
+        runningMediaSync = device["runningMediaSync"]
         LOGGER.debug("Enable Media Sync: %s", enable_media_sync)
         if enable_media_sync or runningMediaSync is True:
-            data = self._hass.data[DOMAIN][self._config_entry.entry_id]
             LOGGER.debug("Initial Media Scan: %s", data["initialMediaScanDone"])
             LOGGER.debug("Media Sync Available: %s", data["mediaSyncAvailable"])
             LOGGER.debug("Download Progress: %s", data["downloadProgress"])
@@ -367,3 +366,19 @@ class TapoSyncSensor(TapoSensorEntity):
                 self._attr_native_value = "Idle"
         else:
             self._attr_native_value = "Idle"
+
+        def _fmt(ts):
+            try:
+                return dt_util.as_local(dt_util.utc_from_timestamp(ts)).isoformat()
+            except Exception:
+                return None
+
+        self._attr_extra_state_attributes = {
+            "media_sync_enabled": enable_media_sync,
+            "running": runningMediaSync,
+            "last_sync_start": _fmt(device.get("lastMediaSyncStart", 0)),
+            "last_sync_activity": _fmt(device.get("lastMediaSyncActivity", 0)),
+            "last_sync_success": _fmt(device.get("lastMediaSyncSuccess", 0)),
+            "stall_count": device.get("mediaSyncStallCount", 0),
+            "last_progress": data.get("downloadProgress") or "Idle",
+        }
