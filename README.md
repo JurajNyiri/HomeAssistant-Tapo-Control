@@ -20,7 +20,7 @@ HACS is a community store for Home Assistant. You can install [HACS](https://git
 
 ### Network
 
-Following (v)LAN ports **must be open** in firewall for the camera to access your Tapo Camera from Home Assistant:
+Following (v)LAN ports **must be open** in firewall for the camera to access your Tapo Device from Home Assistant:
 
 Chimes:
 
