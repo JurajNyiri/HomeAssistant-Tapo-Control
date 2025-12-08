@@ -20,18 +20,19 @@ HACS is a community store for Home Assistant. You can install [HACS](https://git
 
 ### Network
 
-Following target TCP (v)LAN ports **must be open** in firewall for the camera to access your Tapo Camera from Home Assistant:
+Following (v)LAN ports **must be open** in firewall for the camera to access your Tapo Device from Home Assistant:
 
 Chimes:
 
-- 80 - HTTP for control of the camera ([services](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control#quick-start))
+- TCP/80 - HTTP for control of the camera ([services](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control#quick-start))
 
 Cameras and Doorbells:
 
-- 443 - HTTPS for control of the camera ([services](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control#quick-start))
-- 8800 - Proprietary protocol for video streaming and recordings downloads (if available on device)
-- 554 - RTSP to fetch video stream from the camera (if available on device)
-- 2020 - ONVIF to track detected movement via a binary sensor (if available on device)
+- TCP/443 - HTTPS for control of the camera ([services](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control#quick-start))
+- TCP/8800 - Proprietary protocol for video streaming and recordings downloads (if available on device)
+- TCP/554 - RTSP to fetch video stream from the camera (if available on device)
+- TCP/2020 - ONVIF to track detected movement via a binary sensor (if available on device)
+- UDP/20005 (broadcast) for doorbell press event on standalone doorbell, or hub for a doorbell
 
 **These are not WAN ports, _DO NOT_ OPEN WAN PORTS VIA PORT FORWARDING. You might need to open (v)lan ports _only_ if you know what all of this means.**
 
@@ -70,7 +71,7 @@ This custom component creates:
 Doorbells, Cameras:
 
 - Up to 4 camera entities: HD and SD, using RTSP standard or TP-Link proprietary video protocol. If you choose to use direct entities, it is recommended to disable `Use Stream from Home Assistant` in options for the best performance and battery life.
-- Binary sensor for motion after the motion is detected for the first time
+- Binary sensor for motion after the motion is detected for the first time and a binary sensor for doorbell press
 - Light entity, if the camera supports a floodlight switch
 - Buttons for Calibrate, Format, Manual Alarm start & stop, Moving the camera, Reboot and syncing time
 - Switch entities for Auto track, Flip setting, LED Indicator, Lens Distortion Correction, (Rich) Notifications, Recording, Microphone Mute, Microphone Noise Cancelling, Automatically Upgrade Firmware, HDR mode, Alarm Trigger Event types, Privacy Zones, Diagnose Mode, Smart Track specific switches, Audio Recording and Privacy mode
