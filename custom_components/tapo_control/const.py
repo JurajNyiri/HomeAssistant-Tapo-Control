@@ -6,7 +6,7 @@ from datetime import timedelta
 from homeassistant.helpers import config_validation as cv
 
 CONTROL_PORT = "control_port"
-PYTAPO_REQUIRED_VERSION = "3.3.54"
+PYTAPO_REQUIRED_VERSION = "3.3.56"
 DOMAIN = "tapo_control"
 BRAND = "TP-Link"
 DOORBELL_UDP_PORT = 20005
