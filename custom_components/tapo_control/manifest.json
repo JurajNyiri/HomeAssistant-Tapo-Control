@@ -6,7 +6,7 @@
   "codeowners": [
     "@JurajNyiri"
   ],
-  "version": "7.0.12",
+  "version": "7.0.13",
   "requirements": [
     "pytapo==3.3.56",
     "python-kasa[speedups]==0.10.2"
