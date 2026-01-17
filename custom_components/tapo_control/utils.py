@@ -10,6 +10,7 @@ import urllib.parse
 import uuid
 import requests
 import base64
+from typing import Callable, Optional
 
 from functools import partial
 from homeassistant.helpers.event import async_track_time_interval
@@ -282,9 +283,10 @@ async def processDownload(
         raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
 
     if filePath not in entryData["downloadedStreams"]:
+        # Store download metadata in a consistent format for media browsing.
         entryData["downloadedStreams"][filePath] = {
-            startDate: startDate,
-            endDate: endDate,
+            "startDate": startDate,
+            "endDate": endDate,
         }
     mediaScanName = (
         ((childID + "-") if childID != "" else "") + str(startDate) + "-" + str(endDate)
@@ -505,18 +507,40 @@ async def deleteFilesNotIncluding(hass: HomeAssistant, dirPath, includingString)
                 os.remove(filePath)
 
 
+async def async_update_sync_sensors(hass: HomeAssistant, entry_id: str, device: dict):
+    """Force an immediate update of media sync sensors for the given device."""
+    if DOMAIN not in hass.data or entry_id not in hass.data[DOMAIN]:
+        return
+    for entity in hass.data[DOMAIN][entry_id]["entities"]:
+        if (
+            entity["entry"] is device
+            and entity["entity"].__class__.__name__ == "TapoSyncSensor"
+        ):
+            entity["entity"].updateTapo(None)
+            # async_write_ha_state is sync for non-entity_component updates; do not await.
+            entity["entity"].async_write_ha_state()
+
+
 def processDownloadStatus(
+    hass: HomeAssistant,
+    entry_id: str,
     entryData,
     date: str,
     allRecordingsCount: int,
     recordingCount: int = False,
+    progress_callback: Optional[
+        Callable[[str, Optional[float], Optional[float]], None]
+    ] = None,
 ):
     def processUpdate(status):
         LOGGER.debug(status)
+        message = ""
+        current = None
+        total = None
         if isinstance(status, str):
-            entryData["downloadProgress"] = status
+            message = status
         else:
-            entryData["downloadProgress"] = (
+            message = (
                 status["currentAction"]
                 + " "
                 + date
@@ -531,6 +555,16 @@ def processDownloadStatus(
                     else ""
                 )
             )
+            current = status.get("progress")
+            total = status.get("total")
+
+        entryData["downloadProgress"] = message
+        entryData["lastMediaSyncActivity"] = datetime.datetime.utcnow().timestamp()
+        if progress_callback is not None:
+            progress_callback(message, current, total)
+        hass.async_create_task(
+            async_update_sync_sensors(hass, entry_id, entryData)
+        )
 
     return processUpdate
 
@@ -618,6 +652,9 @@ async def getRecording(
     endDate: int,
     recordingCount: int = False,
     totalRecordingCount: int = False,
+    progress_callback: Optional[
+        Callable[[str, Optional[float], Optional[float]], None]
+    ] = None,
 ) -> str:
     timeCorrection = await hass.async_add_executor_job(tapo.getTimeCorrection)
     startDate = int(startDate)
@@ -636,6 +673,9 @@ async def getRecording(
     if not os.path.exists(coldFilePath):
         # this NEEDS to happen otherwise camera does not send data!
         allRecordings = await hass.async_add_executor_job(tapo.getRecordings, date)
+        all_recordings_count = (
+            len(allRecordings) if totalRecordingCount is False else totalRecordingCount
+        )
         downloader = Downloader(
             tapo,
             startDate,
@@ -649,21 +689,28 @@ async def getRecording(
         )
 
         entryData["isDownloadingStream"] = True
-        downloadedFile = await downloader.downloadFile(
-            processDownloadStatus(
-                entryData,
-                date,
-                (
-                    len(allRecordings)
-                    if totalRecordingCount is False
-                    else totalRecordingCount
-                ),
-                recordingCount if recordingCount is not False else False,
+        try:
+            downloadedFile = await downloader.downloadFile(
+                processDownloadStatus(
+                    hass,
+                    entry_id,
+                    entryData,
+                    date,
+                    all_recordings_count,
+                    recordingCount if recordingCount is not False else False,
+                    progress_callback=progress_callback,
+                )
             )
-        )
-        entryData["isDownloadingStream"] = False
+        finally:
+            entryData["isDownloadingStream"] = False
+
         if downloadedFile["currentAction"] == "Recording in progress":
             raise Unresolvable("Recording is currently in progress.")
+
+        completion_message = "Finished download"
+        entryData["downloadProgress"] = completion_message
+        if progress_callback is not None:
+            progress_callback(completion_message, None, None)
 
         hass.bus.fire(
             "tapo_control_media_downloaded",
@@ -1706,6 +1753,23 @@ async def update_listener(hass, entry):
         ]
         if motionSensor:
             await setupOnvif(hass, entry)
+
+    # Ensure media sync settings (hours/enable) propagate immediately.
+    if DOMAIN in hass.data and entry.entry_id in hass.data[DOMAIN]:
+        now_ts = datetime.datetime.utcnow().timestamp()
+        entry_data = hass.data[DOMAIN][entry.entry_id]
+        devices = [entry_data]
+        if entry_data.get("isParent"):
+            devices.extend(entry_data.get("childDevices", []))
+        for device in devices:
+            device["lastMediaSyncActivity"] = now_ts
+            if not device.get(ENABLE_MEDIA_SYNC):
+                device["runningMediaSync"] = False
+                device["downloadProgress"] = "Disabled"
+            hass.async_create_task(
+                async_update_sync_sensors(hass, entry.entry_id, device)
+            )
+        await hass.data[DOMAIN][entry.entry_id]["coordinator"].async_request_refresh()
 
 
 async def getLatestFirmwareVersion(hass, config_entry, entry, controller):
