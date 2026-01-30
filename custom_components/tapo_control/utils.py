@@ -20,7 +20,7 @@ from homeassistant.components.media_source.error import Unresolvable
 
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from onvif import ONVIFCamera
-from .pytapo import Tapo
+from pytapo import Tapo
 from yarl import URL
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 
