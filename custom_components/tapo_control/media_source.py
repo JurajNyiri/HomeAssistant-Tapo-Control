@@ -35,7 +35,7 @@ from .utils import (
     getWebFile,
 )
 
-from pytapo import Tapo
+from .pytapo import Tapo
 
 import json
 from urllib.parse import urlencode, urlparse, parse_qsl

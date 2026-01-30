@@ -20,7 +20,7 @@ from homeassistant.components.media_source.error import Unresolvable
 
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from onvif import ONVIFCamera
-from pytapo import Tapo
+from .pytapo import Tapo
 from yarl import URL
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 
@@ -701,13 +701,9 @@ async def isRtspStreamWorking(
 
     safe_streaming_url = streaming_url
     if username:
-        safe_streaming_url = safe_streaming_url.replace(
-            username, "HIDDEN_USERNAME"
-        )
+        safe_streaming_url = safe_streaming_url.replace(username, "HIDDEN_USERNAME")
     if password:
-        safe_streaming_url = safe_streaming_url.replace(
-            password, "HIDDEN_PASSWORD"
-        )
+        safe_streaming_url = safe_streaming_url.replace(password, "HIDDEN_PASSWORD")
 
     LOGGER.debug(
         "[isRtspStreamWorking][%s] Getting image from %s.",

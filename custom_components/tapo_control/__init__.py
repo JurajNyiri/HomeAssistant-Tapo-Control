@@ -88,8 +88,8 @@ from .utils import (
     getRecordings,
     scheduleAll,
 )
-from pytapo import Tapo
-from pytapo.version import PYTAPO_VERSION
+from .pytapo import Tapo
+from .pytapo.version import PYTAPO_VERSION
 
 from homeassistant.helpers.event import async_track_time_interval
 from datetime import timedelta
@@ -469,6 +469,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
         LOGGER.debug("Events stopped.")
 
+    # Close controllers to avoid unclosed aiohttp sessions
+    await _close_controllers(hass, entry.entry_id)
+
     return True
 
 
@@ -502,6 +505,26 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             + entry_id
             + ". Not deleting anything."
         )
+
+
+async def _close_controllers(hass: HomeAssistant, entry_id: str):
+    data = hass.data.get(DOMAIN, {}).get(entry_id)
+    if not data:
+        return
+
+    controllers = []
+    if data.get("controller"):
+        controllers.append(data["controller"])
+    for child in data.get("childDevices", []):
+        ctrl = child.get("controller")
+        if ctrl:
+            controllers.append(ctrl)
+
+    for ctrl in controllers:
+        try:
+            await hass.async_add_executor_job(ctrl.close)
+        except Exception as err:
+            LOGGER.debug("Error closing controller during shutdown: %s", err)
 
     # Remove the entry data
     hass.data[DOMAIN].pop(entry_id, None)
@@ -1215,6 +1238,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 await hass.data[DOMAIN][entry.entry_id]["events"].async_stop()
 
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, unsubscribe)
+        hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STOP,
+            lambda event: hass.add_job(_close_controllers, hass, entry.entry_id),
+        )
 
     except Exception as e:
         if "Invalid authentication data" in str(e):
