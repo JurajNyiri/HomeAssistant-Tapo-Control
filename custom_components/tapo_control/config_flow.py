@@ -180,7 +180,7 @@ class FlowHandler(ConfigFlow):
                                 "[REAUTH][%s] Temporary suspension.",
                                 tapoHost,
                             )
-                            raise Exception("temporary_suspension")
+                            raise e from e
                         else:
                             LOGGER.error(e)
                             raise Exception(e)
@@ -796,7 +796,7 @@ class FlowHandler(ConfigFlow):
                                 "[ADD DEVICE][%s] Temporary suspension.",
                                 host,
                             )
-                            raise Exception("temporary_suspension")
+                            raise e from e
                         else:
                             LOGGER.debug(
                                 "[ADD DEVICE][%s] Camera control is not available, IP is not a Tapo device. Error: %s",
@@ -819,7 +819,7 @@ class FlowHandler(ConfigFlow):
                     errors["base"] = "not_tapo_device"
                 elif "ports_closed" in str(e):
                     errors["base"] = "ports_closed"
-                elif "temporary_suspension" in str(e):
+                elif "Temporary Suspension:" in str(e):
                     errors["base"] = str(e)
                 else:
                     errors["base"] = "unknown"
@@ -1011,7 +1011,7 @@ class FlowHandler(ConfigFlow):
                                 "[ADD DEVICE][%s] Temporary suspension.",
                                 self.tapoHost,
                             )
-                            raise Exception("temporary_suspension")
+                            raise e from e
                         else:
                             LOGGER.error(e)
                             raise Exception(e)
@@ -1031,7 +1031,7 @@ class FlowHandler(ConfigFlow):
                     errors["base"] = "ports_closed"
                 elif str(e) == "Invalid authentication data":
                     errors["base"] = "invalid_auth"
-                elif str(e) == "temporary_suspension":
+                elif "Temporary Suspension:" in str(e):
                     errors["base"] = str(e)
                 else:
                     errors["base"] = "unknown"

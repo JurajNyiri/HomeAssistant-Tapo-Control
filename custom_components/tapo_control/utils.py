@@ -701,13 +701,9 @@ async def isRtspStreamWorking(
 
     safe_streaming_url = streaming_url
     if username:
-        safe_streaming_url = safe_streaming_url.replace(
-            username, "HIDDEN_USERNAME"
-        )
+        safe_streaming_url = safe_streaming_url.replace(username, "HIDDEN_USERNAME")
     if password:
-        safe_streaming_url = safe_streaming_url.replace(
-            password, "HIDDEN_PASSWORD"
-        )
+        safe_streaming_url = safe_streaming_url.replace(password, "HIDDEN_PASSWORD")
 
     LOGGER.debug(
         "[isRtspStreamWorking][%s] Getting image from %s.",
