@@ -123,6 +123,43 @@ async def async_setup_entry(
             entry["entities"].append({"entity": directStreamSD, "entry": entry})
             async_add_entities([directStreamHD, directStreamSD])
 
+            minor_stream_support = (
+                str(
+                    (
+                        entry.get("camData", {})
+                        .get("videoCapability", {})
+                        .get("video_capability", {})
+                        .get("main", {})
+                        .get("minor_stream_support")
+                    )
+                )
+                == "1"
+            )
+            if minor_stream_support:
+                directMinorStreamHD = TapoDirectCamEntity(
+                    hass,
+                    config_entry,
+                    entry,
+                    "stream6",
+                    enabledByDefault=not hasRTSPEntities,
+                    videoStream=1,
+                )
+                directMinorStreamSD = TapoDirectCamEntity(
+                    hass,
+                    config_entry,
+                    entry,
+                    "stream7",
+                    enabledByDefault=False,
+                    videoStream=1,
+                )
+                entry["entities"].append(
+                    {"entity": directMinorStreamHD, "entry": entry}
+                )
+                entry["entities"].append(
+                    {"entity": directMinorStreamSD, "entry": entry}
+                )
+                async_add_entities([directMinorStreamHD, directMinorStreamSD])
+
     await setupEntities(entry)
     for childDevice in entry["childDevices"]:
         await setupEntities(childDevice)
@@ -418,6 +455,7 @@ class TapoDirectCamEntity(TapoCamEntity):
         entry: dict,
         stream: str,
         enabledByDefault: bool,
+        videoStream: int = 0,  # 0 for main, 1 for substream
     ):
         super().__init__(hass, config_entry, entry, True, stream)
 
@@ -431,6 +469,7 @@ class TapoDirectCamEntity(TapoCamEntity):
         self._stream_fd: int | None = None
         self._stream_task: asyncio.Task | None = None
         self._enabled_by_default = enabledByDefault
+        self.videoStream = videoStream
 
     @property
     def entity_registry_enabled_default(self) -> bool:
@@ -457,6 +496,7 @@ class TapoDirectCamEntity(TapoCamEntity):
                 "-f": "image2pipe",
                 "-c:v": "mjpeg",
                 "-vsync": "0",
+                "-map-video": f"0:v:{self.videoStream}",
             },
         )
         LOGGER.debug("async_camera_image - Starting streamer")
@@ -486,6 +526,7 @@ class TapoDirectCamEntity(TapoCamEntity):
                 "-c:v": "mjpeg",
                 "-f": "mpjpeg",
                 "-vsync": "0",
+                "-map-video": f"0:v:{self.videoStream}",
             },
         )
         info = await streamer.start()
