@@ -4,7 +4,7 @@ import os
 from haffmpeg.camera import CameraMjpeg
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from typing import Callable
-from pytapo.media_stream.streamer import Streamer
+from .pytapo.media_stream.streamer import Streamer
 
 from homeassistant.const import STATE_UNAVAILABLE, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.core import HomeAssistant

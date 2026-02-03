@@ -40,12 +40,14 @@
       },
       "auth_cloud_password": {
         "data": {
+          "cloud_username": "Username",
           "cloud_password": "Cloud Password"
         },
         "description": "Camera requires your cloud password for control.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
       },
       "auth_optional_cloud": {
         "data": {
+          "cloud_username": "Username",
           "cloud_password": "Cloud Password"
         },
         "description": "Camera requires your cloud password for recordings.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local.\n\nYou can skip this step by leaving password empty and enter password later if you do not need recordings viewing functionality."
@@ -158,7 +160,7 @@
       "invalid_auth": "Invalid authentication data",
       "unknown": "Unknown error",
       "connection_failed": "Connection failed",
-      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On) and you have tried the other solutions suggested in the FAQ https://github.com/JurajNyiri/HomeAssistant-Tapo-Control?tab=readme-ov-file#troubleshooting--faq.",
+      "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On) and you have tried the other solutions suggested in the FAQ https://github.com/JurajNyiri/HomeAssistant-Tapo-Control?tab=readme-ov-file#troubleshooting--faq. If you are adding chime, change username value from admin, to your TPLink email.",
       "cold_storage_path_does_not_exist": "Cold storage path does not exist",
       "camera_requires_admin": "Camera requires cloud password for control",
       "incorrect_peak_value": "Incorrect sound detection peak value.",
