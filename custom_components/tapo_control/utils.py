@@ -1585,6 +1585,18 @@ async def getCamData(hass, controller):
     camData["videoCapability"] = videoCapability
 
     try:
+        allChnInfo = data["getAllChnInfo"][0]
+    except Exception:
+        allChnInfo = None
+    camData["allChnInfo"] = allChnInfo
+
+    try:
+        dualCamCapability = data["getDualCamCapability"][0]
+    except Exception:
+        dualCamCapability = None
+    camData["dualCamCapability"] = dualCamCapability
+
+    try:
         videoQualities = data["getVideoQualities"][0]
     except Exception:
         videoQualities = None

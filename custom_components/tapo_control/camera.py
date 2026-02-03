@@ -109,33 +109,45 @@ async def async_setup_entry(
                 async_add_entities(telephotoEntities)
 
         if not entry["isParent"]:
+            channel_info = (
+                entry.get("camData", {})
+                .get("allChnInfo", {})
+                .get("system", {})
+                .get("chn_info", {})
+            )
+
+            chn_0_alias = (
+                channel_info[0].get("chn_alias")
+                if isinstance(channel_info, list) and channel_info
+                else None
+            )
+            chn_1_alias = (
+                channel_info[1].get("chn_alias")
+                if isinstance(channel_info, list) and channel_info
+                else None
+            )
+
             directStreamHD = TapoDirectCamEntity(
                 hass,
                 config_entry,
                 entry,
                 "stream1",
                 enabledByDefault=not hasRTSPEntities,
+                stream_label=f"{chn_0_alias} HD" if chn_0_alias is not None else None,
             )
             directStreamSD = TapoDirectCamEntity(
-                hass, config_entry, entry, "stream2", enabledByDefault=False
+                hass,
+                config_entry,
+                entry,
+                "stream2",
+                enabledByDefault=False,
+                stream_label=f"{chn_0_alias} SD" if chn_0_alias is not None else None,
             )
             entry["entities"].append({"entity": directStreamHD, "entry": entry})
             entry["entities"].append({"entity": directStreamSD, "entry": entry})
             async_add_entities([directStreamHD, directStreamSD])
 
-            minor_stream_support = (
-                str(
-                    (
-                        entry.get("camData", {})
-                        .get("videoCapability", {})
-                        .get("video_capability", {})
-                        .get("main", {})
-                        .get("minor_stream_support")
-                    )
-                )
-                == "1"
-            )
-            if minor_stream_support:
+            if channel_info:
                 directMinorStreamHD = TapoDirectCamEntity(
                     hass,
                     config_entry,
@@ -143,6 +155,9 @@ async def async_setup_entry(
                     "stream6",
                     enabledByDefault=not hasRTSPEntities,
                     videoStream=1,
+                    stream_label=(
+                        f"{chn_1_alias} HD" if chn_1_alias is not None else None
+                    ),
                 )
                 directMinorStreamSD = TapoDirectCamEntity(
                     hass,
@@ -151,6 +166,9 @@ async def async_setup_entry(
                     "stream7",
                     enabledByDefault=False,
                     videoStream=1,
+                    stream_label=(
+                        f"{chn_1_alias} SD" if chn_1_alias is not None else None
+                    ),
                 )
                 entry["entities"].append(
                     {"entity": directMinorStreamHD, "entry": entry}
@@ -456,8 +474,9 @@ class TapoDirectCamEntity(TapoCamEntity):
         stream: str,
         enabledByDefault: bool,
         videoStream: int = 0,  # 0 for main, 1 for substream
+        stream_label: str | None = None,
     ):
-        super().__init__(hass, config_entry, entry, True, stream)
+        super().__init__(hass, config_entry, entry, True, stream, stream_label)
 
         if stream in ("stream1"):
             self._directQuality = "HD"
