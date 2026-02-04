@@ -92,6 +92,10 @@ def pytapoLog(msg):
     LOGGER.debug(f"[pytapo] {msg}")
 
 
+def pytapoWarnLog(msg):
+    LOGGER.warning(f"[pytapo] {msg}")
+
+
 def isKLAP(host, port, timeout=2):
     try:
         url = f"http://{host}:{port}"
@@ -121,6 +125,7 @@ def registerController(
         device_id,
         reuseSession=False,
         printDebugInformation=pytapoLog,
+        printWarnInformation=pytapoWarnLog,
         retryStok=False,
         controlPort=control_port,
         isKLAP=is_klap,
