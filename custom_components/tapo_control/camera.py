@@ -109,23 +109,24 @@ async def async_setup_entry(
                 async_add_entities(telephotoEntities)
 
         if not entry["isParent"]:
-            channel_info = (
-                entry.get("camData", {})
-                .get("allChnInfo", {})
-                .get("system", {})
-                .get("chn_info", {})
-            )
 
-            chn_0_alias = (
-                channel_info[0].get("chn_alias")
-                if isinstance(channel_info, list) and channel_info
-                else None
-            )
-            chn_1_alias = (
-                channel_info[1].get("chn_alias")
-                if isinstance(channel_info, list) and channel_info
-                else None
-            )
+            allChnInfo = entry.get("camData", {}).get("allChnInfo", {})
+            if allChnInfo:
+                channel_info = allChnInfo.get("system", {}).get("chn_info", {})
+                chn_0_alias = (
+                    channel_info[0].get("chn_alias")
+                    if isinstance(channel_info, list) and channel_info
+                    else None
+                )
+                chn_1_alias = (
+                    channel_info[1].get("chn_alias")
+                    if isinstance(channel_info, list) and channel_info
+                    else None
+                )
+            else:
+                channel_info = None
+                chn_0_alias = None
+                chn_1_alias = None
 
             directStreamHD = TapoDirectCamEntity(
                 hass,
