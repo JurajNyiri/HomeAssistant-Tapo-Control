@@ -854,9 +854,14 @@ def getIP(data):
     return False
 
 
-async def getCamData(hass, controller):
+async def getCamData(hass, controller, chInfo=None):
     LOGGER.debug("getCamData")
-    data = await hass.async_add_executor_job(controller.getMost)
+
+    chn_id = []
+    if chInfo is not None:
+        for lens in chInfo:
+            chn_id.append(lens["chn_id"])
+    data = await hass.async_add_executor_job(controller.getMost, [], chn_id)
     LOGGER.debug("Raw update data:")
     LOGGER.debug(data)
     camData = {}

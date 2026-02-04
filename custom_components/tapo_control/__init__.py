@@ -757,7 +757,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     if timeForAnUpdate:
                         try:
                             updateDataForAllControllers[controller] = await getCamData(
-                                hass, controller
+                                hass, controller, controllerData["chInfo"]
                             )
                             controllerData["isRunningOnBattery"] = (
                                 True
@@ -908,7 +908,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         LOGGER.debug("Retrieving initial device data.")
 
-        camData = await getCamData(hass, tapoController)
+        try:
+            chInfo = await hass.async_add_executor_job(tapoController.getAllChnInfo)
+            chInfo = chInfo["system"]["chn_info"]
+        except Exception as err:
+            LOGGER.debug(f"Failed to retrieve channels info: {err}")
+            chInfo = None
+
+        camData = await getCamData(hass, tapoController, chInfo)
         LOGGER.debug("Retrieved initial device data.")
         LOGGER.debug("Retrieving camera time.")
         cameraTime = await hass.async_add_executor_job(tapoController.getTime)
@@ -931,6 +938,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             TIME_SYNC_NDST: timeSyncNDST,
             "controller": tapoController,
             "entry": entry,
+            "chInfo": chInfo,
             "usingCloudPassword": cloud_password != "",
             "allControllers": [tapoController],
             "update_listener": entry.add_update_listener(update_listener),
@@ -1008,13 +1016,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         tapoChildController
                     )
                     LOGGER.debug("Getting initial child device data.")
-                    childCamData = await getCamData(hass, tapoChildController)
+
+                    try:
+                        chInfo = await hass.async_add_executor_job(
+                            tapoChildController.getAllChnInfo
+                        )
+                        chInfo = chInfo["system"]["chn_info"]
+                    except Exception as err:
+                        LOGGER.debug(f"Failed to retrieve channels info: {err}")
+                        chInfo = None
+
+                    childCamData = await getCamData(hass, tapoChildController, chInfo)
                     LOGGER.debug("Retrieved initial child device data.")
                     hass.data[DOMAIN][entry.entry_id]["childDevices"].append(
                         {
                             "controller": tapoChildController,
                             "coordinator": tapoCoordinator,
                             "entry": entry,
+                            "chInfo": chInfo,
                             "usingCloudPassword": cloud_password != "",
                             "timezoneOffset": hass.data[DOMAIN][entry.entry_id][
                                 "timezoneOffset"
