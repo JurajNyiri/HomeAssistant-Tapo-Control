@@ -7,7 +7,12 @@ from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoSelectEntity
-from .utils import check_and_create, getNightModeName, getNightModeValue
+from .utils import (
+    check_and_create,
+    check_functionality,
+    getNightModeName,
+    getNightModeValue,
+)
 
 
 async def async_setup_entry(
@@ -103,12 +108,25 @@ async def async_setup_entry(
                 LOGGER.debug("Adding tapoAlertTypeSelect with start ID 0...")
                 selects.append(TapoAlertTypeSelect(entry, hass, config_entry, 0))
 
-        tapoMotionDetectionSelect = await check_and_create(
-            entry, hass, TapoMotionDetectionSelect, "getMotionDetection", config_entry
+        tapoMotionDetectionSelectAvailable = await check_functionality(
+            entry, hass, TapoMotionDetectionSelect, "getMotionDetection"
         )
-        if tapoMotionDetectionSelect:
-            LOGGER.debug("Adding TapoMotionDetectionSelect...")
-            selects.append(tapoMotionDetectionSelect)
+        if tapoMotionDetectionSelectAvailable:
+            if entry["chInfo"]:
+                for lens in entry["chInfo"]:
+                    chn_alias = lens.get("chn_alias", "")
+                    chn_id = lens.get("chn_id")
+                    LOGGER.warning(
+                        f"Adding TapoMotionDetectionSelect for {chn_alias}, id: {chn_id}..."
+                    )
+                    selects.append(
+                        TapoMotionDetectionSelect(
+                            entry, hass, config_entry, chn_alias, chn_id
+                        )
+                    )
+            else:
+                LOGGER.warning("Adding TapoMotionDetectionSelect...")
+                selects.append(TapoMotionDetectionSelect(entry, hass, config_entry))
 
         tapoPersonDetectionSelect = await check_and_create(
             entry, hass, TapoPersonDetectionSelect, "getPersonDetection", config_entry
@@ -780,12 +798,21 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
 
 
 class TapoMotionDetectionSelect(TapoSelectEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+    def __init__(
+        self,
+        entry: dict,
+        hass: HomeAssistant,
+        config_entry,
+        specific_name=None,
+        chn_id=None,
+    ):
         self._attr_options = ["high", "normal", "low", "off"]
         self._attr_current_option = None
+        self.chn_id = chn_id
+        self.read_chn_id = str(chn_id) if chn_id else "1"
         TapoSelectEntity.__init__(
             self,
-            "Motion Detection",
+            f"Motion Detection{" - " + specific_name if specific_name else ""}",
             entry,
             hass,
             config_entry,
@@ -797,18 +824,20 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
-        LOGGER.debug("TapoMotionDetectionSelect updateTapo 1")
+        LOGGER.debug(f"TapoMotionDetectionSelect updateTapo 1 ({self.chn_id})")
         if not camData:
             LOGGER.debug("TapoMotionDetectionSelect updateTapo 2")
             self._attr_state = STATE_UNAVAILABLE
         else:
             LOGGER.debug("TapoMotionDetectionSelect updateTapo 3")
-            if camData["motion_detection_enabled"] == "off":
+            if camData["motion_detection_enabled"][self.read_chn_id] == "off":
                 LOGGER.debug("TapoMotionDetectionSelect updateTapo 4")
                 self._attr_current_option = "off"
             else:
                 LOGGER.debug("TapoMotionDetectionSelect updateTapo 5")
-                self._attr_current_option = camData["motion_detection_sensitivity"]
+                self._attr_current_option = camData["motion_detection_sensitivity"][
+                    self.read_chn_id
+                ]
             LOGGER.debug("TapoMotionDetectionSelect updateTapo 6")
             self._attr_state = self._attr_current_option
         LOGGER.debug("Updating TapoMotionDetectionSelect to: " + str(self._attr_state))
@@ -818,6 +847,7 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
             self._controller.setMotionDetection,
             option != "off",
             option if option != "off" else False,
+            [self.chn_id] if self.chn_id else None,
         )
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = option

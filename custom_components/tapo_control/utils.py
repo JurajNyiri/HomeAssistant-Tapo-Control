@@ -854,11 +854,22 @@ def getIP(data):
     return False
 
 
+def motionSensitivityFromData(motionDet):
+    sensitivity_map = {"low": "low", "medium": "normal", "high": "high"}
+    digital_map = {"20": "low", "50": "normal", "80": "high"}
+
+    sensitivity = motionDet.get("sensitivity")
+    if sensitivity in sensitivity_map:
+        return sensitivity_map[sensitivity]
+
+    return digital_map.get(motionDet.get("digital_sensitivity"))
+
+
 async def getCamData(hass, controller, chInfo=None):
-    LOGGER.debug("getCamData")
+    LOGGER.warning("getCamData")
 
     chn_id = []
-    if chInfo is not None:
+    if chInfo:
         for lens in chInfo:
             chn_id.append(lens["chn_id"])
     data = await hass.async_add_executor_job(controller.getMost, [], chn_id)
@@ -875,30 +886,25 @@ async def getCamData(hass, controller, chInfo=None):
         camData["basic_info"] = data["getDeviceInfo"][0]["device_info"]["basic_info"]
 
     try:
-        motionDetectionData = data["getDetectionConfig"][0]["motion_detection"][
+        motion_detection_data = data["getDetectionConfig"][0]["motion_detection"][
             "motion_det"
         ]
-        motion_detection_enabled = motionDetectionData["enabled"]
-        motion_detection_digital_sensitivity = motionDetectionData[
-            "digital_sensitivity"
-        ]
-        if motionDetectionData["digital_sensitivity"] == "20" or (
-            "sensitivity" in motionDetectionData
-            and motionDetectionData["sensitivity"] == "low"
-        ):
-            motion_detection_sensitivity = "low"
-        elif motionDetectionData["digital_sensitivity"] == "50" or (
-            "sensitivity" in motionDetectionData
-            and motionDetectionData["sensitivity"] == "medium"
-        ):
-            motion_detection_sensitivity = "normal"
-        elif motionDetectionData["digital_sensitivity"] == "80" or (
-            "sensitivity" in motionDetectionData
-            and motionDetectionData["sensitivity"] == "high"
-        ):
-            motion_detection_sensitivity = "high"
-        else:
-            motion_detection_sensitivity = None
+        motionDetectionData = (
+            {"1": motion_detection_data} if chInfo is None else motion_detection_data
+        )
+
+        motion_detection_enabled = {
+            key: motion_det["enabled"]
+            for key, motion_det in motionDetectionData.items()
+        }
+        motion_detection_digital_sensitivity = {
+            key: motion_det["digital_sensitivity"]
+            for key, motion_det in motionDetectionData.items()
+        }
+        motion_detection_sensitivity = {
+            key: motionSensitivityFromData(motion_det)
+            for key, motion_det in motionDetectionData.items()
+        }
     except Exception:
         motion_detection_enabled = None
         motion_detection_sensitivity = None
@@ -2011,13 +2017,13 @@ async def scheduleAll(hass, device, entry, mediaSync):
                     LOGGER.info(device["name"] + ": " + str(err))
 
 
-async def check_and_create(entry, hass, cls, check_function, config_entry):
+async def check_functionality(entry, hass, cls, check_function):
     try:
         if isCacheSupported(check_function, entry["camData"]["raw"]):
             LOGGER.debug(
                 f"Found cached capability {check_function}, creating {cls.__name__}"
             )
-            return cls(entry, hass, config_entry)
+            return True
         else:
             if (
                 entry["controller"].isKLAP is False
@@ -2030,7 +2036,18 @@ async def check_and_create(entry, hass, cls, check_function, config_entry):
                 )
                 LOGGER.debug(result)
                 LOGGER.debug(f"Creating {cls.__name__}")
-                return cls(entry, hass, config_entry)
+                return True
     except Exception as err:
         LOGGER.info(f"Camera does not support {cls.__name__}: {err}")
-        return None
+        return False
+    return False
+
+
+async def check_and_create(entry, hass, cls, check_function, config_entry):
+    if await check_functionality(entry, hass, cls, check_function):
+        try:
+            return cls(entry, hass, config_entry)
+        except Exception as err:
+            LOGGER.info(f"Camera does not support {cls.__name__}: {err}")
+            return None
+    return None
