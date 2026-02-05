@@ -999,79 +999,88 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             ):
                 LOGGER.debug("Device is a parent.")
                 hass.data[DOMAIN][entry.entry_id]["isParent"] = True
-                for childDevice in camData["childDevices"]["child_device_list"]:
-                    LOGGER.debug("Setting up child controller.")
-                    tapoChildController = await hass.async_add_executor_job(
-                        registerController,
-                        host,
-                        controlPort,
-                        "admin",
-                        cloud_password,
-                        cloud_password,
-                        "",
-                        childDevice["device_id"],
-                    )
-                    LOGGER.debug("Child controller set up.")
-                    hass.data[DOMAIN][entry.entry_id]["allControllers"].append(
-                        tapoChildController
-                    )
-                    LOGGER.debug("Getting initial child device data.")
-
-                    try:
-                        chInfo = await hass.async_add_executor_job(
-                            tapoChildController.getAllChnInfo
+                if (
+                    camData["childDevices"]
+                    and "child_device_list" in camData["childDevices"]
+                ):
+                    for childDevice in camData["childDevices"]["child_device_list"]:
+                        LOGGER.debug("Setting up child controller.")
+                        tapoChildController = await hass.async_add_executor_job(
+                            registerController,
+                            host,
+                            controlPort,
+                            "admin",
+                            cloud_password,
+                            cloud_password,
+                            "",
+                            childDevice["device_id"],
                         )
-                        chInfo = chInfo["system"]["chn_info"]
-                    except Exception as err:
-                        LOGGER.debug(f"Failed to retrieve channels info: {err}")
-                        chInfo = None
+                        LOGGER.debug("Child controller set up.")
+                        hass.data[DOMAIN][entry.entry_id]["allControllers"].append(
+                            tapoChildController
+                        )
+                        LOGGER.debug("Getting initial child device data.")
 
-                    childCamData = await getCamData(hass, tapoChildController, chInfo)
-                    LOGGER.debug("Retrieved initial child device data.")
-                    hass.data[DOMAIN][entry.entry_id]["childDevices"].append(
-                        {
-                            "controller": tapoChildController,
-                            "coordinator": tapoCoordinator,
-                            "entry": entry,
-                            "chInfo": chInfo,
-                            "usingCloudPassword": cloud_password != "",
-                            "timezoneOffset": hass.data[DOMAIN][entry.entry_id][
-                                "timezoneOffset"
-                            ],
-                            "camData": childCamData,
-                            "lastTimeSync": 0,
-                            "lastMediaCleanup": 0,
-                            "lastUpdate": 0,
-                            "lastFirmwareCheck": 0,
-                            "latestFirmwareVersion": False,
-                            "motionSensorCreated": False,
-                            "isDownloadingStream": False,
-                            "downloadedStreams": {},  # keeps track of all videos downloaded
-                            "downloadProgress": False,
-                            "initialMediaScanDone": False,
-                            ENABLE_MEDIA_SYNC: None,
-                            "mediaSyncScheduled": False,
-                            "mediaSyncRanOnce": False,
-                            "mediaSyncAvailable": True,
-                            "initialMediaScanRunning": False,
-                            "runningMediaSync": False,
-                            "mediaScanResult": {},  # keeps track of all videos currently on camera
-                            "entities": [],
-                            "name": childCamData["basic_info"]["device_alias"],
-                            "childDevices": [],
-                            "isChild": True,
-                            "isRunningOnBattery": (
-                                True
-                                if (
-                                    "basic_info" in childCamData
-                                    and "power" in childCamData["basic_info"]
-                                    and childCamData["basic_info"]["power"] == "BATTERY"
-                                )
-                                else False
-                            ),
-                            "isParent": False,
-                        }
-                    )
+                        try:
+                            chInfo = await hass.async_add_executor_job(
+                                tapoChildController.getAllChnInfo
+                            )
+                            chInfo = chInfo["system"]["chn_info"]
+                        except Exception as err:
+                            LOGGER.debug(f"Failed to retrieve channels info: {err}")
+                            chInfo = None
+
+                        childCamData = await getCamData(
+                            hass, tapoChildController, chInfo
+                        )
+                        LOGGER.debug("Retrieved initial child device data.")
+                        hass.data[DOMAIN][entry.entry_id]["childDevices"].append(
+                            {
+                                "controller": tapoChildController,
+                                "coordinator": tapoCoordinator,
+                                "entry": entry,
+                                "chInfo": chInfo,
+                                "usingCloudPassword": cloud_password != "",
+                                "timezoneOffset": hass.data[DOMAIN][entry.entry_id][
+                                    "timezoneOffset"
+                                ],
+                                "camData": childCamData,
+                                "lastTimeSync": 0,
+                                "lastMediaCleanup": 0,
+                                "lastUpdate": 0,
+                                "lastFirmwareCheck": 0,
+                                "latestFirmwareVersion": False,
+                                "motionSensorCreated": False,
+                                "isDownloadingStream": False,
+                                "downloadedStreams": {},  # keeps track of all videos downloaded
+                                "downloadProgress": False,
+                                "initialMediaScanDone": False,
+                                ENABLE_MEDIA_SYNC: None,
+                                "mediaSyncScheduled": False,
+                                "mediaSyncRanOnce": False,
+                                "mediaSyncAvailable": True,
+                                "initialMediaScanRunning": False,
+                                "runningMediaSync": False,
+                                "mediaScanResult": {},  # keeps track of all videos currently on camera
+                                "entities": [],
+                                "name": childCamData["basic_info"]["device_alias"],
+                                "childDevices": [],
+                                "isChild": True,
+                                "isRunningOnBattery": (
+                                    True
+                                    if (
+                                        "basic_info" in childCamData
+                                        and "power" in childCamData["basic_info"]
+                                        and childCamData["basic_info"]["power"]
+                                        == "BATTERY"
+                                    )
+                                    else False
+                                ),
+                                "isParent": False,
+                            }
+                        )
+                else:
+                    LOGGER.warning("No child devices found.")
             LOGGER.debug("Setting up camera entities.")
             await hass.async_create_task(
                 hass.config_entries.async_forward_entry_setups(entry, ["camera"])
