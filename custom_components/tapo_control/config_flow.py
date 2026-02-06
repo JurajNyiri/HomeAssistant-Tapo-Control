@@ -72,7 +72,7 @@ from .const import (
 class FlowHandler(ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 24
+    VERSION = 25
 
     def __init__(self):
         self.tapoHasStream6 = False
@@ -323,7 +323,10 @@ class FlowHandler(ConfigFlow):
 
     async def async_step_dhcp(self, dhcp_discovery):
         """Handle dhcp discovery."""
-        if self._async_host_already_configured(dhcp_discovery.ip):
+        already_configured = self._async_host_already_configured(
+            dhcp_discovery.ip, 443
+        ) or self._async_host_already_configured(dhcp_discovery.ip, 80)
+        if already_configured:
             LOGGER.debug("[ADD DEVICE][%s] Already discovered.", dhcp_discovery.ip)
             return self.async_abort(reason="already_configured")
 

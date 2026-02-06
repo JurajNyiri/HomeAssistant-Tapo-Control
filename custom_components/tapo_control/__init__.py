@@ -432,6 +432,40 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
         hass.config_entries.async_update_entry(config_entry, data=new, version=24)
 
+    if config_entry.version == 24:
+        new = {**config_entry.data}
+        host = new.get(CONF_IP_ADDRESS)
+        reported_ip_address = new.get(REPORTED_IP_ADDRESS)
+        control_port = new.get(CONTROL_PORT)
+        if control_port is not None and (reported_ip_address or host):
+            desired_unique_id = (
+                DOMAIN
+                + (reported_ip_address if reported_ip_address else host)
+                + str(control_port)
+            )
+        else:
+            desired_unique_id = config_entry.unique_id
+
+        if desired_unique_id != config_entry.unique_id:
+            LOGGER.debug(
+                f"Updating {config_entry.unique_id} to {desired_unique_id} as part of migration."
+            )
+            hass.config_entries.async_update_entry(
+                config_entry,
+                data=new,
+                unique_id=desired_unique_id,
+                version=25,
+            )
+        else:
+            LOGGER.debug(
+                f"Skipping {config_entry.unique_id} for unique_id update as part of migration."
+            )
+            hass.config_entries.async_update_entry(
+                config_entry,
+                data=new,
+                version=25,
+            )
+
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
     return True
