@@ -10,7 +10,7 @@ from homeassistant.components.light import ATTR_BRIGHTNESS
 from homeassistant.util.color import value_to_brightness
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoLightEntity
-from .utils import check_and_create
+from .utils import check_and_create, check_functionality
 
 
 async def async_setup_entry(
@@ -24,12 +24,33 @@ async def async_setup_entry(
     async def setupEntities(entry):
         lights = []
 
-        tapoFloodlight = await check_and_create(
-            entry, hass, TapoFloodlight, "getForceWhitelampState", config_entry
+        tapoFloodlightAvailable = await check_functionality(
+            entry, hass, TapoFloodlight, "getForceWhitelampState"
         )
-        if tapoFloodlight:
-            LOGGER.debug("Adding tapoFloodlight...")
-            lights.append(tapoFloodlight)
+        if tapoFloodlightAvailable:
+            if entry["chInfo"]:
+                for lens in entry["chInfo"]:
+                    chn_alias = lens.get("chn_alias", "")
+                    chn_id = lens.get("chn_id")
+                    force_state = entry["camData"].get("force_white_lamp_state")
+                    if isinstance(force_state, dict) and (
+                        str(chn_id) not in force_state
+                        or force_state.get(str(chn_id)) is None
+                    ):
+                        continue
+                    tapoFloodlight = TapoFloodlight(
+                        entry, hass, config_entry, chn_alias, chn_id
+                    )
+                    if tapoFloodlight:
+                        LOGGER.debug(
+                            f"Adding tapoFloodlight for {chn_alias}, id: {chn_id}..."
+                        )
+                        lights.append(tapoFloodlight)
+            else:
+                tapoFloodlight = TapoFloodlight(entry, hass, config_entry)
+                if tapoFloodlight:
+                    LOGGER.debug("Adding tapoFloodlight...")
+                    lights.append(tapoFloodlight)
         else:
             if (
                 entry["camData"]["flood_light_capability"] is not None
@@ -246,16 +267,25 @@ class TapoFloodlightModern(TapoLightEntity):
 
 
 class TapoFloodlight(TapoLightEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+    def __init__(
+        self,
+        entry: dict,
+        hass: HomeAssistant,
+        config_entry,
+        specific_name=None,
+        chn_id=None,
+    ):
         LOGGER.debug("TapoFloodlight - init - start")
         self._attr_is_on = False
         self._attr_color_mode = ColorMode.ONOFF
         self._attr_supported_color_modes = set([ColorMode.ONOFF])
         self._hass = hass
+        self.chn_id = chn_id
+        self.read_chn_id = str(chn_id) if chn_id else "1"
 
         TapoLightEntity.__init__(
             self,
-            "Floodlight",
+            f"Floodlight{" - " + specific_name if specific_name else ""}",
             entry,
             hass,
             config_entry,
@@ -271,6 +301,7 @@ class TapoFloodlight(TapoLightEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setForceWhitelampState,
             True,
+            [self.chn_id] if self.chn_id else None,
         )
         LOGGER.debug(result)
         if "error_code" not in result or result["error_code"] == 0:
@@ -284,6 +315,7 @@ class TapoFloodlight(TapoLightEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setForceWhitelampState,
             False,
+            [self.chn_id] if self.chn_id else None,
         )
         LOGGER.debug(result)
         if "error_code" not in result or result["error_code"] == 0:
@@ -297,5 +329,8 @@ class TapoFloodlight(TapoLightEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
-            self._attr_is_on = camData["force_white_lamp_state"] == "on"
+            force_state = camData["force_white_lamp_state"]
+            if isinstance(force_state, dict):
+                force_state = force_state.get(self.read_chn_id)
+            self._attr_is_on = force_state == "on"
             self._attr_state = "on" if self._attr_is_on else "off"

@@ -9,7 +9,7 @@ from homeassistant.const import STATE_UNAVAILABLE, UnitOfTime
 
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoEntity, TapoNumberEntity
-from .utils import check_and_create
+from .utils import check_and_create, check_functionality
 
 
 async def async_setup_entry(
@@ -30,16 +30,27 @@ async def async_setup_entry(
             LOGGER.debug("Adding TapoMovementAngle...")
             numbers.append(tapoMovementAngle)
 
-        tapoMotionDetectionDigitalSensitivity = await check_and_create(
-            entry,
-            hass,
-            TapoMotionDetectionDigitalSensitivity,
-            "getMotionDetection",
-            config_entry,
+        tapoMotionDetectionDigitalSensitivityAvailable = await check_functionality(
+            entry, hass, TapoMotionDetectionDigitalSensitivity, "getMotionDetection"
         )
-        if tapoMotionDetectionDigitalSensitivity:
-            LOGGER.debug("Adding tapoMotionDetectionDigitalSensitivity...")
-            numbers.append(tapoMotionDetectionDigitalSensitivity)
+        if tapoMotionDetectionDigitalSensitivityAvailable:
+            if entry["chInfo"]:
+                for lens in entry["chInfo"]:
+                    chn_alias = lens.get("chn_alias", "")
+                    chn_id = lens.get("chn_id")
+                    LOGGER.debug(
+                        f"Adding tapoMotionDetectionDigitalSensitivity for {chn_alias}, id: {chn_id}..."
+                    )
+                    numbers.append(
+                        TapoMotionDetectionDigitalSensitivity(
+                            entry, hass, config_entry, chn_alias, chn_id
+                        )
+                    )
+            else:
+                LOGGER.debug("Adding tapoMotionDetectionDigitalSensitivity...")
+                numbers.append(
+                    TapoMotionDetectionDigitalSensitivity(entry, hass, config_entry)
+                )
 
         if (
             "microphoneVolume" in entry["camData"]
@@ -100,10 +111,25 @@ async def async_setup_entry(
             entry["camData"]["whitelampConfigIntensity"] is not None
             and entry["camData"]["smartwtl_digital_level"] is not None
         ):
-            tapoSpotlightIntensity = TapoSpotlightIntensity(entry, hass, config_entry)
-            if tapoSpotlightIntensity:
-                LOGGER.debug("Adding tapoSpotlightIntensity...")
-                numbers.append(tapoSpotlightIntensity)
+            if entry["chInfo"]:
+                for lens in entry["chInfo"]:
+                    chn_alias = lens.get("chn_alias", "")
+                    chn_id = lens.get("chn_id")
+                    tapoSpotlightIntensity = TapoSpotlightIntensity(
+                        entry, hass, config_entry, chn_alias, chn_id
+                    )
+                    if tapoSpotlightIntensity:
+                        LOGGER.debug(
+                            f"Adding tapoSpotlightIntensity for {chn_alias}, id: {chn_id}..."
+                        )
+                        numbers.append(tapoSpotlightIntensity)
+            else:
+                tapoSpotlightIntensity = TapoSpotlightIntensity(
+                    entry, hass, config_entry
+                )
+                if tapoSpotlightIntensity:
+                    LOGGER.debug("Adding tapoSpotlightIntensity...")
+                    numbers.append(tapoSpotlightIntensity)
 
         if (
             entry["camData"]["flood_light_capability"] is not None
@@ -262,7 +288,14 @@ class TapoMovementAngle(RestoreNumber, TapoEntity):
 
 
 class TapoMotionDetectionDigitalSensitivity(TapoNumberEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+    def __init__(
+        self,
+        entry: dict,
+        hass: HomeAssistant,
+        config_entry,
+        specific_name=None,
+        chn_id=None,
+    ):
         LOGGER.debug("TapoMotionDetectionDigitalSensitivity - init - start")
         self._attr_min_value = 1
         self._attr_max_value = 100
@@ -270,10 +303,12 @@ class TapoMotionDetectionDigitalSensitivity(TapoNumberEntity):
         self._attr_native_max_value = 100
         self._attr_step = 1
         self._hass = hass
+        self.chn_id = chn_id
+        self.read_chn_id = str(chn_id) if chn_id else "1"
 
         TapoNumberEntity.__init__(
             self,
-            "Motion Detection - Digital Sensitivity",
+            f"Motion Detection - Digital Sensitivity{" - " + specific_name if specific_name else ""}",
             entry,
             hass,
             config_entry,
@@ -289,7 +324,10 @@ class TapoMotionDetectionDigitalSensitivity(TapoNumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         result = await self._hass.async_add_executor_job(
-            self._controller.setMotionDetection, None, int(value)
+            self._controller.setMotionDetection,
+            None,
+            int(value),
+            [self.chn_id] if self.chn_id else None,
         )
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = value
@@ -300,7 +338,10 @@ class TapoMotionDetectionDigitalSensitivity(TapoNumberEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
-            self._attr_state = camData["motion_detection_digital_sensitivity"]
+            sensitivity = camData["motion_detection_digital_sensitivity"]
+            if isinstance(sensitivity, dict):
+                sensitivity = sensitivity.get(self.read_chn_id)
+            self._attr_state = sensitivity
 
 
 class TapoChimeDuration(TapoNumberEntity):
@@ -646,13 +687,36 @@ class TapoFloodlightBrightness(TapoNumberEntity):
 
 
 class TapoSpotlightIntensity(TapoNumberEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+    def __init__(
+        self,
+        entry: dict,
+        hass: HomeAssistant,
+        config_entry,
+        specific_name=None,
+        chn_id=None,
+    ):
         LOGGER.debug("TapoSpotlightIntensity - init - start")
         self._attr_min_value = 1
         self._attr_native_min_value = 1
+        self.chn_id = chn_id
+        self.read_chn_id = str(chn_id) if chn_id else "1"
 
-        if "ldcStyle" in entry["camData"] and entry["camData"]["ldcStyle"]:
-            if entry["camData"]["ldcStyle"] == "standard":
+        ldc_style = entry["camData"].get("ldcStyle")
+        if isinstance(ldc_style, dict):
+            ldc_style = entry["camData"].get("ldcStyle").get(self.read_chn_id)
+            if not ldc_style and chn_id > 1:
+                ldc_style = entry["camData"].get("ldcStyle").get("1")
+
+        smartwtl_level = entry["camData"].get("smartwtl_digital_level")
+        if isinstance(smartwtl_level, dict):
+            smartwtl_level = (
+                entry["camData"].get("smartwtl_digital_level").get(self.read_chn_id)
+            )
+            if not smartwtl_level and chn_id > 1:
+                smartwtl_level = entry["camData"].get("smartwtl_digital_level").get("1")
+
+        if ldc_style:
+            if ldc_style == "standard":
                 LOGGER.debug(
                     "Determining maximum range for TapoSpotlightIntensity: standard"
                 )
@@ -661,12 +725,14 @@ class TapoSpotlightIntensity(TapoNumberEntity):
             else:
                 LOGGER.debug(
                     "Determining maximum range for TapoSpotlightIntensity: "
-                    + entry["camData"]["ldcStyle"]
+                    + str(ldc_style)
                 )
-                self._attr_max_value = int(entry["camData"]["smartwtl_digital_level"])
-                self._attr_native_max_value = int(
-                    entry["camData"]["smartwtl_digital_level"]
-                )
+                if smartwtl_level is not None:
+                    self._attr_max_value = int(smartwtl_level)
+                    self._attr_native_max_value = int(smartwtl_level)
+                else:
+                    self._attr_max_value = 100
+                    self._attr_native_max_value = 100
         else:
             LOGGER.debug(
                 "Determining maximum range for TapoSpotlightIntensity: Default to 100 because of missing style."
@@ -675,12 +741,15 @@ class TapoSpotlightIntensity(TapoNumberEntity):
             self._attr_native_max_value = 100
         self._attr_step = 1
         self._hass = hass
-        self._attr_native_value = entry["camData"]["whitelampConfigIntensity"]
-        self._attr_state = entry["camData"]["whitelampConfigIntensity"]
+        intensity = entry["camData"]["whitelampConfigIntensity"]
+        if isinstance(intensity, dict):
+            intensity = intensity.get(self.read_chn_id)
+        self._attr_native_value = intensity
+        self._attr_state = intensity
 
         TapoNumberEntity.__init__(
             self,
-            "Spotlight Intensity",
+            f"Spotlight Intensity{" - " + specific_name if specific_name else ""}",
             entry,
             hass,
             config_entry,
@@ -697,7 +766,10 @@ class TapoSpotlightIntensity(TapoNumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         result = await self._hass.async_add_executor_job(
-            self._controller.setWhitelampConfig, False, int(value)
+            self._controller.setWhitelampConfig,
+            False,
+            int(value),
+            [self.chn_id] if self.chn_id else None,
         )
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = value
@@ -708,8 +780,12 @@ class TapoSpotlightIntensity(TapoNumberEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
-            self._attr_native_value = int(camData["whitelampConfigIntensity"])
-            self._attr_state = camData["whitelampConfigIntensity"]
+            intensity = camData["whitelampConfigIntensity"]
+            if isinstance(intensity, dict):
+                intensity = intensity.get(self.read_chn_id)
+            if intensity is not None:
+                self._attr_native_value = int(intensity)
+            self._attr_state = intensity
 
 
 class TapoSirenDuration(TapoNumberEntity):

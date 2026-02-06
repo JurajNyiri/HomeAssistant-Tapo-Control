@@ -92,6 +92,10 @@ def pytapoLog(msg):
     LOGGER.debug(f"[pytapo] {msg}")
 
 
+def pytapoWarnLog(msg):
+    LOGGER.warning(f"[pytapo] {msg}")
+
+
 def isKLAP(host, port, timeout=2):
     try:
         url = f"http://{host}:{port}"
@@ -121,6 +125,7 @@ def registerController(
         device_id,
         reuseSession=False,
         printDebugInformation=pytapoLog,
+        printWarnInformation=pytapoWarnLog,
         retryStok=False,
         controlPort=control_port,
         isKLAP=is_klap,
@@ -701,13 +706,9 @@ async def isRtspStreamWorking(
 
     safe_streaming_url = streaming_url
     if username:
-        safe_streaming_url = safe_streaming_url.replace(
-            username, "HIDDEN_USERNAME"
-        )
+        safe_streaming_url = safe_streaming_url.replace(username, "HIDDEN_USERNAME")
     if password:
-        safe_streaming_url = safe_streaming_url.replace(
-            password, "HIDDEN_PASSWORD"
-        )
+        safe_streaming_url = safe_streaming_url.replace(password, "HIDDEN_PASSWORD")
 
     LOGGER.debug(
         "[isRtspStreamWorking][%s] Getting image from %s.",
@@ -853,9 +854,95 @@ def getIP(data):
     return False
 
 
-async def getCamData(hass, controller):
+def motionSensitivityFromData(motionDet):
+    sensitivity_map = {"low": "low", "medium": "normal", "high": "high"}
+    digital_map = {"20": "low", "50": "normal", "80": "high"}
+
+    sensitivity = motionDet.get("sensitivity")
+    if sensitivity in sensitivity_map:
+        return sensitivity_map[sensitivity]
+
+    return digital_map.get(motionDet.get("digital_sensitivity"))
+
+
+def detectionSensitivityFromPercentage(value):
+    sensitivity = tryParseInt(value)
+    if sensitivity is None:
+        return None
+    if sensitivity <= 33:
+        return "low"
+    if sensitivity <= 66:
+        return "normal"
+    return "high"
+
+
+def extractFieldByChannel(container, field):
+    if not isinstance(container, dict):
+        return None
+    if field in container:
+        return container[field]
+    per_channel = {}
+    for chn_key, chn_value in container.items():
+        if isinstance(chn_value, dict) and field in chn_value:
+            per_channel[str(chn_key)] = chn_value[field]
+    if per_channel:
+        return per_channel
+    return None
+
+
+def getLdcImageSection(ldc_data, section):
+    if not ldc_data:
+        return None
+    entries = ldc_data if isinstance(ldc_data, list) else [ldc_data]
+    result = None
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        image = entry.get("image")
+        if not isinstance(image, dict):
+            continue
+        section_data = image.get(section)
+        if section_data is None:
+            continue
+        if result is None:
+            result = section_data
+        elif isinstance(result, dict) and isinstance(section_data, dict):
+            merged = dict(result)
+            merged.update(section_data)
+            result = merged
+        else:
+            result = section_data
+    return result
+
+
+def ldcHasField(rawData, section, field):
+    ldc_data = rawData.get("getLdc", [])
+    entries = ldc_data if isinstance(ldc_data, list) else [ldc_data]
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        image = entry.get("image")
+        if not isinstance(image, dict):
+            continue
+        section_data = image.get(section)
+        if not isinstance(section_data, dict):
+            continue
+        if field in section_data:
+            return True
+        for value in section_data.values():
+            if isinstance(value, dict) and field in value:
+                return True
+    return False
+
+
+async def getCamData(hass, controller, chInfo=None):
     LOGGER.debug("getCamData")
-    data = await hass.async_add_executor_job(controller.getMost)
+
+    chn_id = []
+    if chInfo:
+        for lens in chInfo:
+            chn_id.append(lens["chn_id"])
+    data = await hass.async_add_executor_job(controller.getMost, [], chn_id)
     LOGGER.debug("Raw update data:")
     LOGGER.debug(data)
     camData = {}
@@ -869,30 +956,25 @@ async def getCamData(hass, controller):
         camData["basic_info"] = data["getDeviceInfo"][0]["device_info"]["basic_info"]
 
     try:
-        motionDetectionData = data["getDetectionConfig"][0]["motion_detection"][
+        motion_detection_data = data["getDetectionConfig"][0]["motion_detection"][
             "motion_det"
         ]
-        motion_detection_enabled = motionDetectionData["enabled"]
-        motion_detection_digital_sensitivity = motionDetectionData[
-            "digital_sensitivity"
-        ]
-        if motionDetectionData["digital_sensitivity"] == "20" or (
-            "sensitivity" in motionDetectionData
-            and motionDetectionData["sensitivity"] == "low"
-        ):
-            motion_detection_sensitivity = "low"
-        elif motionDetectionData["digital_sensitivity"] == "50" or (
-            "sensitivity" in motionDetectionData
-            and motionDetectionData["sensitivity"] == "medium"
-        ):
-            motion_detection_sensitivity = "normal"
-        elif motionDetectionData["digital_sensitivity"] == "80" or (
-            "sensitivity" in motionDetectionData
-            and motionDetectionData["sensitivity"] == "high"
-        ):
-            motion_detection_sensitivity = "high"
-        else:
-            motion_detection_sensitivity = None
+        motionDetectionData = (
+            {"1": motion_detection_data} if chInfo is None else motion_detection_data
+        )
+
+        motion_detection_enabled = {
+            str(key): motion_det["enabled"]
+            for key, motion_det in motionDetectionData.items()
+        }
+        motion_detection_digital_sensitivity = {
+            str(key): motion_det["digital_sensitivity"]
+            for key, motion_det in motionDetectionData.items()
+        }
+        motion_detection_sensitivity = {
+            str(key): motionSensitivityFromData(motion_det)
+            for key, motion_det in motionDetectionData.items()
+        }
     except Exception:
         motion_detection_enabled = None
         motion_detection_sensitivity = None
@@ -943,17 +1025,22 @@ async def getCamData(hass, controller):
         personDetectionData = data["getPersonDetectionConfig"][0]["people_detection"][
             "detection"
         ]
-        person_detection_enabled = personDetectionData["enabled"]
-        person_detection_sensitivity = None
-
-        sensitivity = tryParseInt(personDetectionData["sensitivity"])
-        if sensitivity is not None:
-            if sensitivity <= 33:
-                person_detection_sensitivity = "low"
-            elif sensitivity <= 66:
-                person_detection_sensitivity = "normal"
-            else:
-                person_detection_sensitivity = "high"
+        if chInfo is None:
+            personDetectionData = {"1": personDetectionData}
+        person_detection_enabled = {}
+        person_detection_sensitivity = {}
+        for key, detectionData in personDetectionData.items():
+            if not isinstance(detectionData, dict):
+                continue
+            key = str(key)
+            person_detection_enabled[key] = detectionData.get("enabled")
+            person_detection_sensitivity[key] = detectionSensitivityFromPercentage(
+                detectionData.get("sensitivity")
+            )
+        if not person_detection_enabled:
+            person_detection_enabled = None
+        if not person_detection_sensitivity:
+            person_detection_sensitivity = None
     except Exception:
         person_detection_enabled = None
         person_detection_sensitivity = None
@@ -964,17 +1051,22 @@ async def getCamData(hass, controller):
         vehicleDetectionData = data["getVehicleDetectionConfig"][0][
             "vehicle_detection"
         ]["detection"]
-        vehicle_detection_enabled = vehicleDetectionData["enabled"]
-        vehicle_detection_sensitivity = None
-
-        sensitivity = tryParseInt(vehicleDetectionData["sensitivity"])
-        if sensitivity is not None:
-            if sensitivity <= 33:
-                vehicle_detection_sensitivity = "low"
-            elif sensitivity <= 66:
-                vehicle_detection_sensitivity = "normal"
-            else:
-                vehicle_detection_sensitivity = "high"
+        if chInfo is None:
+            vehicleDetectionData = {"1": vehicleDetectionData}
+        vehicle_detection_enabled = {}
+        vehicle_detection_sensitivity = {}
+        for key, detectionData in vehicleDetectionData.items():
+            if not isinstance(detectionData, dict):
+                continue
+            key = str(key)
+            vehicle_detection_enabled[key] = detectionData.get("enabled")
+            vehicle_detection_sensitivity[key] = detectionSensitivityFromPercentage(
+                detectionData.get("sensitivity")
+            )
+        if not vehicle_detection_enabled:
+            vehicle_detection_enabled = None
+        if not vehicle_detection_sensitivity:
+            vehicle_detection_sensitivity = None
     except Exception:
         vehicle_detection_enabled = None
         vehicle_detection_sensitivity = None
@@ -1004,17 +1096,22 @@ async def getCamData(hass, controller):
         petDetectionData = data["getPetDetectionConfig"][0]["pet_detection"][
             "detection"
         ]
-        pet_detection_enabled = petDetectionData["enabled"]
-        pet_detection_sensitivity = None
-
-        sensitivity = tryParseInt(petDetectionData["sensitivity"])
-        if sensitivity is not None:
-            if sensitivity <= 33:
-                pet_detection_sensitivity = "low"
-            elif sensitivity <= 66:
-                pet_detection_sensitivity = "normal"
-            else:
-                pet_detection_sensitivity = "high"
+        if chInfo is None:
+            petDetectionData = {"1": petDetectionData}
+        pet_detection_enabled = {}
+        pet_detection_sensitivity = {}
+        for key, detectionData in petDetectionData.items():
+            if not isinstance(detectionData, dict):
+                continue
+            key = str(key)
+            pet_detection_enabled[key] = detectionData.get("enabled")
+            pet_detection_sensitivity[key] = detectionSensitivityFromPercentage(
+                detectionData.get("sensitivity")
+            )
+        if not pet_detection_enabled:
+            pet_detection_enabled = None
+        if not pet_detection_sensitivity:
+            pet_detection_sensitivity = None
     except Exception:
         pet_detection_enabled = None
         pet_detection_sensitivity = None
@@ -1088,16 +1185,26 @@ async def getCamData(hass, controller):
         tamperDetectionData = data["getTamperDetectionConfig"][0]["tamper_detection"][
             "tamper_det"
         ]
-        tamper_detection_enabled = tamperDetectionData["enabled"]
-        tamper_detection_sensitivity = None
-
-        if sensitivity is not None:
-            if sensitivity == "low":
-                tamper_detection_sensitivity = "low"
+        if chInfo is None:
+            tamperDetectionData = {"1": tamperDetectionData}
+        tamper_detection_enabled = {}
+        tamper_detection_sensitivity = {}
+        for key, detectionData in tamperDetectionData.items():
+            if not isinstance(detectionData, dict):
+                continue
+            key = str(key)
+            tamper_detection_enabled[key] = detectionData.get("enabled")
+            sensitivity = detectionData.get("sensitivity")
+            if sensitivity is None:
+                tamper_detection_sensitivity[key] = None
             elif sensitivity == "medium":
-                tamper_detection_sensitivity = "normal"
+                tamper_detection_sensitivity[key] = "normal"
             else:
-                tamper_detection_sensitivity = "high"
+                tamper_detection_sensitivity[key] = sensitivity
+        if not tamper_detection_enabled:
+            tamper_detection_enabled = None
+        if not tamper_detection_sensitivity:
+            tamper_detection_sensitivity = None
     except Exception:
         tamper_detection_enabled = None
         tamper_detection_sensitivity = None
@@ -1138,36 +1245,40 @@ async def getCamData(hass, controller):
         rich_notifications = None
     camData["rich_notifications"] = rich_notifications
 
+    ldc_switch = getLdcImageSection(data.get("getLdc"), "switch")
+    ldc_common = getLdcImageSection(data.get("getLdc"), "common")
+
     try:
-        lens_distrotion_correction = data["getLdc"][0]["image"]["switch"]["ldc"]
+        lens_distrotion_correction = extractFieldByChannel(ldc_switch, "ldc")
     except Exception:
         lens_distrotion_correction = None
     camData["lens_distrotion_correction"] = lens_distrotion_correction
 
     try:
-        ldcStyle = data["getLdc"][0]["image"]["common"]["style"]
+        ldcStyle = extractFieldByChannel(ldc_common, "style")
     except Exception:
         ldcStyle = None
     camData["ldcStyle"] = ldcStyle
 
     try:
-        light_frequency_mode = data["getLdc"][0]["image"]["common"]["light_freq_mode"]
+        light_frequency_mode = extractFieldByChannel(ldc_common, "light_freq_mode")
     except Exception:
         light_frequency_mode = None
 
     if light_frequency_mode is None:
         try:
-            light_frequency_mode = data["getLightFrequencyInfo"][0]["image"]["common"][
-                "light_freq_mode"
-            ]
+            light_frequency_mode = extractFieldByChannel(
+                data["getLightFrequencyInfo"][0]["image"]["common"], "light_freq_mode"
+            )
         except Exception:
             light_frequency_mode = None
     camData["light_frequency_mode"] = light_frequency_mode
 
     try:
-        night_vision_mode = data["getNightVisionModeConfig"][0]["image"]["switch"][
-            "night_vision_mode"
-        ]
+        night_vision_mode = extractFieldByChannel(
+            data["getNightVisionModeConfig"][0]["image"]["switch"],
+            "night_vision_mode",
+        )
     except Exception:
         night_vision_mode = None
     camData["night_vision_mode"] = night_vision_mode
@@ -1207,30 +1318,30 @@ async def getCamData(hass, controller):
     camData["night_vision_capability"] = night_vision_capability
 
     try:
-        night_vision_mode_switching = data["getLdc"][0]["image"]["common"]["inf_type"]
+        night_vision_mode_switching = extractFieldByChannel(ldc_common, "inf_type")
     except Exception:
         night_vision_mode_switching = None
     camData["night_vision_mode_switching"] = night_vision_mode_switching
 
     if night_vision_mode_switching is None:
         try:
-            night_vision_mode_switching = data["getLightFrequencyInfo"][0]["image"][
-                "common"
-            ]["inf_type"]
+            night_vision_mode_switching = extractFieldByChannel(
+                data["getLightFrequencyInfo"][0]["image"]["common"], "inf_type"
+            )
         except Exception:
             night_vision_mode_switching = None
         camData["night_vision_mode_switching"] = night_vision_mode_switching
 
     try:
-        force_white_lamp_state = data["getLdc"][0]["image"]["switch"]["force_wtl_state"]
+        force_white_lamp_state = extractFieldByChannel(ldc_switch, "force_wtl_state")
     except Exception:
         force_white_lamp_state = None
     camData["force_white_lamp_state"] = force_white_lamp_state
 
     try:
-        smartwtl_digital_level = data["getLdc"][0]["image"]["common"][
-            "smartwtl_digital_level"
-        ]
+        smartwtl_digital_level = extractFieldByChannel(
+            ldc_common, "smartwtl_digital_level"
+        )
     except Exception:
         smartwtl_digital_level = None
     camData["smartwtl_digital_level"] = smartwtl_digital_level
@@ -1256,22 +1367,35 @@ async def getCamData(hass, controller):
     camData["flood_light_capability"] = flood_light_capability
 
     try:
-        flip = (
-            "on"
-            if data["getLdc"][0]["image"]["switch"]["flip_type"] == "center"
-            else "off"
-        )
+        flip_type = extractFieldByChannel(ldc_switch, "flip_type")
+        if isinstance(flip_type, dict):
+            flip = {
+                key: ("on" if value == "center" else "off")
+                for key, value in flip_type.items()
+            }
+        elif flip_type is None:
+            flip = None
+        else:
+            flip = "on" if flip_type == "center" else "off"
     except Exception:
         flip = None
 
     if flip is None:
         try:
-            flip = (
-                "on"
-                if data["getRotationStatus"][0]["image"]["switch"]["flip_type"]
-                == "center"
-                else "off"
+            rotation_image = data["getRotationStatus"][0].get("image", {})
+            rotation_switch = rotation_image.get("switch_chn") or rotation_image.get(
+                "switch"
             )
+            rotation_flip = extractFieldByChannel(rotation_switch, "flip_type")
+            if isinstance(rotation_flip, dict):
+                flip = {
+                    key: ("on" if value == "center" else "off")
+                    for key, value in rotation_flip.items()
+                }
+            elif rotation_flip is None:
+                flip = None
+            else:
+                flip = "on" if rotation_flip == "center" else "off"
         except Exception:
             flip = None
     camData["flip"] = flip
@@ -1483,17 +1607,17 @@ async def getCamData(hass, controller):
     camData["childDevices"] = childDevices
 
     try:
-        whitelampConfigForceTime = data["getWhitelampConfig"][0]["image"]["switch"][
-            "wtl_force_time"
-        ]
+        whitelampConfigForceTime = extractFieldByChannel(
+            data["getWhitelampConfig"][0]["image"]["switch"], "wtl_force_time"
+        )
     except Exception:
         whitelampConfigForceTime = None
     camData["whitelampConfigForceTime"] = whitelampConfigForceTime
 
     try:
-        whitelampConfigIntensity = data["getWhitelampConfig"][0]["image"]["switch"][
-            "wtl_intensity_level"
-        ]
+        whitelampConfigIntensity = extractFieldByChannel(
+            data["getWhitelampConfig"][0]["image"]["switch"], "wtl_intensity_level"
+        )
     except Exception:
         whitelampConfigIntensity = None
     camData["whitelampConfigIntensity"] = whitelampConfigIntensity
@@ -1587,6 +1711,18 @@ async def getCamData(hass, controller):
     except Exception:
         videoCapability = None
     camData["videoCapability"] = videoCapability
+
+    try:
+        allChnInfo = data["getAllChnInfo"][0]
+    except Exception:
+        allChnInfo = None
+    camData["allChnInfo"] = allChnInfo
+
+    try:
+        dualCamCapability = data["getDualCamCapability"][0]
+    except Exception:
+        dualCamCapability = None
+    camData["dualCamCapability"] = dualCamCapability
 
     try:
         videoQualities = data["getVideoQualities"][0]
@@ -1914,35 +2050,41 @@ def isCacheSupported(check_function, rawData):
         if function in rawData:
             if rawData[function][0]:
                 if check_function == "getForceWhitelampState":
-                    return (
-                        "image" in rawData["getLdc"][0]
-                        and "switch" in rawData["getLdc"][0]["image"]
-                        and "force_wtl_state" in rawData["getLdc"][0]["image"]["switch"]
-                    )
+                    return ldcHasField(rawData, "switch", "force_wtl_state")
                 elif check_function == "getDayNightMode":
-                    return (
+                    if (
                         "image" in rawData["getLightFrequencyInfo"][0]
                         and "common" in rawData["getLightFrequencyInfo"][0]["image"]
-                        and "inf_type"
-                        in rawData["getLightFrequencyInfo"][0]["image"]["common"]
-                    )
+                    ):
+                        common = rawData["getLightFrequencyInfo"][0]["image"]["common"]
+                        if isinstance(common, dict) and "inf_type" in common:
+                            return True
+                        if isinstance(common, dict):
+                            for entry in common.values():
+                                if isinstance(entry, dict) and "inf_type" in entry:
+                                    return True
+                    return False
                 elif check_function == "getImageFlipVertical":
-                    return (
-                        "image" in rawData["getLdc"][0]
-                        and "switch" in rawData["getLdc"][0]["image"]
-                        and "flip_type" in rawData["getLdc"][0]["image"]["switch"]
-                    ) or (
-                        "image" in rawData["getRotationStatus"][0]
-                        and "switch" in rawData["getRotationStatus"][0]["image"]
-                        and "flip_type"
-                        in rawData["getRotationStatus"][0]["image"]["switch"]
-                    )
+                    if ldcHasField(rawData, "switch", "flip_type"):
+                        return True
+                    try:
+                        rotation_image = rawData["getRotationStatus"][0].get(
+                            "image", {}
+                        )
+                        rotation_switch = rotation_image.get(
+                            "switch_chn"
+                        ) or rotation_image.get("switch")
+                        if isinstance(rotation_switch, dict):
+                            if "flip_type" in rotation_switch:
+                                return True
+                            for entry in rotation_switch.values():
+                                if isinstance(entry, dict) and "flip_type" in entry:
+                                    return True
+                    except Exception:
+                        pass
+                    return False
                 elif check_function == "getLensDistortionCorrection":
-                    return (
-                        "image" in rawData["getLdc"][0]
-                        and "switch" in rawData["getLdc"][0]["image"]
-                        and "ldc" in rawData["getLdc"][0]["image"]["switch"]
-                    )
+                    return ldcHasField(rawData, "switch", "ldc")
                 return True
             else:
                 raise Exception(
@@ -1993,13 +2135,13 @@ async def scheduleAll(hass, device, entry, mediaSync):
                     LOGGER.info(device["name"] + ": " + str(err))
 
 
-async def check_and_create(entry, hass, cls, check_function, config_entry):
+async def check_functionality(entry, hass, cls, check_function):
     try:
         if isCacheSupported(check_function, entry["camData"]["raw"]):
             LOGGER.debug(
                 f"Found cached capability {check_function}, creating {cls.__name__}"
             )
-            return cls(entry, hass, config_entry)
+            return True
         else:
             if (
                 entry["controller"].isKLAP is False
@@ -2012,7 +2154,18 @@ async def check_and_create(entry, hass, cls, check_function, config_entry):
                 )
                 LOGGER.debug(result)
                 LOGGER.debug(f"Creating {cls.__name__}")
-                return cls(entry, hass, config_entry)
+                return True
     except Exception as err:
         LOGGER.info(f"Camera does not support {cls.__name__}: {err}")
-        return None
+        return False
+    return False
+
+
+async def check_and_create(entry, hass, cls, check_function, config_entry):
+    if await check_functionality(entry, hass, cls, check_function):
+        try:
+            return cls(entry, hass, config_entry)
+        except Exception as err:
+            LOGGER.info(f"Camera does not support {cls.__name__}: {err}")
+            return None
+    return None

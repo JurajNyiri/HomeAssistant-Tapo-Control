@@ -25,6 +25,7 @@ from .utils import (
     isKLAP,
 )
 from .const import (
+    CLOUD_USERNAME,
     CONF_SKIP_RTSP,
     DOMAIN,
     CONTROL_PORT,
@@ -180,7 +181,7 @@ class FlowHandler(ConfigFlow):
                                 "[REAUTH][%s] Temporary suspension.",
                                 tapoHost,
                             )
-                            raise Exception("temporary_suspension")
+                            raise e from e
                         else:
                             LOGGER.error(e)
                             raise Exception(e)
@@ -356,12 +357,18 @@ class FlowHandler(ConfigFlow):
             return await self.async_step_auth()
 
     @callback
-    def _async_host_already_configured(self, host):
+    def _async_host_already_configured(self, host, port):
         """See if we already have an entry matching the host."""
         for entry in self._async_current_entries():
-            if entry.data.get(CONF_IP_ADDRESS) == host:
+            if (
+                entry.data.get(CONF_IP_ADDRESS) == host
+                and entry.data.get(CONTROL_PORT) == port
+            ):
                 return True
-            elif entry.data.get(REPORTED_IP_ADDRESS) == host:
+            elif (
+                entry.data.get(REPORTED_IP_ADDRESS) == host
+                and entry.data.get(CONTROL_PORT) == port
+            ):
                 return True
         return False
 
@@ -451,6 +458,11 @@ class FlowHandler(ConfigFlow):
             host = self.tapoHost
             controlPort = self.tapoControlPort
             cloud_password = self.tapoCloudPassword
+            cloud_username = self.tapoCloudUsername
+            if cloud_username != "admin":
+                isKlapDevice = True
+            else:
+                isKlapDevice = False
             username = self.tapoUsername
             password = self.tapoPassword
             LOGGER.debug(
@@ -458,45 +470,90 @@ class FlowHandler(ConfigFlow):
                 self.tapoHost,
             )
             await self.async_set_unique_id(
-                DOMAIN + (self.reportedIPAddress if self.reportedIPAddress else host)
+                DOMAIN
+                + (self.reportedIPAddress if self.reportedIPAddress else host)
+                + str(self.tapoControlPort)
             )
-            return self.async_create_entry(
-                title=host,
-                data={
-                    MEDIA_VIEW_DAYS_ORDER: "Ascending",
-                    MEDIA_VIEW_RECORDINGS_ORDER: "Ascending",
-                    MEDIA_SYNC_HOURS: "",
-                    MEDIA_SYNC_COLD_STORAGE_PATH: "",
-                    ENABLE_MOTION_SENSOR: enable_motion_sensor,
-                    ENABLE_WEBHOOKS: enable_webhooks,
-                    ENABLE_STREAM: enable_stream,
-                    ENABLE_TIME_SYNC: enable_time_sync,
-                    CONF_IP_ADDRESS: host,
-                    CONTROL_PORT: controlPort,
-                    CONF_USERNAME: username,
-                    CONF_PASSWORD: password,
-                    CLOUD_PASSWORD: cloud_password,
-                    HAS_STREAM_6: self.tapoHasStream6,
-                    HAS_STREAM_7: self.tapoHasStream7,
-                    REPORTED_IP_ADDRESS: self.reportedIPAddress,
-                    ENABLE_SOUND_DETECTION: enable_sound_detection,
-                    SOUND_DETECTION_PEAK: sound_detection_peak,
-                    SOUND_DETECTION_DURATION: sound_detection_duration,
-                    SOUND_DETECTION_RESET: sound_detection_reset,
-                    CONF_EXTRA_ARGUMENTS: extra_arguments,
-                    CONF_CUSTOM_STREAM_HD: "",
-                    CONF_CUSTOM_STREAM_SD: "",
-                    CONF_CUSTOM_STREAM_6: "",
-                    CONF_CUSTOM_STREAM_7: "",
-                    CONF_RTSP_TRANSPORT: rtsp_transport,
-                    UPDATE_INTERVAL_MAIN: UPDATE_INTERVAL_MAIN_DEFAULT,
-                    UPDATE_INTERVAL_BATTERY: UPDATE_INTERVAL_BATTERY_DEFAULT,
-                    IS_KLAP_DEVICE: False,
-                    TIME_SYNC_DST: TIME_SYNC_DST_DEFAULT,
-                    TIME_SYNC_NDST: TIME_SYNC_NDST_DEFAULT,
-                    DOORBELL_UDP_DISCOVERED: False,
-                },
-            )
+            if isKlapDevice:
+                tapoController = await self.hass.async_add_executor_job(
+                    registerController,
+                    self.tapoHost,
+                    self.tapoControlPort,
+                    cloud_username,
+                    cloud_password,
+                )
+                camData = await getCamData(self.hass, tapoController)
+                reported_ip_address = getIP(camData)
+                return self.async_create_entry(
+                    title=host,
+                    data={
+                        MEDIA_VIEW_DAYS_ORDER: "Ascending",
+                        MEDIA_VIEW_RECORDINGS_ORDER: "Ascending",
+                        MEDIA_SYNC_HOURS: "",
+                        MEDIA_SYNC_COLD_STORAGE_PATH: "",
+                        ENABLE_MOTION_SENSOR: False,
+                        ENABLE_WEBHOOKS: False,
+                        ENABLE_STREAM: False,
+                        ENABLE_TIME_SYNC: False,
+                        CONF_IP_ADDRESS: host,
+                        REPORTED_IP_ADDRESS: reported_ip_address,
+                        CONTROL_PORT: controlPort,
+                        CONF_USERNAME: cloud_username,
+                        CONF_PASSWORD: cloud_password,
+                        CLOUD_PASSWORD: "",
+                        ENABLE_SOUND_DETECTION: False,
+                        SOUND_DETECTION_PEAK: -30,
+                        SOUND_DETECTION_DURATION: 1,
+                        SOUND_DETECTION_RESET: 10,
+                        CONF_EXTRA_ARGUMENTS: "",
+                        CONF_CUSTOM_STREAM_HD: "",
+                        CONF_CUSTOM_STREAM_SD: "",
+                        CONF_CUSTOM_STREAM_6: "",
+                        CONF_CUSTOM_STREAM_7: "",
+                        CONF_RTSP_TRANSPORT: "tcp",
+                        UPDATE_INTERVAL_MAIN: UPDATE_INTERVAL_MAIN_DEFAULT,
+                        UPDATE_INTERVAL_BATTERY: UPDATE_INTERVAL_BATTERY_DEFAULT,
+                        IS_KLAP_DEVICE: True,
+                    },
+                )
+            else:
+                return self.async_create_entry(
+                    title=host,
+                    data={
+                        MEDIA_VIEW_DAYS_ORDER: "Ascending",
+                        MEDIA_VIEW_RECORDINGS_ORDER: "Ascending",
+                        MEDIA_SYNC_HOURS: "",
+                        MEDIA_SYNC_COLD_STORAGE_PATH: "",
+                        ENABLE_MOTION_SENSOR: enable_motion_sensor,
+                        ENABLE_WEBHOOKS: enable_webhooks,
+                        ENABLE_STREAM: enable_stream,
+                        ENABLE_TIME_SYNC: enable_time_sync,
+                        CONF_IP_ADDRESS: host,
+                        CONTROL_PORT: controlPort,
+                        CONF_USERNAME: username,
+                        CONF_PASSWORD: password,
+                        CLOUD_PASSWORD: cloud_password,
+                        HAS_STREAM_6: self.tapoHasStream6,
+                        HAS_STREAM_7: self.tapoHasStream7,
+                        REPORTED_IP_ADDRESS: self.reportedIPAddress,
+                        ENABLE_SOUND_DETECTION: enable_sound_detection,
+                        SOUND_DETECTION_PEAK: sound_detection_peak,
+                        SOUND_DETECTION_DURATION: sound_detection_duration,
+                        SOUND_DETECTION_RESET: sound_detection_reset,
+                        CONF_EXTRA_ARGUMENTS: extra_arguments,
+                        CONF_CUSTOM_STREAM_HD: "",
+                        CONF_CUSTOM_STREAM_SD: "",
+                        CONF_CUSTOM_STREAM_6: "",
+                        CONF_CUSTOM_STREAM_7: "",
+                        CONF_RTSP_TRANSPORT: rtsp_transport,
+                        UPDATE_INTERVAL_MAIN: UPDATE_INTERVAL_MAIN_DEFAULT,
+                        UPDATE_INTERVAL_BATTERY: UPDATE_INTERVAL_BATTERY_DEFAULT,
+                        IS_KLAP_DEVICE: False,
+                        TIME_SYNC_DST: TIME_SYNC_DST_DEFAULT,
+                        TIME_SYNC_NDST: TIME_SYNC_NDST_DEFAULT,
+                        DOORBELL_UDP_DISCOVERED: False,
+                    },
+                )
 
         LOGGER.debug(
             "[ADD DEVICE][%s] Showing config flow for other options.",
@@ -555,6 +612,8 @@ class FlowHandler(ConfigFlow):
     async def async_step_auth_cloud_password(self, user_input=None):
         """Enter and process cloud password if needed"""
         errors = {}
+        if user_input is None or CONF_USERNAME not in user_input:
+            cloud_username = "admin"
         cloud_password = ""
         if user_input is not None:
             try:
@@ -562,12 +621,14 @@ class FlowHandler(ConfigFlow):
                     "[ADD DEVICE][%s] Verifying cloud password.",
                     self.tapoHost,
                 )
+                if CONF_USERNAME in user_input:
+                    cloud_username = user_input[CONF_USERNAME]
                 cloud_password = user_input[CLOUD_PASSWORD]
                 tapoController = await self.hass.async_add_executor_job(
                     registerController,
                     self.tapoHost,
                     self.tapoControlPort,
-                    "admin",
+                    cloud_username,
                     cloud_password,
                 )
                 camData = await getCamData(self.hass, tapoController)
@@ -577,6 +638,7 @@ class FlowHandler(ConfigFlow):
                     self.tapoHost,
                 )
                 self.tapoCloudPassword = cloud_password
+                self.tapoCloudUsername = cloud_username
                 return await self.async_step_other_options()
             except Exception as e:
                 if "Failed to establish a new connection" in str(e):
@@ -605,15 +667,28 @@ class FlowHandler(ConfigFlow):
             "[ADD DEVICE][%s] Showing config flow for cloud password.",
             self.tapoHost,
         )
-        return self.async_show_form(
-            step_id="auth_cloud_password",
-            data_schema=vol.Schema(
+        if errors == {}:
+            data_schema = vol.Schema(
                 {
                     vol.Required(
                         CLOUD_PASSWORD, description={"suggested_value": cloud_password}
                     ): str,
                 }
-            ),
+            )
+        else:
+            data_schema = vol.Schema(
+                {
+                    vol.Required(
+                        CONF_USERNAME, description={"suggested_value": cloud_username}
+                    ): str,
+                    vol.Required(
+                        CLOUD_PASSWORD, description={"suggested_value": cloud_password}
+                    ): str,
+                }
+            )
+        return self.async_show_form(
+            step_id="auth_cloud_password",
+            data_schema=data_schema,
             errors=errors,
             last_step=False,
         )
@@ -665,7 +740,9 @@ class FlowHandler(ConfigFlow):
                         raise Exception(e)
 
                 await self.async_set_unique_id(
-                    DOMAIN + (reported_ip_address if reported_ip_address else host)
+                    DOMAIN
+                    + (reported_ip_address if reported_ip_address else host)
+                    + str(self.tapoControlPort)
                 )
                 return self.async_create_entry(
                     title=host,
@@ -745,8 +822,8 @@ class FlowHandler(ConfigFlow):
                 host = user_input[CONF_IP_ADDRESS]
                 controlPort = user_input[CONTROL_PORT]
 
-                if self._async_host_already_configured(host):
-                    LOGGER.debug("[ADD DEVICE][%s] IP already configured.", host)
+                if self._async_host_already_configured(host, controlPort):
+                    LOGGER.debug("[ADD DEVICE][%s] IP:Port already configured.", host)
                     raise Exception("already_configured")
 
                 LOGGER.debug("[ADD DEVICE][%s] Verifying port %s.", host, controlPort)
@@ -796,7 +873,7 @@ class FlowHandler(ConfigFlow):
                                 "[ADD DEVICE][%s] Temporary suspension.",
                                 host,
                             )
-                            raise Exception("temporary_suspension")
+                            raise e from e
                         else:
                             LOGGER.debug(
                                 "[ADD DEVICE][%s] Camera control is not available, IP is not a Tapo device. Error: %s",
@@ -819,7 +896,7 @@ class FlowHandler(ConfigFlow):
                     errors["base"] = "not_tapo_device"
                 elif "ports_closed" in str(e):
                     errors["base"] = "ports_closed"
-                elif "temporary_suspension" in str(e):
+                elif "Temporary Suspension:" in str(e):
                     errors["base"] = str(e)
                 else:
                     errors["base"] = "unknown"
@@ -978,6 +1055,7 @@ class FlowHandler(ConfigFlow):
 
                     self.tapoUsername = username
                     self.tapoPassword = password
+                    self.tapoCloudUsername = ""
                     self.tapoCloudPassword = ""
 
                     try:
@@ -1011,7 +1089,7 @@ class FlowHandler(ConfigFlow):
                                 "[ADD DEVICE][%s] Temporary suspension.",
                                 self.tapoHost,
                             )
-                            raise Exception("temporary_suspension")
+                            raise e from e
                         else:
                             LOGGER.error(e)
                             raise Exception(e)
@@ -1031,7 +1109,7 @@ class FlowHandler(ConfigFlow):
                     errors["base"] = "ports_closed"
                 elif str(e) == "Invalid authentication data":
                     errors["base"] = "invalid_auth"
-                elif str(e) == "temporary_suspension":
+                elif "Temporary Suspension:" in str(e):
                     errors["base"] = str(e)
                 else:
                     errors["base"] = "unknown"
@@ -1730,7 +1808,8 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     self.config_entry,
                     data=allConfigData,
                     unique_id=DOMAIN
-                    + (reported_ip_address if reported_ip_address else ip_address),
+                    + (reported_ip_address if reported_ip_address else ip_address)
+                    + str(controlPort),
                 )
 
                 if ipChanged or rtspEnablementChanged:

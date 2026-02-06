@@ -7,7 +7,12 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, LOGGER, ENABLE_MEDIA_SYNC, MEDIA_SYNC_HOURS
 from .tapo.entities import TapoSwitchEntity
-from .utils import check_and_create, getColdDirPathForEntry, getEntryStorageFile
+from .utils import (
+    check_and_create,
+    check_functionality,
+    getColdDirPathForEntry,
+    getEntryStorageFile,
+)
 
 
 async def async_setup_entry(
@@ -63,16 +68,36 @@ async def async_setup_entry(
                 LOGGER.debug("Adding TapoEnableMediaSyncSwitch...")
                 switches.append(tapoEnableMediaSyncSwitch)
 
-        tapoLensDistortionCorrectionSwitch = await check_and_create(
+        tapoLensDistortionCorrectionSwitchAvailable = await check_functionality(
             entry,
             hass,
             TapoLensDistortionCorrectionSwitch,
             "getLensDistortionCorrection",
-            config_entry,
         )
-        if tapoLensDistortionCorrectionSwitch:
-            LOGGER.debug("Adding tapoLensDistortionCorrectionSwitch...")
-            switches.append(tapoLensDistortionCorrectionSwitch)
+        if tapoLensDistortionCorrectionSwitchAvailable:
+            if entry["chInfo"]:
+                for lens in entry["chInfo"]:
+                    chn_alias = lens.get("chn_alias", "")
+                    chn_id = lens.get("chn_id")
+                    ldc_value = entry["camData"].get("lens_distrotion_correction")
+                    if isinstance(ldc_value, dict) and (
+                        str(chn_id) not in ldc_value
+                        or ldc_value.get(str(chn_id)) is None
+                    ):
+                        continue
+                    LOGGER.debug(
+                        f"Adding tapoLensDistortionCorrectionSwitch for {chn_alias}, id: {chn_id}..."
+                    )
+                    switches.append(
+                        TapoLensDistortionCorrectionSwitch(
+                            entry, hass, config_entry, chn_alias, chn_id
+                        )
+                    )
+            else:
+                LOGGER.debug("Adding tapoLensDistortionCorrectionSwitch...")
+                switches.append(
+                    TapoLensDistortionCorrectionSwitch(entry, hass, config_entry)
+                )
 
         if "led" in entry["camData"] and entry["camData"]["led"] is not None:
             tapoIndicatorLedSwitch = TapoIndicatorLedSwitch(entry, hass, config_entry)
@@ -119,12 +144,29 @@ async def async_setup_entry(
             LOGGER.debug("Adding tapoCoverSwitch...")
             switches.append(tapoCoverSwitch)
 
-        tapoFlipSwitch = await check_and_create(
-            entry, hass, TapoFlipSwitch, "getImageFlipVertical", config_entry
+        tapoFlipSwitchAvailable = await check_functionality(
+            entry, hass, TapoFlipSwitch, "getImageFlipVertical"
         )
-        if tapoFlipSwitch:
-            LOGGER.debug("Adding tapoFlipSwitch...")
-            switches.append(tapoFlipSwitch)
+        if tapoFlipSwitchAvailable:
+            if entry["chInfo"]:
+                for lens in entry["chInfo"]:
+                    chn_alias = lens.get("chn_alias", "")
+                    chn_id = lens.get("chn_id")
+                    flip_value = entry["camData"].get("flip")
+                    if isinstance(flip_value, dict) and (
+                        str(chn_id) not in flip_value
+                        or flip_value.get(str(chn_id)) is None
+                    ):
+                        continue
+                    LOGGER.debug(
+                        f"Adding tapoFlipSwitch for {chn_alias}, id: {chn_id}..."
+                    )
+                    switches.append(
+                        TapoFlipSwitch(entry, hass, config_entry, chn_alias, chn_id)
+                    )
+            else:
+                LOGGER.debug("Adding tapoFlipSwitch...")
+                switches.append(TapoFlipSwitch(entry, hass, config_entry))
 
         tapoAutoTrackSwitch = await check_and_create(
             entry, hass, TapoAutoTrackSwitch, "getAutoTrackTarget", config_entry
@@ -704,10 +746,19 @@ class TapoAlarmEventTypeSwitch(TapoSwitchEntity):
 
 
 class TapoLensDistortionCorrectionSwitch(TapoSwitchEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+    def __init__(
+        self,
+        entry: dict,
+        hass: HomeAssistant,
+        config_entry,
+        specific_name=None,
+        chn_id=None,
+    ):
+        self.chn_id = chn_id
+        self.read_chn_id = str(chn_id) if chn_id else "1"
         TapoSwitchEntity.__init__(
             self,
-            "Lens Distortion Correction",
+            f"Lens Distortion Correction{" - " + specific_name if specific_name else ""}",
             entry,
             hass,
             config_entry,
@@ -721,6 +772,7 @@ class TapoLensDistortionCorrectionSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setLensDistortionCorrection,
             True,
+            [self.chn_id] if self.chn_id else None,
         )
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "on"
@@ -731,6 +783,7 @@ class TapoLensDistortionCorrectionSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setLensDistortionCorrection,
             False,
+            [self.chn_id] if self.chn_id else None,
         )
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "off"
@@ -741,7 +794,10 @@ class TapoLensDistortionCorrectionSwitch(TapoSwitchEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
-            self._attr_is_on = camData["lens_distrotion_correction"] == "on"
+            ldc_value = camData["lens_distrotion_correction"]
+            if isinstance(ldc_value, dict):
+                ldc_value = ldc_value.get(self.read_chn_id)
+            self._attr_is_on = ldc_value == "on"
             self._attr_state = "on" if self._attr_is_on else "off"
 
 
@@ -995,9 +1051,23 @@ class TapoIndicatorLedSwitch(TapoSwitchEntity):
 
 
 class TapoFlipSwitch(TapoSwitchEntity):
-    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+    def __init__(
+        self,
+        entry: dict,
+        hass: HomeAssistant,
+        config_entry,
+        specific_name=None,
+        chn_id=None,
+    ):
+        self.chn_id = chn_id
+        self.read_chn_id = str(chn_id) if chn_id else "1"
         TapoSwitchEntity.__init__(
-            self, "Flip", entry, hass, config_entry, "mdi:flip-vertical"
+            self,
+            f"Flip{" - " + specific_name if specific_name else ""}",
+            entry,
+            hass,
+            config_entry,
+            "mdi:flip-vertical",
         )
 
     async def async_update(self) -> None:
@@ -1007,6 +1077,7 @@ class TapoFlipSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setImageFlipVertical,
             True,
+            [self.chn_id] if self.chn_id else None,
         )
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "on"
@@ -1017,6 +1088,7 @@ class TapoFlipSwitch(TapoSwitchEntity):
         result = await self._hass.async_add_executor_job(
             self._controller.setImageFlipVertical,
             False,
+            [self.chn_id] if self.chn_id else None,
         )
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "off"
@@ -1027,7 +1099,10 @@ class TapoFlipSwitch(TapoSwitchEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
-            self._attr_is_on = camData["flip"] == "on"
+            flip_value = camData["flip"]
+            if isinstance(flip_value, dict):
+                flip_value = flip_value.get(self.read_chn_id)
+            self._attr_is_on = flip_value == "on"
             self._attr_state = "on" if self._attr_is_on else "off"
 
 
