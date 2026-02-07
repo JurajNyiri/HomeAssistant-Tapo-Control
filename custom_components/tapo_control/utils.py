@@ -237,46 +237,56 @@ async def findMedia(hass, entryData, entry):
         childID = entryData["camData"]["basic_info"]["dev_id"]
     tapoController: Tapo = entryData["controller"]
 
-    recordingsList = await hass.async_add_executor_job(tapoController.getRecordingsList)
-    mediaScanResult = {}
-    for searchResult in recordingsList:
-        for key in searchResult:
-            LOGGER.debug(f"Getting media for day {searchResult[key]['date']}...")
-            recordingsForDay = await getRecordings(
-                hass, entryData, tapoController, searchResult[key]["date"]
-            )
-            LOGGER.debug(
-                f"Looping through recordings for day {searchResult[key]['date']}..."
-            )
-            for recording in recordingsForDay:
-                for recordingKey in recording:
-                    filePathVideo = getColdFile(
-                        hass,
-                        entry_id,
-                        recording[recordingKey]["startTime"],
-                        recording[recordingKey]["endTime"],
-                        "videos",
-                        childID=childID,
-                    )
-                    mediaScanResult[
-                        ((childID + "-") if childID != "" else "")
-                        + str(recording[recordingKey]["startTime"])
-                        + "-"
-                        + str(recording[recordingKey]["endTime"])
-                    ] = True
-                    if os.path.exists(filePathVideo):
-                        await processDownload(
+    try:
+        recordingsList = await hass.async_add_executor_job(
+            tapoController.getRecordingsList
+        )
+        mediaScanResult = {}
+        for searchResult in recordingsList:
+            for key in searchResult:
+                LOGGER.debug(f"Getting media for day {searchResult[key]['date']}...")
+                recordingsForDay = await getRecordings(
+                    hass, entryData, tapoController, searchResult[key]["date"]
+                )
+                LOGGER.debug(
+                    f"Looping through recordings for day {searchResult[key]['date']}..."
+                )
+                for recording in recordingsForDay:
+                    for recordingKey in recording:
+                        filePathVideo = getColdFile(
                             hass,
                             entry_id,
-                            entryData,
                             recording[recordingKey]["startTime"],
                             recording[recordingKey]["endTime"],
+                            "videos",
+                            childID=childID,
                         )
-    LOGGER.debug("Found media for " + entryData["name"] + ".")
-    entryData["mediaScanResult"] = mediaScanResult
-    entryData["initialMediaScanDone"] = True
-
-    await mediaCleanup(hass, entry, entryData)
+                        mediaScanResult[
+                            ((childID + "-") if childID != "" else "")
+                            + str(recording[recordingKey]["startTime"])
+                            + "-"
+                            + str(recording[recordingKey]["endTime"])
+                        ] = True
+                        if os.path.exists(filePathVideo):
+                            await processDownload(
+                                hass,
+                                entry_id,
+                                entryData,
+                                recording[recordingKey]["startTime"],
+                                recording[recordingKey]["endTime"],
+                            )
+        LOGGER.debug("Found media for " + entryData["name"] + ".")
+        entryData["mediaScanResult"] = mediaScanResult
+        entryData["initialMediaScanDone"] = True
+        await mediaCleanup(hass, entry, entryData)
+    except Exception as err:
+        LOGGER.warning(
+            "Media scan failed for %s; will retry on next update cycle: %s",
+            entryData["name"],
+            err,
+        )
+    finally:
+        entryData["initialMediaScanRunning"] = False
 
 
 async def processDownload(
@@ -574,9 +584,7 @@ def processDownloadStatus(
         entryData["lastMediaSyncActivity"] = datetime.datetime.utcnow().timestamp()
         if progress_callback is not None:
             progress_callback(message, current, total)
-        hass.async_create_task(
-            async_update_sync_sensors(hass, entry_id, entryData)
-        )
+        hass.async_create_task(async_update_sync_sensors(hass, entry_id, entryData))
 
     return processUpdate
 
@@ -2167,21 +2175,19 @@ def isCacheSupported(check_function, rawData):
 async def scheduleAll(hass, device, entry, mediaSync):
     LOGGER.debug("scheduleAll for " + device["name"] + " called.")
     if device["mediaSyncAvailable"]:
-        if (
-            device["initialMediaScanDone"] is True
-            and device["mediaSyncScheduled"] is False
-        ):
-            device["mediaSyncScheduled"] = True
-            LOGGER.debug("Scheduling media sync")
-            callback = partial(mediaSync, entry=entry, device=device)
+        if device["initialMediaScanDone"] is True:
+            if device["mediaSyncScheduled"] is False:
+                device["mediaSyncScheduled"] = True
+                LOGGER.debug("Scheduling media sync")
+                callback = partial(mediaSync, entry=entry, device=device)
 
-            entry.async_on_unload(
-                async_track_time_interval(
-                    hass,
-                    callback,
-                    datetime.timedelta(seconds=60),
+                entry.async_on_unload(
+                    async_track_time_interval(
+                        hass,
+                        callback,
+                        datetime.timedelta(seconds=60),
+                    )
                 )
-            )
         elif device["initialMediaScanRunning"] is False:
             LOGGER.debug("Media scan running")
             device["initialMediaScanRunning"] = True
