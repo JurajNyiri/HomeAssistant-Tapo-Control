@@ -434,6 +434,40 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
         hass.config_entries.async_update_entry(config_entry, data=new, version=24)
 
+    if config_entry.version == 24:
+        new = {**config_entry.data}
+        host = new.get(CONF_IP_ADDRESS)
+        reported_ip_address = new.get(REPORTED_IP_ADDRESS)
+        control_port = new.get(CONTROL_PORT)
+        if control_port is not None and (reported_ip_address or host):
+            desired_unique_id = (
+                DOMAIN
+                + (reported_ip_address if reported_ip_address else host)
+                + str(control_port)
+            )
+        else:
+            desired_unique_id = config_entry.unique_id
+
+        if desired_unique_id != config_entry.unique_id:
+            LOGGER.debug(
+                f"Updating {config_entry.unique_id} to {desired_unique_id} as part of migration."
+            )
+            hass.config_entries.async_update_entry(
+                config_entry,
+                data=new,
+                unique_id=desired_unique_id,
+                version=25,
+            )
+        else:
+            LOGGER.debug(
+                f"Skipping {config_entry.unique_id} for unique_id update as part of migration."
+            )
+            hass.config_entries.async_update_entry(
+                config_entry,
+                data=new,
+                version=25,
+            )
+
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
     return True
@@ -471,6 +505,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
         LOGGER.debug("Events stopped.")
 
+    # Close controllers to avoid unclosed aiohttp sessions
+    await _close_controllers(hass, entry.entry_id)
+
     return True
 
 
@@ -504,6 +541,26 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             + entry_id
             + ". Not deleting anything."
         )
+
+
+async def _close_controllers(hass: HomeAssistant, entry_id: str):
+    data = hass.data.get(DOMAIN, {}).get(entry_id)
+    if not data:
+        return
+
+    controllers = []
+    if data.get("controller"):
+        controllers.append(data["controller"])
+    for child in data.get("childDevices", []):
+        ctrl = child.get("controller")
+        if ctrl:
+            controllers.append(ctrl)
+
+    for ctrl in controllers:
+        try:
+            await hass.async_add_executor_job(ctrl.close)
+        except Exception as err:
+            LOGGER.debug("Error closing controller during shutdown: %s", err)
 
     # Remove the entry data
     hass.data[DOMAIN].pop(entry_id, None)
@@ -591,6 +648,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 allEntities.extend(childDevice["entities"])
             return allEntities
 
+        def handleTimeSyncError(error):
+            if (
+                error.__class__.__module__ == "zeep.exceptions"
+                and error.__class__.__name__ == "Fault"
+                and "error time" in str(error).lower()
+            ):
+                # `lastTimeSync` is compared with `TIME_SYNC_PERIOD`, so offset it to back off 24 hours.
+                hass.data[DOMAIN][entry.entry_id]["lastTimeSync"] = (
+                    datetime.datetime.utcnow().timestamp()
+                    + int(timedelta(hours=24).total_seconds())
+                    - TIME_SYNC_PERIOD
+                )
+                LOGGER.warning(
+                    "Time sync for %s failed with zeep fault 'error time'. Backing off for 24 hours. This is issue with camera, do not report it to integration github. See more at https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/1166 .",
+                    host,
+                )
+            else:
+                LOGGER.error(
+                    f"Failed to sync time for {host}: {error}",
+                    exc_info=True,
+                )
+
         async def async_update_data():
             LOGGER.debug("async_update_data - entry")
             tapoController = hass.data[DOMAIN][entry.entry_id]["controller"]
@@ -614,9 +693,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     and ts - last_activity > MEDIA_SYNC_WATCHDOG_SECONDS
                 ):
                     device["runningMediaSync"] = False
-                    device["mediaSyncStallCount"] = device.get(
-                        "mediaSyncStallCount", 0
-                    ) + 1
+                    device["mediaSyncStallCount"] = (
+                        device.get("mediaSyncStallCount", 0) + 1
+                    )
                     device["downloadProgress"] = "Recovered after stall"
                     device["lastMediaSyncActivity"] = ts
                     hass.async_create_task(
@@ -683,10 +762,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         try:
                             await syncTime(hass, entry.entry_id)
                         except Exception as e:
-                            LOGGER.error(
-                                f"Failed to sync time for {host}: {e}",
-                                exc_info=True,
-                            )
+                            handleTimeSyncError(e)
                 ts = datetime.datetime.utcnow().timestamp()
             else:
                 debugMsg = "Both motion sensor and time sync are disabled."
@@ -754,7 +830,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     if timeForAnUpdate:
                         try:
                             updateDataForAllControllers[controller] = await getCamData(
-                                hass, controller
+                                hass, controller, controllerData["chInfo"]
                             )
                             controllerData["isRunningOnBattery"] = (
                                 True
@@ -911,7 +987,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         LOGGER.debug("Retrieving initial device data.")
 
-        camData = await getCamData(hass, tapoController)
+        try:
+            chInfo = await hass.async_add_executor_job(tapoController.getAllChnInfo)
+            chInfo = chInfo["system"]["chn_info"]
+        except Exception as err:
+            LOGGER.debug(f"Failed to retrieve channels info: {err}")
+            chInfo = None
+
+        camData = await getCamData(hass, tapoController, chInfo)
         LOGGER.debug("Retrieved initial device data.")
         LOGGER.debug("Retrieving camera time.")
         cameraTime = await hass.async_add_executor_job(tapoController.getTime)
@@ -934,6 +1017,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             TIME_SYNC_NDST: timeSyncNDST,
             "controller": tapoController,
             "entry": entry,
+            "chInfo": chInfo,
             "usingCloudPassword": cloud_password != "",
             "allControllers": [tapoController],
             "update_listener": entry.add_update_listener(update_listener),
@@ -998,72 +1082,77 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             ):
                 LOGGER.debug("Device is a parent.")
                 hass.data[DOMAIN][entry.entry_id]["isParent"] = True
-                for childDevice in camData["childDevices"]["child_device_list"]:
-                    LOGGER.debug("Setting up child controller.")
-                    tapoChildController = await hass.async_add_executor_job(
-                        registerController,
-                        host,
-                        controlPort,
-                        "admin",
-                        cloud_password,
-                        cloud_password,
-                        "",
-                        childDevice["device_id"],
-                    )
-                    LOGGER.debug("Child controller set up.")
-                    hass.data[DOMAIN][entry.entry_id]["allControllers"].append(
-                        tapoChildController
-                    )
-                    LOGGER.debug("Getting initial child device data.")
-                    childCamData = await getCamData(hass, tapoChildController)
-                    LOGGER.debug("Retrieved initial child device data.")
-                    hass.data[DOMAIN][entry.entry_id]["childDevices"].append(
-                        {
-                            "controller": tapoChildController,
-                            "coordinator": tapoCoordinator,
-                            "entry": entry,
-                            "usingCloudPassword": cloud_password != "",
-                            "timezoneOffset": hass.data[DOMAIN][entry.entry_id][
-                                "timezoneOffset"
-                            ],
-                            "camData": childCamData,
-                            "lastTimeSync": 0,
-                            "lastMediaCleanup": 0,
-                            "lastUpdate": 0,
-                            "lastFirmwareCheck": 0,
-                            "latestFirmwareVersion": False,
-                            "motionSensorCreated": False,
-                            "isDownloadingStream": False,
-                            "downloadedStreams": {},  # keeps track of all videos downloaded
-                            "downloadProgress": False,
-                            "lastMediaSyncStart": 0,
-                            "lastMediaSyncActivity": 0,
-                            "lastMediaSyncSuccess": 0,
-                            "mediaSyncStallCount": 0,
-                            "initialMediaScanDone": False,
-                            ENABLE_MEDIA_SYNC: None,
-                            "mediaSyncScheduled": False,
-                            "mediaSyncRanOnce": False,
-                            "mediaSyncAvailable": True,
-                            "initialMediaScanRunning": False,
-                            "runningMediaSync": False,
-                            "mediaScanResult": {},  # keeps track of all videos currently on camera
-                            "entities": [],
-                            "name": childCamData["basic_info"]["device_alias"],
-                            "childDevices": [],
-                            "isChild": True,
-                            "isRunningOnBattery": (
-                                True
-                                if (
-                                    "basic_info" in childCamData
-                                    and "power" in childCamData["basic_info"]
-                                    and childCamData["basic_info"]["power"] == "BATTERY"
-                                )
-                                else False
-                            ),
-                            "isParent": False,
-                        }
-                    )
+                if (
+                    camData["childDevices"]
+                    and "child_device_list" in camData["childDevices"]
+                ):
+                    for childDevice in camData["childDevices"]["child_device_list"]:
+                        LOGGER.debug("Setting up child controller.")
+                        tapoChildController = await hass.async_add_executor_job(
+                            registerController,
+                            host,
+                            controlPort,
+                            "admin",
+                            cloud_password,
+                            cloud_password,
+                            "",
+                            childDevice["device_id"],
+                        )
+                        LOGGER.debug("Child controller set up.")
+                        hass.data[DOMAIN][entry.entry_id]["allControllers"].append(
+                            tapoChildController
+                        )
+                        LOGGER.debug("Getting initial child device data.")
+                        childCamData = await getCamData(hass, tapoChildController)
+                        LOGGER.debug("Retrieved initial child device data.")
+                        hass.data[DOMAIN][entry.entry_id]["childDevices"].append(
+                            {
+                                "controller": tapoChildController,
+                                "coordinator": tapoCoordinator,
+                                "entry": entry,
+                                "usingCloudPassword": cloud_password != "",
+                                "timezoneOffset": hass.data[DOMAIN][entry.entry_id][
+                                    "timezoneOffset"
+                                ],
+                                "camData": childCamData,
+                                "lastTimeSync": 0,
+                                "lastMediaCleanup": 0,
+                                "lastUpdate": 0,
+                                "lastFirmwareCheck": 0,
+                                "latestFirmwareVersion": False,
+                                "motionSensorCreated": False,
+                                "isDownloadingStream": False,
+                                "downloadedStreams": {},  # keeps track of all videos downloaded
+                                "downloadProgress": False,
+                                "lastMediaSyncStart": 0,
+                                "lastMediaSyncActivity": 0,
+                                "lastMediaSyncSuccess": 0,
+                                "mediaSyncStallCount": 0,
+                                "initialMediaScanDone": False,
+                                ENABLE_MEDIA_SYNC: None,
+                                "mediaSyncScheduled": False,
+                                "mediaSyncRanOnce": False,
+                                "mediaSyncAvailable": True,
+                                "initialMediaScanRunning": False,
+                                "runningMediaSync": False,
+                                "mediaScanResult": {},  # keeps track of all videos currently on camera
+                                "entities": [],
+                                "name": childCamData["basic_info"]["device_alias"],
+                                "childDevices": [],
+                                "isChild": True,
+                                "isRunningOnBattery": (
+                                    True
+                                    if (
+                                        "basic_info" in childCamData
+                                        and "power" in childCamData["basic_info"]
+                                        and childCamData["basic_info"]["power"]
+                                        == "BATTERY"
+                                    )
+                                    else False
+                                ),
+                                "isParent": False,
+                            }
+                        )
             LOGGER.debug("Setting up camera entities.")
             await hass.async_create_task(
                 hass.config_entries.async_forward_entry_setups(entry, ["camera"])
@@ -1111,10 +1200,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 try:
                     await syncTime(hass, entry.entry_id)
                 except Exception as e:
-                    LOGGER.error(
-                        f"Failed to sync time for {host}: {e}",
-                        exc_info=True,
-                    )
+                    handleTimeSyncError(e)
 
         # Media sync
         timeCorrection = await hass.async_add_executor_job(
@@ -1262,6 +1348,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 await hass.data[DOMAIN][entry.entry_id]["events"].async_stop()
 
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, unsubscribe)
+        hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STOP,
+            lambda event: hass.add_job(_close_controllers, hass, entry.entry_id),
+        )
 
     except Exception as e:
         if "Invalid authentication data" in str(e):

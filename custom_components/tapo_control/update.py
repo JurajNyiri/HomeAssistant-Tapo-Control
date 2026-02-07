@@ -61,7 +61,7 @@ class TapoCamUpdate(UpdateEntity):
         # on this entity and cancelling in progress update
         LOGGER.debug("updateTapo in update entity")
         if camData and camData["updated"] > self._lastDataUpdate:
-            LOGGER.debug(f"Processing new data (updated at {camData["updated"]})...")
+            LOGGER.debug(f"Processing new data (updated at {camData['updated']})...")
             self._lastDataUpdate = camData["updated"]
             self._attributes = camData["basic_info"]
             if self._in_progress:

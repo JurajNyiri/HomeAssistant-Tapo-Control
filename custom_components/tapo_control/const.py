@@ -6,7 +6,7 @@ from datetime import timedelta
 from homeassistant.helpers import config_validation as cv
 
 CONTROL_PORT = "control_port"
-PYTAPO_REQUIRED_VERSION = "3.3.54"
+PYTAPO_REQUIRED_VERSION = "3.4.7"
 DOMAIN = "tapo_control"
 BRAND = "TP-Link"
 DOORBELL_UDP_PORT = 20005
@@ -24,6 +24,7 @@ TILT = "tilt"
 PAN = "pan"
 MOTION_DETECTION_MODE = "motion_detection_mode"
 AUTO_TRACK_MODE = "auto_track_mode"
+CLOUD_USERNAME = "cloud_username"
 CLOUD_PASSWORD = "cloud_password"
 DEFAULT_SCAN_INTERVAL = 10
 SCAN_INTERVAL = timedelta(seconds=5)
