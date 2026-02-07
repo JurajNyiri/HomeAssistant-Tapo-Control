@@ -1103,7 +1103,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             tapoChildController
                         )
                         LOGGER.debug("Getting initial child device data.")
-                        childCamData = await getCamData(hass, tapoChildController)
+
+                        try:
+                            chInfo = await hass.async_add_executor_job(
+                                tapoChildController.getAllChnInfo
+                            )
+                            chInfo = chInfo["system"]["chn_info"]
+                        except Exception as err:
+                            LOGGER.debug(f"Failed to retrieve channels info: {err}")
+                            chInfo = None
+
+                        childCamData = await getCamData(
+                            hass, tapoChildController, chInfo
+                        )
                         LOGGER.debug("Retrieved initial child device data.")
                         hass.data[DOMAIN][entry.entry_id]["childDevices"].append(
                             {
