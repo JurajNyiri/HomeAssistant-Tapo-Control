@@ -215,7 +215,7 @@ async def getRecordings(hass, entryData, tapoController, date):
     except Exception as err:
         if "-71105" in str(err):
             LOGGER.debug(
-                f"Received error -71105 when browsing for recordings for day {date}. Assuming no recordings."
+                f"Received error -71105 when browsing for recordings for day {date}: {err}. Assuming no recordings."
             )
         else:
             raise err
