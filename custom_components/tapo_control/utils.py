@@ -786,7 +786,7 @@ def tryParseInt(value):
     try:
         return int(value)
     except Exception as e:
-        LOGGER.error("Couldnt parse as integer: %s", str(e))
+        LOGGER.debug("Couldnt parse as integer: %s", str(e))
         return None
 
 
