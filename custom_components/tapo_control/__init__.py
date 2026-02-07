@@ -1122,6 +1122,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                 "controller": tapoChildController,
                                 "coordinator": tapoCoordinator,
                                 "entry": entry,
+                                "chInfo": chInfo,
                                 "usingCloudPassword": cloud_password != "",
                                 "timezoneOffset": hass.data[DOMAIN][entry.entry_id][
                                     "timezoneOffset"
