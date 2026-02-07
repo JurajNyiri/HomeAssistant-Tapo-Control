@@ -1166,8 +1166,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                 "isParent": False,
                             }
                         )
-            else:
-                LOGGER.debug("No child devices found.")
+                else:
+                    LOGGER.debug("No child devices found.")
             LOGGER.debug("Setting up camera entities.")
             await hass.async_create_task(
                 hass.config_entries.async_forward_entry_setups(entry, ["camera"])
