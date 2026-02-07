@@ -646,6 +646,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 allEntities.extend(childDevice["entities"])
             return allEntities
 
+        def handleTimeSyncError(error):
+            if (
+                error.__class__.__module__ == "zeep.exceptions"
+                and error.__class__.__name__ == "Fault"
+                and "error time" in str(error).lower()
+            ):
+                # `lastTimeSync` is compared with `TIME_SYNC_PERIOD`, so offset it to back off 24 hours.
+                hass.data[DOMAIN][entry.entry_id]["lastTimeSync"] = (
+                    datetime.datetime.utcnow().timestamp()
+                    + int(timedelta(hours=24).total_seconds())
+                    - TIME_SYNC_PERIOD
+                )
+                LOGGER.warning(
+                    "Time sync for %s failed with zeep fault 'error time'. Backing off for 24 hours. This is issue with camera, do not report it to integration github. See more at https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/1166 .",
+                    host,
+                )
+            else:
+                LOGGER.error(
+                    f"Failed to sync time for {host}: {error}",
+                    exc_info=True,
+                )
+
         async def async_update_data():
             LOGGER.debug("async_update_data - entry")
             tapoController = hass.data[DOMAIN][entry.entry_id]["controller"]
@@ -720,10 +742,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         try:
                             await syncTime(hass, entry.entry_id)
                         except Exception as e:
-                            LOGGER.error(
-                                f"Failed to sync time for {host}: {e}",
-                                exc_info=True,
-                            )
+                            handleTimeSyncError(e)
                 ts = datetime.datetime.utcnow().timestamp()
             else:
                 debugMsg = "Both motion sensor and time sync are disabled."
@@ -1162,10 +1181,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 try:
                     await syncTime(hass, entry.entry_id)
                 except Exception as e:
-                    LOGGER.error(
-                        f"Failed to sync time for {host}: {e}",
-                        exc_info=True,
-                    )
+                    handleTimeSyncError(e)
 
         # Media sync
         timeCorrection = await hass.async_add_executor_job(

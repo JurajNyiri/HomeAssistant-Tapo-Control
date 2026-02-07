@@ -198,20 +198,27 @@ async def getRecordings(hass, entryData, tapoController, date):
     childID = ""
     if entryData["isChild"]:
         childID = entryData["camData"]["basic_info"]["dev_id"]
-    recordingsForDay = await hass.async_add_executor_job(
-        tapoController.getRecordings, date
-    )
-    if recordingsForDay is not None:
-        for recording in recordingsForDay:
-            for recordingKey in recording:
-                entryData["mediaScanResult"][
-                    ((childID + "-") if childID != "" else "")
-                    + str(recording[recordingKey]["startTime"])
-                    + "-"
-                    + str(recording[recordingKey]["endTime"])
-                ] = True
-    else:
-        recordingsForDay = []
+    recordingsForDay = []
+    try:
+        recordingsForDay = await hass.async_add_executor_job(
+            tapoController.getRecordings, date
+        )
+        if recordingsForDay is not None:
+            for recording in recordingsForDay:
+                for recordingKey in recording:
+                    entryData["mediaScanResult"][
+                        ((childID + "-") if childID != "" else "")
+                        + str(recording[recordingKey]["startTime"])
+                        + "-"
+                        + str(recording[recordingKey]["endTime"])
+                    ] = True
+    except Exception as err:
+        if "-71105" in str(err):
+            LOGGER.debug(
+                f"Received error -71105 when browsing for recordings for day {date}: {err}. Assuming no recordings."
+            )
+        else:
+            raise err
     return recordingsForDay
 
 
@@ -781,7 +788,7 @@ def tryParseInt(value):
     try:
         return int(value)
     except Exception as e:
-        LOGGER.error("Couldnt parse as integer: %s", str(e))
+        LOGGER.debug("Couldnt parse as integer: %s", str(e))
         return None
 
 
