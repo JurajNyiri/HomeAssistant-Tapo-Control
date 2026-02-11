@@ -18,7 +18,7 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           issue-close-message: "@${issue.user.login} this issue was automatically closed because it did not follow the [Bug Report](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new?assignees=&labels=bug&template=bug_report.yml) or [Feature Request](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues/new?assignees=JurajNyiri&labels=enhancement&template=feature_request.md&title=Feature+Request%3A) template."
-          issue-pattern: ".*Camera has all attributes filled out in developer tools.*|.*Is your feature request related to a problem.*"
+          issue-pattern: ".*If applicable, add error logs.*|.*Is your feature request related to a problem.*"
 
   autoclose-cloud-token:
     name: Autoclose known FAQ matches
