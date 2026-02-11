@@ -24,8 +24,10 @@ from homeassistant.components.media_source.error import Unresolvable
 import homeassistant.helpers.entity_registry
 
 from .const import (
+    CONF_TRANSPORT_METHOD,
     CONF_RTSP_TRANSPORT,
     CONTROL_PORT,
+    DOMAIN_CONFIG,
     ENABLE_MEDIA_SYNC,
     ENABLE_SOUND_DETECTION,
     CONF_CUSTOM_STREAM_HD,
@@ -101,6 +103,16 @@ from .utils import getRecording
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the Tapo: Cameras Control component from YAML."""
+    transport_method = None
+    if DOMAIN in config and isinstance(config[DOMAIN], dict):
+        transport_method = config[DOMAIN].get(CONF_TRANSPORT_METHOD)
+    hass.data.setdefault(DOMAIN_CONFIG, {})
+    hass.data[DOMAIN_CONFIG][CONF_TRANSPORT_METHOD] = transport_method
+    if transport_method:
+        LOGGER.warning(
+            "Using transport method override from configuration.yaml: %s",
+            transport_method,
+        )
     return True
 
 
@@ -1097,6 +1109,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             cloud_password,
                             "",
                             childDevice["device_id"],
+                            None,
+                            hass,
                         )
                         LOGGER.debug("Child controller set up.")
                         hass.data[DOMAIN][entry.entry_id]["allControllers"].append(

@@ -6,8 +6,9 @@ from datetime import timedelta
 from homeassistant.helpers import config_validation as cv
 
 CONTROL_PORT = "control_port"
-PYTAPO_REQUIRED_VERSION = "3.4.8"
+PYTAPO_REQUIRED_VERSION = "3.4.9"
 DOMAIN = "tapo_control"
+DOMAIN_CONFIG = DOMAIN + "_config"
 BRAND = "TP-Link"
 DOORBELL_UDP_PORT = 20005
 DOORBELL_UDP_DISCOVERED = "doorbell_udp_discovered"
@@ -33,6 +34,7 @@ CONF_CUSTOM_STREAM_SD = "custom_stream_sd"
 CONF_CUSTOM_STREAM_6 = "custom_stream6"
 CONF_CUSTOM_STREAM_7 = "custom_stream7"
 CONF_SKIP_RTSP = "skip_rtsp"
+CONF_TRANSPORT_METHOD = "transport_method"
 
 ENABLE_MOTION_SENSOR = "enable_motion_sensor"
 ENABLE_MEDIA_SYNC = "enable_media_sync"

@@ -60,6 +60,15 @@ body:
     validations:
       required: true
 
+  - type: input
+    attributes:
+      label: Last known working integration version
+      description: |
+        Specify a version of integration where this issue was not present.
+      placeholder: "5.0.0"
+    validations:
+      required: true
+
   - type: dropdown
     attributes:
       label: Using stream component
@@ -73,23 +82,11 @@ body:
   - type: dropdown
     attributes:
       label: Does camera work via official integrations?
-      description: If you are having issues with displaying camera stream, try it via onvif or ffmpeg integrations from Home Assistant.
+      description: If you are having issues with camera, try it via https://www.home-assistant.io/integrations/tplink_tapo/ integration from Home Assistant.
       options:
         - "Yes"
         - "No"
         - "N/A"
-    validations:
-      required: true
-
-  - type: dropdown
-    attributes:
-      label: Camera has all attributes filled out in developer tools
-      description: |
-        Does camera have all attributes filled out in entity attributes?
-        You can find the camera entity at [Home Assistant - Developer Tools - States](https://my.home-assistant.io/redirect/developer_states/)
-      options:
-        - "Yes"
-        - "No"
     validations:
       required: true
 
@@ -120,3 +117,45 @@ body:
         Add any other information about the problem here.
     validations:
       required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Debug Logs Required
+        To properly investigate your issue, debug logs are mandatory.
+
+  - type: textarea
+    attributes:
+      label: Debug Logs (Required)
+      description: |
+        ⚠️ Please enable debug logging and upload the full log file.
+
+        ## Option 1: Enable via Home Assistant UI (Recommended)
+        1. Go to *Settings → Devices & Services → Integrations*
+        2. Select **Tapo Control**
+        3. Click **Enable Debug Logging**
+        4. Reproduce the issue
+
+        ## Option 2: Enable via configuration.yaml
+        Add the following to your `configuration.yaml`:
+
+        ```yaml
+        logger:
+          default: info
+          logs:
+            custom_components.tapo_control: debug
+        ```
+
+        Then restart Home Assistant and reproduce the issue.
+
+        ## Upload Logs
+        After reproducing:
+        1. Go to *Settings → System → Logs*
+        2. Click **Download Full Logs**
+        3. Upload the file here (drag & drop)
+
+        Issues without debug logs will likely be closed as incomplete.
+      placeholder: |
+        Drag & drop your debug log file here, or paste relevant excerpts.
+    validations:
+      required: true
