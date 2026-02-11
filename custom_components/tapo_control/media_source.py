@@ -46,7 +46,8 @@ async def async_get_media_source(hass: HomeAssistant) -> TapoMediaSource:
     LOGGER.debug("async_get_media_source")
     # TODO: handle case where cloud password was not set with nice error
 
-    entry = hass.config_entries.async_entries(DOMAIN)[0]
+    entries = hass.config_entries.async_entries(DOMAIN)
+    entry = entries[0] if entries else None
 
     return TapoMediaSource(hass, entry)
 
@@ -76,7 +77,7 @@ class TapoMediaSource(MediaSource):
             return RECORDINGS_UNAVAILABLE_MESSAGE
         return "Unable to retrieve recordings, please try again later."
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry | None) -> None:
         """Initialize CameraMediaSource."""
         super().__init__(DOMAIN)
         self.hass = hass
