@@ -670,7 +670,7 @@ class FlowHandler(ConfigFlow):
             "[ADD DEVICE][%s] Showing config flow for cloud password.",
             self.tapoHost,
         )
-        if errors == {}:
+        if errors == {} or str(self.tapoControlPort) == "443":
             data_schema = vol.Schema(
                 {
                     vol.Required(
