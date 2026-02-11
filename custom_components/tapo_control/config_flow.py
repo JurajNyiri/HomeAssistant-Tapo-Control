@@ -503,7 +503,7 @@ class FlowHandler(ConfigFlow):
                     "",
                     "",
                     None,
-                    None,
+                    True,
                     self.hass,
                 )
                 camData = await getCamData(self.hass, tapoController)
