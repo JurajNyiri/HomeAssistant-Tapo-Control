@@ -158,6 +158,11 @@ class FlowHandler(ConfigFlow):
                             controlPort,
                             username,
                             password,
+                            "",
+                            "",
+                            None,
+                            None,
+                            self.hass,
                         )
                         LOGGER.debug(
                             "[REAUTH][%s] Camera Account works for control.",
@@ -256,7 +261,16 @@ class FlowHandler(ConfigFlow):
                     tapoHost,
                 )
                 await self.hass.async_add_executor_job(
-                    registerController, tapoHost, controlPort, "admin", cloudPassword
+                    registerController,
+                    tapoHost,
+                    controlPort,
+                    "admin",
+                    cloudPassword,
+                    "",
+                    "",
+                    None,
+                    None,
+                    self.hass,
                 )
                 LOGGER.debug(
                     "[REAUTH][%s] Cloud Account works for control.",
@@ -484,6 +498,11 @@ class FlowHandler(ConfigFlow):
                     self.tapoControlPort,
                     cloud_username,
                     cloud_password,
+                    "",
+                    "",
+                    None,
+                    None,
+                    self.hass,
                 )
                 camData = await getCamData(self.hass, tapoController)
                 reported_ip_address = getIP(camData)
@@ -633,6 +652,11 @@ class FlowHandler(ConfigFlow):
                     self.tapoControlPort,
                     cloud_username,
                     cloud_password,
+                    "",
+                    "",
+                    None,
+                    None,
+                    self.hass,
                 )
                 camData = await getCamData(self.hass, tapoController)
                 self.reportedIPAddress = getIP(camData)
@@ -722,6 +746,11 @@ class FlowHandler(ConfigFlow):
                         controlPort,
                         email,
                         password,
+                        "",
+                        "",
+                        None,
+                        None,
+                        self.hass,
                     )
                     camData = await getCamData(self.hass, tapoController)
                     reported_ip_address = getIP(camData)
@@ -838,7 +867,16 @@ class FlowHandler(ConfigFlow):
                     )
                     try:
                         await self.hass.async_add_executor_job(
-                            registerController, host, controlPort, "invalid", ""
+                            registerController,
+                            host,
+                            controlPort,
+                            "invalid",
+                            "",
+                            "",
+                            "",
+                            None,
+                            None,
+                            self.hass,
                         )
                     except Exception as e:
                         if str(e) == "Invalid authentication data":
@@ -939,6 +977,11 @@ class FlowHandler(ConfigFlow):
                         self.tapoControlPort,
                         "admin",
                         cloud_password,
+                        "",
+                        "",
+                        None,
+                        None,
+                        self.hass,
                     )
                     LOGGER.debug(
                         "[ADD DEVICE][%s] Cloud password works for control.",
@@ -1072,6 +1115,11 @@ class FlowHandler(ConfigFlow):
                             controlPort,
                             username,
                             password,
+                            "",
+                            "",
+                            None,
+                            None,
+                            self.hass,
                         )
                         LOGGER.debug(
                             "[ADD DEVICE][%s] Camera Account works for control.",
@@ -1558,6 +1606,11 @@ class TapoOptionsFlowHandler(OptionsFlow):
                                 controlPort,
                                 "admin",
                                 cloud_password,
+                                "",
+                                "",
+                                None,
+                                None,
+                                self.hass,
                             )
                             LOGGER.debug(
                                 "[%s] Cloud password works for control.",
@@ -1684,6 +1737,11 @@ class TapoOptionsFlowHandler(OptionsFlow):
                                 controlPort,
                                 username,
                                 password,
+                                "",
+                                "",
+                                None,
+                                None,
+                                self.hass,
                             )
                             LOGGER.debug(
                                 "[%s] Camera Account works for control.",
