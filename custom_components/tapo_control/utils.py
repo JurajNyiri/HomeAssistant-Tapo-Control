@@ -32,7 +32,9 @@ from homeassistant.util import slugify, dt as dt_util
 
 from .const import (
     BRAND,
+    CONF_TRANSPORT_METHOD,
     CONTROL_PORT,
+    DOMAIN_CONFIG,
     ENABLE_MEDIA_SYNC,
     ENABLE_MOTION_SENSOR,
     DOMAIN,
@@ -116,6 +118,15 @@ def registerController(
     is_klap=None,
     hass=None,
 ):
+    selected_transport_method = (
+        hass.data.get(DOMAIN_CONFIG, {}).get(CONF_TRANSPORT_METHOD)
+        if hass is not None
+        else None
+    )
+    LOGGER.debug(
+        f"Creating Tapo controller with transport method {selected_transport_method}."
+    )
+
     return Tapo(
         host,
         username,
@@ -130,6 +141,7 @@ def registerController(
         controlPort=control_port,
         isKLAP=is_klap,
         hass=hass,
+        transportMethod=selected_transport_method,
     )
 
 
@@ -1812,11 +1824,29 @@ async def update_listener(hass, entry):
                 )
             if cloud_password != "":
                 tapoController = await hass.async_add_executor_job(
-                    registerController, host, controlPort, "admin", cloud_password
+                    registerController,
+                    host,
+                    controlPort,
+                    "admin",
+                    cloud_password,
+                    "",
+                    "",
+                    None,
+                    None,
+                    hass,
                 )
             else:
                 tapoController = await hass.async_add_executor_job(
-                    registerController, host, controlPort, username, password
+                    registerController,
+                    host,
+                    controlPort,
+                    username,
+                    password,
+                    "",
+                    "",
+                    None,
+                    None,
+                    hass,
                 )
             hass.data[DOMAIN][entry.entry_id]["usingCloudPassword"] = (
                 cloud_password != ""
