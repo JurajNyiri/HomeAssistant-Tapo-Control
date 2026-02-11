@@ -477,8 +477,10 @@ class FlowHandler(ConfigFlow):
             cloud_password = self.tapoCloudPassword
             cloud_username = self.tapoCloudUsername
             if cloud_username != "admin":
+                LOGGER.debug("Last step of adding device - device is klap.")
                 isKlapDevice = True
             else:
+                LOGGER.debug("Last step of adding device - device is NOT klap.")
                 isKlapDevice = False
             username = self.tapoUsername
             password = self.tapoPassword
@@ -506,6 +508,10 @@ class FlowHandler(ConfigFlow):
                 )
                 camData = await getCamData(self.hass, tapoController)
                 reported_ip_address = getIP(camData)
+
+                LOGGER.debug(
+                    f"Creating a KLAP device: {CONF_IP_ADDRESS}: {host}, {REPORTED_IP_ADDRESS}: {reported_ip_address}, {CONTROL_PORT}: {controlPort}, {CONF_USERNAME}: {cloud_username}"
+                )
                 return self.async_create_entry(
                     title=host,
                     data={
@@ -539,6 +545,9 @@ class FlowHandler(ConfigFlow):
                     },
                 )
             else:
+                LOGGER.debug(
+                    f"Creating a Camera device: {CONF_IP_ADDRESS}: {host}, {REPORTED_IP_ADDRESS}: {self.reportedIPAddress}, {CONTROL_PORT}: {controlPort}, {CONF_USERNAME}: {username}"
+                )
                 return self.async_create_entry(
                     title=host,
                     data={
