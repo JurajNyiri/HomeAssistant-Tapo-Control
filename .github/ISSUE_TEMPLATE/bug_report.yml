@@ -134,8 +134,7 @@ body:
         1. Go to *Settings → Devices & Services → Integrations*
         2. Select **Tapo Control**
         3. Click **Enable Debug Logging**
-        4. Restart Home Assistant
-        5. Reproduce the issue
+        4. Reproduce the issue
 
         ## Option 2: Enable via configuration.yaml
         Add the following to your `configuration.yaml`:
