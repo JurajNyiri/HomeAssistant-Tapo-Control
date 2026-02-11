@@ -120,3 +120,46 @@ body:
         Add any other information about the problem here.
     validations:
       required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Debug Logs Required
+        To properly investigate your issue, debug logs are mandatory.
+
+  - type: textarea
+    attributes:
+      label: Debug Logs (Required)
+      description: |
+        ⚠️ Please enable debug logging and upload the full log file.
+
+        ## Option 1: Enable via Home Assistant UI (Recommended)
+        1. Go to *Settings → Devices & Services → Integrations*
+        2. Select **Tapo Control**
+        3. Click **Enable Debug Logging**
+        4. Restart Home Assistant
+        5. Reproduce the issue
+
+        ## Option 2: Enable via configuration.yaml
+        Add the following to your `configuration.yaml`:
+
+        ```yaml
+        logger:
+          default: info
+          logs:
+            custom_components.tapo_control: debug
+        ```
+
+        Then restart Home Assistant and reproduce the issue.
+
+        ## Upload Logs
+        After reproducing:
+        1. Go to *Settings → System → Logs*
+        2. Click **Download Full Logs**
+        3. Upload the file here (drag & drop)
+
+        Issues without debug logs will likely be closed as incomplete.
+      placeholder: |
+        Drag & drop your debug log file here, or paste relevant excerpts.
+    validations:
+      required: true
