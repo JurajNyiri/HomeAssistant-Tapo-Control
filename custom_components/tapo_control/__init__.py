@@ -68,6 +68,7 @@ from .const import (
     UPDATE_INTERVAL_MAIN_DEFAULT,
 )
 from .utils import (
+    _is_used_by_tplink,
     convert_to_timestamp,
     deleteDir,
     getColdDirPathForEntry,
@@ -591,6 +592,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     host = entry.data.get(CONF_IP_ADDRESS)
     controlPort = entry.data.get(CONTROL_PORT)
+
+    if _is_used_by_tplink(hass, host):
+        LOGGER.warning(
+            "TP-Link core integration is also configured for device IP %s. "
+            "Using multiple integrations for the same device causes instability.",
+            host,
+        )
+
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
     isKlapDevice = entry.data.get(IS_KLAP_DEVICE)
