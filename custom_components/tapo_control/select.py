@@ -168,6 +168,13 @@ async def async_setup_entry(
                 LOGGER.debug("Adding TapoMotionDetectionSelect...")
                 selects.append(TapoMotionDetectionSelect(entry, hass, config_entry))
 
+        tapoDualCamLinkageSelectAvailable = await check_functionality(
+            entry, hass, TapoDualCamLinkage, "getDualCamLinkage"
+        )
+        if tapoDualCamLinkageSelectAvailable:
+            LOGGER.debug("Adding TapoDualCamLinkage...")
+            selects.append(TapoDualCamLinkage(entry, hass, config_entry))
+
         tapoPersonDetectionSelectAvailable = await check_functionality(
             entry, hass, TapoPersonDetectionSelect, "getPersonDetection"
         )
@@ -971,6 +978,57 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
             option != "off",
             option == "off" or option in ["both", "sound"],
             option == "off" or option in ["both", "light"],
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = option
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+
+class TapoDualCamLinkage(TapoSelectEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._options_map = {"Continuous tracking": 0, "Fixed view tracking": 1}
+        self._attr_options = ["Continuous tracking", "Fixed view tracking", "off"]
+        self._attr_current_option = None
+        TapoSelectEntity.__init__(
+            self, "Smart Dual Track Method", entry, hass, config_entry
+        )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        LOGGER.debug(f"TapoDualCamLinkage updateTapo 1")
+        LOGGER.debug(f"Enabled: {camData["dualCamLinkageEnabled"]}")
+        LOGGER.debug(f"Type: {camData["dualCamLinkageType"]}")
+        if not camData:
+            LOGGER.debug("TapoDualCamLinkage updateTapo 2")
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            LOGGER.debug("TapoDualCamLinkage updateTapo 3")
+            if camData["dualCamLinkageEnabled"] == "off":
+                LOGGER.debug("TapoDualCamLinkage updateTapo 4")
+                self._attr_current_option = "off"
+            else:
+                LOGGER.debug("TapoDualCamLinkage updateTapo 5")
+                linkage_type = str(camData.get("dualCamLinkageType"))
+                self._attr_current_option = next(
+                    (
+                        option
+                        for option, value in self._options_map.items()
+                        if str(value) == linkage_type
+                    ),
+                    "off",
+                )
+            LOGGER.debug("TapoDualCamLinkage updateTapo 6")
+            self._attr_state = self._attr_current_option
+        LOGGER.debug("Updating TapoDualCamLinkage to: " + str(self._attr_state))
+
+    async def async_select_option(self, option: str) -> None:
+        result = await self.hass.async_add_executor_job(
+            self._controller.setDualCamLinkage,
+            option != "off",
+            self._options_map[option] if option != "off" else None,
         )
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = option

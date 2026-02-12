@@ -1826,11 +1826,6 @@ async def getCamData(hass, controller, chInfo=None):
     camData["dualCamLinkageEnabled"] = dualCamLinkageEnabled
     camData["dualCamLinkageType"] = dualCamLinkageType
 
-    LOGGER.warning(dualLinkageTargetSetting)
-    LOGGER.warning(dualLinkageCapability)
-    LOGGER.warning(dualCamLinkageEnabled)
-    LOGGER.warning(dualCamLinkageType)
-
     LOGGER.debug("getCamData - done")
     LOGGER.debug("Processed update data:")
     LOGGER.debug(camData)
