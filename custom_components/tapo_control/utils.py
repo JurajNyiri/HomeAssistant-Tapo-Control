@@ -27,7 +27,12 @@ from homeassistant.helpers.network import NoURLAvailableError, get_url
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.ffmpeg import DATA_FFMPEG
 from homeassistant.components.onvif.event import EventManager
-from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
+from homeassistant.const import (
+    CONF_IP_ADDRESS,
+    CONF_USERNAME,
+    CONF_PASSWORD,
+    CONF_HOST,
+)
 from homeassistant.util import slugify, dt as dt_util
 
 from .const import (
@@ -51,9 +56,20 @@ from .const import (
     MEDIA_SYNC_HOURS,
     TIME_SYNC_DST,
     TIME_SYNC_NDST,
+    TPLINK_DOMAIN,
 )
 
 UUID = uuid.uuid4().hex
+
+
+def _is_used_by_tplink(hass: HomeAssistant, host: str) -> bool:
+    for entry in hass.config_entries.async_entries(
+        TPLINK_DOMAIN, include_ignore=False, include_disabled=False
+    ):
+        if entry.data.get(CONF_HOST) != host:
+            continue
+        return True
+    return False
 
 
 def isUsingHTTPS(hass):

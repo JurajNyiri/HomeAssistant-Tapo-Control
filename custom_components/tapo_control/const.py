@@ -5,8 +5,11 @@ from datetime import timedelta
 
 from homeassistant.helpers import config_validation as cv
 
+# Used for conflict detection
+TPLINK_DOMAIN = "tplink"
+
 CONTROL_PORT = "control_port"
-PYTAPO_REQUIRED_VERSION = "3.4.9"
+PYTAPO_REQUIRED_VERSION = "3.4.10"
 DOMAIN = "tapo_control"
 DOMAIN_CONFIG = DOMAIN + "_config"
 BRAND = "TP-Link"
