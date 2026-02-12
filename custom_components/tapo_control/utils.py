@@ -1797,6 +1797,35 @@ async def getCamData(hass, controller, chInfo=None):
     except Exception:
         camData["quick_response"] = None
 
+    try:
+        dualLinkageTargetSetting = data["readLinkageTargetSetting"][0][
+            "dual_cam_linkage"
+        ]
+    except Exception:
+        dualLinkageTargetSetting = None
+    camData["dualLinkageTargetSetting"] = dualLinkageTargetSetting
+
+    try:
+        dualLinkageCapability = data["getLinkageTargetCapability"][0][
+            "dual_cam_linkage"
+        ]["linkage_target_capability"]
+    except Exception:
+        dualLinkageCapability = None
+    camData["dualLinkageCapability"] = dualLinkageCapability
+
+    try:
+        dualCamLinkageEnabled = data["getDualCamLinkage"][0]["dual_cam_linkage"][
+            "linkage_state"
+        ]["enabled"]
+        dualCamLinkageType = data["getDualCamLinkage"][0]["dual_cam_linkage"][
+            "linkage_state"
+        ]["linkage_type"]
+    except Exception:
+        dualCamLinkageEnabled = None
+        dualCamLinkageType = None
+    camData["dualCamLinkageEnabled"] = dualCamLinkageEnabled
+    camData["dualCamLinkageType"] = dualCamLinkageType
+
     LOGGER.debug("getCamData - done")
     LOGGER.debug("Processed update data:")
     LOGGER.debug(camData)

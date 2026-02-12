@@ -9,7 +9,7 @@ from homeassistant.helpers import config_validation as cv
 TPLINK_DOMAIN = "tplink"
 
 CONTROL_PORT = "control_port"
-PYTAPO_REQUIRED_VERSION = "3.4.10"
+PYTAPO_REQUIRED_VERSION = "3.4.11"
 DOMAIN = "tapo_control"
 DOMAIN_CONFIG = DOMAIN + "_config"
 BRAND = "TP-Link"
