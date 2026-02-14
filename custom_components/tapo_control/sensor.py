@@ -267,6 +267,10 @@ class TapoHDDSensor(TapoSensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_entity_registry_enabled_default = False
 
+    _state_parser = re.compile(
+        r"\A\s*(?P<value>[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+)))\s*(?P<unit>[^0-9.].*?)\s*\Z"
+    )
+
     def __init__(
         self,
         entry: dict,
@@ -300,14 +304,14 @@ class TapoHDDSensor(TapoSensorEntity):
                 if hdd["disk_name"] == self._sensor_name:
                     state = hdd[self._sensor_property]
         if "space" in self._sensor_property and (
-            match := re.search(r"[-+]?\d*\.?\d+", state)
+            match := __class__._state_parser.search(state)
         ):
-            value = match.group()
-            if (unit := state.replace(value, "")) in UnitOfInformation:
+            unit = match["unit"]
+            if unit in UnitOfInformation:
                 self._attr_device_class = SensorDeviceClass.DATA_SIZE
                 self._attr_native_unit_of_measurement = UnitOfInformation(unit)
                 self._attr_suggested_unit_of_measurement = UnitOfInformation.GIGABYTES
-                state = value
+                state = match["value"]
         self._attr_native_value = state
 
 
