@@ -82,7 +82,7 @@ body:
   - type: dropdown
     attributes:
       label: Does camera work via official integrations?
-      description: If you are having issues with camera, try it via https://www.home-assistant.io/integrations/tplink_tapo/ integration from Home Assistant.
+      description: If you are having issues with camera, try it via https://www.home-assistant.io/integrations/tplink_tapo/, or https://www.home-assistant.io/integrations/onvif/ in case of motion event issues, integration from Home Assistant.
       options:
         - "Yes"
         - "No"
