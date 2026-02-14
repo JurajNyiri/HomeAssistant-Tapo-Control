@@ -130,13 +130,13 @@ body:
       description: |
         ⚠️ Please enable debug logging and upload the full log file.
 
-        ## Option 1: Enable via Home Assistant UI (Recommended)
+        ## Option 1: Enable via Home Assistant UI (Recommended) - Not to be used when issue is related to motion events
         1. Go to *Settings → Devices & Services → Integrations*
         2. Select **Tapo Control**
         3. Click **Enable Debug Logging**
         4. Reproduce the issue
 
-        ## Option 2: Enable via configuration.yaml
+        ## Option 2: Enable via configuration.yaml - Required when issue is related to motion events
         Add the following to your `configuration.yaml`:
 
         ```yaml
@@ -144,6 +144,7 @@ body:
           default: info
           logs:
             custom_components.tapo_control: debug
+            homeassistant.components.onvif: debug
         ```
 
         Then restart Home Assistant and reproduce the issue.
