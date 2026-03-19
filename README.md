@@ -278,7 +278,7 @@ As well as:
 <details>
   <summary>I see error `Invalid cloud password.`</summary>
 
-1. Ensure you have Third Party Compatibility turned on in official Tapo app on your smartphone. Tapo App -> Me -> Tapo Lab -> Third-Party Compatibility -> On
+1. Ensure you have Third Party Compatibility turned on in official Tapo app on your smartphone. Tapo App -> Me -> Third-Party Services -> Third-Party Compatibility -> On
 2. Make sure that "Two-Step Verification" for login is disabled. Go in the Tapo app > Me > View Account > Login Security > Turn off the "Two-Step Verification".
 3. Reset your password.
 4. Make sure your camera can access the internet.
