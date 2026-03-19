@@ -40,9 +40,10 @@ Cameras and Doorbells:
 
 Ensure you have Third Party Compatibility turned on in the official Tapo app on your smartphone.
 
-**Tapo App -> Me -> Tapo Lab -> Third-Party Compatibility -> On**
+**Tapo App -> Me -> Third-Party Services -> Third-Party Compatibility -> On**
 
-![Image describing how to enable Third-Party Compatibility](img/tapo_third_party.png)
+![Image describing how to enable Third-Party Compatibility](https://github.com/user-attachments/assets/c6c122d0-0439-43b4-8667-92961d1c4556)
+
 
 Note: Version 3.8.103 and later is required.
 
