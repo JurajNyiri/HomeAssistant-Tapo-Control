@@ -404,7 +404,7 @@ class TapoMotionSensor(BinarySensorEntity):
 
     @property
     def device_info(self) -> DeviceInfo:
-        return build_device_info(self._attributes)
+        return build_device_info(self._attributes, self._name)
 
     @property
     def model(self):

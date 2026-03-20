@@ -25,6 +25,7 @@ from yarl import URL
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers import device_registry as dr
 from homeassistant.components.ffmpeg import DATA_FFMPEG
 from homeassistant.components.onvif.event import EventManager
 from homeassistant.const import (
@@ -2064,11 +2065,57 @@ async def setupEvents(hass, config_entry):
             return False
 
 
-def build_device_info(attributes: dict) -> DeviceInfo:
+def get_device_name(
+    hass: HomeAssistant, attributes: dict, fallback_name: str = None
+) -> str:
+    """Get device name prioritizing name_by_user over device_alias.
+    
+    Checks the device registry for a user-customized name (name_by_user).
+    Falls back to device_alias if no user customization exists.
+    
+    Args:
+        hass: Home Assistant instance
+        attributes: Device attributes containing 'mac' and 'device_alias'
+        fallback_name: Optional fallback name if device_alias is not available
+    
+    Returns:
+        The preferred device name
+    """
+    device_alias = attributes.get("device_alias", fallback_name or "Tapo Camera")
+    
+    if hass is None:
+        return device_alias
+    
+    try:
+        device_registry = dr.async_get(hass)
+        device_identifier = (DOMAIN, slugify(f"{attributes['mac']}_tapo_control"))
+        device = device_registry.async_get_device(identifiers={device_identifier})
+        
+        if device and device.name_by_user:
+            LOGGER.debug(
+                f"Using name_by_user '{device.name_by_user}' for device {attributes['mac']}"
+            )
+            return device.name_by_user
+    except Exception as e:
+        LOGGER.debug(f"Could not get device from registry: {e}")
+    
+    return device_alias
+
+
+def build_device_info(attributes: dict, name_override: str = None) -> DeviceInfo:
+    """Build DeviceInfo for a Tapo device.
+    
+    Args:
+        attributes: Device attributes containing mac, device_alias, device_model, etc.
+        name_override: Optional name to use instead of device_alias
+    
+    Returns:
+        DeviceInfo object for the device
+    """
     return DeviceInfo(
         identifiers={(DOMAIN, slugify(f"{attributes['mac']}_tapo_control"))},
         connections={("mac", attributes["mac"])},
-        name=attributes["device_alias"],
+        name=name_override if name_override else attributes["device_alias"],
         manufacturer=BRAND,
         model=attributes["device_model"],
         sw_version=attributes["sw_version"],

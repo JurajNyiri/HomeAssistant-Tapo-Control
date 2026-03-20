@@ -75,6 +75,7 @@ from .utils import (
     getDataForController,
     getEntryStorageFile,
     getHotDirPathForEntry,
+    get_device_name,
     getIP,
     isUsingHTTPS,
     mediaCleanup,
@@ -1033,7 +1034,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "eventsListener": False,
             "entities": [],
             "noiseSensorStarted": False,
-            "name": camData["basic_info"]["device_alias"],
+            "name": get_device_name(hass, camData["basic_info"]),
             "childDevices": [],
             "isRunningOnBattery": (
                 True
@@ -1139,7 +1140,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                 "runningMediaSync": False,
                                 "mediaScanResult": {},  # keeps track of all videos currently on camera
                                 "entities": [],
-                                "name": childCamData["basic_info"]["device_alias"],
+                                "name": get_device_name(hass, childCamData["basic_info"]),
                                 "childDevices": [],
                                 "isChild": True,
                                 "isRunningOnBattery": (

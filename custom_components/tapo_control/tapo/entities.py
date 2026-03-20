@@ -24,10 +24,7 @@ class TapoEntity(Entity):
         self._enabled = False
         self._is_cam_entity = False
         self._is_noise_sensor = False
-        if self._entry["isChild"]:
-            self._name = entry["camData"]["basic_info"]["device_alias"]
-        else:
-            self._name = entry["name"]
+        self._name = entry["name"]
         self._name_suffix = name_suffix
         self._controller = entry["controller"]
         self._coordinator = entry["coordinator"]
@@ -39,7 +36,7 @@ class TapoEntity(Entity):
 
     @property
     def device_info(self) -> DeviceInfo:
-        return build_device_info(self._attributes)
+        return build_device_info(self._attributes, self._name)
 
     @property
     def unique_id(self) -> str:
