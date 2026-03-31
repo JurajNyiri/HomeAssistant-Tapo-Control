@@ -237,9 +237,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         hass.data[DOMAIN][config_entry.entry_id]["udp_monitor"] = udp_monitor
     else:
         LOGGER.debug(
-            "Skipping doorbell UDP binary sensor setup; model=%s, child_models=%s, is_child=%s, Parent IP=%s",
+            "Skipping doorbell UDP binary sensor setup; model=%s, is_child=%s, Parent IP=%s",
             model,
-            child_models,
             is_child_device,
             device_ip,
         )
