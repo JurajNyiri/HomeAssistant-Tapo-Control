@@ -193,14 +193,19 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     is_doorbell_model = (
         isinstance(model, str) and model.upper().startswith("D")
     ) or device_type == "SMART.TAPODOORBELL"
-    child_models = [
-        child.get("camData", {}).get("basic_info", {}).get("device_model")
-        for child in entry.get("childDevices", [])
-    ]
-    has_doorbell_child = any(
-        isinstance(child_model, str) and child_model.upper().startswith("D")
-        for child_model in child_models
-    )
+
+    # Check child devices for doorbell models or types
+    has_doorbell_child = False
+    for child in entry.get("childDevices", []):
+        if not isinstance(child, dict):
+            continue
+        child_model = child.get("camData", {}).get("basic_info", {}).get("device_model")
+        child_type = child.get("camData", {}).get("basic_info", {}).get("device_type")
+        if (
+            isinstance(child_model, str) and child_model.upper().startswith("D")
+        ) or child_type == "SMART.TAPODOORBELL":
+            has_doorbell_child = True
+            break
     is_child_device = bool(entry.get("isChild"))
     device_ip = config_entry.data.get(CONF_IP_ADDRESS)
 
