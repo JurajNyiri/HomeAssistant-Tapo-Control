@@ -552,6 +552,7 @@ class TapoDirectCamEntity(TapoCamEntity):
             includeAudio=False,
             quality=self._directQuality,
             logFunction=self.logFunction,
+            no_data_timeout=25.0 if self._is_running_on_battery else 10.0,
             ff_args={
                 "-frames:v": "1",
                 "-f": "image2pipe",
@@ -589,6 +590,7 @@ class TapoDirectCamEntity(TapoCamEntity):
             includeAudio=False,
             quality=self._directQuality,
             logFunction=self.logFunction,
+            no_data_timeout=25.0 if self._is_running_on_battery else 10.0,
             ff_args={
                 "-c:v": "mjpeg",
                 "-f": "mpjpeg",
@@ -646,6 +648,7 @@ class TapoDirectCamEntity(TapoCamEntity):
             includeAudio=False,
             quality=self._directQuality,
             logFunction=self.logFunction,
+            no_data_timeout=25.0 if self._is_running_on_battery else 10.0,
         )
         info = await self._streamer.start()
 
