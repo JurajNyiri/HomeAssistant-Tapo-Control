@@ -25,6 +25,7 @@ from homeassistant.components.stream import (
 from .const import (
     CONF_RTSP_TRANSPORT,
     ENABLE_STREAM,
+    DISABLE_STREAM_THUMBNAILS,
     SERVICE_SAVE_PRESET,
     SCHEMA_SERVICE_SAVE_PRESET,
     SERVICE_DELETE_PRESET,
@@ -246,7 +247,7 @@ class TapoCamEntity(Camera):
         self._attr_should_poll = True
         self._is_cam_entity = True
         self._is_noise_sensor = False
-
+        self._is_running_on_battery = entry.get("isRunningOnBattery", False)
         self.updateTapo(entry["camData"])
 
     async def async_added_to_hass(self) -> None:
@@ -303,7 +304,8 @@ class TapoCamEntity(Camera):
     def updateTapo(self, camData):
         LOGGER.debug("updateTapo - camera")
         if not camData:
-            self._attr_state = STATE_UNAVAILABLE
+            if not self._is_running_on_battery:
+                self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_state = "idle"
             motion_enabled = camData["motion_detection_enabled"]
@@ -540,6 +542,10 @@ class TapoDirectCamEntity(TapoCamEntity):
     async def async_camera_image(
         self, width: int | None = None, height: int | None = None
     ):
+        if self._config_entry.data.get(DISABLE_STREAM_THUMBNAILS, False):
+            LOGGER.debug("Thumbnails generation is disabled for this camera.")
+            return None
+
         LOGGER.debug("async_camera_image")
         streamer = Streamer(
             self._controller,
@@ -559,16 +565,22 @@ class TapoDirectCamEntity(TapoCamEntity):
 
         proc = info["ffmpegProcess"]
 
-        LOGGER.debug("Direct MJPEG: ffmpeg PID %s", proc.pid)
-
-        jpeg = await proc.stdout.read()
-        await proc.wait()
-
-        LOGGER.debug("async_camera_image - Stopping streamer")
-        await streamer.stop()
-        info["streamProcess"].cancel()
-        LOGGER.debug("async_camera_image - Returning jpeg")
-        return jpeg
+        try:
+            LOGGER.debug("Direct MJPEG: ffmpeg PID %s", proc.pid)
+            jpeg = await proc.stdout.read()
+            await proc.wait()
+            return jpeg
+        finally:
+            LOGGER.debug("async_camera_image - Stopping streamer")
+            if proc.returncode is None:
+                try:
+                    proc.kill()
+                    await proc.wait()
+                except Exception as e:
+                    LOGGER.debug(f"Direct MJPEG: Failed to kill orphaned ffmpeg: {e}")
+            await streamer.stop()
+            if "streamProcess" in info and not info["streamProcess"].done():
+                info["streamProcess"].cancel()
 
     async def handle_async_mjpeg_stream(self, request):
         LOGGER.debug("Direct MJPEG: request")
@@ -666,5 +678,12 @@ class TapoDirectCamEntity(TapoCamEntity):
 
     def _on_stream_state(self):
         if not self._HAstream.available:
-            LOGGER.debug("%s: HA stream unavailable: restarting", self.entity_id)
-            asyncio.create_task(self._ensure_av_pipe(newStream=True))
+            if not self._is_running_on_battery:
+                LOGGER.debug("%s: HA stream unavailable: restarting", self.entity_id)
+                asyncio.create_task(self._ensure_av_pipe(newStream=True))
+            else:
+                LOGGER.debug("%s: HA stream unavailable: tearing down underlying streamer to clear zombie processes", self.entity_id)
+                if self._streamer:
+                    asyncio.create_task(self._streamer.stop())
+                if self._stream_task:
+                    self._stream_task.cancel()

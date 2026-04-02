@@ -31,6 +31,7 @@ from .const import (
     CONTROL_PORT,
     ENABLE_MOTION_SENSOR,
     ENABLE_STREAM,
+    DISABLE_STREAM_THUMBNAILS,
     ENABLE_SOUND_DETECTION,
     ENABLE_WEBHOOKS,
     IS_KLAP_DEVICE,
@@ -420,6 +421,7 @@ class FlowHandler(ConfigFlow):
         enable_motion_sensor = True
         enable_webhooks = True
         enable_stream = True
+        disable_stream_thumbnails = False
         enable_time_sync = False
         enable_sound_detection = False
         sound_detection_peak = -30
@@ -444,6 +446,10 @@ class FlowHandler(ConfigFlow):
                 enable_stream = user_input[ENABLE_STREAM]
             else:
                 enable_stream = False
+            if DISABLE_STREAM_THUMBNAILS in user_input:
+                disable_stream_thumbnails = user_input[DISABLE_STREAM_THUMBNAILS]
+            else:
+                disable_stream_thumbnails = False
             if ENABLE_TIME_SYNC in user_input:
                 enable_time_sync = user_input[ENABLE_TIME_SYNC]
             else:
@@ -522,6 +528,7 @@ class FlowHandler(ConfigFlow):
                         ENABLE_MOTION_SENSOR: False,
                         ENABLE_WEBHOOKS: False,
                         ENABLE_STREAM: False,
+                        DISABLE_STREAM_THUMBNAILS: disable_stream_thumbnails,
                         ENABLE_TIME_SYNC: False,
                         CONF_IP_ADDRESS: host,
                         REPORTED_IP_ADDRESS: reported_ip_address,
@@ -558,6 +565,7 @@ class FlowHandler(ConfigFlow):
                         ENABLE_MOTION_SENSOR: enable_motion_sensor,
                         ENABLE_WEBHOOKS: enable_webhooks,
                         ENABLE_STREAM: enable_stream,
+                        DISABLE_STREAM_THUMBNAILS: disable_stream_thumbnails,
                         ENABLE_TIME_SYNC: enable_time_sync,
                         CONF_IP_ADDRESS: host,
                         CONTROL_PORT: controlPort,
@@ -609,6 +617,10 @@ class FlowHandler(ConfigFlow):
                     vol.Optional(
                         ENABLE_STREAM,
                         description={"suggested_value": enable_stream},
+                    ): bool,
+                    vol.Optional(
+                        DISABLE_STREAM_THUMBNAILS,
+                        description={"suggested_value": disable_stream_thumbnails},
                     ): bool,
                     vol.Optional(
                         ENABLE_SOUND_DETECTION,
@@ -1587,8 +1599,9 @@ class TapoOptionsFlowHandler(OptionsFlow):
         cloud_password = self.config_entry.data[CLOUD_PASSWORD]
         enable_motion_sensor = self.config_entry.data[ENABLE_MOTION_SENSOR]
         enable_webhooks = self.config_entry.data[ENABLE_WEBHOOKS]
-        enable_stream = self.config_entry.data[ENABLE_STREAM]
-        enable_time_sync = self.config_entry.data[ENABLE_TIME_SYNC]
+        enable_stream = self.config_entry.data.get(ENABLE_STREAM, False)
+        disable_stream_thumbnails = self.config_entry.data.get(DISABLE_STREAM_THUMBNAILS, False)
+        enable_time_sync = self.config_entry.data.get(ENABLE_TIME_SYNC, False)
         extra_arguments = self.config_entry.data[CONF_EXTRA_ARGUMENTS]
         custom_stream_hd = self.config_entry.data.get(CONF_CUSTOM_STREAM_HD, "")
         custom_stream_sd = self.config_entry.data.get(CONF_CUSTOM_STREAM_SD, "")
@@ -1680,6 +1693,11 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     enable_stream = user_input[ENABLE_STREAM]
                 else:
                     enable_stream = False
+
+                if DISABLE_STREAM_THUMBNAILS in user_input:
+                    disable_stream_thumbnails = user_input[DISABLE_STREAM_THUMBNAILS]
+                else:
+                    disable_stream_thumbnails = False
 
                 if CONF_CUSTOM_STREAM_HD in user_input:
                     custom_stream_hd = user_input[CONF_CUSTOM_STREAM_HD]
@@ -1878,6 +1896,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
 
                 allConfigData = {**self.config_entry.data}
                 allConfigData[ENABLE_STREAM] = enable_stream
+                allConfigData[DISABLE_STREAM_THUMBNAILS] = disable_stream_thumbnails
                 allConfigData[ENABLE_MOTION_SENSOR] = enable_motion_sensor
                 allConfigData[ENABLE_WEBHOOKS] = enable_webhooks
                 allConfigData[CONF_IP_ADDRESS] = ip_address
@@ -1962,6 +1981,10 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     vol.Optional(
                         ENABLE_STREAM,
                         description={"suggested_value": enable_stream},
+                    ): bool,
+                    vol.Optional(
+                        DISABLE_STREAM_THUMBNAILS,
+                        description={"suggested_value": disable_stream_thumbnails},
                     ): bool,
                     vol.Optional(
                         CONF_EXTRA_ARGUMENTS,

@@ -68,6 +68,7 @@ MEDIA_VIEW_RECORDINGS_ORDER_OPTIONS = ["Ascending", "Descending"]
 
 ENABLE_WEBHOOKS = "enable_webhooks"
 ENABLE_STREAM = "enable_stream"
+DISABLE_STREAM_THUMBNAILS = "disable_stream_thumbnails"
 ENABLE_SOUND_DETECTION = "enable_sound_detection"
 SOUND_DETECTION_PEAK = "sound_detection_peak"
 SOUND_DETECTION_DURATION = "sound_detection_duration"
