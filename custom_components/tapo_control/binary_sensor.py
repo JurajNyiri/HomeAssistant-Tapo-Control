@@ -189,15 +189,23 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     LOGGER.debug("Setting up binary sensor for motion.")
     entry = hass.data[DOMAIN][config_entry.entry_id]
     model = entry.get("camData", {}).get("basic_info", {}).get("device_model")
-    is_doorbell_model = isinstance(model, str) and model.upper().startswith("D")
-    child_models = [
-        child.get("camData", {}).get("basic_info", {}).get("device_model")
-        for child in entry.get("childDevices", [])
-    ]
-    has_doorbell_child = any(
-        isinstance(child_model, str) and child_model.upper().startswith("D")
-        for child_model in child_models
-    )
+    device_type = entry.get("camData", {}).get("basic_info", {}).get("device_type")
+    is_doorbell_model = (
+        isinstance(model, str) and model.upper().startswith("D")
+    ) or device_type == "SMART.TAPODOORBELL"
+
+    # Check child devices for doorbell models or types
+    has_doorbell_child = False
+    for child in entry.get("childDevices", []):
+        if not isinstance(child, dict):
+            continue
+        child_model = child.get("camData", {}).get("basic_info", {}).get("device_model")
+        child_type = child.get("camData", {}).get("basic_info", {}).get("device_type")
+        if (
+            isinstance(child_model, str) and child_model.upper().startswith("D")
+        ) or child_type == "SMART.TAPODOORBELL":
+            has_doorbell_child = True
+            break
     is_child_device = bool(entry.get("isChild"))
     device_ip = config_entry.data.get(CONF_IP_ADDRESS)
 
@@ -229,9 +237,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         hass.data[DOMAIN][config_entry.entry_id]["udp_monitor"] = udp_monitor
     else:
         LOGGER.debug(
-            "Skipping doorbell UDP binary sensor setup; model=%s, child_models=%s, is_child=%s, Parent IP=%s",
+            "Skipping doorbell UDP binary sensor setup; model=%s, is_child=%s, Parent IP=%s",
             model,
-            child_models,
             is_child_device,
             device_ip,
         )
