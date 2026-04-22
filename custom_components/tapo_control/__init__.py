@@ -800,7 +800,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             allEntities = getAllEntities(hass.data[DOMAIN][entry.entry_id])
             for entity in allEntities:
                 LOGGER.debug(entity["entity"])
-                if entity["entity"]._enabled:
+                if getattr(entity["entity"], "_enabled", False):
                     LOGGER.debug("async_update_data - enabling someEntityEnabled check")
                     someEntityEnabled = True
                     break
@@ -910,7 +910,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
                     for entity in allEntities:
                         if (
-                            entity["entity"]._enabled
+                            getattr(entity["entity"], "_enabled", False)
                             and entity["entry"]["controller"]
                             in updateDataForAllControllers
                         ):
@@ -935,9 +935,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             ):
                                 await entity["entity"].startNoiseDetection()
 
-                if ("updateEntity" in hass.data[DOMAIN][entry.entry_id]) and hass.data[
-                    DOMAIN
-                ][entry.entry_id]["updateEntity"]._enabled:
+                if ("updateEntity" in hass.data[DOMAIN][entry.entry_id]) and getattr(
+                    hass.data[DOMAIN][entry.entry_id]["updateEntity"],
+                    "_enabled",
+                    False,
+                ):
                     hass.data[DOMAIN][entry.entry_id]["updateEntity"].updateTapo(
                         camData
                     )
