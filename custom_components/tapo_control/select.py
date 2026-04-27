@@ -1063,30 +1063,26 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
-        LOGGER.debug(f"TapoMotionDetectionSelect updateTapo 1 ({self.chn_id})")
+        LOGGER.debug("TapoMotionDetectionSelect updateTapo 1")
         if not camData:
             LOGGER.debug("TapoMotionDetectionSelect updateTapo 2")
             self._attr_state = STATE_UNAVAILABLE
         else:
             LOGGER.debug("TapoMotionDetectionSelect updateTapo 3")
-            enabled = camData.get("motion_detection_enabled")
-
-            # Check if return type is list
-            if isinstance(enabled, list):
-                enabled_value = enabled[self.read_chn_id]
-                if enabled_value == "off":
-                    LOGGER.debug("TapoMotionDetectionSelect updateTapo 4-1")
-                    self._attr_current_option = "off"
-                else:
-                    LOGGER.debug("TapoMotionDetectionSelect updateTapo 5-1")
-                    self._attr_current_option = camData["motion_detection_sensitivity"][self.read_chn_id]
+            motion_enabled = camData["motion_detection_enabled"]
+            motion_sensitivity = camData["motion_detection_sensitivity"]
+            if isinstance(motion_enabled, dict):
+                motion_enabled = motion_enabled.get(self.read_chn_id)
+            if isinstance(motion_sensitivity, dict):
+                motion_sensitivity = motion_sensitivity.get(self.read_chn_id)
+            LOGGER.debug(f"Enabled: {motion_enabled}")
+            LOGGER.debug(f"Sensitivity: {motion_sensitivity}")
+            if motion_enabled == "off":
+                LOGGER.debug("TapoMotionDetectionSelect updateTapo 4")
+                self._attr_current_option = "off"
             else:
-                if not enabled:
-                    LOGGER.debug("TapoMotionDetectionSelect updateTapo 4-2")
-                    self._attr_current_option = "off"
-                else:
-                    LOGGER.debug("TapoMotionDetectionSelect updateTapo 5-2")
-                    self._attr_current_option = camData["motion_detection_sensitivity"][self.read_chn_id] 
+                LOGGER.debug("TapoMotionDetectionSelect updateTapo 5")
+                self._attr_current_option = motion_sensitivity
             LOGGER.debug("TapoMotionDetectionSelect updateTapo 6")
             self._attr_state = self._attr_current_option
         LOGGER.debug("Updating TapoMotionDetectionSelect to: " + str(self._attr_state))
