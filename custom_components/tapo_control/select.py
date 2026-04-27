@@ -1064,25 +1064,29 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
 
     def updateTapo(self, camData):
         LOGGER.debug(f"TapoMotionDetectionSelect updateTapo 1 ({self.chn_id})")
-        LOGGER.debug(
-            f"Enabled: {camData["motion_detection_enabled"][self.read_chn_id]}"
-        )
-        LOGGER.debug(
-            f"Sensitivity: {camData["motion_detection_sensitivity"][self.read_chn_id]}"
-        )
         if not camData:
             LOGGER.debug("TapoMotionDetectionSelect updateTapo 2")
             self._attr_state = STATE_UNAVAILABLE
         else:
             LOGGER.debug("TapoMotionDetectionSelect updateTapo 3")
-            if camData["motion_detection_enabled"][self.read_chn_id] == "off":
-                LOGGER.debug("TapoMotionDetectionSelect updateTapo 4")
-                self._attr_current_option = "off"
+            enabled = camData.get("motion_detection_enabled")
+
+            # Check if return type is list
+            if isinstance(enabled, list):
+                enabled_value = enabled[self.read_chn_id]
+                if enabled_value == "off":
+                    LOGGER.debug("TapoMotionDetectionSelect updateTapo 4-1")
+                    self._attr_current_option = "off"
+                else:
+                    LOGGER.debug("TapoMotionDetectionSelect updateTapo 5-1")
+                    self._attr_current_option = camData["motion_detection_sensitivity"][self.read_chn_id]
             else:
-                LOGGER.debug("TapoMotionDetectionSelect updateTapo 5")
-                self._attr_current_option = camData["motion_detection_sensitivity"][
-                    self.read_chn_id
-                ]
+                if not enabled:
+                    LOGGER.debug("TapoMotionDetectionSelect updateTapo 4-2")
+                    self._attr_current_option = "off"
+                else:
+                    LOGGER.debug("TapoMotionDetectionSelect updateTapo 5-2")
+                    self._attr_current_option = camData["motion_detection_sensitivity"][self.read_chn_id] 
             LOGGER.debug("TapoMotionDetectionSelect updateTapo 6")
             self._attr_state = self._attr_current_option
         LOGGER.debug("Updating TapoMotionDetectionSelect to: " + str(self._attr_state))
