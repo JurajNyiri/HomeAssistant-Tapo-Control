@@ -1064,17 +1064,17 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
 
     def updateTapo(self, camData):
         LOGGER.debug(f"TapoMotionDetectionSelect updateTapo 1 ({self.chn_id})")
-        LOGGER.debug(
-            f"Enabled: {camData["motion_detection_enabled"][self.read_chn_id]}"
-        )
-        LOGGER.debug(
-            f"Sensitivity: {camData["motion_detection_sensitivity"][self.read_chn_id]}"
-        )
         if not camData:
             LOGGER.debug("TapoMotionDetectionSelect updateTapo 2")
             self._attr_state = STATE_UNAVAILABLE
         else:
             LOGGER.debug("TapoMotionDetectionSelect updateTapo 3")
+            LOGGER.debug(
+                f"Enabled: {camData["motion_detection_enabled"][self.read_chn_id]}"
+            )
+            LOGGER.debug(
+                f"Sensitivity: {camData["motion_detection_sensitivity"][self.read_chn_id]}"
+            )
             if camData["motion_detection_enabled"][self.read_chn_id] == "off":
                 LOGGER.debug("TapoMotionDetectionSelect updateTapo 4")
                 self._attr_current_option = "off"
