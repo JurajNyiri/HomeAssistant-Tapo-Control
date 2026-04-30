@@ -6,7 +6,7 @@
   "codeowners": [
     "@JurajNyiri"
   ],
-  "version": "7.1.12",
+  "version": "7.1.13",
   "requirements": [
     "pytapo==3.4.11",
     "python-kasa[speedups]==0.10.2"
@@ -18,7 +18,7 @@
     "network"
   ],
   "config_flow": true,
-  "homeassistant": "2026.5.0",
+  "homeassistant": "2025.10.0",
   "dhcp": [
     {
       "hostname": "c[0-9][0-9][0-9]*_*"

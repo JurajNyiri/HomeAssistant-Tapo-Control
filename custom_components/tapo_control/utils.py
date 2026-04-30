@@ -26,7 +26,11 @@ from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.ffmpeg import DATA_FFMPEG
-from homeassistant.components.onvif.event_manager import EventManager
+try:
+    # Home Assistant moved EventManager from `event` to `event_manager` in 2026.5.
+    from homeassistant.components.onvif.event_manager import EventManager
+except ModuleNotFoundError:
+    from homeassistant.components.onvif.event import EventManager
 from homeassistant.const import (
     CONF_IP_ADDRESS,
     CONF_USERNAME,
