@@ -578,9 +578,10 @@ class TapoDirectCamEntity(TapoCamEntity):
             quality=self._directQuality,
             logFunction=self.logFunction,
             ff_args={
+                "-probesize": "50000",
+                "-analyzeduration": "1000000",
                 "-c:v": "mjpeg",
                 "-f": "mpjpeg",
-                "-vsync": "0",
                 "-map-video": f"0:v:{self.videoStream}",
             },
         )
