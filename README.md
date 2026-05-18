@@ -197,7 +197,7 @@ Also make sure that:
 - binary sensor is not disabled via entity, check .storage/core.entity_registry for disabled entities, look for "disabled_by": "user" on platform "tapo_control". If it is, remove the whole entity or change to "disabled_by": null, and restart HASS.
 - binary sensor is enabled in tapo integration options
 - onvif port 2020 on camera is opened
-- onvif on camera is not being used more than once, and is only used by this integration
+- onvif on camera is not being used more than once concurrently, and is only used by this integration
 </details>
 
 <details>
