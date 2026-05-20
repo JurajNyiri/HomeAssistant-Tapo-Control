@@ -386,7 +386,7 @@ class TapoLastRebootTimeSensor(TapoSensorEntity):
         """Initialize the entity."""
         TapoSensorEntity.__init__(
             self,
-            "Last Reboot Time",
+            "Last Automatic Reboot Time",
             entry,
             hass,
             config_entry,
