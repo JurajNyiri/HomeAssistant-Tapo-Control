@@ -13,6 +13,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN, ENABLE_MEDIA_SYNC, LOGGER
 from .tapo.entities import TapoSensorEntity
@@ -71,6 +72,10 @@ async def async_setup_entry(
                 and camData["basic_info"]["signal_level"] is not None
             ):
                 sensors.append(TapoChimeSignalLevel(entry, hass, config_entry))
+
+            if "rebootLastTime" in camData and camData["rebootLastTime"] is not None:
+                LOGGER.debug("Adding TapoLastRebootTimeSensor...")
+                sensors.append(TapoLastRebootTimeSensor(entry, hass, config_entry))
 
         if entry["controller"].isKLAP is False:
             sensors.append(TapoSyncSensor(entry, hass, config_entry))
@@ -367,3 +372,50 @@ class TapoSyncSensor(TapoSensorEntity):
                 self._attr_native_value = "Idle"
         else:
             self._attr_native_value = "Idle"
+
+
+class TapoLastRebootTimeSensor(TapoSensorEntity):
+    """Tapo last reboot time sensor."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self, entry: dict, hass: HomeAssistant, config_entry: ConfigEntry
+    ) -> None:
+        """Initialize the entity."""
+        TapoSensorEntity.__init__(
+            self,
+            "Last Reboot Time",
+            entry,
+            hass,
+            config_entry,
+            "mdi:restart",
+            SensorDeviceClass.TIMESTAMP,
+        )
+
+    async def async_update(self) -> None:
+        """Update the entity."""
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData: dict | None) -> None:
+        """Update the entity."""
+        if (
+            not camData
+            or "rebootLastTime" not in camData
+            or camData["rebootLastTime"] is None
+        ):
+            self._attr_native_value = STATE_UNAVAILABLE
+            return
+
+        try:
+            reboot_ts = int(camData["rebootLastTime"])
+        except (TypeError, ValueError):
+            self._attr_native_value = STATE_UNAVAILABLE
+            return
+
+        if reboot_ts <= 0:
+            self._attr_native_value = STATE_UNAVAILABLE
+            return
+
+        self._attr_native_value = dt_util.utc_from_timestamp(reboot_ts)

@@ -34,6 +34,21 @@ async def async_setup_entry(
             selects.append(tapoTimezoneSelect)
 
         if (
+            "rebootTime" in entry["camData"]
+            and entry["camData"]["rebootTime"] is not None
+        ):
+            tapoAutomaticRebootTimeSelect = await check_and_create(
+                entry,
+                hass,
+                TapoAutomaticRebootTimeSelect,
+                "getReboot",
+                config_entry,
+            )
+            if tapoAutomaticRebootTimeSelect:
+                LOGGER.debug("Adding tapoAutomaticRebootTimeSelect...")
+                selects.append(tapoAutomaticRebootTimeSelect)
+
+        if (
             "night_vision_mode_switching" in entry["camData"]
             and entry["camData"]["night_vision_mode_switching"] is not None
         ):
@@ -825,6 +840,79 @@ class TapoTimezoneSelect(TapoSelectEntity):
             self._controller.setTimezone, timezone_timezone, timezone_zone_id
         )
         if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = option
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+
+class TapoAutomaticRebootTimeSelect(TapoSelectEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self._attr_options = []
+        self._option_to_time = {}
+        self._time_to_option = {}
+        self._populateOptions()
+        self._attr_current_option = None
+        TapoSelectEntity.__init__(
+            self,
+            "Automatic Reboot - Time",
+            entry,
+            hass,
+            config_entry,
+            "mdi:clock-time-twelve-outline",
+        )
+
+    def _populateOptions(self):
+        for hour in range(24):
+            for minute in (0, 30):
+                start_minutes = (hour * 60) + minute
+                end_minutes = (start_minutes + 30) % (24 * 60)
+                start_hour = start_minutes // 60
+                start_minute = start_minutes % 60
+                end_hour = end_minutes // 60
+                end_minute = end_minutes % 60
+                start_time = f"{start_hour:02d}:{start_minute:02d}"
+                end_time = f"{end_hour:02d}:{end_minute:02d}"
+                label = f"{start_time} - {end_time}"
+                reboot_time = f"{start_time}:00"
+                self._attr_options.append(label)
+                self._option_to_time[label] = reboot_time
+                self._time_to_option[start_time] = label
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if (
+            not camData
+            or "rebootTime" not in camData
+            or camData["rebootTime"] is None
+        ):
+            self._attr_state = STATE_UNAVAILABLE
+            return
+
+        reboot_time = str(camData["rebootTime"])[:5]
+        if reboot_time in self._time_to_option:
+            self._attr_current_option = self._time_to_option[reboot_time]
+            self._attr_state = self._attr_current_option
+        else:
+            self._attr_state = STATE_UNAVAILABLE
+
+    async def async_select_option(self, option: str) -> None:
+        reboot_time = self._option_to_time.get(option)
+        if reboot_time is None:
+            self._attr_state = STATE_UNAVAILABLE
+            self.async_write_ha_state()
+            return
+
+        result = await self._hass.async_add_executor_job(
+            self._controller.setReboot,
+            None,
+            reboot_time,
+            None,
+            30,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_current_option = option
             self._attr_state = option
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()

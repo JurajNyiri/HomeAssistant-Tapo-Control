@@ -1726,6 +1726,24 @@ async def getCamData(hass, controller, chInfo=None):
     camData["autoUpgradeEnabled"] = autoUpgradeEnabled
 
     try:
+        rebootConfig = data["getReboot"][0]["timing_reboot"]["reboot"]
+    except Exception:
+        rebootConfig = None
+    camData["rebootConfig"] = rebootConfig
+    if isinstance(rebootConfig, dict):
+        camData["rebootEnabled"] = rebootConfig.get("enabled")
+        camData["rebootTime"] = rebootConfig.get("time")
+        camData["rebootDay"] = rebootConfig.get("day")
+        camData["rebootRandomRange"] = rebootConfig.get("random_range")
+        camData["rebootLastTime"] = rebootConfig.get("last_reboot_time")
+    else:
+        camData["rebootEnabled"] = None
+        camData["rebootTime"] = None
+        camData["rebootDay"] = None
+        camData["rebootRandomRange"] = None
+        camData["rebootLastTime"] = None
+
+    try:
         connectionInformation = data["getConnectionType"][0]
     except Exception:
         connectionInformation = None
