@@ -284,7 +284,7 @@ As well as:
 4. Make sure your camera can access the internet.
 5. Reboot your camera a few times.
 6. Reset the camera. Remove it from your account, do a factory reset, add it back with internet access, add it back to the integration.
-7. Try checking Third-Party Compatibility off and on again and opening the camera via Tapo App.
+7. Try checking Third-Party Compatibility off and on again and opening the camera via Tapo App, while being on the same network as the camera is.
 8. If all of this fails (unlikely) repeat from step 1, wait a few hours and try again.
 
 </details>
