@@ -324,6 +324,7 @@ Users reported full functionality with following Tapo Cameras, Doorbells and Chi
 - C710
 - C720
 - D100C
+- D130
 - D205
 - D230
 - D235
