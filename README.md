@@ -40,11 +40,7 @@ Cameras and Doorbells:
 
 Ensure you have Third Party Compatibility turned on in the official Tapo app on your smartphone.
 
-**Tapo App -> Me -> Tapo Lab -> Third-Party Compatibility -> On**
-
-![Image describing how to enable Third-Party Compatibility](img/tapo_third_party.png)
-
-Note: Version 3.8.103 and later is required.
+**Tapo App -> Me -> Third-Party Compatibility -> On**
 
 ## Usage
 
@@ -148,6 +144,23 @@ action:
 ```
 
 ## Troubleshooting | FAQ
+
+
+<details>
+  <summary>I see error `Invalid cloud password.`</summary>
+
+
+After every step, test if camera works in HA, and after each step try checking Third-Party Compatibility off and on again.
+
+1. Ensure you have Third Party Compatibility turned on in official Tapo app on your smartphone. Tapo App -> Me -> Third-Party Compatibility -> On
+2. Try checking Third-Party Compatibility off and on again and opening the camera via Tapo App, while being on the same network as the camera is.
+3. Reset your password.
+4. Make sure your camera can access the internet.
+5. Reboot your camera a few times.
+6. Reset the camera. Remove it from your account, do a factory reset, add it back with internet access, add it back to the integration.
+7. If all of this fails (unlikely) repeat from step 1, wait a few hours and try again.
+
+</details>
 
 <details>
   <summary>Which stream to use?</summary>
@@ -272,20 +285,6 @@ As well as:
 > If you are using an SD card and Tapo Care at the same time, the NVR(RTSP/ONVIF) will be disabled.
 >
 > To restart the recording on the NVR, please remove the SD card from the camera.
-
-</details>
-
-<details>
-  <summary>I see error `Invalid cloud password.`</summary>
-
-1. Ensure you have Third Party Compatibility turned on in official Tapo app on your smartphone. Tapo App -> Me -> Tapo Lab -> Third-Party Compatibility -> On
-2. Make sure that "Two-Step Verification" for login is disabled. Go in the Tapo app > Me > View Account > Login Security > Turn off the "Two-Step Verification".
-3. Reset your password.
-4. Make sure your camera can access the internet.
-5. Reboot your camera a few times.
-6. Reset the camera. Remove it from your account, do a factory reset, add it back with internet access, add it back to the integration.
-7. Try checking Third-Party Compatibility off and on again and opening the camera via Tapo App, while being on the same network as the camera is.
-8. If all of this fails (unlikely) repeat from step 1, wait a few hours and try again.
 
 </details>
 
