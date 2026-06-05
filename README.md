@@ -149,6 +149,7 @@ action:
 <details>
   <summary>I see error `Invalid cloud password.`</summary>
 
+**These steps apply even if camera worked before, and now does not (for example, after firmware update).**
 
 After every step, test if camera works in HA, and after each step try checking Third-Party Compatibility off and on again.
 
