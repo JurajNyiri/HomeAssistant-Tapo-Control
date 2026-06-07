@@ -318,6 +318,7 @@ Users reported full functionality with following Tapo Cameras, Doorbells and Chi
 - C410
 - C420
 - C420S2
+- C425
 - C500
 - C510W
 - C520WS
