@@ -330,11 +330,13 @@ class EventsListener:
         events = self.metaData["events"]
         name = self.metaData["name"]
         camData = self.metaData["camData"]
-        entities = {
-            event.uid: TapoMotionSensor(event.uid, events, name, camData)
-            for event in events.get_platform("binary_sensor")
-        }
-        self.async_add_entities(entities.values())
+        entities = {}
+        if camData:
+            entities = {
+                event.uid: TapoMotionSensor(event.uid, events, name, camData)
+                for event in events.get_platform("binary_sensor")
+            }
+            self.async_add_entities(entities.values())
         uids_by_platform = events.get_uids_by_platform("binary_sensor")
 
         @callback
@@ -343,8 +345,13 @@ class EventsListener:
             nonlocal uids_by_platform
             if not (missing := uids_by_platform.difference(entities)):
                 return
+            currentCamData = self.metaData["camData"]
+            if not currentCamData:
+                LOGGER.debug("async_check_entities - camData not ready; will retry")
+                return
             new_entities: dict[str, TapoMotionSensor] = {
-                uid: TapoMotionSensor(uid, events, name, camData) for uid in missing
+                uid: TapoMotionSensor(uid, events, name, currentCamData)
+                for uid in missing
             }
             LOGGER.debug("async_check_entities2")
             if new_entities:
