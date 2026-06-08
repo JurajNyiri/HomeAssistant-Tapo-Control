@@ -40,11 +40,7 @@ Cameras and Doorbells:
 
 Ensure you have Third Party Compatibility turned on in the official Tapo app on your smartphone.
 
-**Tapo App -> Me -> Tapo Lab -> Third-Party Compatibility -> On**
-
-![Image describing how to enable Third-Party Compatibility](img/tapo_third_party.png)
-
-Note: Version 3.8.103 and later is required.
+**Tapo App -> Me -> Third-Party Compatibility -> On**
 
 ## Usage
 
@@ -68,18 +64,18 @@ See [examples for lovelace cards](https://github.com/JurajNyiri/HomeAssistant-Ta
 
 This custom component creates:
 
-Doorbells, Cameras:
+Doorbells, Cameras (for each lens, if supported):
 
 - Up to 4 camera entities: HD and SD, using RTSP standard or TP-Link proprietary video protocol. If you choose to use direct entities, it is recommended to disable `Use Stream from Home Assistant` in options for the best performance and battery life.
 - Binary sensor for motion after the motion is detected for the first time and a binary sensor for doorbell press
 - Light entity, if the camera supports a floodlight switch
 - Buttons for Calibrate, Format, Manual Alarm start & stop, Moving the camera, Reboot and syncing time
-- Switch entities for Auto track, Flip setting, LED Indicator, Lens Distortion Correction, (Rich) Notifications, Recording, Microphone Mute, Microphone Noise Cancelling, Automatically Upgrade Firmware, HDR mode, Alarm Trigger Event types, Privacy Zones, Diagnose Mode, Smart Track specific switches, Audio Recording and Privacy mode
-- Select entities for Automatic Alarm, Light Frequency, Motion Detection, Night Vision, Spotlight Intensity, Alarm Type, Quick Response and Move to Preset
+- Switch entities for Auto track, Automatic Reboot, Flip setting, LED Indicator, Lens Distortion Correction, (Rich) Notifications, Recording, Microphone Mute, Microphone Noise Cancelling, Automatically Upgrade Firmware, HDR mode, Alarm Trigger Event types, Privacy Zones, Diagnose Mode, Smart Track specific switches, Smart Dual Track specific switches, Audio Recording and Privacy mode
+- Select entities for Automatic Alarm, Automatic Reboot Time, Light Frequency, Motion Detection, Night Vision, Spotlight Intensity, Alarm Type, Quick Response, Smart Dual Track Method and Move to Preset
 - Number entity for Movement Angle, Speaker Volume, Microphone Volume, Spotlight Intensity, Siren Volume, Siren Duration and Motion Detection Digital Sensitivity
 - Media Source for browsing and playing recordings stored on camera
 - Sensor entity that reports monitor media sync status
-- Sensor entities for Storage diagnostics
+- Sensor entities for Storage diagnostics and Last Automatic Reboot Time
 
 Chimes:
 - Number entity for Chime Duration, Chime Volume, Chime Play Duration and Chime Play Volume
@@ -149,6 +145,24 @@ action:
 
 ## Troubleshooting | FAQ
 
+
+<details>
+  <summary>I see error `Invalid cloud password.`</summary>
+
+**These steps apply even if camera worked before, and now does not (for example, after firmware update).**
+
+After every step, test if camera works in HA, and after each step try checking Third-Party Compatibility off and on again.
+
+1. Ensure you have Third Party Compatibility turned on in official Tapo app on your smartphone. Tapo App -> Me -> Third-Party Compatibility -> On
+2. Try checking Third-Party Compatibility off and on again and opening the camera via Tapo App, while being on the same network as the camera is.
+3. Reset your password.
+4. Make sure your camera can access the internet.
+5. Reboot your camera a few times.
+6. Reset the camera. Remove it from your account, do a factory reset, add it back with internet access, add it back to the integration.
+7. If all of this fails (unlikely) repeat from step 1, wait a few hours and try again.
+
+</details>
+
 <details>
   <summary>Which stream to use?</summary>
 
@@ -197,6 +211,7 @@ Also make sure that:
 - binary sensor is not disabled via entity, check .storage/core.entity_registry for disabled entities, look for "disabled_by": "user" on platform "tapo_control". If it is, remove the whole entity or change to "disabled_by": null, and restart HASS.
 - binary sensor is enabled in tapo integration options
 - onvif port 2020 on camera is opened
+- onvif on camera is not being used more than once concurrently, and is only used by this integration
 </details>
 
 <details>
@@ -275,20 +290,6 @@ As well as:
 </details>
 
 <details>
-  <summary>I see error `Invalid cloud password.`</summary>
-
-1. Ensure you have Third Party Compatibility turned on in official Tapo app on your smartphone. Tapo App -> Me -> Tapo Lab -> Third-Party Compatibility -> On
-2. Make sure that "Two-Step Verification" for login is disabled. Go in the Tapo app > Me > View Account > Login Security > Turn off the "Two-Step Verification".
-3. Reset your password.
-4. Make sure your camera can access the internet.
-5. Reboot your camera a few times.
-6. Reset the camera. Remove it from your account, do a factory reset, add it back with internet access, add it back to the integration.
-7. Try checking Third-Party Compatibility off and on again and opening the camera via Tapo App.
-8. If all of this fails (unlikely) repeat from step 1, wait a few hours and try again.
-
-</details>
-
-<details>
   <summary>Supported models</summary>
 
 Users reported full functionality with following Tapo Cameras, Doorbells and Chimes:
@@ -296,6 +297,7 @@ Users reported full functionality with following Tapo Cameras, Doorbells and Chi
 - TC55
 - TC60
 - TC70
+- TC(A)72NL/EU
 - TC82
 - TC85
 - C100
@@ -311,15 +313,21 @@ Users reported full functionality with following Tapo Cameras, Doorbells and Chi
 - C236
 - C310
 - C320WS
+- C402
+- C403
 - C410
 - C420
 - C420S2
+- C425
 - C500
 - C510W
 - C520WS
 - C530WS
+- C710
 - C720
 - D100C
+- D130
+- D205
 - D230
 - D235
 

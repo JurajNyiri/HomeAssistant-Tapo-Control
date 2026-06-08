@@ -73,6 +73,10 @@ async def async_setup_entry(
             ):
                 sensors.append(TapoChimeSignalLevel(entry, hass, config_entry))
 
+            if "rebootLastTime" in camData and camData["rebootLastTime"] is not None:
+                LOGGER.debug("Adding TapoLastRebootTimeSensor...")
+                sensors.append(TapoLastRebootTimeSensor(entry, hass, config_entry))
+
         if entry["controller"].isKLAP is False:
             sensors.append(TapoSyncSensor(entry, hass, config_entry))
 

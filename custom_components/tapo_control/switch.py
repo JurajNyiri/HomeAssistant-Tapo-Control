@@ -210,6 +210,21 @@ async def async_setup_entry(
             LOGGER.debug("Adding tapoAutoUpgradeSwitch...")
             switches.append(tapoAutoUpgradeSwitch)
 
+        if (
+            "rebootEnabled" in entry["camData"]
+            and entry["camData"]["rebootEnabled"] is not None
+        ):
+            tapoAutomaticRebootSwitch = await check_and_create(
+                entry,
+                hass,
+                TapoAutomaticRebootSwitch,
+                "getReboot",
+                config_entry,
+            )
+            if tapoAutomaticRebootSwitch:
+                LOGGER.debug("Adding tapoAutomaticRebootSwitch...")
+                switches.append(tapoAutomaticRebootSwitch)
+
         tapoRecordingPlanSwitch = await check_and_create(
             entry,
             hass,
@@ -283,6 +298,28 @@ async def async_setup_entry(
             if tapoHDRSwitch:
                 LOGGER.debug("Adding tapoHDRSwitch...")
                 switches.append(tapoHDRSwitch)
+
+        if (
+            "dualLinkageCapability" in entry["camData"]
+            and entry["camData"]["dualLinkageCapability"] is not None
+        ):
+            for key in entry["camData"]["dualLinkageCapability"]:
+                if "_support" in key:
+                    support_type = key.removesuffix("_support")
+                    if str(entry["camData"]["dualLinkageCapability"][key]) == "1":
+                        switches.append(
+                            TapoDualLinkageTargetSwitch(
+                                entry, hass, config_entry, support_type
+                            )
+                        )
+                    else:
+                        LOGGER.debug(
+                            f"Skipping adding switch for {support_type}, value is {entry["camData"]["dualLinkageCapability"][key]}."
+                        )
+                else:
+                    LOGGER.warning(
+                        f"Unexpected key {key} for dualLinkageCapability: {entry["camData"]["dualLinkageCapability"]}"
+                    )
 
         return switches
 
@@ -407,6 +444,60 @@ class TapoChimeRingtoneSwitch(TapoSwitchEntity):
                 self._attr_is_on = False
             else:
                 self._attr_is_on = chimeData["on_off"] == 1
+            self._attr_state = "on" if self._attr_is_on else "off"
+
+
+class TapoDualLinkageTargetSwitch(TapoSwitchEntity):
+    def __init__(
+        self, entry: dict, hass: HomeAssistant, config_entry, target_type: str
+    ):
+        self.target_type = target_type
+        target_label = target_type[:1].upper() + target_type[1:]
+        TapoSwitchEntity.__init__(
+            self,
+            f"Smart Dual Track - {target_label}",
+            entry,
+            hass,
+            config_entry,
+        )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_on(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setLinkageTargetSetting,
+            f"{self.target_type}_enabled",
+            True,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "on"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_off(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setLinkageTargetSetting,
+            f"{self.target_type}_enabled",
+            False,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "off"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if (
+            not camData
+            or "dualLinkageTargetSetting" not in camData
+            or f"{self.target_type}_enabled" not in camData["dualLinkageTargetSetting"]
+        ):
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            self._attr_is_on = (
+                camData["dualLinkageTargetSetting"][f"{self.target_type}_enabled"]
+                == "on"
+            )
             self._attr_state = "on" if self._attr_is_on else "off"
 
 
@@ -668,6 +759,58 @@ class TapoAutoUpgradeSwitch(TapoSwitchEntity):
             self._attr_state = STATE_UNAVAILABLE
         else:
             self._attr_is_on = camData["autoUpgradeEnabled"] == "on"
+            self._attr_state = "on" if self._attr_is_on else "off"
+
+
+class TapoAutomaticRebootSwitch(TapoSwitchEntity):
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        TapoSwitchEntity.__init__(
+            self,
+            "Automatic Reboot",
+            entry,
+            hass,
+            config_entry,
+            "mdi:restart-alert",
+        )
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_on(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setReboot,
+            True,
+            None,
+            None,
+            30,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "on"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_off(self) -> None:
+        result = await self._hass.async_add_executor_job(
+            self._controller.setReboot,
+            False,
+            None,
+            None,
+            30,
+        )
+        if "error_code" not in result or result["error_code"] == 0:
+            self._attr_state = "off"
+        self.async_write_ha_state()
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        if (
+            not camData
+            or "rebootEnabled" not in camData
+            or camData["rebootEnabled"] is None
+        ):
+            self._attr_state = STATE_UNAVAILABLE
+        else:
+            self._attr_is_on = camData["rebootEnabled"] == "on"
             self._attr_state = "on" if self._attr_is_on else "off"
 
 

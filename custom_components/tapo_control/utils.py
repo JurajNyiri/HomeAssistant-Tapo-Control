@@ -27,8 +27,17 @@ from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.ffmpeg import DATA_FFMPEG
-from homeassistant.components.onvif.event import EventManager
-from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
+try:
+    # Home Assistant moved EventManager from `event` to `event_manager` in 2026.5.
+    from homeassistant.components.onvif.event_manager import EventManager
+except ModuleNotFoundError:
+    from homeassistant.components.onvif.event import EventManager
+from homeassistant.const import (
+    CONF_IP_ADDRESS,
+    CONF_USERNAME,
+    CONF_PASSWORD,
+    CONF_HOST,
+)
 from homeassistant.util import slugify, dt as dt_util
 
 from .const import (
@@ -52,9 +61,20 @@ from .const import (
     MEDIA_SYNC_HOURS,
     TIME_SYNC_DST,
     TIME_SYNC_NDST,
+    TPLINK_DOMAIN,
 )
 
 UUID = uuid.uuid4().hex
+
+
+def _is_used_by_tplink(hass: HomeAssistant, host: str) -> bool:
+    for entry in hass.config_entries.async_entries(
+        TPLINK_DOMAIN, include_ignore=False, include_disabled=False
+    ):
+        if entry.data.get(CONF_HOST) != host:
+            continue
+        return True
+    return False
 
 
 def isUsingHTTPS(hass):
@@ -1761,6 +1781,24 @@ async def getCamData(hass, controller, chInfo=None):
     camData["autoUpgradeEnabled"] = autoUpgradeEnabled
 
     try:
+        rebootConfig = data["getReboot"][0]["timing_reboot"]["reboot"]
+    except Exception:
+        rebootConfig = None
+    camData["rebootConfig"] = rebootConfig
+    if isinstance(rebootConfig, dict):
+        camData["rebootEnabled"] = rebootConfig.get("enabled")
+        camData["rebootTime"] = rebootConfig.get("time")
+        camData["rebootDay"] = rebootConfig.get("day")
+        camData["rebootRandomRange"] = rebootConfig.get("random_range")
+        camData["rebootLastTime"] = rebootConfig.get("last_reboot_time")
+    else:
+        camData["rebootEnabled"] = None
+        camData["rebootTime"] = None
+        camData["rebootDay"] = None
+        camData["rebootRandomRange"] = None
+        camData["rebootLastTime"] = None
+
+    try:
         connectionInformation = data["getConnectionType"][0]
     except Exception:
         connectionInformation = None
@@ -1835,6 +1873,35 @@ async def getCamData(hass, controller, chInfo=None):
             LOGGER.warning("Quick response data is not in expected format")
     except Exception:
         camData["quick_response"] = None
+
+    try:
+        dualLinkageTargetSetting = data["readLinkageTargetSetting"][0][
+            "dual_cam_linkage"
+        ]
+    except Exception:
+        dualLinkageTargetSetting = None
+    camData["dualLinkageTargetSetting"] = dualLinkageTargetSetting
+
+    try:
+        dualLinkageCapability = data["getLinkageTargetCapability"][0][
+            "dual_cam_linkage"
+        ]["linkage_target_capability"]
+    except Exception:
+        dualLinkageCapability = None
+    camData["dualLinkageCapability"] = dualLinkageCapability
+
+    try:
+        dualCamLinkageEnabled = data["getDualCamLinkage"][0]["dual_cam_linkage"][
+            "linkage_state"
+        ]["enabled"]
+        dualCamLinkageType = data["getDualCamLinkage"][0]["dual_cam_linkage"][
+            "linkage_state"
+        ]["linkage_type"]
+    except Exception:
+        dualCamLinkageEnabled = None
+        dualCamLinkageType = None
+    camData["dualCamLinkageEnabled"] = dualCamLinkageEnabled
+    camData["dualCamLinkageType"] = dualCamLinkageType
 
     LOGGER.debug("getCamData - done")
     LOGGER.debug("Processed update data:")

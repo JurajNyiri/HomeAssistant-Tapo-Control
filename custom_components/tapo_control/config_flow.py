@@ -477,8 +477,10 @@ class FlowHandler(ConfigFlow):
             cloud_password = self.tapoCloudPassword
             cloud_username = self.tapoCloudUsername
             if cloud_username != "admin":
+                LOGGER.debug("Last step of adding device - device is klap.")
                 isKlapDevice = True
             else:
+                LOGGER.debug("Last step of adding device - device is NOT klap.")
                 isKlapDevice = False
             username = self.tapoUsername
             password = self.tapoPassword
@@ -501,11 +503,15 @@ class FlowHandler(ConfigFlow):
                     "",
                     "",
                     None,
-                    None,
+                    True,
                     self.hass,
                 )
                 camData = await getCamData(self.hass, tapoController)
                 reported_ip_address = getIP(camData)
+
+                LOGGER.debug(
+                    f"Creating a KLAP device: {CONF_IP_ADDRESS}: {host}, {REPORTED_IP_ADDRESS}: {reported_ip_address}, {CONTROL_PORT}: {controlPort}, {CONF_USERNAME}: {cloud_username}"
+                )
                 return self.async_create_entry(
                     title=host,
                     data={
@@ -539,6 +545,9 @@ class FlowHandler(ConfigFlow):
                     },
                 )
             else:
+                LOGGER.debug(
+                    f"Creating a Camera device: {CONF_IP_ADDRESS}: {host}, {REPORTED_IP_ADDRESS}: {self.reportedIPAddress}, {CONTROL_PORT}: {controlPort}, {CONF_USERNAME}: {username}"
+                )
                 return self.async_create_entry(
                     title=host,
                     data={
@@ -632,6 +641,7 @@ class FlowHandler(ConfigFlow):
         )
 
     async def async_step_auth_cloud_password(self, user_input=None):
+        LOGGER.debug("[ADD DEVICE][%s] async_step_auth_cloud_password", self.tapoHost)
         """Enter and process cloud password if needed"""
         errors = {}
         if user_input is None or CONF_USERNAME not in user_input:
@@ -961,8 +971,11 @@ class FlowHandler(ConfigFlow):
         )
 
     async def async_step_auth_optional_cloud(self, user_input=None):
+        LOGGER.debug("[ADD DEVICE][%s] async_step_auth_optional_cloud", self.tapoHost)
         """Enter and process cloud password if needed"""
         errors = {}
+        if user_input is None or CONF_USERNAME not in user_input:
+            cloud_username = "admin"
         if user_input is not None:
             if CLOUD_PASSWORD in user_input:
                 try:
@@ -988,6 +1001,7 @@ class FlowHandler(ConfigFlow):
                         self.tapoHost,
                     )
                     self.tapoCloudPassword = cloud_password
+                    self.tapoCloudUsername = cloud_username
                     return await self.async_step_other_options()
                 except Exception as e:
                     if "Failed to establish a new connection" in str(e):
@@ -1013,6 +1027,7 @@ class FlowHandler(ConfigFlow):
                         errors["base"] = "unknown"
                         LOGGER.error(e)
             else:
+                self.tapoCloudUsername = "admin"
                 self.tapoCloudPassword = ""
                 return await self.async_step_other_options()
         cloud_password = ""
@@ -1020,15 +1035,28 @@ class FlowHandler(ConfigFlow):
             "[ADD DEVICE][%s] Showing config flow for cloud password.",
             self.tapoHost,
         )
-        return self.async_show_form(
-            step_id="auth_optional_cloud",
-            data_schema=vol.Schema(
+        if errors == {} or str(self.tapoControlPort) == "443":
+            data_schema = vol.Schema(
                 {
                     vol.Optional(
                         CLOUD_PASSWORD, description={"suggested_value": cloud_password}
                     ): str,
                 }
-            ),
+            )
+        else:
+            data_schema = vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_USERNAME, description={"suggested_value": cloud_username}
+                    ): str,
+                    vol.Optional(
+                        CLOUD_PASSWORD, description={"suggested_value": cloud_password}
+                    ): str,
+                }
+            )
+        return self.async_show_form(
+            step_id="auth_optional_cloud",
+            data_schema=data_schema,
             errors=errors,
             last_step=False,
         )
