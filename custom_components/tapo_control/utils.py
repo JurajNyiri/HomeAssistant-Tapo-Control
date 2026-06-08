@@ -26,6 +26,7 @@ from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.ffmpeg import DATA_FFMPEG
+
 try:
     # Home Assistant moved EventManager from `event` to `event_manager` in 2026.5.
     from homeassistant.components.onvif.event_manager import EventManager
@@ -91,9 +92,7 @@ def isUsingHTTPS(hass):
 def mark_entry_data_for_refresh(hass: HomeAssistant, entry: dict) -> None:
     config_entry = entry.get("entry")
     root_entry = (
-        hass.data.get(DOMAIN, {}).get(config_entry.entry_id)
-        if config_entry
-        else None
+        hass.data.get(DOMAIN, {}).get(config_entry.entry_id) if config_entry else None
     )
     if root_entry is None:
         root_entry = entry
@@ -106,12 +105,6 @@ def mark_entry_data_for_refresh(hass: HomeAssistant, entry: dict) -> None:
 async def async_force_entry_refresh(hass: HomeAssistant, entry: dict) -> None:
     mark_entry_data_for_refresh(hass, entry)
     await entry["coordinator"].async_request_refresh()
-
-
-async def async_refresh_after_privacy_mode_change(
-    hass: HomeAssistant, entry: dict
-) -> None:
-    await async_force_entry_refresh(hass, entry)
 
 
 def getStreamSource(entry, stream):
