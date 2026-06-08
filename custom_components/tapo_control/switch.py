@@ -8,6 +8,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN, LOGGER, ENABLE_MEDIA_SYNC, MEDIA_SYNC_HOURS
 from .tapo.entities import TapoSwitchEntity
 from .utils import (
+    async_refresh_after_privacy_mode_change,
     check_and_create,
     check_functionality,
     getColdDirPathForEntry,
@@ -959,7 +960,7 @@ class TapoPrivacySwitch(TapoSwitchEntity):
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "on"
         self.async_write_ha_state()
-        await self._coordinator.async_request_refresh()
+        await async_refresh_after_privacy_mode_change(self._hass, self._entry)
 
     async def async_turn_off(self) -> None:
         result = await self._hass.async_add_executor_job(
@@ -969,7 +970,7 @@ class TapoPrivacySwitch(TapoSwitchEntity):
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = "off"
         self.async_write_ha_state()
-        await self._coordinator.async_request_refresh()
+        await async_refresh_after_privacy_mode_change(self._hass, self._entry)
 
     def updateTapo(self, camData):
         if not camData:

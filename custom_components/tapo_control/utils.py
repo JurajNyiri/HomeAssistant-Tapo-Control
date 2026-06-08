@@ -88,6 +88,32 @@ def isUsingHTTPS(hass):
     return URL(base_url).scheme == "https"
 
 
+def mark_entry_data_for_refresh(hass: HomeAssistant, entry: dict) -> None:
+    config_entry = entry.get("entry")
+    root_entry = (
+        hass.data.get(DOMAIN, {}).get(config_entry.entry_id)
+        if config_entry
+        else None
+    )
+    if root_entry is None:
+        root_entry = entry
+
+    root_entry["lastUpdate"] = 0
+    for child in root_entry.get("childDevices", []):
+        child["lastUpdate"] = 0
+
+
+async def async_force_entry_refresh(hass: HomeAssistant, entry: dict) -> None:
+    mark_entry_data_for_refresh(hass, entry)
+    await entry["coordinator"].async_request_refresh()
+
+
+async def async_refresh_after_privacy_mode_change(
+    hass: HomeAssistant, entry: dict
+) -> None:
+    await async_force_entry_refresh(hass, entry)
+
+
 def getStreamSource(entry, stream):
     custom_stream_hd = entry.data.get(CONF_CUSTOM_STREAM_HD, "")
     custom_stream_sd = entry.data.get(CONF_CUSTOM_STREAM_SD, "")
