@@ -39,7 +39,7 @@ from .const import (
     CONF_CUSTOM_STREAM_7,
 )
 from .utils import (
-    async_refresh_after_privacy_mode_change,
+    async_force_entry_refresh,
     build_device_info,
     getStreamSource,
 )
@@ -394,7 +394,7 @@ class TapoCamEntity(Camera):
             self._controller.setPrivacyMode,
             False,
         )
-        await async_refresh_after_privacy_mode_change(self._hass, self._entry)
+        await async_force_entry_refresh(self._hass, self._entry)
 
     async def async_turn_off(self):
         LOGGER.debug("async_turn_off - camera")
@@ -402,7 +402,7 @@ class TapoCamEntity(Camera):
             self._controller.setPrivacyMode,
             True,
         )
-        await async_refresh_after_privacy_mode_change(self._hass, self._entry)
+        await async_force_entry_refresh(self._hass, self._entry)
 
     async def save_preset(self, name):
         LOGGER.debug("save_preset - camera")
