@@ -1611,17 +1611,20 @@ class TapoMoveToPresetSelect(TapoSelectEntity):
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
-        if not camData or camData["privacy_mode"] == "on":
+        if not camData:
             self._attr_state = STATE_UNAVAILABLE
+            return
+
+        self._presets = camData["presets"]
+        self._attr_options = list(camData["presets"].values())
+
+        if camData["privacy_mode"] == "on":
+            self._attr_state = STATE_UNAVAILABLE
+        elif self._presets:
+            self._attr_current_option = None
+            self._attr_state = self._attr_current_option
         else:
-            self._presets = camData["presets"]
-            presetsConvertedToList = list(camData["presets"].values())
-            if presetsConvertedToList:
-                self._attr_options = list(camData["presets"].values())
-                self._attr_current_option = None
-                self._attr_state = self._attr_current_option
-            else:
-                self._attr_state = STATE_UNAVAILABLE
+            self._attr_state = STATE_UNAVAILABLE
 
     async def async_select_option(self, option: str) -> None:
         foundKey = False

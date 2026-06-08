@@ -27,6 +27,7 @@ from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.ffmpeg import DATA_FFMPEG
+
 try:
     # Home Assistant moved EventManager from `event` to `event_manager` in 2026.5.
     from homeassistant.components.onvif.event_manager import EventManager
@@ -87,6 +88,24 @@ def isUsingHTTPS(hass):
             return True
     LOGGER.debug("Detected base_url schema: " + URL(base_url).scheme)
     return URL(base_url).scheme == "https"
+
+
+def mark_entry_data_for_refresh(hass: HomeAssistant, entry: dict) -> None:
+    config_entry = entry.get("entry")
+    root_entry = (
+        hass.data.get(DOMAIN, {}).get(config_entry.entry_id) if config_entry else None
+    )
+    if root_entry is None:
+        root_entry = entry
+
+    root_entry["lastUpdate"] = 0
+    for child in root_entry.get("childDevices", []):
+        child["lastUpdate"] = 0
+
+
+async def async_force_entry_refresh(hass: HomeAssistant, entry: dict) -> None:
+    mark_entry_data_for_refresh(hass, entry)
+    await entry["coordinator"].async_request_refresh()
 
 
 def getStreamSource(entry, stream):
