@@ -8,6 +8,8 @@ TODO:
 from __future__ import annotations
 
 
+import asyncio
+from typing import Optional, Coroutine
 from homeassistant.components.media_player import MediaClass, MediaType
 from homeassistant.components.media_source.error import Unresolvable
 from homeassistant.components.media_source.models import (
@@ -18,6 +20,7 @@ from homeassistant.components.media_source.models import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.util import dt
 
 from .const import (
@@ -82,6 +85,98 @@ class TapoMediaSource(MediaSource):
         super().__init__(DOMAIN)
         self.hass = hass
         self.entry = entry
+        self._background_tasks: set[asyncio.Task] = set()
+        self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._async_handle_stop)
+
+    async def _async_handle_stop(self, _event) -> None:
+        """Cancel background media downloads on shutdown."""
+        if not self._background_tasks:
+            return
+        tasks = list(self._background_tasks)
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    def _create_background_task(self, coro: Coroutine) -> None:
+        """Track long-running tasks so they can be cancelled on shutdown."""
+        task = self.hass.async_create_task(coro)
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
+        return task
+
+    def _format_clip_label(self, start_ts: int, end_ts: int) -> str:
+        start_dt = dt.as_local(dt.utc_from_timestamp(int(start_ts)))
+        end_dt = dt.as_local(dt.utc_from_timestamp(int(end_ts)))
+        return (
+            f"{start_dt.strftime('%Y-%m-%d %H:%M:%S')} - {end_dt.strftime('%H:%M:%S')}"
+        )
+
+    def _build_notification_id(self, entry_id: str, child_id: str) -> str:
+        suffix = child_id if child_id else "root"
+        return f"{DOMAIN}_recording_download_{entry_id}_{suffix}"
+
+    def _schedule_notification(self, coro):
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = None
+
+        if running_loop and running_loop == self.hass.loop:
+            self.hass.async_create_task(coro)
+        else:
+            asyncio.run_coroutine_threadsafe(coro, self.hass.loop)
+
+    async def _async_create_download_notification(
+        self, notification_id: str, title: str, message: str
+    ) -> None:
+        await self.hass.services.async_call(
+            "persistent_notification",
+            "create",
+            {
+                "title": title,
+                "message": message,
+                "notification_id": notification_id,
+            },
+            blocking=False,
+        )
+
+    async def _async_dismiss_download_notification(self, notification_id: str) -> None:
+        await self.hass.services.async_call(
+            "persistent_notification",
+            "dismiss",
+            {"notification_id": notification_id},
+            blocking=False,
+        )
+
+    def _build_progress_notifier(
+        self, notification_id: str, main_title: str, sub_title: str
+    ):
+        def notifier(
+            message: str,
+            progress: Optional[float] = None,
+            total: Optional[float] = None,
+        ):
+            friendly_message = message
+            if progress is not None and total is not None and total > 0:
+                percent = round((float(progress) / float(total)) * 100)
+                friendly_message = (
+                    f"Downloading... {percent}% ({round(progress)} / {round(total)})"
+                )
+
+            full_message = (
+                f"{sub_title}\n{friendly_message}\n\n"
+                "Download runs in the background; check this notification for progress.\n\n"
+                "When browsing during downloading, only downloaded recordings are visible."
+            )
+            self._schedule_notification(
+                self._async_create_download_notification(
+                    notification_id, main_title, full_message
+                )
+            )
+
+        return notifier
 
     def _get_entry_data(self, entry_id: str) -> dict:
         """Return entry data or raise a user facing error if setup is incomplete."""
@@ -91,6 +186,88 @@ class TapoMediaSource(MediaSource):
                 "Camera setup has not finished yet. Recordings will be available once the device is connected."
             )
         return entry_data
+
+    def _manual_download_active(self, device: dict) -> bool:
+        """Return True when a user-triggered download is running (not media sync)."""
+        return bool(
+            device.get("isDownloadingStream") and not device.get("runningMediaSync")
+        )
+
+    def _any_download_active(self, device: dict) -> bool:
+        """Return True when a download is running."""
+        return bool(device.get("isDownloadingStream"))
+
+    def _local_date_key(self, ts_utc: int, tz_offset: int) -> str:
+        """Return YYYY-MM-DD string for a timestamp adjusted by timezone offset."""
+        local_dt = dt.as_local(dt.utc_from_timestamp(ts_utc - tz_offset))
+        return local_dt.strftime("%Y-%m-%d")
+
+    def _parse_download_meta(
+        self, meta: dict, file_key: str
+    ) -> tuple[int | None, int | None]:
+        """Extract start/end timestamps from stored download metadata."""
+        if not isinstance(meta, dict):
+            LOGGER.debug(
+                "[media_source] Skipping downloaded entry %s: metadata not a dict (%s)",
+                file_key,
+                meta,
+            )
+            return None, None
+
+        if "startDate" in meta and "endDate" in meta:
+            try:
+                return int(meta["startDate"]), int(meta["endDate"])
+            except Exception:
+                LOGGER.debug(
+                    "[media_source] Skipping downloaded entry %s: invalid start/end in metadata %s",
+                    file_key,
+                    meta,
+                )
+                return None, None
+
+        LOGGER.debug(
+            "[media_source] Skipping downloaded entry %s due to unrecognized metadata: %s",
+            file_key,
+            meta,
+        )
+        return None, None
+
+    def _get_downloaded_recordings_for_device(
+        self, device: dict, date_key: str | None = None
+    ):
+        """Return downloaded recordings metadata filtered by optional date key."""
+        results = []
+        tz_offset = device.get("timezoneOffset", 0)
+        normalized_filter = date_key.replace("-", "") if date_key else None
+        for file_key, meta in device.get("downloadedStreams", {}).items():
+            start_ts, end_ts = self._parse_download_meta(meta, file_key)
+            if start_ts is None or end_ts is None:
+                continue
+
+            computed_key = self._local_date_key(start_ts, tz_offset)
+            if normalized_filter:
+                computed_normalized = computed_key.replace("-", "")
+                if computed_normalized != normalized_filter:
+                    continue
+
+            results.append(
+                {
+                    "startDate": start_ts,
+                    "endDate": end_ts,
+                    "date_key": self._local_date_key(start_ts, tz_offset),
+                }
+            )
+        return results
+    
+    def _normalize_camera_date(self, date: str) -> str:
+        """Camera API expects dates without dashes."""
+        return date.replace("-", "")
+
+    def _display_date(self, date: str) -> str:
+        """Return date as YYYY-MM-DD for UI."""
+        if len(date) == 8 and date.isdigit():
+            return f"{date[0:4]}-{date[4:6]}-{date[6:8]}"
+        return date
 
     async def async_resolve_media(self, item: MediaSourceItem) -> PlayMedia:
         path = item.identifier.split("/")
@@ -127,13 +304,69 @@ class TapoMediaSource(MediaSource):
                 LOGGER.debug(startDate)
                 LOGGER.debug(endDate)
 
-                await getRecording(
-                    self.hass, tapoController, entry, device, date, startDate, endDate
-                )
-                url = await getWebFile(
-                    self.hass, entry, startDate, endDate, "videos", childID=childID
-                )
-                LOGGER.debug(url)
+                fileName = getFileName(startDate, endDate, False, childID=childID)
+
+                # If we need to fetch the clip, do it in the background and guide the user.
+                if fileName not in device["downloadedStreams"]:
+                    notification_id = self._build_notification_id(entry, childID)
+                    clip_label = self._format_clip_label(int(startDate), int(endDate))
+                    main_title = f"{device['name']}: Downloading..."
+                    sub_title = f"{device['name']} - {clip_label}"
+                    progress_notifier = self._build_progress_notifier(
+                        notification_id, main_title, sub_title
+                    )
+                    progress_notifier(
+                        "Starting download. Track progress in notifications, then try again once it finishes."
+                    )
+
+                    async def _download_and_prepare():
+                        try:
+                            await getRecording(
+                                self.hass,
+                                tapoController,
+                                entry,
+                                device,
+                                self._normalize_camera_date(date),
+                                startDate,
+                                endDate,
+                                progress_callback=progress_notifier,
+                            )
+                            # Prepare hot path so the next click can play instantly.
+                            await getWebFile(
+                                self.hass,
+                                entry,
+                                startDate,
+                                endDate,
+                                "videos",
+                                childID=childID,
+                            )
+                        except Exception as err:
+                            progress_notifier(f"Download failed: {err}")
+                            LOGGER.error(err)
+                        else:
+                            await self._async_dismiss_download_notification(
+                                notification_id
+                            )
+
+                    self._create_background_task(_download_and_prepare())
+                    raise Unresolvable(
+                        "Recording download started in the background. Track progress in notifications, then try again once it finishes."
+                    )
+
+                # Already downloaded: return the playable URL.
+                try:
+                    url = await getWebFile(
+                        self.hass,
+                        entry,
+                        startDate,
+                        endDate,
+                        "videos",
+                        childID=childID,
+                    )
+                    LOGGER.debug(url)
+                except Exception as e:
+                    LOGGER.error(e)
+                    raise Unresolvable(e)
             except Exception as e:
                 LOGGER.error(e)
                 raise Unresolvable(e)
@@ -154,38 +387,63 @@ class TapoMediaSource(MediaSource):
             raise Unresolvable(
                 "Initial local media scan still running, please try again later."
             )
-        try:
-            recordingsForDay = await getRecordings(
-                self.hass, device, tapoController, date
+        cached_only = self._any_download_active(device)
+        downloaded = self._get_downloaded_recordings_for_device(device, date_key=date)
+
+        def _add_clip(target: dict, start_ts: int, end_ts: int):
+            start_local = dt.as_local(
+                dt.utc_from_timestamp(start_ts - device["timezoneOffset"])
             )
-        except Exception as err:
-            LOGGER.error(
-                "Unable to fetch recordings for %s on %s: %s",
-                device["name"],
+            end_local = dt.as_local(
+                dt.utc_from_timestamp(end_ts - device["timezoneOffset"])
+            )
+            target[(start_ts, end_ts)] = {
+                "name": f"{start_local.strftime('%H:%M:%S')} - {end_local.strftime('%H:%M:%S')}",
+                "startDate": start_ts,
+                "endDate": end_ts,
+            }
+
+        # Collect clips keyed by (start, end) to merge camera data with cached items.
+        clips: dict[tuple[int, int], dict] = {}
+
+        if cached_only:
+            LOGGER.debug(
+                "[media_source] Using cached clips only for date %s; manual_download=%s; downloadedStreams keys: %s",
                 date,
-                err,
+                cached_only,
+                list(device.get("downloadedStreams", {}).keys()),
             )
-            raise Unresolvable(self._map_recordings_exception(err)) from err
-        videoNames = []
-        for searchResult in recordingsForDay:
-            for key in searchResult:
-                startTS = searchResult[key]["startTime"] - device["timezoneOffset"]
-                endTS = searchResult[key]["endTime"] - device["timezoneOffset"]
-                startDate = dt.as_local(dt.utc_from_timestamp(startTS))
-                endDate = dt.as_local(dt.utc_from_timestamp(endTS))
-                videoName = (
-                    f"{startDate.strftime('%H:%M:%S')} - {endDate.strftime('%H:%M:%S')}"
+        else:
+            recordingsForDay = []
+            camera_date = self._normalize_camera_date(date)
+            try:
+                recordingsForDay = await getRecordings(
+                    self.hass, device, tapoController, camera_date
                 )
-                videoNames.append(
-                    {
-                        "name": videoName,
-                        "startDate": searchResult[key]["startTime"],
-                        "endDate": searchResult[key]["endTime"],
-                    }
+            except Exception as err:
+                LOGGER.error(
+                    "Unable to fetch recordings for %s on %s: %s",
+                    device["name"],
+                    date,
+                    err,
                 )
+                recordingsForDay = []
+                if not downloaded:
+                    raise Unresolvable(self._map_recordings_exception(err)) from err
+            for searchResult in recordingsForDay:
+                for key in searchResult:
+                    _add_clip(
+                        clips,
+                        searchResult[key]["startTime"],
+                        searchResult[key]["endTime"],
+                    )
+
+        # Merge in cached clips
+        for item in downloaded:
+            _add_clip(clips, item["startDate"], item["endDate"])
 
         videoNames = sorted(
-            videoNames,
+            clips.values(),
             key=lambda x: x["startDate"],
             reverse=(True if media_view_recordings_order == "Descending" else False),
         )
@@ -236,28 +494,57 @@ class TapoMediaSource(MediaSource):
             raise Unresolvable(
                 "Initial local media scan still running, please try again later."
             )
+        cached_only = self._any_download_active(device)
 
-        if device["usingCloudPassword"] is False:
-            raise Unresolvable(
-                "Cloud password is required in order to play recordings.\nSet cloud password inside Settings > Devices & Services > Tapo: Cameras Control > Configure."
+        if cached_only:
+            downloaded = self._get_downloaded_recordings_for_device(device)
+            recordingsDates = list(
+                {item["date_key"] for item in downloaded if "date_key" in item}
             )
-        try:
-            recordingsList = await self.hass.async_add_executor_job(
-                tapoController.getRecordingsList
-            )
-        except Exception as err:
-            LOGGER.error(
-                "Unable to fetch recordings list for %s: %s", device["name"], err
-            )
-            raise Unresolvable(self._map_recordings_exception(err)) from err
-        recordingsDates = []
-        for searchResult in recordingsList:
-            for key in searchResult:
-                recordingsDates.append(searchResult[key]["date"])
+            if not recordingsDates:
+                LOGGER.debug(
+                    "[media_source] No cached dates available while in cached-only mode."
+                )
+                # Show an empty list
+                return self.generateView(
+                    build_identifier(query),
+                    title,
+                    False,
+                    True,
+                    children=[],
+                )
+        else:
+            if device["usingCloudPassword"] is False:
+                raise Unresolvable(
+                    "Cloud password is required in order to play recordings.\nSet cloud password inside Settings > Devices & Services > Tapo: Cameras Control > Configure."
+                )
+            try:
+                recordingsList = await self.hass.async_add_executor_job(
+                    tapoController.getRecordingsList
+                )
+            except Exception as err:
+                LOGGER.error(
+                    "Unable to fetch recordings list for %s: %s", device["name"], err
+                )
+                raise Unresolvable(self._map_recordings_exception(err)) from err
+            recordingsDates = []
+            for searchResult in recordingsList:
+                for key in searchResult:
+                    recordingsDates.append(searchResult[key]["date"])
 
         recordingsDates.sort(
             reverse=True if media_view_days_order == "Descending" else False
         )
+
+        # Normalize display to YYYY-MM-DD and deduplicate while preserving order.
+        seen_dates = set()
+        normalized_dates = []
+        for d in recordingsDates:
+            display_d = self._display_date(d)
+            if display_d in seen_dates:
+                continue
+            seen_dates.add(display_d)
+            normalized_dates.append(display_d)
 
         return self.generateView(
             build_identifier(query),
@@ -271,7 +558,7 @@ class TapoMediaSource(MediaSource):
                     False,
                     True,
                 )
-                for date in recordingsDates
+                for date in normalized_dates
             ],
         )
 
