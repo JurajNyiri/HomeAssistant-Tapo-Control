@@ -255,7 +255,7 @@ async def getRecordings(hass, entryData, tapoController, date):
     return recordingsForDay
 
 
-def getEntryStorageFile(config_entry, child_id):
+def getEntryStorageFile(config_entry, child_id=""):
     return f"tapo_control_{config_entry.entry_id}{child_id}"
 
 

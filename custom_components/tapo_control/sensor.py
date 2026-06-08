@@ -386,3 +386,50 @@ class TapoSyncSensor(TapoSensorEntity):
             "stall_count": device.get("mediaSyncStallCount", 0),
             "last_progress": data.get("downloadProgress") or "Idle",
         }
+
+
+class TapoLastRebootTimeSensor(TapoSensorEntity):
+    """Tapo last reboot time sensor."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self, entry: dict, hass: HomeAssistant, config_entry: ConfigEntry
+    ) -> None:
+        """Initialize the entity."""
+        TapoSensorEntity.__init__(
+            self,
+            "Last Automatic Reboot Time",
+            entry,
+            hass,
+            config_entry,
+            "mdi:restart",
+            SensorDeviceClass.TIMESTAMP,
+        )
+
+    async def async_update(self) -> None:
+        """Update the entity."""
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData: dict | None) -> None:
+        """Update the entity."""
+        if (
+            not camData
+            or "rebootLastTime" not in camData
+            or camData["rebootLastTime"] is None
+        ):
+            self._attr_native_value = STATE_UNAVAILABLE
+            return
+
+        try:
+            reboot_ts = int(camData["rebootLastTime"])
+        except (TypeError, ValueError):
+            self._attr_native_value = STATE_UNAVAILABLE
+            return
+
+        if reboot_ts <= 0:
+            self._attr_native_value = STATE_UNAVAILABLE
+            return
+
+        self._attr_native_value = dt_util.utc_from_timestamp(reboot_ts)
