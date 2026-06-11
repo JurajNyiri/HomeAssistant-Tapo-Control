@@ -1503,16 +1503,21 @@ async def getCamData(hass, controller, chInfo=None):
 
     if controller.isKLAP is False:
         try:
+            lastAlarmInfo = data["getLastAlarmInfo"][0]
+            lastAlarmInfoMsgAlarm = (
+                lastAlarmInfo.get("msg_alarm")
+                if isinstance(lastAlarmInfo, dict)
+                else None
+            )
+            alarmData = (
+                lastAlarmInfoMsgAlarm.get("chn1_msg_alarm_info")
+                if isinstance(lastAlarmInfoMsgAlarm, dict)
+                else None
+            )
             if (
                 alarmConfig is None
-                and "msg_alarm" in data["getLastAlarmInfo"][0]
-                and "chn1_msg_alarm_info" in data["getLastAlarmInfo"][0]["msg_alarm"]
-                and data["getLastAlarmInfo"][0]["msg_alarm"]["chn1_msg_alarm_info"]
-                is not False
+                and isinstance(alarmData, dict)
             ):
-                alarmData = data["getLastAlarmInfo"][0]["msg_alarm"][
-                    "chn1_msg_alarm_info"
-                ]
                 alarmConfig = {
                     "typeOfAlarm": "getAlarm",
                     "mode": alarmData["alarm_mode"],
