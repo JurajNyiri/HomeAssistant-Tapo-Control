@@ -152,16 +152,18 @@ async def async_setup_entry(
             LOGGER.debug("Adding tapoSirenTypeSelect...")
             selects.append(tapoSirenTypeSelect)
 
-        tapoAlertTypeSelect = await check_and_create(
-            entry, hass, TapoAlertTypeSelect, "getAlertTypeList", config_entry
-        )
-        if entry["controller"].isKLAP is False:
-            if tapoAlertTypeSelect:
-                LOGGER.debug("Adding tapoAlertTypeSelect...")
-                selects.append(tapoAlertTypeSelect)
-            elif not tapoSirenTypeSelect:
-                LOGGER.debug("Adding tapoAlertTypeSelect with start ID 0...")
-                selects.append(TapoAlertTypeSelect(entry, hass, config_entry, 0))
+        alarm_config = entry["camData"].get("alarm_config")
+        if alarm_config is not None:
+            tapoAlertTypeSelect = await check_and_create(
+                entry, hass, TapoAlertTypeSelect, "getAlertTypeList", config_entry
+            )
+            if entry["controller"].isKLAP is False:
+                if tapoAlertTypeSelect:
+                    LOGGER.debug("Adding tapoAlertTypeSelect...")
+                    selects.append(tapoAlertTypeSelect)
+                elif not tapoSirenTypeSelect:
+                    LOGGER.debug("Adding tapoAlertTypeSelect with start ID 0...")
+                    selects.append(TapoAlertTypeSelect(entry, hass, config_entry, 0))
 
         tapoMotionDetectionSelectAvailable = await check_functionality(
             entry, hass, TapoMotionDetectionSelect, "getMotionDetection"
@@ -882,11 +884,7 @@ class TapoAutomaticRebootTimeSelect(TapoSelectEntity):
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
-        if (
-            not camData
-            or "rebootTime" not in camData
-            or camData["rebootTime"] is None
-        ):
+        if not camData or "rebootTime" not in camData or camData["rebootTime"] is None:
             self._attr_state = STATE_UNAVAILABLE
             return
 
