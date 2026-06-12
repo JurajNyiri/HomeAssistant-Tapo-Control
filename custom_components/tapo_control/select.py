@@ -1711,6 +1711,7 @@ class TapoAlertTypeSelect(TapoSelectEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
+            self.alarm_config = camData["alarm_config"]
             self._attr_options = camData["alarm_siren_type_list"]
             self.user_sounds = {}
             if camData["alarm_user_sounds"] is not None:
@@ -1759,6 +1760,19 @@ class TapoAlertTypeSelect(TapoSelectEntity):
                 None,
                 None,
                 optionIndex,
+            )
+        elif self.typeOfAlarm == "getAlertConfig":
+            # TODO: Move this to pytapo so that executeFunction does not need to be used directly
+            alarmConfig = dict(self.alarm_config["alert_config"])
+            alarmConfig["alarm_type"] = str(optionIndex)
+            result = await self._hass.async_add_executor_job(
+                self._controller.executeFunction,
+                "setAlertConfig",
+                {
+                    "msg_alarm": {
+                        "chn1_msg_alarm_info": alarmConfig,
+                    }
+                },
             )
         else:
             # No idea if this works, cannot test on camera

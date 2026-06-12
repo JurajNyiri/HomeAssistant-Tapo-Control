@@ -1003,6 +1003,7 @@ async def getCamData(hass, controller, chInfo=None):
     data = await hass.async_add_executor_job(controller.getMost, [], chn_id)
     LOGGER.debug("Raw update data:")
     LOGGER.debug(data)
+
     camData = {}
 
     camData["raw"] = data
@@ -1514,10 +1515,7 @@ async def getCamData(hass, controller, chInfo=None):
                 if isinstance(lastAlarmInfoMsgAlarm, dict)
                 else None
             )
-            if (
-                alarmConfig is None
-                and isinstance(alarmData, dict)
-            ):
+            if alarmConfig is None and isinstance(alarmData, dict):
                 alarmConfig = {
                     "typeOfAlarm": "getAlarm",
                     "mode": alarmData["alarm_mode"],
@@ -1539,6 +1537,44 @@ async def getCamData(hass, controller, chInfo=None):
                     alarmConfig["alarm_volume"] = alarmData["alarm_volume"]
         except Exception as err:
             LOGGER.error(f"getLastAlarmInfo unexpected error {err=}, {type(err)=}")
+
+    if controller.isKLAP is False:
+        try:
+            for alertConfig in data["getAlertConfig"]:
+                alertConfigMsgAlarm = (
+                    alertConfig.get("msg_alarm")
+                    if isinstance(alertConfig, dict)
+                    else None
+                )
+                alarmData = (
+                    alertConfigMsgAlarm.get("chn1_msg_alarm_info")
+                    if isinstance(alertConfigMsgAlarm, dict)
+                    else None
+                )
+                if alarmConfig is None and isinstance(alarmData, dict):
+                    alarmConfig = {
+                        "typeOfAlarm": "getAlertConfig",
+                        "mode": alarmData["alarm_mode"],
+                        "automatic": alarmData["enabled"],
+                        "alert_config": alarmData,
+                    }
+                    if "light_type" in alarmData:
+                        alarmConfig["light_type"] = alarmData["light_type"]
+                    if "siren_type" in alarmData:
+                        alarmConfig["siren_type"] = alarmData["siren_type"]
+                    if "alarm_type" in alarmData:
+                        alarmConfig["siren_type"] = alarmData["alarm_type"]
+                    if "siren_duration" in alarmData:
+                        alarmConfig["siren_duration"] = alarmData["siren_duration"]
+                    if "alarm_duration" in alarmData:
+                        alarmConfig["alarm_duration"] = alarmData["alarm_duration"]
+                    if "siren_volume" in alarmData:
+                        alarmConfig["siren_volume"] = alarmData["siren_volume"]
+                    if "alarm_volume" in alarmData:
+                        alarmConfig["alarm_volume"] = alarmData["alarm_volume"]
+                    break
+        except Exception as err:
+            LOGGER.error(f"getAlertConfig unexpected error {err=}, {type(err)=}")
 
     if controller.isKLAP is False:
         try:
