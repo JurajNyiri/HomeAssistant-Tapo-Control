@@ -14,7 +14,7 @@
         "data": {
           "cloud_password": "Cloud Password"
         },
-        "description": "Camera requires your cloud password for control.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
+        "description": "Camera requires your cloud password for control.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local.\n\nNote: Some special characters in your Tapo cloud password may cause authentication to fail on certain camera models. If the password prompt keeps reappearing, try changing your Tapo cloud password to one using only letters, numbers and characters like _ - @ ."
       },
       "ip": {
         "data": {
@@ -43,7 +43,7 @@
           "cloud_username": "Username",
           "cloud_password": "Cloud Password"
         },
-        "description": "Camera requires your cloud password for control.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local."
+        "description": "Camera requires your cloud password for control.\nThis is the password which you used with your email when signing into the Tapo app.\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).\n\nTapo Care paid subscription is not required.\nUnless you used the same password for cloud as for your Camera account, this password is not the same.\nEmail is not needed and all communication is still fully local.\n\nNote: Some special characters in your Tapo cloud password may cause authentication to fail on certain camera models. If the password prompt keeps reappearing, try changing your Tapo cloud password to one using only letters, numbers and characters like _ - @ ."
       },
       "auth_optional_cloud": {
         "data": {

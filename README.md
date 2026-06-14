@@ -155,7 +155,7 @@ After every step, test if camera works in HA, and after each step try checking T
 
 1. Ensure you have Third Party Compatibility turned on in official Tapo app on your smartphone. Tapo App -> Me -> Third-Party Compatibility -> On
 2. Try checking Third-Party Compatibility off and on again and opening the camera via Tapo App, while being on the same network as the camera is.
-3. Reset your password.
+3. Reset your password. Some special characters in your Tapo cloud password may cause authentication to fail on certain camera models. If the password prompt keeps reappearing, try changing your Tapo cloud password to one using only letters, numbers and characters like `_ - @`.
 4. Make sure your camera can access the internet.
 5. Reboot your camera a few times.
 6. Reset the camera. Remove it from your account, do a factory reset, add it back with internet access, add it back to the integration.
