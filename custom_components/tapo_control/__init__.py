@@ -99,6 +99,28 @@ from datetime import timedelta
 from .utils import getRecording
 
 
+MAX_AUTH_RETRIES = 10
+
+
+def _is_network_error(e: Exception) -> bool:
+    """Return True for transient SSL/network errors that should never count as auth failures."""
+    err_str = str(e).lower()
+    return any(
+        marker in err_str
+        for marker in (
+            "ssl",
+            "httpsconnectionpool",
+            "connectionerror",
+            "timeout",
+            "eof occurred",
+            "unexpected_eof",
+            "connection aborted",
+            "connection reset",
+            "remotedisconnected",
+        )
+    )
+
+
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the Tapo: Cameras Control component from YAML."""
     transport_method = None
@@ -269,6 +291,8 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
             LOGGER.error(
                 "Unable to connect to Tapo: Cameras Control controller: %s", str(e)
             )
+            if _is_network_error(e):
+                raise ConfigEntryNotReady
             if "Invalid authentication data" in str(e):
                 raise ConfigEntryAuthFailed(e)
             elif "Temporary Suspension:" in str(
@@ -372,6 +396,8 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
             LOGGER.error(
                 "Unable to connect to Tapo: Cameras Control controller: %s", str(e)
             )
+            if _is_network_error(e):
+                raise ConfigEntryNotReady
             if "Invalid authentication data" in str(e):
                 raise ConfigEntryAuthFailed(e)
             elif "Temporary Suspension:" in str(
@@ -888,8 +914,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             controllerData["reauth_retries"] = 0
                         except Exception as e:
                             updateDataForAllControllers[controller] = False
+                            if _is_network_error(e):
+                                LOGGER.debug("Transient network error, will retry: %s", e)
+                                raise e
                             if str(e) == "Invalid authentication data":
-                                if controllerData["reauth_retries"] < 3:
+                                if controllerData["reauth_retries"] < MAX_AUTH_RETRIES:
                                     controllerData["reauth_retries"] += 1
                                     raise e
                                 else:
@@ -1344,8 +1373,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
 
     except Exception as e:
+        if _is_network_error(e):
+            LOGGER.debug("Transient network error during setup, will retry: %s", e)
+            raise ConfigEntryNotReady(e)
         if "Invalid authentication data" in str(e):
-            if hass.data[DOMAIN][entry.entry_id]["setup_retries"] < 3:
+            if hass.data[DOMAIN][entry.entry_id]["setup_retries"] < MAX_AUTH_RETRIES:
                 hass.data[DOMAIN][entry.entry_id]["setup_retries"] += 1
                 raise ConfigEntryNotReady(e)
             raise ConfigEntryAuthFailed(e)
