@@ -2124,8 +2124,33 @@ async def setupEvents(hass, config_entry):
         pull_point_support = onvif_capabilities.get("Events", {}).get(
             "WSPullPointSupport"
         )
-        LOGGER.debug("WSPullPointSupport: %s", pull_point_support)
-        if await events.async_start(pull_point_support is not False, shouldUseWebhooks):
+        LOGGER.debug(
+            "[setupEvents] device=%s WSPullPointSupport=%s shouldUseWebhooks=%s",
+            config_entry.data.get("ip_address"),
+            pull_point_support,
+            shouldUseWebhooks,
+        )
+        try:
+            started = await events.async_start(
+                pull_point_support is not False, shouldUseWebhooks
+            )
+        except Exception as exc:  # noqa: BLE001
+            LOGGER.error(
+                "[setupEvents] device=%s events.async_start raised %s: %s",
+                config_entry.data.get("ip_address"),
+                type(exc).__name__,
+                exc,
+            )
+            started = False
+        if not started:
+            LOGGER.warning(
+                "[setupEvents] device=%s events.async_start returned False; "
+                "motion/person/pet binary_sensors will NOT be created. "
+                "Common causes: stale subscriptions on camera (try reboot), "
+                "ONVIF event service unavailable.",
+                config_entry.data.get("ip_address"),
+            )
+        if started:
             LOGGER.debug("Events started.")
             if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
                 hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"] = True

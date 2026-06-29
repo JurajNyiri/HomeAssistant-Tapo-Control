@@ -507,11 +507,19 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if hass.data[DOMAIN][entry.entry_id]["events"]:
         LOGGER.debug("Stopping events...")
         try:
-            async with asyncio.timeout(3):
+            # 3s was too short for some cameras (notably D130 doorbell) when
+            # the ONVIF unsubscribe round-trip is slow. Timing out here leaves
+            # zombie subscriptions on the camera side; after several reloads
+            # the camera reaches its subscription limit and silently rejects
+            # new ones — motion/person/pet binary_sensors then never get
+            # created. See issues #1199 and #865.
+            async with asyncio.timeout(10):
                 await hass.data[DOMAIN][entry.entry_id]["events"].async_stop()
-        except (asyncio.TimeoutError, ClientError):
+        except (asyncio.TimeoutError, ClientError) as e:
             LOGGER.warning(
-                "Timed out waiting for onvif connection to close, proceeding."
+                "Timed out waiting for onvif connection to close (10s), "
+                "proceeding. Camera-side subscription may leak. Error: %s",
+                e,
             )
         LOGGER.debug("Events stopped.")
 
