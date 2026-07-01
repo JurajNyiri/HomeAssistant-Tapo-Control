@@ -152,16 +152,18 @@ async def async_setup_entry(
             LOGGER.debug("Adding tapoSirenTypeSelect...")
             selects.append(tapoSirenTypeSelect)
 
-        tapoAlertTypeSelect = await check_and_create(
-            entry, hass, TapoAlertTypeSelect, "getAlertTypeList", config_entry
-        )
-        if entry["controller"].isKLAP is False:
-            if tapoAlertTypeSelect:
-                LOGGER.debug("Adding tapoAlertTypeSelect...")
-                selects.append(tapoAlertTypeSelect)
-            elif not tapoSirenTypeSelect:
-                LOGGER.debug("Adding tapoAlertTypeSelect with start ID 0...")
-                selects.append(TapoAlertTypeSelect(entry, hass, config_entry, 0))
+        alarm_config = entry["camData"].get("alarm_config")
+        if alarm_config is not None:
+            tapoAlertTypeSelect = await check_and_create(
+                entry, hass, TapoAlertTypeSelect, "getAlertTypeList", config_entry
+            )
+            if entry["controller"].isKLAP is False:
+                if tapoAlertTypeSelect:
+                    LOGGER.debug("Adding tapoAlertTypeSelect...")
+                    selects.append(tapoAlertTypeSelect)
+                elif not tapoSirenTypeSelect:
+                    LOGGER.debug("Adding tapoAlertTypeSelect with start ID 0...")
+                    selects.append(TapoAlertTypeSelect(entry, hass, config_entry, 0))
 
         tapoMotionDetectionSelectAvailable = await check_functionality(
             entry, hass, TapoMotionDetectionSelect, "getMotionDetection"
@@ -882,11 +884,7 @@ class TapoAutomaticRebootTimeSelect(TapoSelectEntity):
         await self._coordinator.async_request_refresh()
 
     def updateTapo(self, camData):
-        if (
-            not camData
-            or "rebootTime" not in camData
-            or camData["rebootTime"] is None
-        ):
+        if not camData or "rebootTime" not in camData or camData["rebootTime"] is None:
             self._attr_state = STATE_UNAVAILABLE
             return
 
@@ -1713,6 +1711,7 @@ class TapoAlertTypeSelect(TapoSelectEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
+            self.alarm_config = camData["alarm_config"]
             self._attr_options = camData["alarm_siren_type_list"]
             self.user_sounds = {}
             if camData["alarm_user_sounds"] is not None:
@@ -1761,6 +1760,19 @@ class TapoAlertTypeSelect(TapoSelectEntity):
                 None,
                 None,
                 optionIndex,
+            )
+        elif self.typeOfAlarm == "getAlertConfig":
+            # TODO: Move this to pytapo so that executeFunction does not need to be used directly
+            alarmConfig = dict(self.alarm_config["alert_config"])
+            alarmConfig["alarm_type"] = str(optionIndex)
+            result = await self._hass.async_add_executor_job(
+                self._controller.executeFunction,
+                "setAlertConfig",
+                {
+                    "msg_alarm": {
+                        "chn1_msg_alarm_info": alarmConfig,
+                    }
+                },
             )
         else:
             # No idea if this works, cannot test on camera

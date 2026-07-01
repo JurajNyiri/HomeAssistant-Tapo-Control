@@ -609,8 +609,22 @@ class TapoSirenVolume(TapoNumberEntity):
                     "setAlarmConfig",
                     {"msg_alarm": {self.value_key: strval}},
                 )
+            elif self.typeOfAlarm == "getAlertConfig":
+                # TODO: Move this to pytapo so that executeFunction does not need to be used directly
+                alarmConfig = dict(self.alarm_config["alert_config"])
+                alarmConfig[self.value_key] = strval
+                result = await self._hass.async_add_executor_job(
+                    self._controller.executeFunction,
+                    "setAlertConfig",
+                    {
+                        "msg_alarm": {
+                            "chn1_msg_alarm_info": alarmConfig,
+                        }
+                    },
+                )
             else:
                 LOGGER.error("Unexpected type of alarm: " + self.typeOfAlarm)
+                return
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = value
         self.async_write_ha_state()
@@ -620,6 +634,7 @@ class TapoSirenVolume(TapoNumberEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
+            self.alarm_config = camData["alarm_config"]
             alarmVolume = camData["alarm_config"][self.value_key]
             if str(alarmVolume).isnumeric():
                 self._attr_state = camData["alarm_config"][self.value_key]
@@ -629,7 +644,7 @@ class TapoSirenVolume(TapoNumberEntity):
                 self._attr_state = 5
             elif str(alarmVolume) == "high":
                 self._attr_state = 10
-            if self.typeOfAlarm == "getAlarm":
+            if self.typeOfAlarm in ["getAlarm", "getAlertConfig"]:
                 self.alarm_enabled = camData["alarm_config"]["automatic"] == "on"
                 self.alarm_mode = camData["alarm_config"]["mode"]
 
@@ -847,6 +862,22 @@ class TapoSirenDuration(TapoNumberEntity):
                     "setAlarmConfig",
                     {"msg_alarm": {self.value_key: int(value)}},
                 )
+            elif self.typeOfAlarm == "getAlertConfig":
+                # TODO: Move this to pytapo so that executeFunction does not need to be used directly
+                alarmConfig = dict(self.alarm_config["alert_config"])
+                alarmConfig[self.value_key] = str(int(value))
+                result = await self._hass.async_add_executor_job(
+                    self._controller.executeFunction,
+                    "setAlertConfig",
+                    {
+                        "msg_alarm": {
+                            "chn1_msg_alarm_info": alarmConfig,
+                        }
+                    },
+                )
+            else:
+                LOGGER.error("Unexpected type of alarm: " + self.typeOfAlarm)
+                return
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = value
         self.async_write_ha_state()
@@ -856,7 +887,8 @@ class TapoSirenDuration(TapoNumberEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
+            self.alarm_config = camData["alarm_config"]
             self._attr_state = camData["alarm_config"][self.value_key]
-            if self.typeOfAlarm == "getAlarm":
+            if self.typeOfAlarm in ["getAlarm", "getAlertConfig"]:
                 self.alarm_enabled = camData["alarm_config"]["automatic"] == "on"
                 self.alarm_mode = camData["alarm_config"]["mode"]
