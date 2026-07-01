@@ -175,6 +175,7 @@ class TapoSyncTimeButton(TapoButtonEntity):
 
 class TapoStartManualAlarmButton(TapoButtonEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        self.sirenType = None
         TapoButtonEntity.__init__(
             self, "Manual Alarm Start", entry, hass, "mdi:alarm-light-outline"
         )

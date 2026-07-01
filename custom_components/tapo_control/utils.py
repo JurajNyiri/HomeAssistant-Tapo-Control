@@ -65,6 +65,7 @@ from .const import (
 )
 
 UUID = uuid.uuid4().hex
+ALARM_CONFIG_TYPES = ("getAlarm", "getAlarmConfig", "getAlertConfig")
 
 
 def _is_used_by_tplink(hass: HomeAssistant, host: str) -> bool:
@@ -2301,6 +2302,17 @@ async def scheduleAll(hass, device, entry, mediaSync):
 
 async def check_functionality(entry, hass, cls, check_function):
     try:
+        if check_function == "getAlarm":
+            alarm_config = entry.get("camData", {}).get("alarm_config")
+            if (
+                isinstance(alarm_config, dict)
+                and alarm_config.get("typeOfAlarm") in ALARM_CONFIG_TYPES
+            ):
+                LOGGER.debug(
+                    f"Found parsed alarm config, creating {cls.__name__}"
+                )
+                return True
+
         if isCacheSupported(check_function, entry["camData"]["raw"]):
             LOGGER.debug(
                 f"Found cached capability {check_function}, creating {cls.__name__}"
