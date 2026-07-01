@@ -71,6 +71,7 @@ class TapoSiren(TapoSirenEntity):
         TapoSirenEntity.__init__(self, "Siren", entry, hass, config_entry)
         self._turn_off_task = None
         self.is_hub = entry["camData"]["alarm_is_hubSiren"]
+        self.sirenType = None
 
     async def async_update(self) -> None:
         await self._coordinator.async_request_refresh()
@@ -87,13 +88,13 @@ class TapoSiren(TapoSirenEntity):
             self._turn_off_task.cancel()
             self._turn_off_task = None
 
+        result2 = False
         if self.is_hub:
             result = await self._hass.async_add_executor_job(
                 self._controller.setHubSirenStatus, True
             )
         else:
             result = False
-            result2 = False
             try:
                 result = await self._hass.async_add_executor_job(
                     self._controller.startManualAlarm,
@@ -109,18 +110,33 @@ class TapoSiren(TapoSirenEntity):
                 LOGGER.debug(e)
 
         if result_has_error(result) and result_has_error(result2):
-            self._attr_available = False
-            raise Exception("Camera does not support triggering the siren.")
-        else:
-            self._is_on = True
-            if duration:
-                self._turn_off_task = self.hass.async_create_task(
-                    _turn_off_after(duration, True)
-                )
-            elif "time_left" in result and result["time_left"]:
-                self._turn_off_task = self.hass.async_create_task(
-                    _turn_off_after(result["time_left"], False)
-                )
+            if self.sirenType is not None:
+                try:
+                    result = await self._hass.async_add_executor_job(
+                        self._controller.testUsrDefAudio, self.sirenType, True
+                    )
+                    if result_has_error(result):
+                        self._attr_available = False
+                        raise Exception("Camera does not support triggering the siren.")
+                except Exception:
+                    self._attr_available = False
+                    raise Exception("Camera does not support triggering the siren.")
+            else:
+                self._attr_available = False
+                raise Exception("Camera does not support triggering the siren.")
+        self._is_on = True
+        if duration:
+            self._turn_off_task = self.hass.async_create_task(
+                _turn_off_after(duration, True)
+            )
+        elif (
+            result is not False
+            and "time_left" in result
+            and result["time_left"]
+        ):
+            self._turn_off_task = self.hass.async_create_task(
+                _turn_off_after(result["time_left"], False)
+            )
 
         self._attr_is_on = True
 
@@ -129,13 +145,13 @@ class TapoSiren(TapoSirenEntity):
 
     async def async_turn_off(self, send: bool | None = True, **kwargs) -> None:
         if send:
+            result2 = False
             if self.is_hub:
                 result = await self._hass.async_add_executor_job(
                     self._controller.setHubSirenStatus, False
                 )
             else:
                 result = False
-                result2 = False
 
                 try:
                     result = await self._hass.async_add_executor_job(
@@ -151,8 +167,22 @@ class TapoSiren(TapoSirenEntity):
                 except Exception as e:
                     LOGGER.debug(e)
             if result_has_error(result) and result_has_error(result2):
-                self._attr_available = False
-                raise Exception("Camera does not support triggering the siren.")
+                if self.sirenType is not None:
+                    try:
+                        result = await self._hass.async_add_executor_job(
+                            self._controller.testUsrDefAudio, self.sirenType, False
+                        )
+                        if result_has_error(result):
+                            self._attr_available = False
+                            raise Exception(
+                                "Camera does not support triggering the siren."
+                            )
+                    except Exception:
+                        self._attr_available = False
+                        raise Exception("Camera does not support triggering the siren.")
+                else:
+                    self._attr_available = False
+                    raise Exception("Camera does not support triggering the siren.")
         self._attr_is_on = False
 
         self.async_write_ha_state()
@@ -164,3 +194,10 @@ class TapoSiren(TapoSirenEntity):
         else:
             self._attr_available = True
             self._is_on = camData["alarm_status"] == "on"
+            if (
+                "alarm_config" in camData
+                and camData["alarm_config"]
+                and "siren_type" in camData["alarm_config"]
+                and camData["alarm_config"]["siren_type"]
+            ):
+                self.sirenType = camData["alarm_config"]["siren_type"]

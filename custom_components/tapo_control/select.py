@@ -1019,6 +1019,8 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
     def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
         self._attr_options = ["both", "light", "sound", "off"]
         self._attr_current_option = None
+        self.alarm_config = entry["camData"]["alarm_config"]
+        self.typeOfAlarm = self.alarm_config["typeOfAlarm"]
         TapoSelectEntity.__init__(
             self,
             "Automatic Alarm",
@@ -1036,6 +1038,8 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
+            self.alarm_config = camData["alarm_config"]
+            self.typeOfAlarm = self.alarm_config["typeOfAlarm"]
             if camData["alarm_config"]["automatic"] == "off":
                 self._attr_current_option = "off"
             else:
@@ -1050,21 +1054,59 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
             self._attr_state = self._attr_current_option
 
     async def async_select_option(self, option: str) -> None:
+        alarm_enabled = option != "off"
+        alarm_mode = []
+        if option == "off" or option in ["both", "sound"]:
+            alarm_mode.append("sound")
+        if option == "off" or option in ["both", "light"]:
+            alarm_mode.append("light")
+
         LOGGER.debug(
             "setAlarm("
-            + str(option != "off")
+            + str(alarm_enabled)
             + ", "
-            + str(option == "off" or option in ["both", "sound"])
+            + str("sound" in alarm_mode)
             + ", "
-            + str(option == "off" or option in ["both", "light"])
+            + str("light" in alarm_mode)
             + ")"
         )
-        result = await self.hass.async_add_executor_job(
-            self._controller.setAlarm,
-            option != "off",
-            option == "off" or option in ["both", "sound"],
-            option == "off" or option in ["both", "light"],
-        )
+        if self.typeOfAlarm == "getAlertConfig":
+            alarmConfig = dict(self.alarm_config["alert_config"])
+            alarmConfig["enabled"] = "on" if alarm_enabled else "off"
+            alarmConfig["alarm_mode"] = alarm_mode
+            alarmConfig["sound_alarm_enabled"] = (
+                "on" if "sound" in alarm_mode else "off"
+            )
+            alarmConfig["light_alarm_enabled"] = (
+                "on" if "light" in alarm_mode else "off"
+            )
+            result = await self.hass.async_add_executor_job(
+                self._controller.executeFunction,
+                "setAlertConfig",
+                {
+                    "msg_alarm": {
+                        "chn1_msg_alarm_info": alarmConfig,
+                    }
+                },
+            )
+        elif self.typeOfAlarm == "getAlarmConfig":
+            result = await self.hass.async_add_executor_job(
+                self._controller.executeFunction,
+                "setAlarmConfig",
+                {
+                    "msg_alarm": {
+                        "enabled": "on" if alarm_enabled else "off",
+                        "alarm_mode": alarm_mode,
+                    }
+                },
+            )
+        else:
+            result = await self.hass.async_add_executor_job(
+                self._controller.setAlarm,
+                alarm_enabled,
+                "sound" in alarm_mode,
+                "light" in alarm_mode,
+            )
         if "error_code" not in result or result["error_code"] == 0:
             self._attr_state = option
         self.async_write_ha_state()
