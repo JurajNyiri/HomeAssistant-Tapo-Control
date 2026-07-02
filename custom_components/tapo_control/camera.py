@@ -45,6 +45,46 @@ from .utils import (
 )
 
 
+def _clear_location_attributes(attributes: dict) -> None:
+    attributes.pop("longitude", None)
+    attributes.pop("latitude", None)
+    attributes["has_set_location_info"] = 0
+
+
+def _normalize_tapo_coordinate(value, max_abs: int):
+    if value is None or isinstance(value, bool):
+        return None
+
+    if isinstance(value, int):
+        value = value / 10000
+
+    try:
+        coordinate = float(value)
+    except (TypeError, ValueError):
+        return None
+
+    if -max_abs <= coordinate <= max_abs:
+        return coordinate
+    return None
+
+
+def _update_location_attributes(attributes: dict) -> None:
+    if attributes.get("has_set_location_info") != 1:
+        _clear_location_attributes(attributes)
+        return
+
+    longitude = _normalize_tapo_coordinate(attributes.get("longitude"), 180)
+    latitude = _normalize_tapo_coordinate(attributes.get("latitude"), 90)
+
+    if longitude is None or latitude is None:
+        _clear_location_attributes(attributes)
+        return
+
+    attributes["longitude"] = longitude
+    attributes["latitude"] = latitude
+    attributes["has_set_location_info"] = 1
+
+
 async def async_setup_entry(
     hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: Callable
 ):
@@ -323,10 +363,7 @@ class TapoCamEntity(Camera):
                 ]
             if "user" in camData:
                 self._attr_extra_state_attributes["user"] = camData["user"]
-            # Disable incorrect location report by camera
-            self._attr_extra_state_attributes["longitude"] = 0
-            self._attr_extra_state_attributes["latitude"] = 0
-            self._attr_extra_state_attributes["has_set_location_info"] = 0
+            _update_location_attributes(self._attr_extra_state_attributes)
             # lists below
             self._attr_extra_state_attributes["presets"] = camData["presets"]
             if camData["recordPlan"]:
