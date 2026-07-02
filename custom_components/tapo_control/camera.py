@@ -600,14 +600,18 @@ class TapoDirectCamEntity(TapoCamEntity):
 
         LOGGER.debug("Direct MJPEG: ffmpeg PID %s", proc.pid)
 
-        jpeg = await proc.stdout.read()
-        await proc.wait()
-
-        LOGGER.debug("async_camera_image - Stopping streamer")
-        await streamer.stop()
-        info["streamProcess"].cancel()
-        LOGGER.debug("async_camera_image - Returning jpeg")
-        return jpeg
+        try:
+            jpeg = await proc.stdout.read()
+            await proc.wait()
+            LOGGER.debug("async_camera_image - Returning jpeg")
+            return jpeg
+        finally:
+            LOGGER.debug("async_camera_image - Stopping streamer")
+            if proc.returncode is None:
+                proc.kill()
+                await proc.wait()
+            await streamer.stop()
+            info["streamProcess"].cancel()
 
     async def handle_async_mjpeg_stream(self, request):
         LOGGER.debug("Direct MJPEG: request")
