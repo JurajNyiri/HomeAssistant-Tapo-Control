@@ -754,6 +754,23 @@ class TapoSpotlightIntensity(TapoNumberEntity):
             )
             self._attr_max_value = 100
             self._attr_native_max_value = 100
+
+        # Some C320WS firmwares report getLdc style as "original" together
+        # with a smartwtl_digital_level of 100, yet the camera rejects any
+        # intensity above 5 with -40101 (the Tapo app also only offers 1-5
+        # for this model). See #979.
+        device_model = (
+            entry.get("camData", {}).get("basic_info", {}).get("device_model") or ""
+        )
+        if device_model.startswith("C320WS") and self._attr_max_value > 5:
+            LOGGER.debug(
+                "Capping TapoSpotlightIntensity max at 5 for %s (reported %s)",
+                device_model,
+                self._attr_max_value,
+            )
+            self._attr_max_value = 5
+            self._attr_native_max_value = 5
+
         self._attr_step = 1
         self._hass = hass
         intensity = entry["camData"]["whitelampConfigIntensity"]
