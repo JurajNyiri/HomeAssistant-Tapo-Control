@@ -1695,6 +1695,12 @@ async def getCamData(hass, controller, chInfo=None):
         camData["presets"] = {}
 
     try:
+        patrolStatus = data["getPatrolAction"][0]["patrol"]["patrol"]["action"]
+    except Exception:
+        patrolStatus = None
+    camData["patrol_status"] = patrolStatus
+
+    try:
         firmwareUpdateStatus = data["getFirmwareUpdateStatus"][0]["cloud_config"]
     except Exception:
         firmwareUpdateStatus = None
@@ -2194,6 +2200,8 @@ def pytapoFunctionMap(pytapoFunctionName):
         return ["getTargetTrackConfig"]
     elif pytapoFunctionName == "getPresets":
         return ["getPresetConfig"]
+    elif pytapoFunctionName == "getCruise":
+        return ["getPatrolAction"]
     elif pytapoFunctionName == "getLightFrequencyMode":
         return ["getLightFrequencyInfo", "getLightFrequencyCapability"]
     elif pytapoFunctionName == "getChildDevices":
