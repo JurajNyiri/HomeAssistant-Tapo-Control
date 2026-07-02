@@ -429,7 +429,8 @@ class TapoChimeSoundPlay(RestoreEntity, TapoSelectEntity):
 
     def updateTapo(self, camData):
         if (
-            "supportAlarmTypeList" not in camData
+            not camData
+            or "supportAlarmTypeList" not in camData
             or camData["supportAlarmTypeList"] is None
         ):
             self._attr_state = STATE_UNAVAILABLE
@@ -1127,12 +1128,12 @@ class TapoDualCamLinkage(TapoSelectEntity):
 
     def updateTapo(self, camData):
         LOGGER.debug(f"TapoDualCamLinkage updateTapo 1")
-        LOGGER.debug(f"Enabled: {camData["dualCamLinkageEnabled"]}")
-        LOGGER.debug(f"Type: {camData["dualCamLinkageType"]}")
         if not camData:
             LOGGER.debug("TapoDualCamLinkage updateTapo 2")
             self._attr_state = STATE_UNAVAILABLE
         else:
+            LOGGER.debug(f"Enabled: {camData["dualCamLinkageEnabled"]}")
+            LOGGER.debug(f"Type: {camData["dualCamLinkageType"]}")
             LOGGER.debug("TapoDualCamLinkage updateTapo 3")
             if camData["dualCamLinkageEnabled"] == "off":
                 LOGGER.debug("TapoDualCamLinkage updateTapo 4")
@@ -1192,7 +1193,11 @@ class TapoMotionDetectionSelect(TapoSelectEntity):
 
     def updateTapo(self, camData):
         LOGGER.debug(f"TapoMotionDetectionSelect updateTapo 1 ({self.chn_id})")
-        if not camData:
+        if (
+            not camData
+            or not camData.get("motion_detection_enabled")
+            or not camData.get("motion_detection_sensitivity")
+        ):
             LOGGER.debug("TapoMotionDetectionSelect updateTapo 2")
             self._attr_state = STATE_UNAVAILABLE
         else:
