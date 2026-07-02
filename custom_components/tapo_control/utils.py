@@ -2268,6 +2268,11 @@ def isCacheSupported(check_function, rawData):
 
 async def scheduleAll(hass, device, entry, mediaSync):
     LOGGER.debug("scheduleAll for " + device["name"] + " called.")
+    if not device.get(ENABLE_MEDIA_SYNC):
+        device["initialMediaScanRunning"] = False
+        device["runningMediaSync"] = False
+        return
+
     if device["mediaSyncAvailable"]:
         if (
             device["initialMediaScanDone"] is True

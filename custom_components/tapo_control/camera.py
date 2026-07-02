@@ -45,6 +45,19 @@ from .utils import (
 )
 
 
+def _direct_stream_entities_blocked(entry) -> bool:
+    if not entry.get("isRunningOnBattery"):
+        return False
+
+    basic_info = entry.get("camData", {}).get("basic_info", {})
+    alias = basic_info.get("device_alias") or entry.get("name") or "battery camera"
+    LOGGER.warning(
+        "Skipping direct stream entities for battery-powered camera %s",
+        alias,
+    )
+    return True
+
+
 def _clear_location_coordinates(attributes: dict) -> None:
     attributes.pop("longitude", None)
     attributes.pop("latitude", None)
@@ -164,7 +177,7 @@ async def async_setup_entry(
                     )
                 async_add_entities(telephotoEntities)
 
-        if not entry["isParent"]:
+        if not entry["isParent"] and not _direct_stream_entities_blocked(entry):
 
             allChnInfo = entry.get("camData", {}).get("allChnInfo", {})
             if allChnInfo:
