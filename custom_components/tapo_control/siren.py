@@ -129,7 +129,6 @@ class TapoSiren(TapoSirenEntity):
             else:
                 self._attr_available = False
                 raise Exception("Camera does not support triggering the siren.")
-        self._is_on = True
         if duration:
             self._turn_off_task = self.hass.async_create_task(
                 _turn_off_after(duration, True)
@@ -198,7 +197,7 @@ class TapoSiren(TapoSirenEntity):
             self._attr_available = False
         else:
             self._attr_available = True
-            self._is_on = camData["alarm_status"] == "on"
+            self._attr_is_on = camData["alarm_status"] == "on"
             if (
                 "alarm_config" in camData
                 and camData["alarm_config"]

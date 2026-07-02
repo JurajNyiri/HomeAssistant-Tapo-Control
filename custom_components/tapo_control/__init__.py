@@ -1003,6 +1003,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         LOGGER.debug(f"Timezone offset is {timezoneOffset}.")
 
         LOGGER.debug("Setting up entry data.")
+        # async_on_unload removes the listener on unload; without it every
+        # config entry reload registered an additional listener, so
+        # update_listener ran multiple times per options change.
+        entry.async_on_unload(entry.add_update_listener(update_listener))
         hass.data[DOMAIN][entry.entry_id] = {
             "setup_retries": 0,
             "reauth_retries": 0,
@@ -1014,7 +1018,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "chInfo": chInfo,
             "usingCloudPassword": cloud_password != "",
             "allControllers": [tapoController],
-            "update_listener": entry.add_update_listener(update_listener),
             "coordinator": tapoCoordinator,
             "camData": camData,
             "lastTimeSync": 0,
