@@ -45,10 +45,9 @@ from .utils import (
 )
 
 
-def _clear_location_attributes(attributes: dict) -> None:
+def _clear_location_coordinates(attributes: dict) -> None:
     attributes.pop("longitude", None)
     attributes.pop("latitude", None)
-    attributes["has_set_location_info"] = 0
 
 
 def _normalize_tapo_coordinate(value, max_abs: int):
@@ -70,19 +69,18 @@ def _normalize_tapo_coordinate(value, max_abs: int):
 
 def _update_location_attributes(attributes: dict) -> None:
     if attributes.get("has_set_location_info") != 1:
-        _clear_location_attributes(attributes)
+        _clear_location_coordinates(attributes)
         return
 
     longitude = _normalize_tapo_coordinate(attributes.get("longitude"), 180)
     latitude = _normalize_tapo_coordinate(attributes.get("latitude"), 90)
 
     if longitude is None or latitude is None:
-        _clear_location_attributes(attributes)
+        _clear_location_coordinates(attributes)
         return
 
     attributes["longitude"] = longitude
     attributes["latitude"] = latitude
-    attributes["has_set_location_info"] = 1
 
 
 async def async_setup_entry(
