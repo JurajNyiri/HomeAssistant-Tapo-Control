@@ -280,6 +280,23 @@ def getEntryStorageFile(config_entry, child_id):
 
 # todo: findMedia needs to run periodically
 async def findMedia(hass, entryData, entry):
+    try:
+        await _findMedia(hass, entryData, entry)
+    except Exception as err:
+        # Allow scheduleAll to retry the initial scan on the next update
+        # cycle. Without this, a transient error here would leave
+        # initialMediaScanRunning stuck on True and the media pipeline
+        # (recordings UI, media sync, cold storage cleanup) disabled until
+        # Home Assistant restarts.
+        entryData["initialMediaScanRunning"] = False
+        LOGGER.error(
+            "Initial media scan for %s failed, will retry: %s",
+            entryData["name"],
+            err,
+        )
+
+
+async def _findMedia(hass, entryData, entry):
     entry_id = entry.entry_id
     LOGGER.debug("Finding media for " + entryData["name"] + "...")
     entryData["initialMediaScanDone"] = False
@@ -713,19 +730,24 @@ async def getRecording(
         )
 
         entryData["isDownloadingStream"] = True
-        downloadedFile = await downloader.downloadFile(
-            processDownloadStatus(
-                entryData,
-                date,
-                (
-                    len(allRecordings)
-                    if totalRecordingCount is False
-                    else totalRecordingCount
-                ),
-                recordingCount if recordingCount is not False else False,
+        try:
+            downloadedFile = await downloader.downloadFile(
+                processDownloadStatus(
+                    entryData,
+                    date,
+                    (
+                        len(allRecordings)
+                        if totalRecordingCount is False
+                        else totalRecordingCount
+                    ),
+                    recordingCount if recordingCount is not False else False,
+                )
             )
-        )
-        entryData["isDownloadingStream"] = False
+        finally:
+            # Without this, a single failed download would leave
+            # isDownloadingStream stuck on True, permanently blocking both
+            # media sync and manual playback until Home Assistant restarts.
+            entryData["isDownloadingStream"] = False
         if downloadedFile["currentAction"] == "Recording in progress":
             raise Unresolvable("Recording is currently in progress.")
 
