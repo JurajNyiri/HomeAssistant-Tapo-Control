@@ -59,6 +59,7 @@ from .const import (
     CONF_CUSTOM_STREAM_7,
     MEDIA_SYNC_COLD_STORAGE_PATH,
     MEDIA_SYNC_HOURS,
+    MODELS_WITHOUT_MANUAL_SIREN,
     TIME_SYNC_DST,
     TIME_SYNC_NDST,
     TPLINK_DOMAIN,
@@ -806,6 +807,18 @@ def result_has_error(result):
         return False
     else:
         return True
+
+
+def supports_manual_siren(camData):
+    """Whether the camera can trigger its siren on demand. Known-unsupported
+    models are listed in MODELS_WITHOUT_MANUAL_SIREN; for those we skip
+    creating the Siren entity and the Manual Alarm Start/Stop buttons."""
+    if not camData:
+        return True
+    device_model = (camData.get("basic_info") or {}).get("device_model") or ""
+    return not any(
+        device_model.startswith(prefix) for prefix in MODELS_WITHOUT_MANUAL_SIREN
+    )
 
 
 async def initOnvifEvents(hass, host, username, password):

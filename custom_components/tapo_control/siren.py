@@ -8,7 +8,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoEntity
-from .utils import check_and_create, result_has_error
+from .utils import check_and_create, result_has_error, supports_manual_siren
 
 
 async def async_setup_entry(
@@ -21,6 +21,11 @@ async def async_setup_entry(
 
     async def setupEntities(entry):
         sirens = []
+        if not supports_manual_siren(entry.get("camData")):
+            LOGGER.debug(
+                "Skipping Siren entity: model does not support manual siren."
+            )
+            return sirens
         tapoSiren = await check_and_create(
             entry, hass, TapoSiren, "getAlarm", config_entry
         )
