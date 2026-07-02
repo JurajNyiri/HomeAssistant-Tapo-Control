@@ -11,7 +11,6 @@ import uuid
 import requests
 import base64
 
-from functools import partial
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
@@ -53,6 +52,10 @@ from .const import (
     LOGGER,
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
+    MEDIA_SYNC_INITIAL_SCAN_MAX_ATTEMPTS,
+    MEDIA_SYNC_RUN_TIMEOUT,
+    UPDATE_INTERVAL_BATTERY,
+    UPDATE_INTERVAL_BATTERY_DEFAULT,
     CONF_CUSTOM_STREAM_HD,
     CONF_CUSTOM_STREAM_SD,
     CONF_CUSTOM_STREAM_6,
@@ -2274,38 +2277,101 @@ async def scheduleAll(hass, device, entry, mediaSync):
             and device["mediaSyncScheduled"] is False
         ):
             device["mediaSyncScheduled"] = True
-            LOGGER.debug("Scheduling media sync")
-            callback = partial(mediaSync, entry=entry, device=device)
+            mediaSyncInterval = 60
+            if device.get("isRunningOnBattery") and not device.get(
+                "isHubStorageChild"
+            ):
+                mediaSyncInterval = max(
+                    entry.data.get(UPDATE_INTERVAL_BATTERY)
+                    or UPDATE_INTERVAL_BATTERY_DEFAULT,
+                    mediaSyncInterval,
+                )
+            LOGGER.debug(
+                "Scheduling media sync every " + str(mediaSyncInterval) + " seconds"
+            )
+
+            async def _guardedMediaSync(now, entry=entry, device=device):
+                try:
+                    async with asyncio.timeout(MEDIA_SYNC_RUN_TIMEOUT):
+                        await mediaSync(now, entry=entry, device=device)
+                except TimeoutError:
+                    LOGGER.warning(
+                        "Media sync run for "
+                        + device["name"]
+                        + " timed out after "
+                        + str(MEDIA_SYNC_RUN_TIMEOUT)
+                        + " seconds (camera may have gone to sleep)."
+                        + " Will retry on next cycle."
+                    )
+                finally:
+                    device["runningMediaSync"] = False
 
             entry.async_on_unload(
                 async_track_time_interval(
                     hass,
-                    callback,
-                    datetime.timedelta(seconds=60),
+                    _guardedMediaSync,
+                    datetime.timedelta(seconds=mediaSyncInterval),
                 )
             )
         elif device["initialMediaScanRunning"] is False:
             LOGGER.debug("Media scan running")
             device["initialMediaScanRunning"] = True
+
+            def _handleInitialScanFailure(err):
+                device["initialMediaScanRunning"] = False
+                attempts = device.get("initialMediaScanAttempts", 0) + 1
+                device["initialMediaScanAttempts"] = attempts
+                enableMediaSync = device[ENABLE_MEDIA_SYNC]
+                if attempts >= MEDIA_SYNC_INITIAL_SCAN_MAX_ATTEMPTS:
+                    device["initialMediaScanDone"] = True
+                    device["mediaSyncAvailable"] = False
+                    errMsg = (
+                        "Disabling media sync as initial media scan failed "
+                        + str(attempts)
+                        + " times. Do you have SD card inserted?"
+                    )
+                    if enableMediaSync:
+                        LOGGER.warning(errMsg)
+                        LOGGER.warning(device["name"] + ": " + str(err))
+                    else:
+                        LOGGER.info(errMsg)
+                        LOGGER.info(device["name"] + ": " + str(err))
+                else:
+                    LOGGER.info(
+                        "Initial media scan failed for "
+                        + device["name"]
+                        + " (attempt "
+                        + str(attempts)
+                        + "), will retry on next update cycle: "
+                        + str(err)
+                    )
+
             try:
                 await hass.async_add_executor_job(
                     device["controller"].getRecordingsList
                 )
+
+                async def _guardedFindMedia(device=device, entry=entry):
+                    try:
+                        async with asyncio.timeout(MEDIA_SYNC_RUN_TIMEOUT):
+                            await findMedia(hass, device, entry)
+                    except TimeoutError:
+                        LOGGER.warning(
+                            "Initial media scan for "
+                            + device["name"]
+                            + " timed out (camera may have gone to sleep)."
+                            + " Will retry on next update cycle."
+                        )
+                        _handleInitialScanFailure(err)
+                    except Exception as err:
+                        _handleInitialScanFailure(err)
+
                 hass.async_create_background_task(
-                    findMedia(hass, device, entry),
+                    _guardedFindMedia(),
                     "findMedia",
                 )
             except Exception as err:
-                device["initialMediaScanDone"] = True
-                device["mediaSyncAvailable"] = False
-                enableMediaSync = device[ENABLE_MEDIA_SYNC]
-                errMsg = "Disabling media sync as there was error returned from getRecordingsList. Do you have SD card inserted?"
-                if enableMediaSync:
-                    LOGGER.warning(errMsg)
-                    LOGGER.warning(device["name"] + ": " + str(err))
-                else:
-                    LOGGER.info(errMsg)
-                    LOGGER.info(device["name"] + ": " + str(err))
+                _handleInitialScanFailure(err)
 
 
 async def check_functionality(entry, hass, cls, check_function):
