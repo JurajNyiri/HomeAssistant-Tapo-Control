@@ -21,9 +21,9 @@ async def async_setup_entry(
 
     async def setupEntities(entry):
         sirens = []
-        if not supports_manual_siren(entry.get("camData")):
+        if not await supports_manual_siren(hass, entry):
             LOGGER.debug(
-                "Skipping Siren entity: model does not support manual siren."
+                "Skipping Siren entity: on-demand manual siren unavailable."
             )
             return sirens
         tapoSiren = await check_and_create(

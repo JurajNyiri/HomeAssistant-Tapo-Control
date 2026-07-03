@@ -106,11 +106,3 @@ TAPO_PREFIXES = (
     r"^d[0-9]{3}[a-zA-Z]*c_.*",  # Doorbell Chimes (D100C, D230C, D325C, etc.)
     r"^h[0-9]{3}[a-zA-Z]*_.*",  # Smart Hubs (H100, H200, H300, etc.)
 )
-
-# Models with no way to trigger the siren on demand: startManualAlarm,
-# setSirenStatus and testUsrDefAudio all return -40106/-40210 and the Tapo
-# app offers no manual siren button for them (alarm only fires on motion
-# detection). Creating the Siren entity or the Manual Alarm Start/Stop
-# buttons for these models gives users controls that always fail.
-# See #373, #678 and discussion #978.
-MODELS_WITHOUT_MANUAL_SIREN = ("C320WS",)

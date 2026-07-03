@@ -12,6 +12,8 @@ from .utils import (
     check_functionality,
     getNightModeName,
     getNightModeValue,
+    spotlight_intensity_uses_select,
+    resolve_spotlight_intensity_max,
 )
 
 
@@ -347,10 +349,7 @@ async def async_setup_entry(
                         TapoWhitelampForceTimeSelect(entry, hass, config_entry)
                     )
 
-        if (
-            entry["camData"]["whitelampConfigIntensity"] is not None
-            and entry["camData"]["smartwtl_digital_level"] is None
-        ):
+        if entry["camData"]["whitelampConfigIntensity"] is not None:
             tapoWhitelampIntensityLevelSelectAvailable = await check_functionality(
                 entry, hass, TapoWhitelampIntensityLevelSelect, "getWhitelampConfig"
             )
@@ -359,6 +358,11 @@ async def async_setup_entry(
                     for lens in entry["chInfo"]:
                         chn_alias = lens.get("chn_alias", "")
                         chn_id = lens.get("chn_id")
+                        read_chn_id = str(chn_id) if chn_id else "1"
+                        if not spotlight_intensity_uses_select(
+                            entry["camData"], read_chn_id
+                        ):
+                            continue
                         LOGGER.debug(
                             f"Adding TapoWhitelampIntensityLevelSelect for {chn_alias}, id: {chn_id}..."
                         )
@@ -367,7 +371,7 @@ async def async_setup_entry(
                                 entry, hass, config_entry, chn_alias, chn_id
                             )
                         )
-                else:
+                elif spotlight_intensity_uses_select(entry["camData"]):
                     LOGGER.debug("Adding TapoWhitelampIntensityLevelSelect...")
                     selects.append(
                         TapoWhitelampIntensityLevelSelect(entry, hass, config_entry)
@@ -588,10 +592,13 @@ class TapoWhitelampIntensityLevelSelect(TapoSelectEntity):
         specific_name=None,
         chn_id=None,
     ):
-        self._attr_options = ["1", "2", "3", "4", "5"]
-        self._attr_current_option = None
         self.chn_id = chn_id
         self.read_chn_id = str(chn_id) if chn_id else "1"
+        max_level = resolve_spotlight_intensity_max(
+            entry["camData"], self.read_chn_id
+        )
+        self._attr_options = [str(i) for i in range(1, max_level + 1)]
+        self._attr_current_option = None
         TapoSelectEntity.__init__(
             self,
             f"Spotlight Intensity{" - " + specific_name if specific_name else ""}",

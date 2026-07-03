@@ -26,7 +26,7 @@ async def async_setup_entry(
             if entry["controller"].isKLAP is False:
                 buttons.append(TapoFormatButton(entry, hass, config_entry))
 
-            if supports_manual_siren(entry.get("camData")):
+            if await supports_manual_siren(hass, entry):
                 tapoStartManualAlarmButton = await check_and_create(
                     entry, hass, TapoStartManualAlarmButton, "getAlarm", config_entry
                 )
@@ -42,8 +42,8 @@ async def async_setup_entry(
                     buttons.append(tapoStopManualAlarmButton)
             else:
                 LOGGER.debug(
-                    "Skipping Manual Alarm buttons: model does not support "
-                    "manual siren."
+                    "Skipping Manual Alarm buttons: on-demand manual siren "
+                    "unavailable."
                 )
 
             if not entry["isParent"] and entry["controller"].isKLAP is False:

@@ -9,7 +9,7 @@ from homeassistant.const import STATE_UNAVAILABLE, UnitOfTime
 
 from .const import DOMAIN, LOGGER
 from .tapo.entities import TapoEntity, TapoNumberEntity
-from .utils import check_and_create, check_functionality
+from .utils import check_and_create, check_functionality, spotlight_intensity_uses_select, resolve_spotlight_intensity_max
 
 
 async def async_setup_entry(
@@ -107,14 +107,16 @@ async def async_setup_entry(
                 LOGGER.debug("Adding TapoSirenDuration...")
                 numbers.append(tapoSirenDuration)
 
-        if (
-            entry["camData"]["whitelampConfigIntensity"] is not None
-            and entry["camData"]["smartwtl_digital_level"] is not None
-        ):
+        if entry["camData"]["whitelampConfigIntensity"] is not None:
             if entry["chInfo"]:
                 for lens in entry["chInfo"]:
                     chn_alias = lens.get("chn_alias", "")
                     chn_id = lens.get("chn_id")
+                    read_chn_id = str(chn_id) if chn_id else "1"
+                    if spotlight_intensity_uses_select(
+                        entry["camData"], read_chn_id
+                    ):
+                        continue
                     tapoSpotlightIntensity = TapoSpotlightIntensity(
                         entry, hass, config_entry, chn_alias, chn_id
                     )
@@ -123,7 +125,7 @@ async def async_setup_entry(
                             f"Adding tapoSpotlightIntensity for {chn_alias}, id: {chn_id}..."
                         )
                         numbers.append(tapoSpotlightIntensity)
-            else:
+            elif not spotlight_intensity_uses_select(entry["camData"]):
                 tapoSpotlightIntensity = TapoSpotlightIntensity(
                     entry, hass, config_entry
                 )
@@ -716,60 +718,15 @@ class TapoSpotlightIntensity(TapoNumberEntity):
         self.chn_id = chn_id
         self.read_chn_id = str(chn_id) if chn_id else "1"
 
-        ldc_style = entry["camData"].get("ldcStyle")
-        if isinstance(ldc_style, dict):
-            ldc_style = entry["camData"].get("ldcStyle").get(self.read_chn_id)
-            if not ldc_style and chn_id > 1:
-                ldc_style = entry["camData"].get("ldcStyle").get("1")
-
-        smartwtl_level = entry["camData"].get("smartwtl_digital_level")
-        if isinstance(smartwtl_level, dict):
-            smartwtl_level = (
-                entry["camData"].get("smartwtl_digital_level").get(self.read_chn_id)
-            )
-            if not smartwtl_level and chn_id > 1:
-                smartwtl_level = entry["camData"].get("smartwtl_digital_level").get("1")
-
-        if ldc_style:
-            if ldc_style == "standard":
-                LOGGER.debug(
-                    "Determining maximum range for TapoSpotlightIntensity: standard"
-                )
-                self._attr_max_value = 5
-                self._attr_native_max_value = 5
-            else:
-                LOGGER.debug(
-                    "Determining maximum range for TapoSpotlightIntensity: "
-                    + str(ldc_style)
-                )
-                if smartwtl_level is not None:
-                    self._attr_max_value = int(smartwtl_level)
-                    self._attr_native_max_value = int(smartwtl_level)
-                else:
-                    self._attr_max_value = 100
-                    self._attr_native_max_value = 100
-        else:
-            LOGGER.debug(
-                "Determining maximum range for TapoSpotlightIntensity: Default to 100 because of missing style."
-            )
-            self._attr_max_value = 100
-            self._attr_native_max_value = 100
-
-        # Some C320WS firmwares report getLdc style as "original" together
-        # with a smartwtl_digital_level of 100, yet the camera rejects any
-        # intensity above 5 with -40101 (the Tapo app also only offers 1-5
-        # for this model). See #979.
-        device_model = (
-            entry.get("camData", {}).get("basic_info", {}).get("device_model") or ""
+        max_value = resolve_spotlight_intensity_max(
+            entry["camData"], self.read_chn_id
         )
-        if device_model.startswith("C320WS") and self._attr_max_value > 5:
-            LOGGER.debug(
-                "Capping TapoSpotlightIntensity max at 5 for %s (reported %s)",
-                device_model,
-                self._attr_max_value,
-            )
-            self._attr_max_value = 5
-            self._attr_native_max_value = 5
+        LOGGER.debug(
+            "Determining maximum range for TapoSpotlightIntensity: %s",
+            max_value,
+        )
+        self._attr_max_value = max_value
+        self._attr_native_max_value = max_value
 
         self._attr_step = 1
         self._hass = hass

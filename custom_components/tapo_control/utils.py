@@ -59,7 +59,6 @@ from .const import (
     CONF_CUSTOM_STREAM_7,
     MEDIA_SYNC_COLD_STORAGE_PATH,
     MEDIA_SYNC_HOURS,
-    MODELS_WITHOUT_MANUAL_SIREN,
     TIME_SYNC_DST,
     TIME_SYNC_NDST,
     TPLINK_DOMAIN,
@@ -809,16 +808,118 @@ def result_has_error(result):
         return True
 
 
-def supports_manual_siren(camData):
-    """Whether the camera can trigger its siren on demand. Known-unsupported
-    models are listed in MODELS_WITHOUT_MANUAL_SIREN; for those we skip
-    creating the Siren entity and the Manual Alarm Start/Stop buttons."""
-    if not camData:
-        return True
-    device_model = (camData.get("basic_info") or {}).get("device_model") or ""
-    return not any(
-        device_model.startswith(prefix) for prefix in MODELS_WITHOUT_MANUAL_SIREN
+def _spotlight_channel_value(camData, field, read_chn_id="1"):
+    """Return a per-channel LDC/spotlight field from camData."""
+    val = camData.get(field)
+    if isinstance(val, dict):
+        return val.get(read_chn_id) or val.get("1")
+    return val
+
+
+def resolve_spotlight_intensity_max(camData, read_chn_id="1"):
+    """Maximum spotlight intensity the camera accepts.
+
+    The Tapo app uses smartwtl_level (discrete step count, often 5) rather than
+    smartwtl_digital_level (internal scale, often 100). See #637 and #979.
+    """
+    ldc_style = _spotlight_channel_value(camData, "ldcStyle", read_chn_id)
+    smartwtl_level = _spotlight_channel_value(camData, "smartwtl_level", read_chn_id)
+    smartwtl_digital_level = _spotlight_channel_value(
+        camData, "smartwtl_digital_level", read_chn_id
     )
+
+    if ldc_style == "standard":
+        return 5
+    if smartwtl_level is not None:
+        return int(smartwtl_level)
+    if smartwtl_digital_level is not None:
+        return int(smartwtl_digital_level)
+    return 100
+
+
+def spotlight_intensity_uses_select(camData, read_chn_id="1"):
+    """Whether spotlight intensity should be a select (1-N) vs a number slider.
+
+    When both smartwtl_level and smartwtl_digital_level are present, cameras
+    that expose a small discrete level count use the select UI in the Tapo app.
+    """
+    if _spotlight_channel_value(camData, "smartwtl_digital_level", read_chn_id) is None:
+        return True
+    smartwtl_level = _spotlight_channel_value(camData, "smartwtl_level", read_chn_id)
+    if smartwtl_level is not None:
+        return int(smartwtl_level) <= 5
+    return False
+
+
+_MANUAL_SIREN_UNSUPPORTED = ("-40106", "-40210", "UNSUPPORTED_METHOD", "METHOD_DO_NOT_EXIST")
+
+
+def _manual_siren_probe_failed(exc):
+    msg = str(exc)
+    return any(code in msg for code in _MANUAL_SIREN_UNSUPPORTED)
+
+
+def probe_manual_siren_supported(controller):
+    """Probe whether on-demand siren control is available without sounding it."""
+    probes = (
+        ("stopManualAlarm", lambda: controller.stopManualAlarm()),
+        ("setSirenStatus(off)", lambda: controller.setSirenStatus(False)),
+        ("testUsrDefAudio(stop)", lambda: controller.testUsrDefAudio(0, False)),
+    )
+    had_unexpected = False
+    for name, probe in probes:
+        try:
+            probe()
+            LOGGER.debug("Manual siren probe succeeded via %s", name)
+            return True
+        except Exception as err:
+            if _manual_siren_probe_failed(err):
+                LOGGER.debug("Manual siren probe %s unsupported: %s", name, err)
+                continue
+            had_unexpected = True
+            LOGGER.warning(
+                "Manual siren probe %s unexpected error: %s", name, err
+            )
+    if had_unexpected:
+        LOGGER.debug(
+            "Manual siren probe inconclusive; keeping manual siren entities"
+        )
+        return True
+    return False
+
+
+async def supports_manual_siren(hass, entry):
+    """Whether the camera supports on-demand manual siren control.
+
+    Hub sirens are always supported. For cameras, a silent runtime probe is
+    used because getAlarmConfig alone does not indicate manual trigger support.
+    """
+    if "manualSirenSupported" in entry:
+        return entry["manualSirenSupported"]
+
+    camData = entry.get("camData") or {}
+    if camData.get("alarm_is_hubSiren"):
+        entry["manualSirenSupported"] = True
+        return True
+
+    controller = entry.get("controller")
+    if not controller:
+        entry["manualSirenSupported"] = False
+        return False
+    if controller.isKLAP:
+        # KLAP devices use a different alarm API; keep existing entity creation.
+        entry["manualSirenSupported"] = True
+        return True
+
+    supported = await hass.async_add_executor_job(
+        probe_manual_siren_supported, controller
+    )
+    entry["manualSirenSupported"] = supported
+    if not supported:
+        LOGGER.debug(
+            "Skipping manual siren entities: on-demand siren control unavailable"
+        )
+    return supported
 
 
 async def initOnvifEvents(hass, host, username, password):
@@ -1418,6 +1519,12 @@ async def getCamData(hass, controller, chInfo=None):
     except Exception:
         smartwtl_digital_level = None
     camData["smartwtl_digital_level"] = smartwtl_digital_level
+
+    try:
+        smartwtl_level = extractFieldByChannel(ldc_common, "smartwtl_level")
+    except Exception:
+        smartwtl_level = None
+    camData["smartwtl_level"] = smartwtl_level
 
     try:
         flood_light_config = data["getFloodlightConfig"][0]["floodlight"]["config"]
