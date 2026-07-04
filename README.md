@@ -79,7 +79,7 @@ This custom component creates:
 Doorbells, Cameras (for each lens, if supported):
 
 - Up to 4 camera entities: HD and SD, using RTSP standard or TP-Link proprietary video protocol. If you choose to use direct entities, it is recommended to disable `Use Stream from Home Assistant` in options for the best performance and battery life.
-- Binary sensor for motion after the motion is detected for the first time and a binary sensor for doorbell press
+- Binary sensor for motion after the motion is detected for the first time, if the device exposes ONVIF motion events, and a binary sensor for doorbell press
 - Light entity, if the camera supports a floodlight switch
 - Buttons for Calibrate, Format, Manual Alarm start & stop, Moving the camera, Reboot and syncing time
 - Switch entities for Auto track, Automatic Reboot, Flip setting, LED Indicator, Lens Distortion Correction, (Rich) Notifications, Recording, Microphone Mute, Microphone Noise Cancelling, Automatically Upgrade Firmware, HDR mode, Alarm Trigger Event types, Privacy Zones, Diagnose Mode, Smart Track specific switches, Smart Dual Track specific switches, Preset Patrol Mode, Audio Recording and Privacy mode
@@ -200,6 +200,16 @@ If you have an option to use RTSP, it is recommended to stick with RTSP streams.
 1. Direct streams take a bit more CPU resources since the device running this integration is now handling the binary stream directly, instead of camera exposing a standardized RTSP stream.
 2. Direct streams cannot be used with webrtc card, or go2rtc.
 3. RTSP streams are very fast with almost no delay using the [webrtc](https://github.com/AlexxIT/WebRTC) Home Assistant camera card
+
+</details>
+<details>
+  <summary>Battery powered cameras and motion sensors</summary>
+
+Battery powered and solar powered cameras usually do not expose the ONVIF event interface required by this integration's motion binary sensor.
+
+When ONVIF events are not available, the Home Assistant motion binary sensor will not be created or updated, even if motion detection is enabled in the Tapo app and direct camera streams work.
+
+The same limitation can apply to devices working through a hub. Direct streams can still work on these devices; only the ONVIF-based motion sensor is unavailable.
 
 </details>
 <details>
