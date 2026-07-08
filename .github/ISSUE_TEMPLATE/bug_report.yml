@@ -103,7 +103,7 @@ body:
     attributes:
       label: Search for similar issues
       description: |
-        Have you searched for your issue in [existing issues](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues?q=is%3Aissue) (including recently closed ones)?
+        Have you searched for your issue in [existing issues](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues) (including [recently closed ones](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/issues?q=is%3Aissue%20state%3Aclosed))?
       options:
         - "Yes"
         - "No"
