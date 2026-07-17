@@ -262,6 +262,7 @@ class TapoCamEntity(Camera):
         )
         self._controller = entry["controller"]
         self._coordinator = entry["coordinator"]
+        self._entry = entry
         self._ffmpeg = hass.data[DATA_FFMPEG]
         self._config_entry = config_entry
         self._hass = hass
