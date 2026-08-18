@@ -327,6 +327,7 @@ Users reported full functionality with following Tapo Cameras, Doorbells and Chi
 - C260
 - C310
 - C320WS
+- C401
 - C402
 - C403
 - C410
