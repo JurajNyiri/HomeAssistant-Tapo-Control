@@ -338,6 +338,7 @@ Users reported full functionality with following Tapo Cameras, Doorbells and Chi
 - C510W
 - C520WS
 - C530WS
+- C610
 - C710
 - C720
 - D100C
