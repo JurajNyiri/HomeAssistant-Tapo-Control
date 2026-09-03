@@ -12,7 +12,10 @@ from homeassistant.const import (
     CONF_PASSWORD,
     CONF_EMAIL,
 )
-from homeassistant.helpers.device_registry import async_get as device_registry_async_get
+from homeassistant.helpers.device_registry import (
+    async_entries_for_config_entry as device_registry_async_entries_for_config_entry,
+    async_get as device_registry_async_get,
+)
 from homeassistant.helpers.selector import selector
 
 from .utils import (
@@ -1832,15 +1835,12 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     camData = await getCamData(self.hass, tapoController)
                     reported_ip_address = getIP(camData)
                     device_registry = device_registry_async_get(self.hass)
-                    devices_to_remove = []
-                    for deviceID in device_registry.devices:
-                        device = device_registry.devices[deviceID]
-                        if (
-                            len(device.config_entries)
-                            and list(device.config_entries)[0]
-                            == self.config_entry.entry_id
-                        ):
-                            devices_to_remove.append(device.id)
+                    devices_to_remove = [
+                        device.id
+                        for device in device_registry_async_entries_for_config_entry(
+                            device_registry, self.config_entry.entry_id
+                        )
+                    ]
                     for deviceID in devices_to_remove:
                         LOGGER.debug("[%s] Removing device %s.", ip_address, deviceID)
                         device_registry.async_remove_device(deviceID)
