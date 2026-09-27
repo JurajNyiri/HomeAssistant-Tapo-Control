@@ -130,6 +130,8 @@ Synchronization is turned off by default, you can browse media stored on camera 
 
 Requested recordings download in the background, with progress shown in a notification. Notification times use the same camera offset and Home Assistant local timezone as the recording list. While a download is active, cached recordings remain playable. Reloading the integration cancels its on-demand downloads; switching media sync off lets the current recording finish before the sync stops.
 
+A ✓ at the beginning of a recording's title means its video is downloaded and ready to play (for example, `✓00:00:02–00:00:04`). Refresh or reopen the recording list after a download finishes to see the checkmark; a preloaded thumbnail alone does not mark a recording as ready.
+
 During the initial media scan after startup, the integration downloads available detection-event thumbnails for recordings, even when video synchronization is disabled. Each recording uses the thumbnail of the first detection event that starts within it. The images are saved in the cold storage `thumbs` folder without downloading the videos. Existing thumbnails are reused, and thumbnails are copied to hot storage when you browse the recordings. Recordings without a matching event, or cameras that cannot list events or provide snapshots, still get a generated thumbnail when the video is downloaded.
 
 If a thumbnail request returns no image, preloading stops for that camera for the current scan, avoiding repeated timeouts. Already cached thumbnails are preserved, and preloading is tried again on the next integration startup or reload.

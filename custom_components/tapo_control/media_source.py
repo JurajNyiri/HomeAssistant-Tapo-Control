@@ -432,8 +432,10 @@ class TapoMediaSource(MediaSource):
             end_local = dt.as_local(
                 dt.utc_from_timestamp(end_ts - device["timezoneOffset"])
             )
+            file_name = getFileName(start_ts, end_ts, False, childID=childID)
+            ready_marker = "✓" if file_name in device["downloadedStreams"] else ""
             target[(start_ts, end_ts)] = {
-                "name": f"{start_local.strftime('%H:%M:%S')} - {end_local.strftime('%H:%M:%S')}",
+                "name": f"{ready_marker}{start_local.strftime('%H:%M:%S')}-{end_local.strftime('%H:%M:%S')}",
                 "startDate": start_ts,
                 "endDate": end_ts,
             }
