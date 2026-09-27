@@ -144,17 +144,6 @@ Finally, you can turn on, or off switch entity `switch.*_media_sync`.
 
 Thumbnails are kept independently of this video retention period. They are removed once a subsequent startup scan finds that the recording is no longer on the camera.
 
-For missing or slow thumbnails, enable debug logging for the integration. The logs include camera model/firmware, batch progress, requested recording timestamps, received image sizes, snapshot and disk-write timings, and a batch summary. The `pytapo.media_stream.session` logger includes protocol response types and no-data timeouts. To capture these during startup, add these entries to your existing `logger` configuration and restart Home Assistant:
-
-```yaml
-logger:
-  logs:
-    custom_components.tapo_control: debug
-    pytapo.media_stream.session: debug
-```
-
-The batch API reuses one media session but requests thumbnails sequentially using unmodified detection-event timestamps. Recordings that use the same event share one snapshot request. Recordings without a matching event are skipped instead of waiting for a snapshot timeout. An event without a returned image can still take the full eight-second no-data timeout; a `no JPEG returned` message alone does not identify why the camera did not provide an image.
-
 ### Media download event
 
 Whenever a recording is downloaded (either because you requested playback or media sync picked it up), the integration fires a Home Assistant event `tapo_control_media_downloaded` with data:
