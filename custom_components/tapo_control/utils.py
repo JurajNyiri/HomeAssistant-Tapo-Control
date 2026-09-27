@@ -66,6 +66,8 @@ from .const import (
     TIME_SYNC_DST,
     TIME_SYNC_NDST,
     TPLINK_DOMAIN,
+    UPDATE_INTERVAL_BATTERY,
+    UPDATE_INTERVAL_BATTERY_DEFAULT,
 )
 
 UUID = uuid.uuid4().hex
@@ -2565,11 +2567,24 @@ async def scheduleAll(hass, device, entry, mediaSync):
             LOGGER.debug("Scheduling media sync")
             callback = partial(mediaSync, entry=entry, device=device)
 
+            # A battery-powered camera sleeps between events, so a flat 60s
+            # poll here wakes it up to ask "anything new?" nine times between
+            # every already-scheduled state update, even once the initial
+            # backlog is downloaded and there is nothing to sync (#1403). Once
+            # scheduled, fall back to the same interval already used to poll a
+            # battery device's other state, instead of the mains-powered 60s
+            # default applied to every device regardless of power source.
+            mediaSyncInterval = 60
+            if device.get("isRunningOnBattery"):
+                mediaSyncInterval = entry.data.get(
+                    UPDATE_INTERVAL_BATTERY, UPDATE_INTERVAL_BATTERY_DEFAULT
+                )
+
             entry.async_on_unload(
                 async_track_time_interval(
                     hass,
                     callback,
-                    datetime.timedelta(seconds=60),
+                    datetime.timedelta(seconds=mediaSyncInterval),
                 )
             )
     elif device["initialMediaScanRunning"] is False:
