@@ -31,6 +31,7 @@ from .const import (
 from .utils import (
     getRecording,
     getFileName,
+    getColdFile,
     getRecordings,
     getWebFile,
 )
@@ -38,6 +39,7 @@ from .utils import (
 from pytapo import Tapo
 
 import json
+import os
 from urllib.parse import urlencode, urlparse, parse_qsl
 
 
@@ -192,11 +194,16 @@ class TapoMediaSource(MediaSource):
 
         dateChildren = []
         for data in videoNames:
-            fileName = getFileName(
-                data["startDate"], data["endDate"], False, childID=childID
+            filePathThumb = getColdFile(
+                self.hass,
+                entry,
+                data["startDate"],
+                data["endDate"],
+                "thumbs",
+                childID=childID,
             )
             thumbLink = None
-            if fileName in device["downloadedStreams"]:
+            if await self.hass.async_add_executor_job(os.path.exists, filePathThumb):
                 thumbLink = await getWebFile(
                     self.hass,
                     entry,
