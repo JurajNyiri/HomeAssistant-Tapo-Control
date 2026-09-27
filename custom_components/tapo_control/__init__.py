@@ -712,7 +712,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     and last_activity
                     and ts - last_activity > MEDIA_SYNC_WATCHDOG_SECONDS
                 ):
-                    device["runningMediaSync"] = False
+                    task = device.get("mediaSyncTask")
+                    if task is None or task.done() or task.cancelling():
+                        return
+                    # Leave the running flag set until the task's finally block
+                    # finishes. Clearing it here would permit overlapping syncs.
+                    task.cancel()
                     device["mediaSyncStallCount"] = (
                         device.get("mediaSyncStallCount", 0) + 1
                     )
@@ -1257,21 +1262,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             else:
                 mediaSyncTime = (int(mediaSyncHours) * 60 * 60) + timeCorrection
             LOGGER.debug("mediaSync - 3")
+            syncTask = device.get("mediaSyncTask")
+            manualTask = device.get("manualDownloadTask")
             if (
                 enableMediaSync
                 and entry.entry_id in hass.data[DOMAIN]
                 and "controller" in device
                 and device["runningMediaSync"] is False
+                and (syncTask is None or syncTask.done())
+                and (manualTask is None or manualTask.done())
                 and device["isDownloadingStream"]
                 is False  # prevent breaking user manual upload
             ):
                 LOGGER.debug("Running media sync for " + device["name"] + "...")
                 device["runningMediaSync"] = True
+                device["mediaSyncTask"] = asyncio.current_task()
                 device["lastMediaSyncStart"] = datetime.datetime.utcnow().timestamp()
                 device["lastMediaSyncActivity"] = device["lastMediaSyncStart"]
                 device["downloadProgress"] = "Starting"
-                await async_update_sync_sensors(hass, entry.entry_id, device)
                 try:
+                    await async_update_sync_sensors(hass, entry.entry_id, device)
                     tapoController: Tapo = device["controller"]
                     LOGGER.debug("getRecordingsList -1")
                     recordingsList = await hass.async_add_executor_job(

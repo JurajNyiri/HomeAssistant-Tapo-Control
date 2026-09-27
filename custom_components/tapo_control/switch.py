@@ -372,7 +372,6 @@ class TapoEnableMediaSyncSwitch(TapoSwitchEntity):
         ts = datetime.datetime.utcnow().timestamp()
         self._entry["lastMediaSyncActivity"] = ts
         self._entry["lastMediaSyncStart"] = 0
-        self._entry["runningMediaSync"] = False
         self._entry["downloadProgress"] = "Starting"
         await async_update_sync_sensors(
             self._hass, self._config_entry.entry_id, self._entry
@@ -383,7 +382,6 @@ class TapoEnableMediaSyncSwitch(TapoSwitchEntity):
         await self._entry_storage.async_save({ENABLE_MEDIA_SYNC: False})
         self._entry[ENABLE_MEDIA_SYNC] = False
         self._attr_state = "off"
-        self._entry["runningMediaSync"] = False
         self._entry["downloadProgress"] = "Disabled"
         self._entry["lastMediaSyncActivity"] = datetime.datetime.utcnow().timestamp()
         await async_update_sync_sensors(

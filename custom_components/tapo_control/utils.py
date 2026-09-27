@@ -2287,7 +2287,6 @@ async def update_listener(hass, entry):
         for device in devices:
             device["lastMediaSyncActivity"] = now_ts
             if not device.get(ENABLE_MEDIA_SYNC):
-                device["runningMediaSync"] = False
                 device["downloadProgress"] = "Disabled"
             hass.async_create_task(
                 async_update_sync_sensors(hass, entry.entry_id, device)

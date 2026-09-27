@@ -101,16 +101,22 @@ class TapoMediaSource(MediaSource):
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
 
-    def _create_background_task(self, coro: Coroutine) -> None:
-        """Track long-running tasks so they can be cancelled on shutdown."""
-        task = self.hass.async_create_task(coro)
+    def _create_background_task(
+        self, coro: Coroutine, entry: ConfigEntry
+    ) -> asyncio.Task:
+        """Cancel downloads when their config entry unloads or HA shuts down."""
+        task = entry.async_create_background_task(
+            self.hass, coro, "tapo_recording_download"
+        )
         self._background_tasks.add(task)
         task.add_done_callback(self._background_tasks.discard)
         return task
 
-    def _format_clip_label(self, start_ts: int, end_ts: int) -> str:
-        start_dt = dt.as_local(dt.utc_from_timestamp(int(start_ts)))
-        end_dt = dt.as_local(dt.utc_from_timestamp(int(end_ts)))
+    def _format_clip_label(
+        self, start_ts: int, end_ts: int, timezone_offset: float
+    ) -> str:
+        start_dt = dt.as_local(dt.utc_from_timestamp(int(start_ts) - timezone_offset))
+        end_dt = dt.as_local(dt.utc_from_timestamp(int(end_ts) - timezone_offset))
         return (
             f"{start_dt.strftime('%Y-%m-%d %H:%M:%S')} - {end_dt.strftime('%H:%M:%S')}"
         )
@@ -197,7 +203,11 @@ class TapoMediaSource(MediaSource):
 
     def _any_download_active(self, device: dict) -> bool:
         """Return True when a download is running."""
-        return bool(device.get("isDownloadingStream"))
+        tasks = (device.get("manualDownloadTask"), device.get("mediaSyncTask"))
+        return bool(
+            device.get("isDownloadingStream")
+            or any(task and not task.done() for task in tasks)
+        )
 
     def _local_date_key(self, ts_utc: int, tz_offset: int) -> str:
         """Return YYYY-MM-DD string for a timestamp adjusted by timezone offset."""
@@ -295,7 +305,7 @@ class TapoMediaSource(MediaSource):
                 tapoController: Tapo = device["controller"]
 
                 if (
-                    device["isDownloadingStream"]
+                    self._any_download_active(device)
                     and getFileName(startDate, endDate, False, childID=childID)
                     not in device["downloadedStreams"]
                 ):
@@ -311,7 +321,9 @@ class TapoMediaSource(MediaSource):
                 # If we need to fetch the clip, do it in the background and guide the user.
                 if fileName not in device["downloadedStreams"]:
                     notification_id = self._build_notification_id(entry, childID)
-                    clip_label = self._format_clip_label(int(startDate), int(endDate))
+                    clip_label = self._format_clip_label(
+                        int(startDate), int(endDate), device["timezoneOffset"]
+                    )
                     main_title = f"{device['name']}: Downloading..."
                     sub_title = f"{device['name']} - {clip_label}"
                     progress_notifier = self._build_progress_notifier(
@@ -350,7 +362,10 @@ class TapoMediaSource(MediaSource):
                                 notification_id
                             )
 
-                    self._create_background_task(_download_and_prepare())
+                    device["manualDownloadTask"] = self._create_background_task(
+                        _download_and_prepare(),
+                        self.hass.data[DOMAIN][entry]["entry"],
+                    )
                     raise Unresolvable(
                         "Recording download started in the background. Track progress in notifications, then try again once it finishes."
                     )
