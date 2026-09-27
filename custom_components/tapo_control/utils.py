@@ -398,6 +398,9 @@ async def deleteFilesNoLongerPresentInCamera(
                 os.listdir, coldDirPath + "/" + folder + "/"
             )
             for f in listDirFiles:
+                if not f.endswith(extension):
+                    #Files sometimes get deleted during download. Never delete a file a download is still using
+                    continue
                 fileName = f.replace(extension, "")
                 filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
                 if (
@@ -444,6 +447,9 @@ async def deleteColdFilesOlderThanMaxSyncTime(
                 os.listdir, coldDirPath + "/" + folder + "/"
             )
             for f in listDirFiles:
+                if not f.endswith(extension):
+                    #Same as above. Files sometimes get deleted during download. Never delete a file a download is still using
+                    continue
                 fileName = f.replace(extension, "")
                 filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
                 splitFileName = fileName.split("-")
@@ -694,6 +700,12 @@ async def getRecording(
     coldDirPath = getColdDirPathForEntry(hass, entry_id)
     downloadUID = getFileName(startDate, endDate, False, childID=childID)
 
+    #If the cold path is on an smb share or something similar, the videos folder gets cached but can break if something on the nas changes (folder removal or network hiccups)
+    #Therefore simply create the folder unconditionally and fail fast if it already exists. This also helps in recaching the files in the folder.
+    await hass.async_add_executor_job(
+        pathlib.Path(coldDirPath + "/videos").mkdir, 0o777, True, True
+    )
+
     coldFilePath = getColdFile(
         hass, entry_id, startDate, endDate, "videos", childID=childID
     )
@@ -713,19 +725,22 @@ async def getRecording(
         )
 
         entryData["isDownloadingStream"] = True
-        downloadedFile = await downloader.downloadFile(
-            processDownloadStatus(
-                entryData,
-                date,
-                (
-                    len(allRecordings)
-                    if totalRecordingCount is False
-                    else totalRecordingCount
-                ),
-                recordingCount if recordingCount is not False else False,
+        #Simple try and finally block to ensure that isDownloadingStream is always false and can not hang.
+        try:
+            downloadedFile = await downloader.downloadFile(
+                processDownloadStatus(
+                    entryData,
+                    date,
+                    (
+                        len(allRecordings)
+                        if totalRecordingCount is False
+                        else totalRecordingCount
+                    ),
+                    recordingCount if recordingCount is not False else False,
+                )
             )
-        )
-        entryData["isDownloadingStream"] = False
+        finally:
+            entryData["isDownloadingStream"] = False
         if downloadedFile["currentAction"] == "Recording in progress":
             raise Unresolvable("Recording is currently in progress.")
 
@@ -2268,44 +2283,48 @@ def isCacheSupported(check_function, rawData):
 
 async def scheduleAll(hass, device, entry, mediaSync):
     LOGGER.debug("scheduleAll for " + device["name"] + " called.")
-    if device["mediaSyncAvailable"]:
-        if (
-            device["initialMediaScanDone"] is True
-            and device["mediaSyncScheduled"] is False
-        ):
-            device["mediaSyncScheduled"] = True
-            LOGGER.debug("Scheduling media sync")
-            callback = partial(mediaSync, entry=entry, device=device)
+    #Try regardless if media sync is available or not first. Otherwise data could not be synced correctly?
+    #This basically forces the schedule to retry on the next schedule and not assume that the device is not working permanently.
+    #TODO: find out if this is actually necessary.
+    #if device["mediaSyncAvailable"]:
+    if device["initialMediaScanDone"] is True and device["mediaSyncScheduled"] is False:
+        device["mediaSyncScheduled"] = True
+        LOGGER.debug("Scheduling media sync")
+        callback = partial(mediaSync, entry=entry, device=device)
 
-            entry.async_on_unload(
-                async_track_time_interval(
-                    hass,
-                    callback,
-                    datetime.timedelta(seconds=60),
-                )
+        entry.async_on_unload(
+            async_track_time_interval(
+                hass,
+                callback,
+                datetime.timedelta(seconds=60),
             )
-        elif device["initialMediaScanRunning"] is False:
-            LOGGER.debug("Media scan running")
-            device["initialMediaScanRunning"] = True
-            try:
-                await hass.async_add_executor_job(
-                    device["controller"].getRecordingsList
-                )
-                hass.async_create_background_task(
-                    findMedia(hass, device, entry),
-                    "findMedia",
-                )
-            except Exception as err:
-                device["initialMediaScanDone"] = True
-                device["mediaSyncAvailable"] = False
-                enableMediaSync = device[ENABLE_MEDIA_SYNC]
-                errMsg = "Disabling media sync as there was error returned from getRecordingsList. Do you have SD card inserted?"
-                if enableMediaSync:
-                    LOGGER.warning(errMsg)
-                    LOGGER.warning(device["name"] + ": " + str(err))
-                else:
-                    LOGGER.info(errMsg)
-                    LOGGER.info(device["name"] + ": " + str(err))
+        )
+    elif device["initialMediaScanRunning"] is False:
+        LOGGER.debug("Media scan running")
+        device["initialMediaScanRunning"] = True
+        try:
+            await hass.async_add_executor_job(
+                device["controller"].getRecordingsList
+            )
+            #Set mediaSyncAvailable to true because we got a recording list
+            device["mediaSyncAvailable"] = True
+            hass.async_create_background_task(
+                findMedia(hass, device, entry),
+                "findMedia",
+            )
+        except Exception as err:
+            #This should probably help in working with offline cameras. Before it simply said that in this case the entire
+            #sync is done, but if we have cameras that are unplugged they break the sync.
+            device["initialMediaScanRunning"] = False
+            device["mediaSyncAvailable"] = False
+            enableMediaSync = device[ENABLE_MEDIA_SYNC]
+            errMsg = "Unable to retrieve recordings list, will retry. Do you have an SD card inserted, and is the camera reachable?"
+            if enableMediaSync:
+                LOGGER.warning(errMsg)
+                LOGGER.warning(device["name"] + ": " + str(err))
+            else:
+                LOGGER.info(errMsg)
+                LOGGER.info(device["name"] + ": " + str(err))
 
 
 async def check_functionality(entry, hass, cls, check_function):
