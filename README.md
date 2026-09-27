@@ -128,11 +128,26 @@ Integration is capable of synchronizing recordings for fast playback.
 
 Synchronization is turned off by default, you can browse media stored on camera and request it to be played. However, downloading is rather slow, so it is a good idea to enable media synchronization in background. That way, you will be able to play any synchronized media from camera instantly.
 
+During the initial media scan after startup, the integration downloads available detection-event thumbnails for recordings, even when video synchronization is disabled. Each recording uses the thumbnail of the first detection event that starts within it. The images are saved in the cold storage `thumbs` folder without downloading the videos. Existing thumbnails are reused, and thumbnails are copied to hot storage when you browse the recordings. Recordings without a matching event, or cameras that cannot list events or provide snapshots, still get a generated thumbnail when the video is downloaded.
+
 You can enable this setting by navigating to `Home Assistant Settings` -> `Devices & services` and clicking the `Tapo: Cameras control` integration. There, click on the `Configure` button next to the Tapo device you wish to turn media synchronization on for, and choose `Configure media`. Here, you need to define the number of hours to synchronize. Unless it is specified, synchronization does not run. Here, you are able to also set the storage path where the synchronized recordings will be stored (defaults to /config/.storage/tapo_control).
 
 Finally, you can turn on, or off switch entity `switch.*_media_sync`.
 
 **Notice:** Recordings are deleted after the number of hours you have chosen to synchronize passes, once both the actual recording time and the file modified time is older than the number of hours set.
+
+Thumbnails are kept independently of this video retention period. They are removed once a subsequent startup scan finds that the recording is no longer on the camera.
+
+For missing or slow thumbnails, enable debug logging for the integration. The logs include camera model/firmware, batch progress, requested recording timestamps, received image sizes, snapshot and disk-write timings, and a batch summary. The `pytapo.media_stream.session` logger includes protocol response types and no-data timeouts. To capture these during startup, add these entries to your existing `logger` configuration and restart Home Assistant:
+
+```yaml
+logger:
+  logs:
+    custom_components.tapo_control: debug
+    pytapo.media_stream.session: debug
+```
+
+The batch API reuses one media session but requests thumbnails sequentially using unmodified detection-event timestamps. Recordings that use the same event share one snapshot request. Recordings without a matching event are skipped instead of waiting for a snapshot timeout. An event without a returned image can still take the full eight-second no-data timeout; a `no JPEG returned` message alone does not identify why the camera did not provide an image.
 
 ### Media download event
 

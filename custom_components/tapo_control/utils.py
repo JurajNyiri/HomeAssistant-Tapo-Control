@@ -13,6 +13,7 @@ import base64
 
 from functools import partial
 from contextlib import aclosing
+from bisect import bisect_left
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
@@ -280,6 +281,36 @@ def getEntryStorageFile(config_entry, child_id):
     return f"tapo_control_{config_entry.entry_id}{child_id}"
 
 
+async def getRecordingEventStartTimes(hass, tapoController, startTime, endTime):
+    """Get detection timestamps without getEvents()'s computer-time conversion."""
+    startIndex = 0
+    eventStarts = set()
+    while True:
+        response = await hass.async_add_executor_job(
+            tapoController.executeFunction,
+            "searchDetectionList",
+            {
+                "playback": {
+                    "search_detection_list": {
+                        "start_index": startIndex,
+                        "end_index": startIndex + 999,
+                        "channel": 0,
+                        "start_time": startTime,
+                        "end_time": endTime,
+                    }
+                }
+            },
+        )
+        events = response["playback"]["search_detection_list"]
+        pageStarts = {int(event["start_time"]) for event in events}
+        if events and startIndex and not pageStarts.difference(eventStarts):
+            raise RuntimeError("Detection event pagination did not advance")
+        eventStarts.update(pageStarts)
+        if len(events) < 1000:
+            return sorted(eventStarts)
+        startIndex += len(events)
+
+
 # todo: findMedia needs to run periodically
 async def findMedia(hass, entryData, entry):
     entry_id = entry.entry_id
@@ -294,6 +325,7 @@ async def findMedia(hass, entryData, entry):
     mediaScanResult = {}
     thumbnails = {}
     thumbnailDates = {}
+    missingThumbnailFiles = set()
     recordingsWithVideo = []
     for searchResult in recordingsList:
         for key in searchResult:
@@ -304,6 +336,7 @@ async def findMedia(hass, entryData, entry):
             LOGGER.debug(
                 f"Looping through recordings for day {searchResult[key]['date']}..."
             )
+            missingForDay = []
             for recording in recordingsForDay:
                 for recordingKey in recording:
                     filePathVideo = getColdFile(
@@ -329,23 +362,58 @@ async def findMedia(hass, entryData, entry):
                         childID=childID,
                     )
                     if not os.path.exists(filePathThumb):
-                        startTime = recording[recordingKey]["startTime"]
-                        filePaths = thumbnails.setdefault(startTime, [])
-                        if filePathThumb not in filePaths:
-                            filePaths.append(filePathThumb)
-                        thumbnailDates[startTime] = searchResult[key]["date"]
+                        missingThumbnailFiles.add(filePathThumb)
+                        startTime = int(recording[recordingKey]["startTime"])
+                        endTime = int(recording[recordingKey]["endTime"])
+                        if endTime > startTime:
+                            missingForDay.append((startTime, endTime, filePathThumb))
                     if os.path.exists(filePathVideo):
                         recordingsWithVideo.append(recording[recordingKey])
+
+            if missingForDay:
+                try:
+                    eventStarts = await getRecordingEventStartTimes(
+                        hass,
+                        tapoController,
+                        min(recording[0] for recording in missingForDay),
+                        max(recording[1] for recording in missingForDay),
+                    )
+                    LOGGER.debug(
+                        "Found %s detection event timestamps for %s on %s",
+                        len(eventStarts),
+                        entryData["name"],
+                        searchResult[key]["date"],
+                    )
+                    for startTime, endTime, filePathThumb in missingForDay:
+                        # A continuous recording can contain several events. Use its
+                        # first event thumbnail, keeping the recording's cache name.
+                        index = bisect_left(eventStarts, startTime)
+                        if index == len(eventStarts) or eventStarts[index] >= endTime:
+                            continue
+                        eventStart = eventStarts[index]
+                        filePaths = thumbnails.setdefault(eventStart, [])
+                        if filePathThumb not in filePaths:
+                            filePaths.append(filePathThumb)
+                        thumbnailDates[eventStart] = searchResult[key]["date"]
+                except Exception as err:
+                    LOGGER.warning(
+                        "Unable to find thumbnail events for %s on %s: %s",
+                        entryData["name"],
+                        searchResult[key]["date"],
+                        err,
+                    )
 
     basicInfo = entryData.get("camData", {}).get("basic_info", {})
     missingFiles = sum(len(paths) for paths in thumbnails.values())
     LOGGER.debug(
         "Thumbnail scan for %s: recordings=%s, cached=%s, missing=%s, "
-        "unique_start_times=%s, model=%s, firmware=%s, child=%s, timezone_offset=%s",
+        "unmatched=%s, unique_event_times=%s, model=%s, firmware=%s, "
+        "child=%s, timezone_offset=%s",
         entryData["name"],
         len(mediaScanResult),
-        len(mediaScanResult) - missingFiles,
-        missingFiles,
+        len(mediaScanResult) - len(missingThumbnailFiles),
+        len(missingThumbnailFiles),
+        len(missingThumbnailFiles) - missingFiles,
         len(thumbnails),
         basicInfo.get("device_model"),
         basicInfo.get("sw_version"),
@@ -389,7 +457,7 @@ async def findMedia(hass, entryData, entry):
                         selectedDate = date
                     LOGGER.debug(
                         "Thumbnail %s/%s for %s: requesting start_time=%s "
-                        "(unmodified camera timestamp), date=%s, paths=%s",
+                        "(unmodified detection-event timestamp), date=%s, paths=%s",
                         index,
                         len(thumbnails),
                         entryData["name"],
