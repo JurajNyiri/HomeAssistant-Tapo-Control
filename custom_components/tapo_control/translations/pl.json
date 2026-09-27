@@ -141,6 +141,7 @@
           "enable_motion_sensor": "Włącz sensor ruchu",
           "enable_webhooks": "Włącz webhooki",
           "enable_stream": "Użyj strumienia z Home Assistant (wymagany restart)",
+          "show_on_map": "Pokaż kamerę na mapie",
           "cloud_password": "Hasło do chmury (opcjonalnie)",
           "extra_arguments": "Dodatkowe argumenty dla ffmpeg (wymagany restart)",
           "custom_stream_hd": "Niestandardowy strumień (HD)",

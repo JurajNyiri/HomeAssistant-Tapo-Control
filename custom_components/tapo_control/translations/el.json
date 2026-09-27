@@ -138,6 +138,7 @@
           "enable_motion_sensor": "Ενεργοποίηση αισθητήρα κίνησης",
           "enable_webhooks": "Ενεργοποίηση webhooks",
           "enable_stream": "Χρήση Ροής από το Home Assistant (απαιτείται επανεκκίνηση)",
+          "show_on_map": "Εμφάνιση κάμερας στον χάρτη",
           "cloud_password": "Κωδικός Cloud (Προαιρετικά)",
           "extra_arguments": "Επιπλέον ρυθμίσεις για το ffmpeg (απαιτείται επανεκκίνηση)",
           "custom_stream_hd": "Προσαρμοσμένος σύνδεσμος ροής (HD)",

@@ -37,6 +37,7 @@ CONF_CUSTOM_STREAM_SD = "custom_stream_sd"
 CONF_CUSTOM_STREAM_6 = "custom_stream6"
 CONF_CUSTOM_STREAM_7 = "custom_stream7"
 CONF_DIRECT_STREAM_ARGUMENTS = "direct_stream_arguments"
+CONF_SHOW_ON_MAP = "show_on_map"
 # Arguments supported by pytapo Streamer when audio is disabled.
 DIRECT_STREAM_ARGUMENTS = (
     "-loglevel",

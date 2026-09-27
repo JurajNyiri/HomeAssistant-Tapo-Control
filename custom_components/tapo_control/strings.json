@@ -143,6 +143,7 @@
           "enable_motion_sensor": "Enable motion sensor",
           "enable_webhooks": "Enable webhooks",
           "enable_stream": "Use Stream from Home Assistant (restart required)",
+          "show_on_map": "Show camera on map",
           "cloud_password": "Cloud Password (Optional)",
           "extra_arguments": "Extra arguments for ffmpeg (restart required)",
           "custom_stream_hd": "Custom stream link (HD)",

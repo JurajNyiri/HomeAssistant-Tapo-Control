@@ -65,6 +65,7 @@
           "password": "Palavra-passe",
           "enable_motion_sensor": "Ativar sensor de movimento",
           "enable_stream": "Utilizar streaming do Home Assistant (requer reinício)",
+          "show_on_map": "Mostrar câmara no mapa",
           "enable_sound_detection": "Ativar deteção de limite de som (requer reinício)",
           "cloud_password": "Palavra-passe de cloud (opcional)",
           "sound_detection_peak": "[Deteção de som] Pico em dB. 0 é muito alto e -100 é baixo.",

@@ -119,6 +119,7 @@
           "enable_motion_sensor": "Включить датчик движения",
           "enable_webhooks": "Включить webhook",
           "enable_stream": "Использовать поток из Home Assistant (требуется перезапуск)",
+          "show_on_map": "Показывать камеру на карте",
           "cloud_password": "Пароль от облака (необязательно)",
           "extra_arguments": "Дополнительные аргументы для ffmpeg (требуется перезапуск)",
           "custom_stream_hd": "Пользовательский поток (HD)",

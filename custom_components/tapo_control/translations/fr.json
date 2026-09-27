@@ -138,6 +138,7 @@
           "enable_motion_sensor": "Activer le détecteur de mouvement",
           "enable_webhooks": "Activer les webhooks",
           "enable_stream": "Utiliser le flux de Home Assistant (redémarrage requis)",
+          "show_on_map": "Afficher la caméra sur la carte",
           "cloud_password": "Mot de passe Cloud (facultatif)",
           "extra_arguments": "Arguments supplémentaires pour ffmpeg (redémarrage requis)",
           "custom_stream_hd": "Lien de flux personnalisé (HD)",

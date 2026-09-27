@@ -56,6 +56,7 @@ from .const import (
     CONF_CUSTOM_STREAM_6,
     CONF_CUSTOM_STREAM_7,
     CONF_DIRECT_STREAM_ARGUMENTS,
+    CONF_SHOW_ON_MAP,
     DIRECT_STREAM_ARGUMENTS,
     HAS_STREAM_6,
     HAS_STREAM_7,
@@ -1593,6 +1594,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
         enable_motion_sensor = self.config_entry.data[ENABLE_MOTION_SENSOR]
         enable_webhooks = self.config_entry.data[ENABLE_WEBHOOKS]
         enable_stream = self.config_entry.data[ENABLE_STREAM]
+        show_on_map = self.config_entry.data.get(CONF_SHOW_ON_MAP, True)
         enable_time_sync = self.config_entry.data[ENABLE_TIME_SYNC]
         extra_arguments = self.config_entry.data[CONF_EXTRA_ARGUMENTS]
         custom_stream_hd = self.config_entry.data.get(CONF_CUSTOM_STREAM_HD, "")
@@ -1607,6 +1609,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
         controlPort = self.config_entry.data[CONTROL_PORT]
         if user_input is not None:
             try:
+                show_on_map = user_input.get(CONF_SHOW_ON_MAP, show_on_map)
                 direct_stream_arguments = user_input.get(
                     CONF_DIRECT_STREAM_ARGUMENTS, {}
                 )
@@ -1904,6 +1907,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
 
                 allConfigData = {**self.config_entry.data}
                 allConfigData[ENABLE_STREAM] = enable_stream
+                allConfigData[CONF_SHOW_ON_MAP] = show_on_map
                 allConfigData[ENABLE_MOTION_SENSOR] = enable_motion_sensor
                 allConfigData[ENABLE_WEBHOOKS] = enable_webhooks
                 allConfigData[CONF_IP_ADDRESS] = ip_address
@@ -1994,6 +1998,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                         ENABLE_STREAM,
                         description={"suggested_value": enable_stream},
                     ): bool,
+                    vol.Optional(CONF_SHOW_ON_MAP, default=show_on_map): bool,
                     vol.Optional(
                         CONF_EXTRA_ARGUMENTS,
                         description={"suggested_value": extra_arguments},

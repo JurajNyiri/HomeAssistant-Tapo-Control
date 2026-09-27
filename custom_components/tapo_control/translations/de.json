@@ -71,6 +71,7 @@
           "password": "Passwort",
           "enable_motion_sensor": "Bewegungssensor aktivieren",
           "enable_stream": "Kamera Stream in Home Assistant nutzen (Neustart notwendig)",
+          "show_on_map": "Kamera auf der Karte anzeigen",
           "enable_sound_detection": "Geräuschsensor aktivieren (Neustart notwendig)",
           "cloud_password": "Tapo Cloud Passwort (optional)",
           "sound_detection_peak": "[Geräuschsensor] Schwellenwert in dB (0 ist laut, -100 ist leise).",

@@ -129,6 +129,7 @@
           "enable_motion_sensor": "啟用動態感測器",
           "enable_webhooks": "啟用 webhooks",
           "enable_stream": "使用 Home Assistant 的串流功能（需要重新啟動）",
+          "show_on_map": "在地圖上顯示攝影機",
           "cloud_password": "雲端密碼（可選）",
           "extra_arguments": "FFmpeg 額外參數（需重新啟動）",
           "custom_stream_hd": "自定義串流連結（HD）",

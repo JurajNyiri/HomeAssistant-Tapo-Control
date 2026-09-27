@@ -38,6 +38,7 @@ from .const import (
     CONF_CUSTOM_STREAM_6,
     CONF_CUSTOM_STREAM_7,
     CONF_DIRECT_STREAM_ARGUMENTS,
+    CONF_SHOW_ON_MAP,
 )
 from .utils import (
     async_force_entry_refresh,
@@ -68,8 +69,8 @@ def _normalize_tapo_coordinate(value, max_abs: int):
     return None
 
 
-def _update_location_attributes(attributes: dict) -> None:
-    if attributes.get("has_set_location_info") != 1:
+def _update_location_attributes(attributes: dict, show_on_map: bool = True) -> None:
+    if not show_on_map or attributes.get("has_set_location_info") != 1:
         _clear_location_coordinates(attributes)
         return
 
@@ -285,7 +286,7 @@ class TapoCamEntity(Camera):
         self._stream_unique_id = stream_unique_id or fallback_uid
         self._extra_arguments = config_entry.data.get(CONF_EXTRA_ARGUMENTS)
         self._enable_stream = config_entry.data.get(ENABLE_STREAM)
-        self._attr_extra_state_attributes = entry["camData"]["basic_info"]
+        self._attr_extra_state_attributes = dict(entry["camData"]["basic_info"])
         self._attr_icon = "mdi:cctv"
         self._attr_should_poll = True
         self._is_cam_entity = True
@@ -355,6 +356,7 @@ class TapoCamEntity(Camera):
                 motion_enabled = motion_enabled.get(self.read_chn_id)
             self._motion_detection_enabled = motion_enabled
 
+            _clear_location_coordinates(self._attr_extra_state_attributes)
             for attr, value in camData["basic_info"].items():
                 self._attr_extra_state_attributes[attr] = value
             if "alarm_config" in self._attr_extra_state_attributes:
@@ -363,7 +365,10 @@ class TapoCamEntity(Camera):
                 ]
             if "user" in camData:
                 self._attr_extra_state_attributes["user"] = camData["user"]
-            _update_location_attributes(self._attr_extra_state_attributes)
+            _update_location_attributes(
+                self._attr_extra_state_attributes,
+                self._config_entry.data.get(CONF_SHOW_ON_MAP, True),
+            )
             # lists below
             self._attr_extra_state_attributes["presets"] = camData["presets"]
             if camData["recordPlan"]:
