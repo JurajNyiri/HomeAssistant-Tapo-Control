@@ -149,9 +149,13 @@
           "custom_stream_sd": "Custom stream link (SD)",
           "custom_stream6": "Custom stream link (Telephoto HD)",
           "custom_stream7": "Custom stream link (Telephoto SD)",
-          "rtsp_transport": "RTSP transport mechanism"
+          "rtsp_transport": "RTSP transport mechanism",
+          "direct_stream_arguments": "Direct stream FFmpeg parameters"
         },
-        "description": "Modify settings of your Tapo Camera.\n\nUse stream from Home Assistant:\nYes - Longer playback delay, lower CPU usage, allows playback control\nNo - Very short playback delay, higher CPU usage, no playback control"
+        "description": "Modify settings of your Tapo Camera.\n\nUse stream from Home Assistant:\nYes - Longer playback delay, lower CPU usage, allows playback control\nNo - Very short playback delay, higher CPU usage, no playback control",
+        "data_description": {
+          "direct_stream_arguments": "Advanced overrides for direct streams and snapshots. An empty mapping restores defaults. Set -vsync to null to omit it. Supported: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Applies when a new stream starts; reload the integration to stop existing streams."
+        }
       }
     },
     "error": {
@@ -164,7 +168,8 @@
       "cold_storage_path_does_not_exist": "Cold storage path does not exist",
       "camera_requires_admin": "Camera requires cloud password for control",
       "incorrect_peak_value": "Incorrect sound detection peak value.",
-      "incorrect_options_action": "Incorrect action chosen"
+      "incorrect_options_action": "Incorrect action chosen",
+      "invalid_direct_stream_arguments": "Enter a mapping of supported FFmpeg parameters to non-empty text or numbers. Only -vsync may be null."
     }
   }
 }

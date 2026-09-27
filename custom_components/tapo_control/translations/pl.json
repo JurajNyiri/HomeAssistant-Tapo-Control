@@ -147,9 +147,13 @@
           "custom_stream_sd": "Niestandardowy strumień (SD)",
           "custom_stream6": "Niestandardowy strumień (teleobiektyw HD)",
           "custom_stream7": "Niestandardowy strumień (teleobiektyw SD)",
-          "rtsp_transport": "Mechanizm transportu RTSP"
+          "rtsp_transport": "Mechanizm transportu RTSP",
+          "direct_stream_arguments": "Parametry FFmpeg strumieni bezpośrednich"
         },
-        "description": "Zmień ustawienia swojej kamery Tapo.\n\nUżyj strumienia z Home Assistant:\nTak – dłuższe opóźnienie odtwarzania, mniejsze użycie CPU, możliwość sterowania odtwarzaniem\nNie – bardzo krótkie opóźnienie odtwarzania, większe użycie CPU, brak sterowania odtwarzaniem"
+        "description": "Zmień ustawienia swojej kamery Tapo.\n\nUżyj strumienia z Home Assistant:\nTak – dłuższe opóźnienie odtwarzania, mniejsze użycie CPU, możliwość sterowania odtwarzaniem\nNie – bardzo krótkie opóźnienie odtwarzania, większe użycie CPU, brak sterowania odtwarzaniem",
+        "data_description": {
+          "direct_stream_arguments": "Zaawansowane ustawienia strumieni bezpośrednich i migawek. Pusta mapa przywraca wartości domyślne. -vsync: null pomija ten parametr. Obsługiwane: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Dotyczy nowych strumieni; przeładuj integrację, aby zatrzymać istniejące."
+        }
       }
     },
     "error": {
@@ -162,7 +166,8 @@
       "cold_storage_path_does_not_exist": "Ścieżka cold storage nie istnieje",
       "camera_requires_admin": "Kamera wymaga hasła do chmury do sterowania",
       "incorrect_peak_value": "Nieprawidłowa wartość progu detekcji dźwięku.",
-      "incorrect_options_action": "Wybrano nieprawidłową akcję"
+      "incorrect_options_action": "Wybrano nieprawidłową akcję",
+      "invalid_direct_stream_arguments": "Wprowadź mapę obsługiwanych parametrów FFmpeg z niepustym tekstem lub liczbami. Tylko -vsync może mieć wartość null."
     }
   }
 }

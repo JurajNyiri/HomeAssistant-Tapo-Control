@@ -125,9 +125,13 @@
           "custom_stream_sd": "Пользовательский поток (SD)",
           "custom_stream6": "Пользовательский поток (телефото HD)",
           "custom_stream7": "Пользовательский поток (телефото SD)",
-          "rtsp_transport": "Транспортный механизм RTSP"
+          "rtsp_transport": "Транспортный механизм RTSP",
+          "direct_stream_arguments": "Параметры FFmpeg прямых потоков"
         },
-        "description": "Настройте вашу камеру Tapo.\n\nИспользовать поток из Home Assistant:\nДа — Большая задержка воспроизведения, меньшее использование процессора, возможность управления воспроизведением\nНет — Очень короткая задержка воспроизведения, большее использование процессора, отсутствие управления воспроизведением"
+        "description": "Настройте вашу камеру Tapo.\n\nИспользовать поток из Home Assistant:\nДа — Большая задержка воспроизведения, меньшее использование процессора, возможность управления воспроизведением\nНет — Очень короткая задержка воспроизведения, большее использование процессора, отсутствие управления воспроизведением",
+        "data_description": {
+          "direct_stream_arguments": "Расширенные настройки прямых потоков и снимков. Пустой словарь восстанавливает значения по умолчанию. -vsync: null исключает этот параметр. Поддерживаются: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Применяется к новым потокам; перезагрузите интеграцию, чтобы остановить текущие."
+        }
       }
     },
     "error": {
@@ -139,7 +143,8 @@
       "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).",
       "camera_requires_admin": "Камера требует пароль от облака для управления",
       "incorrect_peak_value": "Некорректное значение пика обнаружения звука.",
-      "incorrect_options_action": "Выбрано некорректное действие"
+      "incorrect_options_action": "Выбрано некорректное действие",
+      "invalid_direct_stream_arguments": "Введите словарь поддерживаемых параметров FFmpeg с непустыми строками или числами. Только -vsync может иметь значение null."
     }
   }
 }

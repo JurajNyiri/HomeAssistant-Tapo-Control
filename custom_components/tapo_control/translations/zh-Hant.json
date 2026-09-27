@@ -135,9 +135,13 @@
           "custom_stream_sd": "自定義串流連結（SD）",
           "custom_stream6": "自定義串流連結（長焦 HD）",
           "custom_stream7": "自定義串流連結（長焦 SD）",
-          "rtsp_transport": "RTSP 傳輸機制"
+          "rtsp_transport": "RTSP 傳輸機制",
+          "direct_stream_arguments": "直接串流 FFmpeg 參數"
         },
-        "description": "修改您的 Tapo 攝影機設定\n\n使用 Home Assistant 的串流:\nYes - 播放延遲較長，CPU 使用率較低，允許播放控制。\nNo - 播放延遲非常短，CPU 使用率較高，不允許播放控制。"
+        "description": "修改您的 Tapo 攝影機設定\n\n使用 Home Assistant 的串流:\nYes - 播放延遲較長，CPU 使用率較低，允許播放控制。\nNo - 播放延遲非常短，CPU 使用率較高，不允許播放控制。",
+        "data_description": {
+          "direct_stream_arguments": "直接串流與快照的進階設定。使用空白對應表還原預設值。將 -vsync 設為 null 可省略此參數。支援：-loglevel、-probesize、-analyzeduration、-frames:v、-map-video、-vsync、-c:v、-f。新串流啟動時生效；重新載入整合可停止現有串流。"
+        }
       }
     },
     "error": {
@@ -150,7 +154,8 @@
       "cold_storage_path_does_not_exist": "冷儲存路徑不存在",
       "camera_requires_admin": "您的攝影機需要雲端密碼才能進行控制",
       "incorrect_peak_value": "錯誤的聲音檢測峰值。",
-      "incorrect_options_action": "選擇了錯誤的動作"
+      "incorrect_options_action": "選擇了錯誤的動作",
+      "invalid_direct_stream_arguments": "請輸入支援的 FFmpeg 參數與非空文字或數值的對應表。只有 -vsync 可以設為 null。"
     }
   }
 }

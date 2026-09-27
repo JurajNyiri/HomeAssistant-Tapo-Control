@@ -144,9 +144,13 @@
           "custom_stream_sd": "Lien de flux personnalisé (SD)",
           "custom_stream6": "Lien de flux personnalisé (téléobjectif HD)",
           "custom_stream7": "Lien de flux personnalisé (téléobjectif SD)",
-          "rtsp_transport": "Mécanisme de transport RTSP"
+          "rtsp_transport": "Mécanisme de transport RTSP",
+          "direct_stream_arguments": "Paramètres FFmpeg des flux directs"
         },
-        "description": "Modifier les paramètres de votre caméra Tapo.\n\nUtiliser le flux de Home Assistant:\nOui - Délai de lecture plus long, utilisation réduite du processeur, permet le contrôle de la lecture\nNon - Délai de lecture très court, utilisation plus élevée du processeur, aucun contrôle de lecture"
+        "description": "Modifier les paramètres de votre caméra Tapo.\n\nUtiliser le flux de Home Assistant:\nOui - Délai de lecture plus long, utilisation réduite du processeur, permet le contrôle de la lecture\nNon - Délai de lecture très court, utilisation plus élevée du processeur, aucun contrôle de lecture",
+        "data_description": {
+          "direct_stream_arguments": "Réglages avancés des flux directs et des instantanés. Une correspondance vide rétablit les valeurs par défaut. -vsync: null omet ce paramètre. Paramètres pris en charge : -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Applicable aux nouveaux flux ; rechargez l’intégration pour arrêter les flux existants."
+        }
       }
     },
     "error": {
@@ -159,7 +163,8 @@
       "cold_storage_path_does_not_exist": "Le chemin de stockage à froid n'existe pas",
       "camera_requires_admin": "La caméra nécessite un mot de passe cloud pour le contrôle",
       "incorrect_peak_value": "Valeur de pic de détection sonore incorrecte.",
-      "incorrect_options_action": "Action incorrecte choisie"
+      "incorrect_options_action": "Action incorrecte choisie",
+      "invalid_direct_stream_arguments": "Saisissez une correspondance entre les paramètres FFmpeg pris en charge et des textes non vides ou des nombres. Seul -vsync peut être null."
     }
   }
 }

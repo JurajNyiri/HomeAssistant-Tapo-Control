@@ -55,6 +55,8 @@ from .const import (
     CONF_CUSTOM_STREAM_SD,
     CONF_CUSTOM_STREAM_6,
     CONF_CUSTOM_STREAM_7,
+    CONF_DIRECT_STREAM_ARGUMENTS,
+    DIRECT_STREAM_ARGUMENTS,
     HAS_STREAM_6,
     HAS_STREAM_7,
     CONF_RTSP_TRANSPORT,
@@ -1597,11 +1599,35 @@ class TapoOptionsFlowHandler(OptionsFlow):
         custom_stream_sd = self.config_entry.data.get(CONF_CUSTOM_STREAM_SD, "")
         custom_stream6 = self.config_entry.data.get(CONF_CUSTOM_STREAM_6, "")
         custom_stream7 = self.config_entry.data.get(CONF_CUSTOM_STREAM_7, "")
+        direct_stream_arguments = self.config_entry.data.get(
+            CONF_DIRECT_STREAM_ARGUMENTS, {}
+        )
         rtsp_transport = self.config_entry.data[CONF_RTSP_TRANSPORT]
         ip_address = self.config_entry.data[CONF_IP_ADDRESS]
         controlPort = self.config_entry.data[CONTROL_PORT]
         if user_input is not None:
             try:
+                direct_stream_arguments = user_input.get(
+                    CONF_DIRECT_STREAM_ARGUMENTS, {}
+                )
+                if not isinstance(direct_stream_arguments, dict) or any(
+                    key not in DIRECT_STREAM_ARGUMENTS
+                    or (value is None and key != "-vsync")
+                    or (
+                        value is not None
+                        and (
+                            type(value) not in (str, int, float)
+                            or not str(value).strip()
+                        )
+                    )
+                    for key, value in direct_stream_arguments.items()
+                ):
+                    raise ValueError("Invalid direct stream arguments")
+                direct_stream_arguments = {
+                    key: str(value) if value is not None else None
+                    for key, value in direct_stream_arguments.items()
+                }
+
                 if CONF_IP_ADDRESS in user_input:
                     ip_address = user_input[CONF_IP_ADDRESS]
 
@@ -1891,6 +1917,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 allConfigData[CONF_CUSTOM_STREAM_SD] = custom_stream_sd
                 allConfigData[CONF_CUSTOM_STREAM_6] = custom_stream6
                 allConfigData[CONF_CUSTOM_STREAM_7] = custom_stream7
+                allConfigData[CONF_DIRECT_STREAM_ARGUMENTS] = direct_stream_arguments
                 allConfigData[CONF_RTSP_TRANSPORT] = rtsp_transport
                 allConfigData[CONTROL_PORT] = controlPort
                 self.hass.config_entries.async_update_entry(
@@ -1916,7 +1943,11 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     )
                 return self.async_create_entry(title="", data=None)
             except Exception as e:
-                if "Failed to establish a new connection" in str(e):
+                if str(e) == "Invalid direct stream arguments":
+                    errors[
+                        CONF_DIRECT_STREAM_ARGUMENTS
+                    ] = "invalid_direct_stream_arguments"
+                elif "Failed to establish a new connection" in str(e):
                     errors["base"] = "connection_failed"
                     LOGGER.error(e)
                 elif str(e) == "Invalid authentication data":
@@ -1987,6 +2018,10 @@ class TapoOptionsFlowHandler(OptionsFlow):
                         CONF_RTSP_TRANSPORT,
                         description={"suggested_value": rtsp_transport},
                     ): vol.In(RTSP_TRANS_PROTOCOLS),
+                    vol.Optional(
+                        CONF_DIRECT_STREAM_ARGUMENTS,
+                        description={"suggested_value": direct_stream_arguments},
+                    ): selector({"object": {}}),
                 }
             ),
             errors=errors,

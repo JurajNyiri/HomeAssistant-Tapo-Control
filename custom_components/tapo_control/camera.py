@@ -37,6 +37,7 @@ from .const import (
     HAS_STREAM_7,
     CONF_CUSTOM_STREAM_6,
     CONF_CUSTOM_STREAM_7,
+    CONF_DIRECT_STREAM_ARGUMENTS,
 )
 from .utils import (
     async_force_entry_refresh,
@@ -539,6 +540,17 @@ class TapoRTSPCamEntity(TapoCamEntity):
 
 
 class TapoDirectCamEntity(TapoCamEntity):
+    def _direct_stream_arguments(self, defaults=None):
+        arguments = dict(defaults or {})
+        for key, value in self._config_entry.data.get(
+            CONF_DIRECT_STREAM_ARGUMENTS, {}
+        ).items():
+            if value is None:
+                arguments.pop(key, None)
+            else:
+                arguments[key] = value
+        return arguments
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -586,13 +598,15 @@ class TapoDirectCamEntity(TapoCamEntity):
             includeAudio=False,
             quality=self._directQuality,
             logFunction=self.logFunction,
-            ff_args={
-                "-frames:v": "1",
-                "-f": "image2pipe",
-                "-c:v": "mjpeg",
-                "-vsync": "0",
-                "-map-video": f"0:v:{self.videoStream}",
-            },
+            ff_args=self._direct_stream_arguments(
+                {
+                    "-frames:v": "1",
+                    "-f": "image2pipe",
+                    "-c:v": "mjpeg",
+                    "-vsync": "0",
+                    "-map-video": f"0:v:{self.videoStream}",
+                }
+            ),
         )
         LOGGER.debug("async_camera_image - Starting streamer")
         info = await streamer.start()
@@ -621,12 +635,14 @@ class TapoDirectCamEntity(TapoCamEntity):
             includeAudio=False,
             quality=self._directQuality,
             logFunction=self.logFunction,
-            ff_args={
-                "-c:v": "mjpeg",
-                "-f": "mpjpeg",
-                "-vsync": "0",
-                "-map-video": f"0:v:{self.videoStream}",
-            },
+            ff_args=self._direct_stream_arguments(
+                {
+                    "-c:v": "mjpeg",
+                    "-f": "mpjpeg",
+                    "-vsync": "0",
+                    "-map-video": f"0:v:{self.videoStream}",
+                }
+            ),
         )
         info = await streamer.start()
         proc = info["ffmpegProcess"]
@@ -678,6 +694,7 @@ class TapoDirectCamEntity(TapoCamEntity):
             includeAudio=False,
             quality=self._directQuality,
             logFunction=self.logFunction,
+            ff_args=self._direct_stream_arguments(),
         )
         info = await self._streamer.start()
 

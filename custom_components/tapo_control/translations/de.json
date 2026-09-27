@@ -81,9 +81,13 @@
           "custom_stream_sd": "Benutzerdefinierter Stream-Link (SD)",
           "custom_stream6": "Benutzerdefinierter Stream-Link (Teleobjektiv HD)",
           "custom_stream7": "Benutzerdefinierter Stream-Link (Teleobjektiv SD)",
-          "rtsp_transport": "RTSP-Transportmechanismus"
+          "rtsp_transport": "RTSP-Transportmechanismus",
+          "direct_stream_arguments": "FFmpeg-Parameter für direkte Streams"
         },
-        "description": "Passe die Einstellungen deiner Tapo-Kamera an.\n\nVerwende den Stream von Home Assistant:\nJa - Längere Wiedergabeverzögerung, geringere CPU-Auslastung, ermöglicht Wiedergabesteuerung.\nNein - Sehr kurze Wiedergabeverzögerung, höhere CPU-Auslastung, keine Wiedergabesteuerung."
+        "description": "Passe die Einstellungen deiner Tapo-Kamera an.\n\nVerwende den Stream von Home Assistant:\nJa - Längere Wiedergabeverzögerung, geringere CPU-Auslastung, ermöglicht Wiedergabesteuerung.\nNein - Sehr kurze Wiedergabeverzögerung, höhere CPU-Auslastung, keine Wiedergabesteuerung.",
+        "data_description": {
+          "direct_stream_arguments": "Erweiterte Einstellungen für direkte Streams und Momentaufnahmen. Eine leere Zuordnung stellt die Standardwerte wieder her. -vsync: null lässt diesen Parameter weg. Unterstützt: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Gilt für neue Streams; Integration neu laden, um bestehende Streams zu beenden."
+        }
       }
     },
     "error": {
@@ -92,7 +96,8 @@
       "connection_failed": "Verbindung fehlgeschlagen.",
       "invalid_auth_cloud": "Ungültiges Cloud-Passwort.\nStelle sicher, dass du das Passwort für dein Cloud-Konto eingibst und NICHT das Passwort, das du in den Kameraeinstellungen erstellt hast (es sei denn, sie sind identisch).\nDu musst das Passwort eingeben, das du zusammen mit deiner E-Mail-Adresse bei der Anmeldung in der Tapo-App verwendet hast.\n\nStelle sicher, dass die Kompatibilität mit Drittanbietern in der Tapo-App aktiviert ist (Ich -> Tapo Labor -> Kompatibilität mit Drittanbietern - Aktiviert).",
       "camera_requires_admin": "Die Kamera erfordert das Cloud-Passwort für die Steuerung.",
-      "incorrect_peak_value": "Ungültiger Schwellenwert für den Geräuschsensor."
+      "incorrect_peak_value": "Ungültiger Schwellenwert für den Geräuschsensor.",
+      "invalid_direct_stream_arguments": "Unterstützte FFmpeg-Parameter als Zuordnung mit nicht leeren Texten oder Zahlen eingeben. Nur -vsync darf null sein."
     }
   }
 }

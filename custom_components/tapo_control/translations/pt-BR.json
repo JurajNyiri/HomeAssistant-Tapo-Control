@@ -69,9 +69,13 @@
           "cloud_password": "Senha cloud (Opcional)",
           "sound_detection_peak": "[Detecção de som] Pico em dB. 0 é muito alto e -100 é baixo.",
           "sound_detection_duration": "[Detecção de som] Quanto tempo o ruído precisa estar acima do pico para acionar o estado.",
-          "sound_detection_reset": "[Detecção de som] O tempo para redefinir o estado depois que nenhum novo ruído ultrapassar o pico."
+          "sound_detection_reset": "[Detecção de som] O tempo para redefinir o estado depois que nenhum novo ruído ultrapassar o pico.",
+          "direct_stream_arguments": "Parâmetros FFmpeg dos fluxos diretos"
         },
-        "description": "Modificar configurações da sua Tapo câmera.\n\nUsar stream do Home Assistant:\nSim - Maior delay de reprodução, menor uso de CPU, permite controle de reprodução\nNão - delay de reprodução muito curto, maior uso de CPU, sem controle de reprodução"
+        "description": "Modificar configurações da sua Tapo câmera.\n\nUsar stream do Home Assistant:\nSim - Maior delay de reprodução, menor uso de CPU, permite controle de reprodução\nNão - delay de reprodução muito curto, maior uso de CPU, sem controle de reprodução",
+        "data_description": {
+          "direct_stream_arguments": "Opções avançadas para fluxos diretos e imagens. Um mapeamento vazio restaura os valores padrão. -vsync: null omite este parâmetro. Suportados: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Aplica-se a novos fluxos; recarregue a integração para parar os existentes."
+        }
       }
     },
     "error": {
@@ -80,7 +84,8 @@
       "connection_failed": "Conexão falhou",
       "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).",
       "camera_requires_admin": "Sua câmera precisa de senha cloud para controle",
-      "incorrect_peak_value": "Valor de pico de detecção de som incorreto."
+      "incorrect_peak_value": "Valor de pico de detecção de som incorreto.",
+      "invalid_direct_stream_arguments": "Insira um mapeamento de parâmetros FFmpeg suportados para texto não vazio ou números. Apenas -vsync pode ser null."
     }
   }
 }

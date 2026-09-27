@@ -210,6 +210,22 @@ Direct streams use proprietary TP-Link streaming protocol. Non-direct ones use s
 2. If you have used up [all your RTSP streams](https://www.tp-link.com/cz/support/faq/2742/) and/or your RTSP streams are unstable in Home Assistant.
 3. Direct streams are _extremely_ fast to load and have less than a half a second delay in stream* (_*make sure to DISABLE `Use Stream from Home Assistant (restart required)` in integration options for the fastest experience_). Under the hood, the new streams are a binary stream of data "straight to your browser", with no unnecessary translations or overhead.
 
+### Configuring Direct stream parameters
+
+Open the integration options, choose **Configure device**, and edit **Direct stream FFmpeg parameters**. This advanced YAML mapping overrides parameters for direct streams and snapshots on that device, including both HD and SD. Changes apply when a new stream starts. Reload the integration after saving to stop existing streams.
+
+For example, to try the settings reported for the C560WS in [PR #1279](https://github.com/JurajNyiri/HomeAssistant-Tapo-Control/pull/1279):
+
+```yaml
+-probesize: 50000
+-analyzeduration: 1000000
+-vsync: null
+```
+
+These settings have not been verified across all cameras. To try only removing `-vsync`, enter just `-vsync: null`. Set the mapping to `{}` to restore the original behavior: probe size 32 bytes, analysis duration 0 microseconds, and `-vsync 0` for direct MJPEG and snapshots (no `-vsync` for Home Assistant stream playback).
+
+Supported keys are `-loglevel`, `-probesize`, `-analyzeduration`, `-frames:v`, `-map-video`, `-vsync`, `-c:v`, and `-f`, matching the video arguments supported by pytapo. Values must be non-empty strings or numbers; only `-vsync` accepts `null`, which omits that flag. Codec, format, frame count, and video mapping overrides also affect snapshots, so changing them can prevent playback or image capture. RTSP streams use the existing **Extra arguments for ffmpeg** option instead.
+
 ### Why not use the Direct streams?
 
 If you have an option to use RTSP, it is recommended to stick with RTSP streams.

@@ -36,6 +36,18 @@ CONF_CUSTOM_STREAM_HD = "custom_stream_hd"
 CONF_CUSTOM_STREAM_SD = "custom_stream_sd"
 CONF_CUSTOM_STREAM_6 = "custom_stream6"
 CONF_CUSTOM_STREAM_7 = "custom_stream7"
+CONF_DIRECT_STREAM_ARGUMENTS = "direct_stream_arguments"
+# Arguments supported by pytapo Streamer when audio is disabled.
+DIRECT_STREAM_ARGUMENTS = (
+    "-loglevel",
+    "-probesize",
+    "-analyzeduration",
+    "-frames:v",
+    "-map-video",
+    "-vsync",
+    "-c:v",
+    "-f",
+)
 CONF_SKIP_RTSP = "skip_rtsp"
 CONF_TRANSPORT_METHOD = "transport_method"
 
