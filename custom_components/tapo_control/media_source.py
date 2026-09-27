@@ -18,7 +18,8 @@ from homeassistant.components.media_source.models import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.util import dt
+from homeassistant.helpers import device_registry as dr
+from homeassistant.util import dt, slugify
 
 from .const import (
     DOMAIN,
@@ -82,6 +83,23 @@ class TapoMediaSource(MediaSource):
         super().__init__(DOMAIN)
         self.hass = hass
         self.entry = entry
+
+    def _get_display_name(self, device: dict) -> str:
+        """Return the Home Assistant device name.
+        This gives the name the user set in Home Assistant, instead of the device name the person originally used in the tapo app.
+        If the name can not be fetched (or the user has not set anything), it falls back to the tapo device name.
+        """
+        fallback = device.get("name")
+        mac = device.get("camData", {}).get("basic_info", {}).get("mac")
+        if not mac:
+            return fallback
+        registry = dr.async_get(self.hass)
+        device_entry = registry.async_get_device(
+            identifiers={(DOMAIN, slugify(f"{mac}_tapo_control"))}
+        )
+        if device_entry is None:
+            return fallback
+        return device_entry.name_by_user or fallback
 
     def _get_entry_data(self, entry_id: str) -> dict:
         """Return entry data or raise a user facing error if setup is incomplete."""
@@ -298,13 +316,13 @@ class TapoMediaSource(MediaSource):
         if item.identifier is None:
             children = []
             for entry_id, entry_data in self.hass.data.get(DOMAIN, {}).items():
-                name = entry_data.get("name")
-                if not name:
+                if not entry_data.get("name"):
                     LOGGER.debug(
                         "Skipping media browse for %s because setup is incomplete",
                         entry_id,
                     )
                     continue
+                name = self._get_display_name(entry_data)
                 children.append(
                     self.generateView(
                         build_identifier({"entry": entry_id, "title": name}),
@@ -348,7 +366,7 @@ class TapoMediaSource(MediaSource):
             elif isParent is True:
                 return self.generateView(
                     build_identifier(query),
-                    entry_data["name"],
+                    self._get_display_name(entry_data),
                     False,
                     True,
                     children=[
@@ -356,13 +374,13 @@ class TapoMediaSource(MediaSource):
                             build_identifier(
                                 {
                                     **query,
-                                    "title": childDevice["name"],
+                                    "title": self._get_display_name(childDevice),
                                     "childID": childDevice["camData"]["basic_info"][
                                         "dev_id"
                                     ],
                                 }
                             ),
-                            childDevice["name"],
+                            self._get_display_name(childDevice),
                             False,
                             True,
                         )
