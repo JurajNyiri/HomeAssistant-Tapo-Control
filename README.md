@@ -132,6 +132,8 @@ Requested recordings download in the background, with progress shown in a notifi
 
 During the initial media scan after startup, the integration downloads available detection-event thumbnails for recordings, even when video synchronization is disabled. Each recording uses the thumbnail of the first detection event that starts within it. The images are saved in the cold storage `thumbs` folder without downloading the videos. Existing thumbnails are reused, and thumbnails are copied to hot storage when you browse the recordings. Recordings without a matching event, or cameras that cannot list events or provide snapshots, still get a generated thumbnail when the video is downloaded.
 
+If a thumbnail request returns no image, preloading stops for that camera for the current scan, avoiding repeated timeouts. Already cached thumbnails are preserved, and preloading is tried again on the next integration startup or reload.
+
 You can enable this setting by navigating to `Home Assistant Settings` -> `Devices & services` and clicking the `Tapo: Cameras control` integration. There, click on the `Configure` button next to the Tapo device you wish to turn media synchronization on for, and choose `Configure media`. Here, you need to define the number of hours to synchronize. Unless it is specified, synchronization does not run. Here, you are able to also set the storage path where the synchronized recordings will be stored (defaults to /config/.storage/tapo_control).
 
 Finally, you can turn on, or off switch entity `switch.*_media_sync`.

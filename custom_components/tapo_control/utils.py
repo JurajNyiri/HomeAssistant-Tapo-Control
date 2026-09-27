@@ -502,6 +502,14 @@ async def findMedia(hass, entryData, entry):
                                 startTime,
                                 snapshotTimeout,
                             )
+                            LOGGER.info(
+                                "Stopping thumbnail preload for %s after no JPEG was "
+                                "returned; skipping %s remaining requests for this scan. "
+                                "Thumbnails will still be generated from downloaded videos.",
+                                entryData["name"],
+                                len(thumbnails) - index,
+                            )
+                            break
             except Exception as err:
                 LOGGER.warning(
                     "Unable to cache recording thumbnails for %s: %s",
