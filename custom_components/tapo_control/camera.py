@@ -622,11 +622,7 @@ class TapoDirectCamEntity(TapoCamEntity):
             return jpeg
         finally:
             LOGGER.debug("async_camera_image - Stopping streamer")
-            if proc.returncode is None:
-                proc.kill()
-                await proc.wait()
-            await streamer.stop()
-            info["streamProcess"].cancel()
+            await self._stop_direct_stream(streamer, info)
 
     async def handle_async_mjpeg_stream(self, request):
         LOGGER.debug("Direct MJPEG: request")
@@ -658,11 +654,29 @@ class TapoDirectCamEntity(TapoCamEntity):
             )
         finally:
             LOGGER.debug("Direct MJPEG: shutting ffmpeg / streamer")
+            await self._stop_direct_stream(streamer, info)
+
+    async def _stop_direct_stream(self, streamer, info):
+        # Stop and await the producer before closing its FFmpeg input pipe.
+        task = info["streamProcess"]
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        except Exception as err:
+            LOGGER.debug("Direct stream ended with an error: %s", err)
+        finally:
+            proc = info["ffmpegProcess"]
             if proc.returncode is None:
                 proc.kill()
                 await proc.wait()
-            await streamer.stop()
-            info["streamProcess"].cancel()
+            # pytapo.stop() awaits the same task; a failed task must not prevent
+            # the process cleanup above.
+            try:
+                await streamer.stop()
+            except Exception as err:
+                LOGGER.debug("Direct stream cleanup: %s", err)
 
     async def _log_stream(self, stream: asyncio.StreamReader, *, prefix=""):
         async for line in stream:
