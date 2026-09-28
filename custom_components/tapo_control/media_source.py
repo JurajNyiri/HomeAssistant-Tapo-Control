@@ -90,7 +90,9 @@ class TapoMediaSource(MediaSource):
         self.hass = hass
         self.entry = entry
         self._background_tasks: set[asyncio.Task] = set()
-        self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._async_handle_stop)
+        self.hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STOP, self._async_handle_stop
+        )
 
     async def _async_handle_stop(self, _event) -> None:
         """Cancel background media downloads on shutdown."""
@@ -190,11 +192,23 @@ class TapoMediaSource(MediaSource):
 
     def _get_display_name(self, device: dict) -> str:
         """Return the Home Assistant device name.
-        This gives the name the user set in Home Assistant, instead of the device name the person originally used in the tapo app.
-        If the name can not be fetched (or the user has not set anything), it falls back to the tapo device name.
+
+        This gives the name the user set in Home Assistant, instead of the device
+        name the person originally used in the Tapo app.
+
+        If the name cannot be fetched (or the user has not set anything), fall
+        back to the Tapo device name.
         """
         fallback = device.get("name")
-        mac = device.get("camData", {}).get("basic_info", {}).get("mac")
+        cam_data = device.get("camData")
+        if not isinstance(cam_data, dict):
+            return fallback
+
+        basic_info = cam_data.get("basic_info")
+        if not isinstance(basic_info, dict):
+            return fallback
+
+        mac = basic_info.get("mac")
         if not mac:
             return fallback
         registry = dr.async_get(self.hass)
@@ -291,7 +305,7 @@ class TapoMediaSource(MediaSource):
                 }
             )
         return results
-    
+
     def _normalize_camera_date(self, date: str) -> str:
         """Camera API expects dates without dashes."""
         return date.replace("-", "")
