@@ -78,6 +78,7 @@ from .utils import (
     getHotDirPathForEntry,
     getIP,
     isUsingHTTPS,
+    isBatteryPowered,
     mediaCleanup,
     registerController,
     getCamData,
@@ -857,55 +858,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             updateDataForAllControllers[controller] = await getCamData(
                                 hass, controller, controllerData["chInfo"]
                             )
-                            controllerData["isRunningOnBattery"] = (
-                                True
-                                if (
-                                    "basic_info"
-                                    in updateDataForAllControllers[controller]
-                                    and (
-                                        (
-                                            "power"
-                                            in updateDataForAllControllers[controller][
-                                                "basic_info"
-                                            ]
-                                            and (
-                                                (
-                                                    updateDataForAllControllers[
-                                                        controller
-                                                    ]["basic_info"]["power"]
-                                                    == "BATTERY"
-                                                )
-                                                or (
-                                                    updateDataForAllControllers[
-                                                        controller
-                                                    ]["basic_info"]["power"]
-                                                    == "SOLAR"
-                                                )
-                                            )
-                                        )
-                                        or (
-                                            "power_mode"
-                                            in updateDataForAllControllers[controller][
-                                                "basic_info"
-                                            ]
-                                            and (
-                                                (
-                                                    updateDataForAllControllers[
-                                                        controller
-                                                    ]["basic_info"]["power_mode"]
-                                                    == "BATTERY"
-                                                )
-                                                or (
-                                                    updateDataForAllControllers[
-                                                        controller
-                                                    ]["basic_info"]["power_mode"]
-                                                    == "SOLAR"
-                                                )
-                                            )
-                                        )
-                                    )
-                                )
-                                else False
+                            controllerData["isRunningOnBattery"] = isBatteryPowered(
+                                updateDataForAllControllers[controller]
                             )
                             controllerData["lastUpdate"] = (
                                 datetime.datetime.utcnow().timestamp()
@@ -1065,15 +1019,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "noiseSensorStarted": False,
             "name": camData["basic_info"]["device_alias"],
             "childDevices": [],
-            "isRunningOnBattery": (
-                True
-                if (
-                    "basic_info" in camData
-                    and "power" in camData["basic_info"]
-                    and camData["basic_info"]["power"] == "BATTERY"
-                )
-                else False
-            ),
+            "isRunningOnBattery": isBatteryPowered(camData),
             "isChild": False,
             "uuid": hashlib.md5(
                 (
@@ -1180,16 +1126,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                 "name": childCamData["basic_info"]["device_alias"],
                                 "childDevices": [],
                                 "isChild": True,
-                                "isRunningOnBattery": (
-                                    True
-                                    if (
-                                        "basic_info" in childCamData
-                                        and "power" in childCamData["basic_info"]
-                                        and childCamData["basic_info"]["power"]
-                                        == "BATTERY"
-                                    )
-                                    else False
-                                ),
+                                "isRunningOnBattery": isBatteryPowered(childCamData),
                                 "isParent": False,
                             }
                         )
