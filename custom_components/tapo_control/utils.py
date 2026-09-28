@@ -74,6 +74,14 @@ UUID = uuid.uuid4().hex
 ALARM_CONFIG_TYPES = ("getAlarm", "getAlarmConfig", "getAlertConfig")
 
 
+def isBatteryPowered(camData):
+    basicInfo = camData.get("basic_info", {})
+    return any(
+        basicInfo.get(field) in ("BATTERY", "SOLAR")
+        for field in ("power", "power_mode")
+    )
+
+
 def _is_used_by_tplink(hass: HomeAssistant, host: str) -> bool:
     for entry in hass.config_entries.async_entries(
         TPLINK_DOMAIN, include_ignore=False, include_disabled=False
@@ -573,7 +581,10 @@ async def findMedia(hass, entryData, entry, recordingsList=None):
                         if os.path.exists(filePathVideo):
                             recordingsWithVideo.append(recording[recordingKey])
 
-        await preloadRecordingThumbnails(hass, entryData, entry_id, recordingsByDate)
+        # Bulk thumbnail downloads can keep a sleeping camera awake for minutes.
+        # Battery cameras still preload the selected day when the user browses it.
+        if not entryData.get("isRunningOnBattery"):
+            await preloadRecordingThumbnails(hass, entryData, entry_id, recordingsByDate)
 
         # Keep the ffmpeg fallback for downloaded videos without a camera thumbnail.
         for recording in recordingsWithVideo:
@@ -587,7 +598,7 @@ async def findMedia(hass, entryData, entry, recordingsList=None):
         await mediaCleanup(hass, entry, entryData)
     except Exception as err:
         LOGGER.warning(
-            "Media scan failed for %s; will retry on next update cycle: %s",
+            "Media scan failed for %s; will retry at the media polling interval: %s",
             entryData["name"],
             err,
         )
@@ -2616,24 +2627,17 @@ def isCacheSupported(check_function, rawData):
 
 async def scheduleAll(hass, device, entry, mediaSync):
     LOGGER.debug("scheduleAll for " + device["name"] + " called.")
+    mediaSyncInterval = 60
+    if device.get("isRunningOnBattery"):
+        mediaSyncInterval = entry.data.get(
+            UPDATE_INTERVAL_BATTERY, UPDATE_INTERVAL_BATTERY_DEFAULT
+        )
+
     if device["initialMediaScanDone"] is True:
         if device["mediaSyncScheduled"] is False:
             device["mediaSyncScheduled"] = True
             LOGGER.debug("Scheduling media sync")
             callback = partial(mediaSync, entry=entry, device=device)
-
-            # A battery-powered camera sleeps between events, so a flat 60s
-            # poll here wakes it up to ask "anything new?" nine times between
-            # every already-scheduled state update, even once the initial
-            # backlog is downloaded and there is nothing to sync (#1403). Once
-            # scheduled, fall back to the same interval already used to poll a
-            # battery device's other state, instead of the mains-powered 60s
-            # default applied to every device regardless of power source.
-            mediaSyncInterval = 60
-            if device.get("isRunningOnBattery"):
-                mediaSyncInterval = entry.data.get(
-                    UPDATE_INTERVAL_BATTERY, UPDATE_INTERVAL_BATTERY_DEFAULT
-                )
 
             entry.async_on_unload(
                 async_track_time_interval(
@@ -2643,6 +2647,13 @@ async def scheduleAll(hass, device, entry, mediaSync):
                 )
             )
     elif device["initialMediaScanRunning"] is False:
+        # Failed scans must not wake the camera on every coordinator update,
+        # including when there is no SD card and media sync is disabled.
+        now = asyncio.get_running_loop().time()
+        lastAttempt = device.get("lastMediaScanAttempt")
+        if lastAttempt is not None and now - lastAttempt < mediaSyncInterval:
+            return
+        device["lastMediaScanAttempt"] = now
         LOGGER.debug("Media scan running")
         device["initialMediaScanRunning"] = True
         try:
@@ -2659,7 +2670,7 @@ async def scheduleAll(hass, device, entry, mediaSync):
             device["initialMediaScanRunning"] = False
             device["mediaSyncAvailable"] = False
             enableMediaSync = device[ENABLE_MEDIA_SYNC]
-            errMsg = "Unable to retrieve recordings list, will retry. Do you have an SD card inserted, and is the camera reachable?"
+            errMsg = "Unable to retrieve recordings list, will retry at the media polling interval. Do you have an SD card inserted, and is the camera reachable?"
             if enableMediaSync:
                 LOGGER.warning(errMsg)
                 LOGGER.warning(device["name"] + ": " + str(err))
