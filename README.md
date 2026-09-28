@@ -96,7 +96,7 @@ Chimes:
 - Sensor entities for Network SSID, Signal Level, RSSI
 - Button entity for Reboot and Ringing the chime
 
-Additionally, following services are available for cameras with PTZ:
+Additionally, following services are available for cameras:
 
 <details>
   <summary>tapo_control.save_preset</summary>
