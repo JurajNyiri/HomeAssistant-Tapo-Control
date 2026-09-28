@@ -114,7 +114,9 @@ Deletes a preset
 - **preset** Required: PTZ preset ID or a Name. See possible presets in entity attributes
 </details>
 
-### Recording schedule
+
+<details>
+  <summary>tapo_control.set_record_plan</summary>
 
 `tapo_control.set_record_plan` updates the weekly recording schedule on cameras that support it. Target one camera entity for the device (HD, SD, or Direct).
 
@@ -137,6 +139,8 @@ data:
 ```
 
 After the call, check the camera entity's `record_plan` attribute and the schedule in the Tapo app. The **Record to SD Card** switch reflects whether recording is enabled.
+
+</details>
 
 ## Sound Detection
 
