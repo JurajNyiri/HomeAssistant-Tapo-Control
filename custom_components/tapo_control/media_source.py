@@ -198,8 +198,9 @@ class TapoMediaSource(MediaSource):
         if not mac:
             return fallback
         registry = dr.async_get(self.hass)
-        device_entry = registry.async_get_device(
-            identifiers={(DOMAIN, slugify(f"{mac}_tapo_control"))}
+        device_entry = registry.async_get_device_by_identifier(
+            (DOMAIN, slugify(f"{mac}_tapo_control")),
+            device["entry"].entry_id,
         )
         if device_entry is None:
             return fallback
