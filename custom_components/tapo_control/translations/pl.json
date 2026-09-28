@@ -71,6 +71,7 @@
       }
     },
     "error": {
+      "cold_storage_path_in_use": "Ta ścieżka cold storage jest już używana przez inną kamerę. Każda kamera musi używać unikalnej ścieżki.",
       "skip_rtsp_not_checked": "Wprowadź nazwę użytkownika i hasło lub pozostaw oba pola puste i zaznacz „Pomiń weryfikację RTSP”.\nGdy pola są puste, strumień RTSP nie będzie działać.",
       "invalid_stream_auth": "Nieprawidłowe dane logowania do strumienia RTSP",
       "account_suspended": "Konto tymczasowo zawieszone; spróbuj ponownie później.\nSprawdź dzienniki po więcej informacji.",
@@ -158,6 +159,7 @@
       }
     },
     "error": {
+      "cold_storage_path_in_use": "Ta ścieżka cold storage jest już używana przez inną kamerę. Każda kamera musi używać unikalnej ścieżki.",
       "invalid_stream_auth": "Nieprawidłowe dane logowania do strumienia RTSP",
       "account_suspended": "Konto tymczasowo zawieszone; spróbuj ponownie później.\nSprawdź dzienniki po więcej informacji.",
       "invalid_auth": "Nieprawidłowe dane logowania",

@@ -36,6 +36,7 @@
       }
     },
     "error": {
+      "cold_storage_path_in_use": "Este caminho de armazenamento a frio já é usado por outra câmera. Cada câmera deve usar um caminho exclusivo.",
       "not_tapo_device": "O endereço IP não é de um dispositivo Tapo",
       "ports_closed": "Porta 443, 554, ou 2020 está fechada",
       "invalid_auth": "Dados inválidos de autenticação",
@@ -80,6 +81,7 @@
       }
     },
     "error": {
+      "cold_storage_path_in_use": "Este caminho de armazenamento a frio já é usado por outra câmera. Cada câmera deve usar um caminho exclusivo.",
       "invalid_auth": "Dados inválidos de autenticação",
       "unknown": "Erro desconhecido",
       "connection_failed": "Conexão falhou",

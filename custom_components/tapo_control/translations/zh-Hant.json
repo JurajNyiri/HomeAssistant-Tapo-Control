@@ -63,6 +63,7 @@
       }
     },
     "error": {
+      "cold_storage_path_in_use": "此冷儲存路徑已被另一台攝影機使用。每台攝影機都必須使用獨立的路徑。",
       "invalid_stream_auth": "無效的 RTSP 串流驗證資料",
       "account_suspended": "帳戶暫時被停用，請稍後再試。\n請查看日誌了解更多詳細資訊。",
       "not_tapo_device": "IP 位址不是受支援的 Tapo 裝置",
@@ -146,6 +147,7 @@
       }
     },
     "error": {
+      "cold_storage_path_in_use": "此冷儲存路徑已被另一台攝影機使用。每台攝影機都必須使用獨立的路徑。",
       "invalid_stream_auth": "RTSP 串流驗證資料無效",
       "account_suspended": "帳戶暫時被停用，請稍後再試。\n請查看日誌了解更多詳細資訊。",
       "invalid_auth": "無效的身份驗證數據",

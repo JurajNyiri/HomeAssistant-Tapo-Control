@@ -73,6 +73,7 @@
       }
     },
     "error": {
+      "cold_storage_path_in_use": "This cold storage path is already used by another camera. Each camera must use a unique path.",
       "skip_rtsp_not_checked": "Enter both username and password, or leave empty and check Skip RTSP check.\n If left empty, RTSP stream will not work.",
       "invalid_stream_auth": "Invalid RTSP stream authentication data",
       "account_suspended": "Account temporarily suspended, please try again later.\n See log for more details.",
@@ -117,7 +118,7 @@
           "media_sync_hours": "Number of hours to keep synchronized",
           "media_sync_cold_storage_path": "[Requires restart] Cold storage path"
         },
-        "description": "Modify settings of recordings media synchronization"
+        "description": "Modify settings of recordings media synchronization. Each camera must use a unique cold storage path."
       },
       "update_interval": {
         "data": {
@@ -160,6 +161,7 @@
       }
     },
     "error": {
+      "cold_storage_path_in_use": "This cold storage path is already used by another camera. Each camera must use a unique path.",
       "invalid_stream_auth": "Invalid RTSP stream authentication data",
       "account_suspended": "Account temporarily suspended, please try again later.\nSee log for more details.",
       "invalid_auth": "Invalid authentication data",

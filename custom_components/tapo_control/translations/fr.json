@@ -71,6 +71,7 @@
       }
     },
     "error": {
+      "cold_storage_path_in_use": "Ce chemin de stockage à froid est déjà utilisé par une autre caméra. Chaque caméra doit utiliser un chemin unique.",
       "skip_rtsp_not_checked": "Entrez à la fois le nom d'utilisateur et le mot de passe, ou laissez vide et activez l'option Ignorer la vérification RTSP.\n Si laissé vide, le flux RTSP ne fonctionnera pas.",
       "invalid_stream_auth": "Données d'authentification de flux RTSP invalides",
       "account_suspended": "Compte temporairement suspendu, veuillez réessayer plus tard.\n Voir le journal pour plus de détails.",
@@ -155,6 +156,7 @@
       }
     },
     "error": {
+      "cold_storage_path_in_use": "Ce chemin de stockage à froid est déjà utilisé par une autre caméra. Chaque caméra doit utiliser un chemin unique.",
       "invalid_stream_auth": "Données d'authentification du flux RTSP invalides",
       "account_suspended": "Compte temporairement suspendu, veuillez réessayer plus tard.\nVoir le journal pour plus de détails.",
       "invalid_auth": "Données d'authentification invalides",

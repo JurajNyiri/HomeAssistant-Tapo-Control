@@ -1539,6 +1539,16 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 ):
                     raise Exception("Cold storage path does not exist")
 
+                if media_sync_cold_storage_path:
+                    for entry in self.hass.config_entries.async_entries(DOMAIN):
+                        if entry.entry_id == self.config_entry.entry_id:
+                            continue
+                        other_path = entry.data.get(MEDIA_SYNC_COLD_STORAGE_PATH)
+                        if other_path and os.path.abspath(other_path) == os.path.abspath(
+                            media_sync_cold_storage_path
+                        ):
+                            raise Exception("Cold storage path is already in use")
+
                 allConfigData[MEDIA_VIEW_DAYS_ORDER] = media_view_days_order
                 allConfigData[MEDIA_VIEW_RECORDINGS_ORDER] = media_view_recordings_order
                 allConfigData[MEDIA_SYNC_HOURS] = media_sync_hours
@@ -1553,6 +1563,8 @@ class TapoOptionsFlowHandler(OptionsFlow):
             except Exception as e:
                 if "Cold storage path does not exist" in str(e):
                     errors["base"] = "cold_storage_path_does_not_exist"
+                elif "Cold storage path is already in use" in str(e):
+                    errors["base"] = "cold_storage_path_in_use"
                 else:
                     errors["base"] = "unknown"
                 LOGGER.error(e)
