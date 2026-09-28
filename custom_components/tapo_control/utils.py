@@ -314,22 +314,235 @@ async def getRecordingEventStartTimes(hass, tapoController, startTime, endTime):
         startIndex += len(events)
 
 
-# todo: findMedia needs to run periodically
-async def findMedia(hass, entryData, entry):
+async def preloadRecordingThumbnails(hass, entryData, entry_id, recordingsByDate):
+    """Preload only unchecked recordings, using raw detection-event timestamps."""
+    lock = entryData.setdefault("thumbnailPreloadLock", asyncio.Lock())
+    async with lock:
+        tasks = (entryData.get("manualDownloadTask"), entryData.get("mediaSyncTask"))
+        if (
+            entryData.get("thumbnailPreloadStopped")
+            or entryData.get("isDownloadingStream")
+            or entryData.get("runningMediaSync")
+            or any(task and not task.done() for task in tasks)
+        ):
+            return
+        entryData["thumbnailPreloadRunning"] = True
+        try:
+            await _preloadRecordingThumbnails(hass, entryData, entry_id, recordingsByDate)
+        except Exception as err:
+            LOGGER.warning(
+                "Unable to preload thumbnails for %s: %s", entryData["name"], err
+            )
+            LOGGER.debug("Thumbnail preload exception", exc_info=True)
+        finally:
+            entryData["thumbnailPreloadRunning"] = False
+
+
+async def _preloadRecordingThumbnails(hass, entryData, entry_id, recordingsByDate):
+    tapoController = entryData["controller"]
+    childID = (
+        entryData["camData"]["basic_info"]["dev_id"] if entryData["isChild"] else ""
+    )
+    processed = entryData.setdefault("thumbnailProcessed", {})
+    thumbnails = {}
+    thumbnailDates = {}
+    thumbnailRecordings = {}
+    for date, recordings in recordingsByDate.items():
+        checked = processed.setdefault(date, set())
+        current = {
+            (int(recording["startTime"]), int(recording["endTime"]))
+            for result in recordings
+            for recording in result.values()
+        }
+        # Drop expired intervals, including the previous end of a growing recording.
+        checked.intersection_update(current)
+        missing = []
+        for startTime, endTime in sorted(current - checked):
+            if endTime <= startTime:
+                continue
+            filePathThumb = getColdFile(
+                hass, entry_id, startTime, endTime, "thumbs", childID=childID
+            )
+            if await hass.async_add_executor_job(os.path.exists, filePathThumb):
+                checked.add((startTime, endTime))
+                continue
+            missing.append((startTime, endTime, filePathThumb))
+        if not missing:
+            continue
+
+        # Merge overlapping/adjacent intervals without querying already-checked gaps.
+        periods = []
+        for startTime, endTime, _ in missing:
+            if periods and startTime <= periods[-1][1] + 1:
+                periods[-1][1] = max(periods[-1][1], endTime)
+            else:
+                periods.append([startTime, endTime])
+        try:
+            eventStarts = set()
+            for startTime, endTime in periods:
+                LOGGER.debug(
+                    "Thumbnail event lookup for %s on %s: start_time=%s, end_time=%s",
+                    entryData["name"],
+                    date,
+                    startTime,
+                    endTime,
+                )
+                eventStarts.update(
+                    await getRecordingEventStartTimes(
+                        hass, tapoController, startTime, endTime
+                    )
+                )
+            eventStarts = sorted(eventStarts)
+            LOGGER.debug(
+                "Thumbnail preload for %s on %s: unchecked=%s, event_times=%s",
+                entryData["name"],
+                date,
+                len(missing),
+                len(eventStarts),
+            )
+            for startTime, endTime, filePathThumb in missing:
+                index = bisect_left(eventStarts, startTime)
+                if index == len(eventStarts) or eventStarts[index] >= endTime:
+                    checked.add((startTime, endTime))
+                    continue
+                eventStart = eventStarts[index]
+                thumbnails.setdefault(eventStart, []).append(filePathThumb)
+                thumbnailDates[eventStart] = date
+                thumbnailRecordings[filePathThumb] = (date, (startTime, endTime))
+        except Exception as err:
+            LOGGER.warning(
+                "Unable to find thumbnail events for %s on %s: %s",
+                entryData["name"],
+                date,
+                err,
+            )
+
+    if thumbnails:
+        snapshotTimeout = 8
+        loop = asyncio.get_running_loop()
+        batchStarted = loop.time()
+        savedCount = 0
+        missingCount = 0
+        selectedDate = None
+        LOGGER.debug(
+            "Downloading %s recording thumbnails for %s in one media session "
+            "(sequential requests, no-data timeout=%ss per request)...",
+            len(thumbnails),
+            entryData["name"],
+            snapshotTimeout,
+        )
+        try:
+            async with aclosing(
+                getRecordingSnapshots(
+                    tapoController, list(thumbnails), timeout=snapshotTimeout
+                )
+            ) as snapshots:
+                for index, (startTime, filePaths) in enumerate(
+                    thumbnails.items(), start=1
+                ):
+                    date = thumbnailDates[startTime]
+                    if date != selectedDate:
+                        # Video downloads also select the day before requesting media.
+                        LOGGER.debug(
+                            "Selecting recording day %s before thumbnail requests for %s",
+                            date,
+                            entryData["name"],
+                        )
+                        await hass.async_add_executor_job(
+                            tapoController.getRecordings, date
+                        )
+                        selectedDate = date
+                    LOGGER.debug(
+                        "Thumbnail %s/%s for %s: requesting start_time=%s "
+                        "(unmodified detection-event timestamp), date=%s, paths=%s",
+                        index,
+                        len(thumbnails),
+                        entryData["name"],
+                        startTime,
+                        date,
+                        filePaths,
+                    )
+                    requestStarted = loop.time()
+                    image = await anext(snapshots)
+                    requestElapsed = loop.time() - requestStarted
+                    if image:
+                        writeStarted = loop.time()
+                        for filePathThumb in filePaths:
+                            await hass.async_add_executor_job(
+                                saveThumbnail, filePathThumb, image
+                            )
+                            date, recordingKey = thumbnailRecordings[filePathThumb]
+                            processed[date].add(recordingKey)
+                        savedCount += 1
+                        LOGGER.debug(
+                            "Thumbnail %s/%s for %s: saved %s bytes, "
+                            "snapshot=%.3fs, disk=%.3fs",
+                            index,
+                            len(thumbnails),
+                            entryData["name"],
+                            len(image),
+                            requestElapsed,
+                            loop.time() - writeStarted,
+                        )
+                    else:
+                        missingCount += 1
+                        entryData["thumbnailPreloadStopped"] = True
+                        LOGGER.debug(
+                            "Thumbnail %s/%s for %s: no JPEG returned after %.3fs "
+                            "for start_time=%s (no-data timeout=%ss). "
+                            "See pytapo.media_stream.session logs for response/timeout details.",
+                            index,
+                            len(thumbnails),
+                            entryData["name"],
+                            requestElapsed,
+                            startTime,
+                            snapshotTimeout,
+                        )
+                        LOGGER.info(
+                            "Stopping thumbnail preload for %s after no JPEG was "
+                            "returned; skipping %s remaining requests until reload. "
+                            "Thumbnails will still be generated from downloaded videos.",
+                            entryData["name"],
+                            len(thumbnails) - index,
+                        )
+                        break
+        except Exception as err:
+            LOGGER.warning(
+                "Unable to cache recording thumbnails for %s: %s",
+                entryData["name"],
+                err,
+            )
+            LOGGER.debug("Thumbnail batch exception", exc_info=True)
+        finally:
+            LOGGER.debug(
+                "Thumbnail batch ended for %s: saved=%s, no_image=%s, "
+                "remaining=%s, elapsed=%.3fs",
+                entryData["name"],
+                savedCount,
+                missingCount,
+                len(thumbnails) - savedCount - missingCount,
+                loop.time() - batchStarted,
+            )
+
+
+async def findMedia(hass, entryData, entry, recordingsList=None):
     entry_id = entry.entry_id
     LOGGER.debug("Finding media for " + entryData["name"] + "...")
     entryData["initialMediaScanDone"] = False
+    entryData["thumbnailProcessed"] = {}
+    entryData["thumbnailPreloadStopped"] = False
     childID = ""
     if entryData["isChild"]:
         childID = entryData["camData"]["basic_info"]["dev_id"]
     tapoController: Tapo = entryData["controller"]
 
     try:
-        recordingsList = await hass.async_add_executor_job(tapoController.getRecordingsList)
+        if recordingsList is None:
+            recordingsList = await hass.async_add_executor_job(
+                tapoController.getRecordingsList
+            )
         mediaScanResult = {}
-        thumbnails = {}
-        thumbnailDates = {}
-        missingThumbnailFiles = set()
+        recordingsByDate = {}
         recordingsWithVideo = []
         for searchResult in recordingsList:
             for key in searchResult:
@@ -340,7 +553,7 @@ async def findMedia(hass, entryData, entry):
                 LOGGER.debug(
                     f"Looping through recordings for day {searchResult[key]['date']}..."
                 )
-                missingForDay = []
+                recordingsByDate[searchResult[key]["date"]] = recordingsForDay
                 for recording in recordingsForDay:
                     for recordingKey in recording:
                         filePathVideo = getColdFile(
@@ -357,176 +570,10 @@ async def findMedia(hass, entryData, entry):
                             + "-"
                             + str(recording[recordingKey]["endTime"])
                         ] = True
-                        filePathThumb = getColdFile(
-                            hass,
-                            entry_id,
-                            recording[recordingKey]["startTime"],
-                            recording[recordingKey]["endTime"],
-                            "thumbs",
-                            childID=childID,
-                        )
-                        if not os.path.exists(filePathThumb):
-                            missingThumbnailFiles.add(filePathThumb)
-                            startTime = int(recording[recordingKey]["startTime"])
-                            endTime = int(recording[recordingKey]["endTime"])
-                            if endTime > startTime:
-                                missingForDay.append((startTime, endTime, filePathThumb))
                         if os.path.exists(filePathVideo):
                             recordingsWithVideo.append(recording[recordingKey])
 
-                if missingForDay:
-                    try:
-                        eventStarts = await getRecordingEventStartTimes(
-                            hass,
-                            tapoController,
-                            min(recording[0] for recording in missingForDay),
-                            max(recording[1] for recording in missingForDay),
-                        )
-                        LOGGER.debug(
-                            "Found %s detection event timestamps for %s on %s",
-                            len(eventStarts),
-                            entryData["name"],
-                            searchResult[key]["date"],
-                        )
-                        for startTime, endTime, filePathThumb in missingForDay:
-                            # A continuous recording can contain several events. Use its
-                            # first event thumbnail, keeping the recording's cache name.
-                            index = bisect_left(eventStarts, startTime)
-                            if index == len(eventStarts) or eventStarts[index] >= endTime:
-                                continue
-                            eventStart = eventStarts[index]
-                            filePaths = thumbnails.setdefault(eventStart, [])
-                            if filePathThumb not in filePaths:
-                                filePaths.append(filePathThumb)
-                            thumbnailDates[eventStart] = searchResult[key]["date"]
-                    except Exception as err:
-                        LOGGER.warning(
-                            "Unable to find thumbnail events for %s on %s: %s",
-                            entryData["name"],
-                            searchResult[key]["date"],
-                            err,
-                        )
-
-        basicInfo = entryData.get("camData", {}).get("basic_info", {})
-        missingFiles = sum(len(paths) for paths in thumbnails.values())
-        LOGGER.debug(
-            "Thumbnail scan for %s: recordings=%s, cached=%s, missing=%s, "
-            "unmatched=%s, unique_event_times=%s, model=%s, firmware=%s, "
-            "child=%s, timezone_offset=%s",
-            entryData["name"],
-            len(mediaScanResult),
-            len(mediaScanResult) - len(missingThumbnailFiles),
-            len(missingThumbnailFiles),
-            len(missingThumbnailFiles) - missingFiles,
-            len(thumbnails),
-            basicInfo.get("device_model"),
-            basicInfo.get("sw_version"),
-            entryData["isChild"],
-            entryData.get("timezoneOffset"),
-        )
-        if thumbnails:
-            snapshotTimeout = 8
-            loop = asyncio.get_running_loop()
-            batchStarted = loop.time()
-            savedCount = 0
-            missingCount = 0
-            selectedDate = None
-            LOGGER.debug(
-                "Downloading %s recording thumbnails for %s in one media session "
-                "(sequential requests, no-data timeout=%ss per request)...",
-                len(thumbnails),
-                entryData["name"],
-                snapshotTimeout,
-            )
-            try:
-                async with aclosing(
-                    getRecordingSnapshots(
-                        tapoController, list(thumbnails), timeout=snapshotTimeout
-                    )
-                ) as snapshots:
-                    for index, (startTime, filePaths) in enumerate(
-                        thumbnails.items(), start=1
-                    ):
-                        date = thumbnailDates[startTime]
-                        if date != selectedDate:
-                            # Video downloads also select the day before requesting media.
-                            LOGGER.debug(
-                                "Selecting recording day %s before thumbnail requests for %s",
-                                date,
-                                entryData["name"],
-                            )
-                            await hass.async_add_executor_job(
-                                tapoController.getRecordings, date
-                            )
-                            selectedDate = date
-                        LOGGER.debug(
-                            "Thumbnail %s/%s for %s: requesting start_time=%s "
-                            "(unmodified detection-event timestamp), date=%s, paths=%s",
-                            index,
-                            len(thumbnails),
-                            entryData["name"],
-                            startTime,
-                            date,
-                            filePaths,
-                        )
-                        requestStarted = loop.time()
-                        image = await anext(snapshots)
-                        requestElapsed = loop.time() - requestStarted
-                        if image:
-                            writeStarted = loop.time()
-                            for filePathThumb in filePaths:
-                                await hass.async_add_executor_job(
-                                    saveThumbnail, filePathThumb, image
-                                )
-                            savedCount += 1
-                            LOGGER.debug(
-                                "Thumbnail %s/%s for %s: saved %s bytes, "
-                                "snapshot=%.3fs, disk=%.3fs",
-                                index,
-                                len(thumbnails),
-                                entryData["name"],
-                                len(image),
-                                requestElapsed,
-                                loop.time() - writeStarted,
-                            )
-                        else:
-                            missingCount += 1
-                            LOGGER.debug(
-                                "Thumbnail %s/%s for %s: no JPEG returned after %.3fs "
-                                "for start_time=%s (no-data timeout=%ss). "
-                                "See pytapo.media_stream.session logs for response/timeout details.",
-                                index,
-                                len(thumbnails),
-                                entryData["name"],
-                                requestElapsed,
-                                startTime,
-                                snapshotTimeout,
-                            )
-                            LOGGER.info(
-                                "Stopping thumbnail preload for %s after no JPEG was "
-                                "returned; skipping %s remaining requests for this scan. "
-                                "Thumbnails will still be generated from downloaded videos.",
-                                entryData["name"],
-                                len(thumbnails) - index,
-                            )
-                            break
-            except Exception as err:
-                LOGGER.warning(
-                    "Unable to cache recording thumbnails for %s: %s",
-                    entryData["name"],
-                    err,
-                )
-                LOGGER.debug("Thumbnail batch exception", exc_info=True)
-            finally:
-                LOGGER.debug(
-                    "Thumbnail batch ended for %s: saved=%s, no_image=%s, "
-                    "remaining=%s, elapsed=%.3fs",
-                    entryData["name"],
-                    savedCount,
-                    missingCount,
-                    len(thumbnails) - savedCount - missingCount,
-                    loop.time() - batchStarted,
-                )
+        await preloadRecordingThumbnails(hass, entryData, entry_id, recordingsByDate)
 
         # Keep the ffmpeg fallback for downloaded videos without a camera thumbnail.
         for recording in recordingsWithVideo:
@@ -2599,13 +2646,13 @@ async def scheduleAll(hass, device, entry, mediaSync):
         LOGGER.debug("Media scan running")
         device["initialMediaScanRunning"] = True
         try:
-            await hass.async_add_executor_job(
+            recordingsList = await hass.async_add_executor_job(
                 device["controller"].getRecordingsList
             )
             device["mediaSyncAvailable"] = True
             entry.async_create_background_task(
                 hass,
-                findMedia(hass, device, entry),
+                findMedia(hass, device, entry, recordingsList),
                 "findMedia",
             )
         except Exception as err:

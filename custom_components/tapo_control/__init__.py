@@ -1271,6 +1271,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 and device["runningMediaSync"] is False
                 and (syncTask is None or syncTask.done())
                 and (manualTask is None or manualTask.done())
+                and not device.get("thumbnailPreloadRunning")
                 and device["isDownloadingStream"]
                 is False  # prevent breaking user manual upload
             ):
@@ -1399,6 +1400,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             EVENT_HOMEASSISTANT_STOP,
             lambda event: hass.add_job(_close_controllers, hass, entry.entry_id),
         )
+
+        # Start scanning without waiting for HA startup and the next polling update.
+        device = hass.data[DOMAIN][entry.entry_id]
+        for scanDevice in [device, *device["childDevices"]]:
+            entry.async_create_background_task(
+                hass,
+                scheduleAll(hass, scanDevice, entry, mediaSync),
+                "initial_media_scan",
+            )
 
     except Exception as e:
         if "Invalid authentication data" in str(e):
