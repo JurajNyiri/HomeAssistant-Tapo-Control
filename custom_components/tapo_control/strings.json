@@ -174,5 +174,45 @@
       "incorrect_options_action": "Incorrect action chosen",
       "invalid_direct_stream_arguments": "Enter a mapping of supported FFmpeg parameters to non-empty text or numbers. Only -vsync may be null."
     }
+  },
+  "services": {
+    "set_record_plan": {
+      "name": "Set recording plan",
+      "description": "Sets the camera recording schedule. Omitted days stay unchanged; an empty list clears a day. Times use the camera local time. Requires recording-plan support.",
+      "fields": {
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enable or disable recording without clearing the schedule."
+        },
+        "sunday": {
+          "name": "Sunday",
+          "description": "List of HHMM-HHMM:mode periods (1 = continuous, 2 = motion). Use [] for no recording; omit to keep unchanged."
+        },
+        "monday": {
+          "name": "Monday",
+          "description": "List of HHMM-HHMM:mode periods (1 = continuous, 2 = motion). Use [] for no recording; omit to keep unchanged."
+        },
+        "tuesday": {
+          "name": "Tuesday",
+          "description": "List of HHMM-HHMM:mode periods (1 = continuous, 2 = motion). Use [] for no recording; omit to keep unchanged."
+        },
+        "wednesday": {
+          "name": "Wednesday",
+          "description": "List of HHMM-HHMM:mode periods (1 = continuous, 2 = motion). Use [] for no recording; omit to keep unchanged."
+        },
+        "thursday": {
+          "name": "Thursday",
+          "description": "List of HHMM-HHMM:mode periods (1 = continuous, 2 = motion). Use [] for no recording; omit to keep unchanged."
+        },
+        "friday": {
+          "name": "Friday",
+          "description": "List of HHMM-HHMM:mode periods (1 = continuous, 2 = motion). Use [] for no recording; omit to keep unchanged."
+        },
+        "saturday": {
+          "name": "Saturday",
+          "description": "List of HHMM-HHMM:mode periods (1 = continuous, 2 = motion). Use [] for no recording; omit to keep unchanged."
+        }
+      }
+    }
   }
 }

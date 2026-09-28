@@ -28,3 +28,59 @@ delete_preset:
       name: Name
       selector:
         text:
+set_record_plan:
+  name: Set recording plan
+  description: "Sets the camera recording schedule. Omitted days stay unchanged; an empty list clears a day. Times use the camera local time. Requires recording-plan support."
+  target:
+    entity:
+      domain: camera
+      integration: tapo_control
+  fields:
+    enabled:
+      name: Enabled
+      description: "Enable or disable recording without clearing the schedule."
+      required: true
+      selector:
+        boolean:
+    sunday:
+      name: Sunday
+      description: "List of HHMM-HHMM:mode periods (1 = continuous, 2 = motion). Use [] for no recording; omit to keep unchanged."
+      example: ["0000-0700:1", "0700-2400:2"]
+      selector:
+        object:
+    monday:
+      name: Monday
+      description: "List of HHMM-HHMM:mode periods (1 = continuous, 2 = motion). Use [] for no recording; omit to keep unchanged."
+      example: ["0000-0700:1", "0700-2400:2"]
+      selector:
+        object:
+    tuesday:
+      name: Tuesday
+      description: "List of HHMM-HHMM:mode periods (1 = continuous, 2 = motion). Use [] for no recording; omit to keep unchanged."
+      example: ["0000-0700:1", "0700-2400:2"]
+      selector:
+        object:
+    wednesday:
+      name: Wednesday
+      description: "List of HHMM-HHMM:mode periods (1 = continuous, 2 = motion). Use [] for no recording; omit to keep unchanged."
+      example: ["0000-0700:1", "0700-2400:2"]
+      selector:
+        object:
+    thursday:
+      name: Thursday
+      description: "List of HHMM-HHMM:mode periods (1 = continuous, 2 = motion). Use [] for no recording; omit to keep unchanged."
+      example: ["0000-0700:1", "0700-2400:2"]
+      selector:
+        object:
+    friday:
+      name: Friday
+      description: "List of HHMM-HHMM:mode periods (1 = continuous, 2 = motion). Use [] for no recording; omit to keep unchanged."
+      example: ["0000-0700:1", "0700-2400:2"]
+      selector:
+        object:
+    saturday:
+      name: Saturday
+      description: "List of HHMM-HHMM:mode periods (1 = continuous, 2 = motion). Use [] for no recording; omit to keep unchanged."
+      example: ["0000-0700:1", "0700-2400:2"]
+      selector:
+        object:

@@ -1,5 +1,6 @@
 import asyncio
 import os
+from functools import partial
 
 from haffmpeg.camera import CameraMjpeg
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
@@ -29,6 +30,8 @@ from .const import (
     SCHEMA_SERVICE_SAVE_PRESET,
     SERVICE_DELETE_PRESET,
     SCHEMA_SERVICE_DELETE_PRESET,
+    SERVICE_SET_RECORD_PLAN,
+    SCHEMA_SERVICE_SET_RECORD_PLAN,
     DOMAIN,
     LOGGER,
     NAME,
@@ -100,6 +103,11 @@ async def async_setup_entry(
         SERVICE_DELETE_PRESET,
         SCHEMA_SERVICE_DELETE_PRESET,
         "delete_preset",
+    )
+    platform.async_register_entity_service(
+        SERVICE_SET_RECORD_PLAN,
+        SCHEMA_SERVICE_SET_RECORD_PLAN,
+        "set_record_plan",
     )
 
     async def setupEntities(entry):
@@ -445,6 +453,21 @@ class TapoCamEntity(Camera):
             True,
         )
         await async_force_entry_refresh(self._hass, self._entry)
+
+    async def set_record_plan(self, enabled, **days):
+        # pytapo checks for exact list types; HA YAML lists can be subclasses.
+        days = {day: list(periods) for day, periods in days.items()}
+        LOGGER.debug(
+            "set_record_plan for %s: enabled=%s, days=%s",
+            self.entity_id,
+            enabled,
+            days,
+        )
+        result = await self.hass.async_add_executor_job(
+            partial(self._controller.setRecordPlan, enabled, **days)
+        )
+        LOGGER.debug("set_record_plan for %s: response=%s", self.entity_id, result)
+        await self._coordinator.async_request_refresh()
 
     async def save_preset(self, name):
         LOGGER.debug("save_preset - camera")
