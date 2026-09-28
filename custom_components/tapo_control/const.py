@@ -9,7 +9,7 @@ from homeassistant.helpers import config_validation as cv
 TPLINK_DOMAIN = "tplink"
 
 CONTROL_PORT = "control_port"
-PYTAPO_REQUIRED_VERSION = "3.4.22"
+PYTAPO_REQUIRED_VERSION = "3.4.26"
 DOMAIN = "tapo_control"
 DOMAIN_CONFIG = DOMAIN + "_config"
 BRAND = "TP-Link"
@@ -113,6 +113,39 @@ SERVICE_DELETE_PRESET = "delete_preset"
 SCHEMA_SERVICE_DELETE_PRESET = {
     vol.Required(PRESET): cv.string,
 }
+
+
+def _validate_record_plan_period(value):
+    """Validate a same-day recording period in pytapo's HHMM-HHMM:mode format."""
+    value = vol.All(
+        str,
+        vol.Match(
+            r"^(?:[01][0-9]|2[0-3])[0-5][0-9]-"
+            r"(?:(?:[01][0-9]|2[0-3])[0-5][0-9]|2400):[12]\Z"
+        ),
+    )(value)
+    if value[:4] >= value[5:9]:
+        raise vol.Invalid("Recording period must end after it starts")
+    return value
+
+
+SERVICE_SET_RECORD_PLAN = "set_record_plan"
+SCHEMA_SERVICE_SET_RECORD_PLAN = {
+    vol.Required("enabled"): cv.boolean,
+    **{
+        vol.Optional(day): [_validate_record_plan_period]
+        for day in (
+            "sunday",
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+        )
+    },
+}
+
 
 TAPO_PREFIXES = (
     r"^c[0-9]{3}[a-zA-Z]*_.*",  # Security Cameras (C100, C200, C310, C325WB, etc.)

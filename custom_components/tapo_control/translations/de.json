@@ -42,6 +42,7 @@
       }
     },
     "error": {
+      "cold_storage_path_in_use": "Dieser Cold-Storage-Pfad wird bereits von einer anderen Kamera verwendet. Jede Kamera muss einen eigenen Pfad verwenden.",
       "not_tapo_device": "Die IP Adresse gehört keinem unterstützten Tapo Gerät.",
       "ports_closed": "er Port 443, 554 oder 2020 ist gesperrt.",
       "invalid_auth": "Ungültige Anmeldedaten.\nStelle sicher, dass du dein Drittanbieter-Konto über die Tapo App erstellt hast.\nDu kannst testen, ob diese Anmeldedaten mit einem RTSP-Stream funktionieren, z.B. in VLC mit dem Link\nrtsp://Benutzername:Passwort@IP-Adresse:554/stream1",
@@ -92,6 +93,7 @@
       }
     },
     "error": {
+      "cold_storage_path_in_use": "Dieser Cold-Storage-Pfad wird bereits von einer anderen Kamera verwendet. Jede Kamera muss einen eigenen Pfad verwenden.",
       "invalid_auth": "Ungültige Anmeldedaten.",
       "unknown": "Unbekannter Fehler.",
       "connection_failed": "Verbindung fehlgeschlagen.",

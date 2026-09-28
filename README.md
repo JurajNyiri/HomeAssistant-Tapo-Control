@@ -96,7 +96,7 @@ Chimes:
 - Sensor entities for Network SSID, Signal Level, RSSI
 - Button entity for Reboot and Ringing the chime
 
-Additionally, following services are available for cameras with PTZ:
+Additionally, following services are available for cameras:
 
 <details>
   <summary>tapo_control.save_preset</summary>
@@ -112,6 +112,34 @@ Saves the current PTZ position to a preset
 Deletes a preset
 
 - **preset** Required: PTZ preset ID or a Name. See possible presets in entity attributes
+</details>
+
+
+<details>
+  <summary>tapo_control.set_record_plan</summary>
+
+`tapo_control.set_record_plan` updates the weekly recording schedule on cameras that support it. Target one camera entity for the device (HD, SD, or Direct).
+
+- **enabled** (required): Enable or disable recording. Disabling does not clear the schedule.
+- **sunday** through **saturday** (optional): Lists of `HHMM-HHMM:mode` periods in the camera's local time. Mode `1` records continuously; mode `2` records on motion. Use `2400` for the end of the day. Split overnight periods across two days.
+- Omitted days remain unchanged. An empty list (`[]`) clears that day's schedule. Gaps between periods have no recording.
+
+For example, update Monday and clear Sunday while leaving the other days unchanged:
+
+```yaml
+action: tapo_control.set_record_plan
+target:
+  entity_id: camera.your_camera_hd
+data:
+  enabled: true
+  monday:
+    - "0000-0700:1"
+    - "0700-2400:2"
+  sunday: []
+```
+
+After the call, check the camera entity's `record_plan` attribute and the schedule in the Tapo app. The **Record to SD Card** switch reflects whether recording is enabled.
+
 </details>
 
 ## Sound Detection

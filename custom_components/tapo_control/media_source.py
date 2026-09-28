@@ -38,6 +38,7 @@ from .utils import (
     getColdFile,
     getRecordings,
     getWebFile,
+    preloadRecordingThumbnails,
 )
 
 from pytapo import Tapo
@@ -197,8 +198,9 @@ class TapoMediaSource(MediaSource):
         if not mac:
             return fallback
         registry = dr.async_get(self.hass)
-        device_entry = registry.async_get_device(
-            identifiers={(DOMAIN, slugify(f"{mac}_tapo_control"))}
+        device_entry = registry.async_get_device_by_identifier(
+            (DOMAIN, slugify(f"{mac}_tapo_control")),
+            device["entry"].entry_id,
         )
         if device_entry is None:
             return fallback
@@ -224,6 +226,7 @@ class TapoMediaSource(MediaSource):
         tasks = (device.get("manualDownloadTask"), device.get("mediaSyncTask"))
         return bool(
             device.get("isDownloadingStream")
+            or device.get("thumbnailPreloadRunning")
             or any(task and not task.done() for task in tasks)
         )
 
@@ -467,6 +470,12 @@ class TapoMediaSource(MediaSource):
                 recordingsForDay = []
                 if not downloaded:
                     raise Unresolvable(self._map_recordings_exception(err)) from err
+            await self._create_background_task(
+                preloadRecordingThumbnails(
+                    self.hass, device, entry, {camera_date: recordingsForDay}
+                ),
+                device["entry"],
+            )
             for searchResult in recordingsForDay:
                 for key in searchResult:
                     _add_clip(
