@@ -156,7 +156,7 @@ Integration is capable of synchronizing recordings for fast playback.
 
 Synchronization is turned off by default, you can browse media stored on camera and request it to be played. However, downloading is rather slow, so it is a good idea to enable media synchronization in background. That way, you will be able to play any synchronized media from camera instantly.
 
-Requested recordings download in the background, with progress shown in a notification. Notification times use the same camera offset and Home Assistant local timezone as the recording list. While a download is active, cached recordings remain playable. Reloading the integration cancels its on-demand downloads; switching media sync off lets the current recording finish before the sync stops.
+Requested recordings download in the background, with progress shown in a notification. While a download is active, cached recordings remain playable. Reloading the integration cancels its on-demand downloads; switching media sync off lets the current recording finish before the sync stops.
 
 A ✓ at the beginning of a recording's title means its video is downloaded and ready to play (for example, `✓00:00:02–00:00:04`). Refresh or reopen the recording list after a download finishes to see the checkmark; a preloaded thumbnail alone does not mark a recording as ready.
 
@@ -164,9 +164,7 @@ With both **Cache thumbnails** and **Preload thumbnails** enabled, the initial m
 
 If the initial media scan fails (for example, because no SD card is inserted), retries use the battery polling interval on battery and solar-powered cameras (10 minutes by default), or 60 seconds on mains-powered cameras. This applies even when video synchronization is disabled. An available camera or newly inserted card can therefore be detected on a later retry without reloading the integration.
 
-If a thumbnail request returns no image, preloading stops for that camera for the current scan, avoiding repeated timeouts. Already cached thumbnails are preserved, and preloading is tried again on the next integration startup or reload.
-
-You can enable this setting by navigating to `Home Assistant Settings` -> `Devices & services` and clicking the `Tapo: Cameras control` integration. There, click on the `Configure` button next to the Tapo device you wish to turn media synchronization on for, and choose `Configure media`. Here, you need to define the number of hours to synchronize. Unless it is specified, synchronization does not run. Here, you can also set the storage path for recordings and thumbnails (defaults to `/config/.storage/tapo_control/<entry_id>`). Changing this path automatically reloads the camera entry and moves its existing videos and thumbnails, including hub child recordings. The old media folders are removed after copying succeeds; unrelated files are left alone. Use a separate directory for each camera entry. The new directory must already exist, except when clearing the setting to return to the default. Conflicting destination files stop the move instead of being overwritten; resolve the error shown in the integration logs and reload to retry.
+You can enable this setting by navigating to `Home Assistant Settings` -> `Devices & services` and clicking the `Tapo: Cameras control` integration. There, click on the `Configure` button next to the Tapo device you wish to turn media synchronization on for, and choose `Configure media`. Here, you need to define the number of hours to synchronize. Unless it is specified, synchronization does not run. Here, you are able to also set the storage path where the synchronized recordings will be stored (defaults to /config/.storage/tapo_control).
 
 The default storage is included in Home Assistant configuration backups. To keep recordings and thumbnails out of those backups, choose a directory such as `/media/tapo_control/front_camera` and exclude media from your backups.
 
@@ -186,17 +184,6 @@ Finally, you can turn on, or off switch entity `switch.*_media_sync`.
 **Notice:** Recordings are deleted after the number of hours you have chosen to synchronize passes, once both the actual recording time and the file modified time is older than the number of hours set.
 
 With thumbnail caching enabled, thumbnails are kept independently of this video retention period. They are removed once a subsequent startup scan finds that the recording is no longer on the camera. With caching disabled, thumbnails remain while their downloaded videos exist; other thumbnails follow the short retention described above.
-
-For missing or slow thumbnails, enable debug logging for the integration. The logs include camera model/firmware, batch progress, requested recording timestamps, received image sizes, snapshot and disk-write timings, and a batch summary. The `pytapo.media_stream.session` logger includes protocol response types and no-data timeouts. To capture these during startup, add these entries to your existing `logger` configuration and restart Home Assistant:
-
-```yaml
-logger:
-  logs:
-    custom_components.tapo_control: debug
-    pytapo.media_stream.session: debug
-```
-
-The batch API reuses one media session but requests thumbnails sequentially using unmodified detection-event timestamps. Recordings that use the same event share one snapshot request. Recordings without a matching event are skipped instead of waiting for a snapshot timeout. An event without a returned image can still take the full eight-second no-data timeout; a `no JPEG returned` message alone does not identify why the camera did not provide an image.
 
 ### Media download event
 
