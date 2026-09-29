@@ -78,6 +78,18 @@
         "data_description": {
           "direct_stream_arguments": "Opções avançadas para fluxos diretos e imagens. Um mapeamento vazio restaura os valores padrão. -vsync: null omite este parâmetro. Suportados: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Aplica-se a novos fluxos; recarregue a integração para parar os existentes."
         }
+      },
+      "media": {
+        "data": {
+          "media_thumbnail_cache": "Armazenar miniaturas em cache",
+          "media_thumbnail_preload": "Pré-carregar miniaturas",
+          "media_sync_cold_storage_path": "Caminho de armazenamento permanente"
+        },
+        "data_description": {
+          "media_thumbnail_cache": "Manter miniaturas dos vídeos ainda não baixados. Quando desativado, essas miniaturas são excluídas após cerca de 5 minutos.",
+          "media_thumbnail_preload": "Buscar miniaturas na inicialização apenas se o cache também estiver ativo. Sem cache, buscar apenas durante a navegação. Se o pré-carregamento estiver desativado, buscar apenas durante a navegação se o cache estiver ativo. Desative ambas as opções para mostrar miniaturas apenas dos vídeos baixados."
+        },
+        "description": "Alterar o caminho move os vídeos e miniaturas existentes e recarrega a entrada da câmera."
       }
     },
     "error": {
@@ -88,7 +100,9 @@
       "invalid_auth_cloud": "Invalid cloud password.\nMake sure you are entering the password for your cloud account and NOT the password which you created via the camera settings (unless they are the same).\nYou need to enter password which you used with your email when signing into the Tapo app.\n\nEnsure you have Third-Party compatibility turned on in Tapo App (Me -> Tapo Lab -> Third-Party Compatibility - On).",
       "camera_requires_admin": "Sua câmera precisa de senha cloud para controle",
       "incorrect_peak_value": "Valor de pico de detecção de som incorreto.",
-      "invalid_direct_stream_arguments": "Insira um mapeamento de parâmetros FFmpeg suportados para texto não vazio ou números. Apenas -vsync pode ser null."
+      "invalid_direct_stream_arguments": "Insira um mapeamento de parâmetros FFmpeg suportados para texto não vazio ou números. Apenas -vsync pode ser null.",
+      "cold_storage_path_overlap": "Os caminhos antigo e novo não podem estar contidos um no outro.",
+      "cold_storage_move_pending": "Há uma mudança de armazenamento pendente. Resolva o erro nos registros da integração e recarregue antes de alterar o caminho novamente."
     }
   }
 }

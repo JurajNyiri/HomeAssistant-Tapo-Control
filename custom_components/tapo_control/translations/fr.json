@@ -114,9 +114,15 @@
           "media_view_days_order": "Ordre des jours dans le navigateur multimédia",
           "media_view_recordings_order": "Ordre des enregistrements dans Media Browser",
           "media_sync_hours": "Number of hours to keep synchronized",
-          "media_sync_cold_storage_path": "[Nécessite un redémarrage] Chemin de stockage à froid"
+          "media_sync_cold_storage_path": "Chemin de stockage à froid",
+          "media_thumbnail_cache": "Mettre les miniatures en cache",
+          "media_thumbnail_preload": "Précharger les miniatures"
         },
-        "description": "Modifier les paramètres de synchronisation des médias d'enregistrement"
+        "description": "Modifier les paramètres de synchronisation des médias d'enregistrement\n\nChanger le chemin déplace les vidéos et miniatures existantes et recharge la caméra.",
+        "data_description": {
+          "media_thumbnail_cache": "Conserver les miniatures des vidéos non téléchargées. Si désactivé, ces miniatures sont supprimées après environ 5 minutes.",
+          "media_thumbnail_preload": "Charger les miniatures au démarrage uniquement si le cache est également activé. Sans cache, les charger uniquement lors de la navigation. Si le préchargement est désactivé, les charger uniquement lors de la navigation si le cache est activé. Désactivez les deux options pour afficher uniquement les miniatures des vidéos téléchargées."
+        }
       },
       "update_interval": {
         "data": {
@@ -167,7 +173,9 @@
       "camera_requires_admin": "La caméra nécessite un mot de passe cloud pour le contrôle",
       "incorrect_peak_value": "Valeur de pic de détection sonore incorrecte.",
       "incorrect_options_action": "Action incorrecte choisie",
-      "invalid_direct_stream_arguments": "Saisissez une correspondance entre les paramètres FFmpeg pris en charge et des textes non vides ou des nombres. Seul -vsync peut être null."
+      "invalid_direct_stream_arguments": "Saisissez une correspondance entre les paramètres FFmpeg pris en charge et des textes non vides ou des nombres. Seul -vsync peut être null.",
+      "cold_storage_path_overlap": "Les anciens et nouveaux chemins de stockage ne doivent pas être imbriqués.",
+      "cold_storage_move_pending": "Un déplacement est en attente. Corrigez l’erreur dans les journaux de l’intégration et rechargez-la avant de modifier à nouveau le chemin."
     }
   }
 }

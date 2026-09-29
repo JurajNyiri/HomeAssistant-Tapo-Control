@@ -27,6 +27,8 @@ from homeassistant.util import dt, slugify
 from .const import (
     DOMAIN,
     LOGGER,
+    MEDIA_THUMBNAIL_CACHE,
+    MEDIA_THUMBNAIL_PRELOAD,
     MEDIA_VIEW_DAYS_ORDER,
     MEDIA_VIEW_RECORDINGS_ORDER,
     RECORDINGS_UNAVAILABLE_MESSAGE,
@@ -39,6 +41,7 @@ from .utils import (
     getRecordings,
     getWebFile,
     preloadRecordingThumbnails,
+    cleanupThumbnailCache,
 )
 
 from pytapo import Tapo
@@ -428,6 +431,7 @@ class TapoMediaSource(MediaSource):
             raise Unresolvable("Unexpected path.")
 
     async def generateVideosForDate(self, query, title, entry, date, device):
+        await cleanupThumbnailCache(self.hass, device["entry"])
         tapoController = device["controller"]
         childID = ""
         if "childID" in query:
@@ -486,7 +490,11 @@ class TapoMediaSource(MediaSource):
                     raise Unresolvable(self._map_recordings_exception(err)) from err
             await self._create_background_task(
                 preloadRecordingThumbnails(
-                    self.hass, device, entry, {camera_date: recordingsForDay}
+                    self.hass,
+                    device,
+                    entry,
+                    {camera_date: recordingsForDay},
+                    browsing=True,
                 ),
                 device["entry"],
             )
@@ -519,7 +527,18 @@ class TapoMediaSource(MediaSource):
                 childID=childID,
             )
             thumbLink = None
-            if await self.hass.async_add_executor_job(os.path.exists, filePathThumb):
+            options = device["entry"].data
+            showThumbnail = (
+                options.get(MEDIA_THUMBNAIL_CACHE, False)
+                or options.get(MEDIA_THUMBNAIL_PRELOAD, True)
+                or getFileName(
+                    data["startDate"], data["endDate"], False, childID=childID
+                )
+                in device["downloadedStreams"]
+            )
+            if showThumbnail and await self.hass.async_add_executor_job(
+                os.path.exists, filePathThumb
+            ):
                 thumbLink = await getWebFile(
                     self.hass,
                     entry,

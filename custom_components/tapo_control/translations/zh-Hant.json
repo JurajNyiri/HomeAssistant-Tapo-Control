@@ -105,9 +105,15 @@
           "media_view_days_order": "媒體瀏覽器中的日期排序。",
           "media_view_recordings_order": "媒體瀏覽器中的錄音排序。",
           "media_sync_hours": "保持同步的時間長度（以小時為單位）",
-          "media_sync_cold_storage_path": "[需要重新啟動]  冷儲存路徑"
+          "media_sync_cold_storage_path": "冷儲存路徑",
+          "media_thumbnail_cache": "快取縮圖",
+          "media_thumbnail_preload": "預先載入縮圖"
         },
-        "description": "修改錄影媒體同步設定"
+        "description": "修改錄影媒體同步設定\n\n變更路徑會移動現有影片及縮圖，並重新載入攝影機項目。",
+        "data_description": {
+          "media_thumbnail_cache": "保留尚未下載影片的縮圖。關閉後，這些縮圖會在約 5 分鐘後刪除。",
+          "media_thumbnail_preload": "僅在同時啟用快取時，才於啟動掃描時取得縮圖。關閉快取後，僅在瀏覽錄影時取得縮圖。關閉預先載入後，僅在啟用快取且瀏覽錄影時取得縮圖。關閉兩個選項後，只會顯示已下載影片的縮圖。"
+        }
       },
       "update_interval": {
         "data": {
@@ -158,7 +164,9 @@
       "camera_requires_admin": "您的攝影機需要雲端密碼才能進行控制",
       "incorrect_peak_value": "錯誤的聲音檢測峰值。",
       "incorrect_options_action": "選擇了錯誤的動作",
-      "invalid_direct_stream_arguments": "請輸入支援的 FFmpeg 參數與非空文字或數值的對應表。只有 -vsync 可以設為 null。"
+      "invalid_direct_stream_arguments": "請輸入支援的 FFmpeg 參數與非空文字或數值的對應表。只有 -vsync 可以設為 null。",
+      "cold_storage_path_overlap": "新舊儲存路徑不可互相包含。",
+      "cold_storage_move_pending": "儲存資料移動尚未完成。請先解決整合日誌中的錯誤並重新載入，再次變更路徑。"
     }
   }
 }

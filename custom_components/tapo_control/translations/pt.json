@@ -78,6 +78,18 @@
         "data_description": {
           "direct_stream_arguments": "Opções avançadas para fluxos diretos e imagens. Um mapeamento vazio repõe os valores predefinidos. -vsync: null omite este parâmetro. Suportados: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Aplica-se a novos fluxos; recarregue a integração para parar os existentes."
         }
+      },
+      "media": {
+        "data": {
+          "media_thumbnail_cache": "Guardar miniaturas em cache",
+          "media_thumbnail_preload": "Pré-carregar miniaturas",
+          "media_sync_cold_storage_path": "Caminho de armazenamento permanente"
+        },
+        "data_description": {
+          "media_thumbnail_cache": "Guardar miniaturas dos vídeos ainda não transferidos. Se desativado, estas miniaturas são eliminadas após cerca de 5 minutos.",
+          "media_thumbnail_preload": "Obter miniaturas no arranque apenas se a cache também estiver ativa. Sem cache, obter apenas durante a navegação. Se o pré-carregamento estiver desativado, obter apenas durante a navegação se a cache estiver ativa. Desative ambas as opções para mostrar miniaturas apenas dos vídeos transferidos."
+        },
+        "description": "Alterar o caminho move os vídeos e miniaturas existentes e recarrega a entrada da câmara."
       }
     },
     "error": {
@@ -88,7 +100,9 @@
       "invalid_auth_cloud": "Palavra-passe de cloud inválida.\nCertifique-se de que está a introduzir a palavra-passe da sua conta de cloud e NÃO a palavra-passe que criou nas definições da câmara (a não ser que sejam a mesma).\nTem de introduzir a palavra-passe que utilizou com o seu email ao iniciar sessão na app Tapo.\n\nCertifique-se de que tem a compatibilidade de terceiros ativada na app Tapo (Eu -> Tapo Lab -> Third-Party Compatibility - Ativado).",
       "camera_requires_admin": "A sua câmara necessita de uma palavra-passe de cloud para controlo",
       "incorrect_peak_value": "Valor de pico de deteção de som incorreto.",
-      "invalid_direct_stream_arguments": "Introduza um mapeamento de parâmetros FFmpeg suportados para texto não vazio ou números. Apenas -vsync pode ser null."
+      "invalid_direct_stream_arguments": "Introduza um mapeamento de parâmetros FFmpeg suportados para texto não vazio ou números. Apenas -vsync pode ser null.",
+      "cold_storage_path_overlap": "Os caminhos antigo e novo não podem estar contidos um no outro.",
+      "cold_storage_move_pending": "Existe uma mudança de armazenamento pendente. Resolva o erro nos registos da integração e recarregue antes de alterar novamente o caminho."
     }
   }
 }

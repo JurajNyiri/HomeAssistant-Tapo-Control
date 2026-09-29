@@ -114,9 +114,15 @@
           "media_view_days_order": "Kolejność dni w Przeglądarce multimediów",
           "media_view_recordings_order": "Kolejność nagrań w Przeglądarce multimediów",
           "media_sync_hours": "Liczba godzin do synchronizacji",
-          "media_sync_cold_storage_path": "[Wymaga restartu] Ścieżka cold storage"
+          "media_sync_cold_storage_path": "Ścieżka przechowywania nagrań",
+          "media_thumbnail_cache": "Przechowuj miniatury w pamięci podręcznej",
+          "media_thumbnail_preload": "Wczytuj miniatury z wyprzedzeniem"
         },
-        "description": "Zmień ustawienia synchronizacji nagrań"
+        "description": "Zmień ustawienia synchronizacji nagrań\n\nZmiana ścieżki przenosi istniejące filmy i miniatury oraz ponownie ładuje wpis kamery.",
+        "data_description": {
+          "media_thumbnail_cache": "Zachowuj miniatury niepobranych nagrań. Po wyłączeniu miniatury są usuwane po około 5 minutach.",
+          "media_thumbnail_preload": "Pobieraj miniatury podczas uruchamiania tylko wtedy, gdy pamięć podręczna jest również włączona. Bez pamięci podręcznej pobieraj je tylko podczas przeglądania. Po wyłączeniu wczytywania z wyprzedzeniem pobieraj je tylko podczas przeglądania, jeśli pamięć podręczna jest włączona. Wyłącz obie opcje, aby wyświetlać miniatury tylko pobranych filmów."
+        }
       },
       "update_interval": {
         "data": {
@@ -170,7 +176,9 @@
       "camera_requires_admin": "Kamera wymaga hasła do chmury do sterowania",
       "incorrect_peak_value": "Nieprawidłowa wartość progu detekcji dźwięku.",
       "incorrect_options_action": "Wybrano nieprawidłową akcję",
-      "invalid_direct_stream_arguments": "Wprowadź mapę obsługiwanych parametrów FFmpeg z niepustym tekstem lub liczbami. Tylko -vsync może mieć wartość null."
+      "invalid_direct_stream_arguments": "Wprowadź mapę obsługiwanych parametrów FFmpeg z niepustym tekstem lub liczbami. Tylko -vsync może mieć wartość null.",
+      "cold_storage_path_overlap": "Stara i nowa ścieżka nie mogą być zagnieżdżone.",
+      "cold_storage_move_pending": "Przenoszenie danych nie zostało zakończone. Rozwiąż błąd w dzienniku integracji i przeładuj wpis przed ponowną zmianą ścieżki."
     }
   }
 }

@@ -26,6 +26,8 @@ from .utils import (
     areCameraPortsOpened,
     isOpen,
     isKLAP,
+    getConfiguredColdDirPath,
+    getDataPath,
 )
 from .const import (
     CLOUD_USERNAME,
@@ -42,6 +44,9 @@ from .const import (
     ENABLE_TIME_SYNC,
     MEDIA_SYNC_COLD_STORAGE_PATH,
     MEDIA_SYNC_HOURS,
+    MEDIA_SYNC_PREVIOUS_STORAGE_PATH,
+    MEDIA_THUMBNAIL_CACHE,
+    MEDIA_THUMBNAIL_PRELOAD,
     MEDIA_VIEW_DAYS_ORDER,
     MEDIA_VIEW_DAYS_ORDER_OPTIONS,
     MEDIA_VIEW_RECORDINGS_ORDER,
@@ -1505,11 +1510,16 @@ class TapoOptionsFlowHandler(OptionsFlow):
         media_sync_cold_storage_path = self.config_entry.data[
             MEDIA_SYNC_COLD_STORAGE_PATH
         ]
+        thumbnail_cache = self.config_entry.data.get(MEDIA_THUMBNAIL_CACHE, False)
+        thumbnail_preload = self.config_entry.data.get(MEDIA_THUMBNAIL_PRELOAD, True)
 
         allConfigData = {**self.config_entry.data}
         if user_input is not None:
             try:
-
+                thumbnail_cache = user_input.get(MEDIA_THUMBNAIL_CACHE, thumbnail_cache)
+                thumbnail_preload = user_input.get(
+                    MEDIA_THUMBNAIL_PRELOAD, thumbnail_preload
+                )
                 if MEDIA_VIEW_DAYS_ORDER in user_input:
                     media_view_days_order = user_input[MEDIA_VIEW_DAYS_ORDER]
                 else:
@@ -1534,24 +1544,43 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 else:
                     media_sync_cold_storage_path = ""
 
-                if media_sync_cold_storage_path != "" and not os.path.exists(
+                if media_sync_cold_storage_path != "" and not os.path.isdir(
                     media_sync_cold_storage_path
                 ):
                     raise Exception("Cold storage path does not exist")
 
-                if media_sync_cold_storage_path:
-                    for entry in self.hass.config_entries.async_entries(DOMAIN):
-                        if entry.entry_id == self.config_entry.entry_id:
-                            continue
-                        other_path = entry.data.get(MEDIA_SYNC_COLD_STORAGE_PATH)
-                        if other_path and os.path.abspath(other_path) == os.path.abspath(
-                            media_sync_cold_storage_path
+                old_path = os.path.realpath(getConfiguredColdDirPath(self.config_entry))
+                new_path = os.path.realpath(
+                    media_sync_cold_storage_path or os.path.join(
+                        getDataPath(), ".storage", DOMAIN, self.config_entry.entry_id
+                    )
+                )
+                for entry in self.hass.config_entries.async_entries(DOMAIN):
+                    if entry.entry_id == self.config_entry.entry_id:
+                        continue
+                    other_paths = [getConfiguredColdDirPath(entry)]
+                    if entry.data.get(MEDIA_SYNC_PREVIOUS_STORAGE_PATH):
+                        other_paths.append(
+                            entry.data[MEDIA_SYNC_PREVIOUS_STORAGE_PATH]
+                        )
+                    for other_path in other_paths:
+                        other_path = os.path.realpath(other_path)
+                        if os.path.commonpath([other_path, new_path]) in (
+                            other_path, new_path
                         ):
                             raise Exception("Cold storage path is already in use")
+                if old_path != new_path:
+                    if MEDIA_SYNC_PREVIOUS_STORAGE_PATH in allConfigData:
+                        raise Exception("Cold storage move is pending")
+                    if os.path.commonpath([old_path, new_path]) in (old_path, new_path):
+                        raise Exception("Cold storage paths must not overlap")
+                    allConfigData[MEDIA_SYNC_PREVIOUS_STORAGE_PATH] = old_path
 
                 allConfigData[MEDIA_VIEW_DAYS_ORDER] = media_view_days_order
                 allConfigData[MEDIA_VIEW_RECORDINGS_ORDER] = media_view_recordings_order
                 allConfigData[MEDIA_SYNC_HOURS] = media_sync_hours
+                allConfigData[MEDIA_THUMBNAIL_CACHE] = thumbnail_cache
+                allConfigData[MEDIA_THUMBNAIL_PRELOAD] = thumbnail_preload
                 allConfigData[MEDIA_SYNC_COLD_STORAGE_PATH] = (
                     media_sync_cold_storage_path
                 )
@@ -1565,6 +1594,10 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     errors["base"] = "cold_storage_path_does_not_exist"
                 elif "Cold storage path is already in use" in str(e):
                     errors["base"] = "cold_storage_path_in_use"
+                elif "Cold storage paths must not overlap" in str(e):
+                    errors["base"] = "cold_storage_path_overlap"
+                elif "Cold storage move is pending" in str(e):
+                    errors["base"] = "cold_storage_move_pending"
                 else:
                     errors["base"] = "unknown"
                 LOGGER.error(e)
@@ -1589,6 +1622,8 @@ class TapoOptionsFlowHandler(OptionsFlow):
                         MEDIA_SYNC_COLD_STORAGE_PATH,
                         description={"suggested_value": media_sync_cold_storage_path},
                     ): str,
+                    vol.Required(MEDIA_THUMBNAIL_CACHE, default=thumbnail_cache): bool,
+                    vol.Required(MEDIA_THUMBNAIL_PRELOAD, default=thumbnail_preload): bool,
                 }
             ),
             errors=errors,
