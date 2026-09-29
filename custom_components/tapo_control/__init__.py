@@ -18,6 +18,8 @@ from homeassistant.exceptions import (
     DependencyError,
 )
 from homeassistant.helpers.storage import Store
+from homeassistant.helpers.event import async_track_time_interval
+from functools import partial
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt
 from homeassistant.components.media_source.error import Unresolvable
@@ -45,6 +47,9 @@ from .const import (
     MEDIA_CLEANUP_PERIOD,
     MEDIA_SYNC_COLD_STORAGE_PATH,
     MEDIA_SYNC_HOURS,
+    MEDIA_SYNC_PREVIOUS_STORAGE_PATH,
+    MEDIA_THUMBNAIL_CACHE,
+    MEDIA_THUMBNAIL_PRELOAD,
     MEDIA_VIEW_DAYS_ORDER,
     MEDIA_VIEW_RECORDINGS_ORDER,
     MEDIA_SYNC_WATCHDOG_SECONDS,
@@ -73,6 +78,9 @@ from .utils import (
     convert_to_timestamp,
     deleteDir,
     getColdDirPathForEntry,
+    getConfiguredColdDirPath,
+    moveMediaStorage,
+    cleanupThumbnailCache,
     getDataForController,
     getEntryStorageFile,
     getHotDirPathForEntry,
@@ -488,7 +496,18 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     LOGGER.debug("Unloading tapo_control...")
-    await hass.config_entries.async_unload_platforms(
+    device = hass.data[DOMAIN][entry.entry_id]
+    tasks = {
+        task
+        for item in [device, *device.get("childDevices", [])]
+        for key in ("mediaSyncTask", "manualDownloadTask")
+        if (task := item.get(key)) is not None and not task.done()
+    }
+    for task in tasks:
+        task.cancel()
+    if tasks:
+        await asyncio.gather(*tasks, return_exceptions=True)
+    unloaded = await hass.config_entries.async_unload_platforms(
         entry,
         [
             "binary_sensor",
@@ -503,6 +522,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             "update",
         ],
     )
+    if not unloaded:
+        return False
 
     if "udp_monitor" in hass.data[DOMAIN][entry.entry_id]:
         await hass.data[DOMAIN][entry.entry_id]["udp_monitor"].async_stop()
@@ -591,6 +612,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     """Set up the Tapo: Cameras Control component from a config entry."""
     hass.data.setdefault(DOMAIN, {})
+
+    previousStorage = entry.data.get(MEDIA_SYNC_PREVIOUS_STORAGE_PATH)
+    if previousStorage is not None:
+        try:
+            await hass.async_add_executor_job(
+                moveMediaStorage, previousStorage, getConfiguredColdDirPath(entry)
+            )
+        except (OSError, ValueError) as err:
+            raise ConfigEntryNotReady(f"Unable to move recording storage: {err}") from err
+        data = dict(entry.data)
+        del data[MEDIA_SYNC_PREVIOUS_STORAGE_PATH]
+        hass.config_entries.async_update_entry(entry, data=data)
 
     host = entry.data.get(CONF_IP_ADDRESS)
     controlPort = entry.data.get(CONTROL_PORT)
@@ -1009,6 +1042,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "latestFirmwareVersion": False,
             "mediaSyncColdDir": False,
             "mediaSyncHotDir": False,
+            "mediaOptions": {
+                MEDIA_SYNC_COLD_STORAGE_PATH: entry.data.get(
+                    MEDIA_SYNC_COLD_STORAGE_PATH, ""
+                ),
+                MEDIA_THUMBNAIL_CACHE: entry.data.get(MEDIA_THUMBNAIL_CACHE, False),
+                MEDIA_THUMBNAIL_PRELOAD: entry.data.get(MEDIA_THUMBNAIL_PRELOAD, True),
+            },
             "motionSensorCreated": False,
             "eventsDevice": False,
             "onvifManagement": False,
@@ -1340,6 +1380,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         # Start scanning without waiting for HA startup and the next polling update.
         device = hass.data[DOMAIN][entry.entry_id]
+        entry.async_on_unload(device["update_listener"])
+        await cleanupThumbnailCache(hass, entry)
+        entry.async_on_unload(
+            async_track_time_interval(
+                hass, partial(cleanupThumbnailCache, hass, entry), timedelta(seconds=60)
+            )
+        )
         for scanDevice in [device, *device["childDevices"]]:
             entry.async_create_background_task(
                 hass,

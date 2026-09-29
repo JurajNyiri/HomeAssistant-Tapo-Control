@@ -1,11 +1,13 @@
 import asyncio
 import datetime
+import filecmp
 import hashlib
 import pathlib
 import onvif
 import os
 import shutil
 import socket
+import time
 import urllib.parse
 import uuid
 import requests
@@ -63,6 +65,9 @@ from .const import (
     CONF_CUSTOM_STREAM_7,
     MEDIA_SYNC_COLD_STORAGE_PATH,
     MEDIA_SYNC_HOURS,
+    MEDIA_THUMBNAIL_CACHE,
+    MEDIA_THUMBNAIL_PRELOAD,
+    THUMBNAIL_CACHE_SECONDS,
     TIME_SYNC_DST,
     TIME_SYNC_NDST,
     TPLINK_DOMAIN,
@@ -216,6 +221,64 @@ def getDataPath():
     )
 
 
+def getConfiguredColdDirPath(entry):
+    return entry.data.get(MEDIA_SYNC_COLD_STORAGE_PATH) or os.path.join(
+        getDataPath(), ".storage", DOMAIN, entry.entry_id
+    )
+
+
+def moveMediaStorage(source, destination):
+    """Move media on the executor, keeping the source until all copies succeed.
+
+    Identical destination files allow a failed/interrupted move to be retried.
+    Conflicting files are never overwritten.
+    """
+    source = pathlib.Path(source).resolve()
+    destination = pathlib.Path(destination).resolve()
+    if source == destination:
+        return
+    if source in destination.parents or destination in source.parents:
+        raise ValueError("Cold storage paths must not overlap")
+
+    def raiseWalkError(error):
+        raise error
+
+    files = []
+    for folder in ("videos", "thumbs"):
+        directory = source / folder
+        try:
+            directory.stat()
+        except FileNotFoundError:
+            continue
+        for root, _, names in os.walk(directory, onerror=raiseWalkError):
+            for name in names:
+                path = pathlib.Path(root) / name
+                target = destination / path.relative_to(source)
+                if target.exists() and not filecmp.cmp(path, target, shallow=False):
+                    raise FileExistsError(f"Different media file already exists: {target}")
+                files.append((path, target))
+    for path, target in files:
+        if not target.exists():
+            target.parent.mkdir(parents=True, exist_ok=True)
+            temporary = target.with_name(target.name + ".moving")
+            try:
+                shutil.copy2(path, temporary)
+                temporary.replace(target)
+            finally:
+                temporary.unlink(missing_ok=True)
+    for path, _ in files:
+        path.unlink()
+    for folder in ("videos", "thumbs"):
+        directory = source / folder
+        if directory.exists():
+            for path in sorted(directory.rglob("*"), reverse=True):
+                if path.is_dir():
+                    path.rmdir()
+            directory.rmdir()
+    if source.exists() and not any(source.iterdir()):
+        source.rmdir()
+
+
 def getColdDirPathForEntry(hass: HomeAssistant, entry_id: str):
     # Fast retrieval of path without file IO
     if (
@@ -224,16 +287,12 @@ def getColdDirPathForEntry(hass: HomeAssistant, entry_id: str):
     ):
         return hass.data[DOMAIN][entry_id]["mediaSyncColdDir"].rstrip("/")
 
-    coldDirPath = os.path.join(getDataPath(), f".storage/{DOMAIN}/{entry_id}/")
     if entry_id in hass.data[DOMAIN]:
         entry: ConfigEntry = hass.data[DOMAIN][entry_id]["entry"]
     else:  # if device is disabled, get entry from HA storage
         entry: ConfigEntry = hass.config_entries.async_get_entry(entry_id)
 
-    media_sync_cold_storage_path = entry.data.get(MEDIA_SYNC_COLD_STORAGE_PATH)
-
-    if not media_sync_cold_storage_path == "":
-        coldDirPath = f"{media_sync_cold_storage_path}/"
+    coldDirPath = getConfiguredColdDirPath(entry)
 
     if entry_id in hass.data[DOMAIN]:
         pathlib.Path(coldDirPath + "/videos").mkdir(parents=True, exist_ok=True)
@@ -322,10 +381,19 @@ async def getRecordingEventStartTimes(hass, tapoController, startTime, endTime):
         startIndex += len(events)
 
 
-async def preloadRecordingThumbnails(hass, entryData, entry_id, recordingsByDate):
+async def preloadRecordingThumbnails(
+    hass, entryData, entry_id, recordingsByDate, *, browsing=False
+):
     """Preload only unchecked recordings, using raw detection-event timestamps."""
     lock = entryData.setdefault("thumbnailPreloadLock", asyncio.Lock())
     async with lock:
+        options = entryData["entry"].data
+        cache = options.get(MEDIA_THUMBNAIL_CACHE, False)
+        preload = options.get(MEDIA_THUMBNAIL_PRELOAD, True)
+        if not (cache or preload):
+            return
+        if not browsing and not (cache and preload):
+            return
         tasks = (entryData.get("manualDownloadTask"), entryData.get("mediaSyncTask"))
         if (
             entryData.get("thumbnailPreloadStopped")
@@ -352,6 +420,7 @@ async def _preloadRecordingThumbnails(hass, entryData, entry_id, recordingsByDat
         entryData["camData"]["basic_info"]["dev_id"] if entryData["isChild"] else ""
     )
     processed = entryData.setdefault("thumbnailProcessed", {})
+    cache = entryData["entry"].data.get(MEDIA_THUMBNAIL_CACHE, False)
     thumbnails = {}
     thumbnailDates = {}
     thumbnailRecordings = {}
@@ -372,7 +441,8 @@ async def _preloadRecordingThumbnails(hass, entryData, entry_id, recordingsByDat
                 hass, entry_id, startTime, endTime, "thumbs", childID=childID
             )
             if await hass.async_add_executor_job(os.path.exists, filePathThumb):
-                checked.add((startTime, endTime))
+                if cache:
+                    checked.add((startTime, endTime))
                 continue
             missing.append((startTime, endTime, filePathThumb))
         if not missing:
@@ -480,7 +550,8 @@ async def _preloadRecordingThumbnails(hass, entryData, entry_id, recordingsByDat
                                 saveThumbnail, filePathThumb, image
                             )
                             date, recordingKey = thumbnailRecordings[filePathThumb]
-                            processed[date].add(recordingKey)
+                            if cache:
+                                processed[date].add(recordingKey)
                         savedCount += 1
                         LOGGER.debug(
                             "Thumbnail %s/%s for %s: saved %s bytes, "
@@ -772,6 +843,53 @@ async def deleteColdFilesOlderThanMaxSyncTime(
                         + fileName
                         + ") because of incorrect file name format..."
                     )
+
+
+def cleanupTemporaryThumbnails(coldDirPath, hotDirPath, preload):
+    """Expire thumbnails without downloaded videos, including their web copies."""
+    cold = pathlib.Path(coldDirPath)
+    hot = pathlib.Path(hotDirPath) / "thumbs"
+    now = time.time()
+    expired = []
+    expiredHashes = set()
+    for thumbnail in (cold / "thumbs").glob("*.jpg"):
+        if (cold / "videos" / (thumbnail.stem + ".mp4")).exists():
+            continue
+        try:
+            if preload and now - thumbnail.stat().st_mtime < THUMBNAIL_CACHE_SECONDS:
+                continue
+            parts = thumbnail.stem.rsplit("-", 2)
+            if len(parts) == 2:
+                childID = ""
+                start, end = parts
+            elif len(parts) == 3:
+                childID, start, end = parts
+            else:
+                continue
+            expiredHashes.add(getFileName(start, end, True, childID=childID))
+            expired.append(thumbnail)
+        except FileNotFoundError:
+            # Another media cleanup may have removed the file already.
+            continue
+    if expired:
+        for cached in hot.glob("*.jpg"):
+            if cached.name[:32] in expiredHashes:
+                cached.unlink(missing_ok=True)
+        for thumbnail in expired:
+            thumbnail.unlink(missing_ok=True)
+
+
+async def cleanupThumbnailCache(hass, entry, now=None):
+    if entry.data.get(MEDIA_THUMBNAIL_CACHE, False):
+        return
+    cold = await hass.async_add_executor_job(getColdDirPathForEntry, hass, entry.entry_id)
+    hot = await hass.async_add_executor_job(getHotDirPathForEntry, hass, entry.entry_id)
+    await hass.async_add_executor_job(
+        cleanupTemporaryThumbnails,
+        cold,
+        hot,
+        entry.data.get(MEDIA_THUMBNAIL_PRELOAD, True),
+    )
 
 
 async def mediaCleanup(hass, entry, deviceData):
@@ -2278,6 +2396,17 @@ def convert_to_timestamp(date_string):
 
 async def update_listener(hass, entry):
     """Handle options update."""
+    entryData = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    if entryData is None:
+        return
+    mediaOptions = {
+        MEDIA_SYNC_COLD_STORAGE_PATH: entry.data.get(MEDIA_SYNC_COLD_STORAGE_PATH, ""),
+        MEDIA_THUMBNAIL_CACHE: entry.data.get(MEDIA_THUMBNAIL_CACHE, False),
+        MEDIA_THUMBNAIL_PRELOAD: entry.data.get(MEDIA_THUMBNAIL_PRELOAD, True),
+    }
+    if entryData["mediaOptions"] != mediaOptions:
+        await hass.config_entries.async_reload(entry.entry_id)
+        return
     host = entry.data.get(CONF_IP_ADDRESS)
     controlPort = entry.data.get(CONTROL_PORT)
     username = entry.data.get(CONF_USERNAME)

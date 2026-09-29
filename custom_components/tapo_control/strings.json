@@ -116,9 +116,15 @@
           "media_view_days_order": "Order of days in Media Browser",
           "media_view_recordings_order": "Order of recordings in Media Browser",
           "media_sync_hours": "Number of hours to keep synchronized",
-          "media_sync_cold_storage_path": "[Requires restart] Cold storage path"
+          "media_sync_cold_storage_path": "Cold storage path",
+          "media_thumbnail_cache": "Cache thumbnails",
+          "media_thumbnail_preload": "Preload thumbnails"
         },
-        "description": "Modify settings of recordings media synchronization. Each camera must use a unique cold storage path."
+        "description": "Modify settings of recordings media synchronization. Each camera must use a unique cold storage path.\n\nChanging the path moves existing videos and thumbnails and reloads the camera entry.",
+        "data_description": {
+          "media_thumbnail_cache": "Keep thumbnails for recordings whose videos have not been downloaded. When off, these thumbnails expire after about 5 minutes.",
+          "media_thumbnail_preload": "Fetch thumbnails during startup scans only when caching is also enabled. With caching off, fetch only while browsing. When preloading is off, fetch only while browsing if caching is enabled. Turn both options off to show thumbnails only for downloaded videos."
+        }
       },
       "update_interval": {
         "data": {
@@ -172,7 +178,9 @@
       "camera_requires_admin": "Camera requires cloud password for control",
       "incorrect_peak_value": "Incorrect sound detection peak value.",
       "incorrect_options_action": "Incorrect action chosen",
-      "invalid_direct_stream_arguments": "Enter a mapping of supported FFmpeg parameters to non-empty text or numbers. Only -vsync may be null."
+      "invalid_direct_stream_arguments": "Enter a mapping of supported FFmpeg parameters to non-empty text or numbers. Only -vsync may be null.",
+      "cold_storage_path_overlap": "The old and new storage paths must not contain one another.",
+      "cold_storage_move_pending": "A storage move is still pending. Resolve the error in the integration logs and reload before changing the path again."
     }
   },
   "services": {

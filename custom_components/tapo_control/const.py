@@ -71,6 +71,10 @@ MEDIA_VIEW_DAYS_ORDER = "media_view_days_order"
 MEDIA_VIEW_RECORDINGS_ORDER = "media_view_recordings_order"
 MEDIA_SYNC_HOURS = "media_sync_hours"
 MEDIA_SYNC_COLD_STORAGE_PATH = "media_sync_cold_storage_path"
+MEDIA_SYNC_PREVIOUS_STORAGE_PATH = "media_sync_previous_storage_path"
+MEDIA_THUMBNAIL_CACHE = "media_thumbnail_cache"
+MEDIA_THUMBNAIL_PRELOAD = "media_thumbnail_preload"
+THUMBNAIL_CACHE_SECONDS = 5 * 60
 
 TOGGLE_STATES = ["on", "off"]
 
