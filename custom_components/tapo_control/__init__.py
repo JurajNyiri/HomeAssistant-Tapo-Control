@@ -1199,7 +1199,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         # Needs to execute AFTER binary_sensor creation!
         if (
             tapoController.isKLAP is False
-            and camData["childDevices"] is None
+            and camData["childDevices"] in (None, False)
             and (motionSensor or enableTimeSync)
         ):
             onvifDevice = await initOnvifEvents(hass, host, username, password)
