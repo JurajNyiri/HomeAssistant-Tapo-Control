@@ -1278,21 +1278,38 @@ async def initOnvifEvents(hass, host, username, password):
         f"{os.path.dirname(onvif.__file__)}/wsdl/",
         no_cache=True,
     )
+    started = time.monotonic()
+    stage = "discovering ONVIF services"
     try:
-        LOGGER.debug("[initOnvifEvents] Creating onvif connection...")
+        LOGGER.debug("[initOnvifEvents] Creating ONVIF connection to %s:2020...", host)
         await device.update_xaddrs()
-        LOGGER.debug("[initOnvifEvents] Connection estabilished.")
+        LOGGER.debug("[initOnvifEvents] Connection established to %s:2020.", host)
+        stage = "creating device management service"
         device_mgmt = await device.create_devicemgmt_service()
-        LOGGER.debug("[initOnvifEvents] Getting device information...")
+        stage = "getting device information"
+        LOGGER.debug("[initOnvifEvents] Getting device information from %s...", host)
         device_info = await device_mgmt.GetDeviceInformation()
-        LOGGER.debug("[initOnvifEvents] Got device information.")
+        LOGGER.debug("[initOnvifEvents] Got device information from %s.", host)
+        stage = "validating device information"
         if "Manufacturer" not in device_info:
-            raise Exception("Onvif connection has failed.")
+            raise Exception("ONVIF device information is missing Manufacturer.")
 
         return {"device": device, "device_mgmt": device_mgmt}
     except Exception as e:
-        LOGGER.error("[initOnvifEvents] Initiating onvif connection failed.")
-        LOGGER.error(e)
+        LOGGER.error(
+            "[initOnvifEvents] Initiating ONVIF connection to %s:2020 failed: %s",
+            host,
+            e,
+        )
+        LOGGER.debug(
+            "[initOnvifEvents] %s:2020 failed while %s after %.3fs (%s): %r",
+            host,
+            stage,
+            time.monotonic() - started,
+            type(e).__name__,
+            e,
+            exc_info=True,
+        )
 
     return False
 
@@ -2612,16 +2629,40 @@ async def setupEvents(hass, config_entry):
     ):
         LOGGER.debug("Setting up events...")
         events = hass.data[DOMAIN][config_entry.entry_id]["events"]
-        onvif_capabilities = await hass.data[DOMAIN][config_entry.entry_id][
-            "eventsDevice"
-        ].get_capabilities()
-        onvif_capabilities = onvif_capabilities or {}
-        pull_point_support = onvif_capabilities.get("Events", {}).get(
-            "WSPullPointSupport"
-        )
-        LOGGER.debug("WSPullPointSupport: %s", pull_point_support)
-        if await events.async_start(pull_point_support is not False, shouldUseWebhooks):
-            LOGGER.debug("Events started.")
+        stage = "getting event capabilities"
+        try:
+            onvif_capabilities = await hass.data[DOMAIN][config_entry.entry_id][
+                "eventsDevice"
+            ].get_capabilities()
+            onvif_capabilities = onvif_capabilities or {}
+            pull_point_support = onvif_capabilities.get("Events", {}).get(
+                "WSPullPointSupport"
+            )
+            LOGGER.debug("WSPullPointSupport: %s", pull_point_support)
+            LOGGER.debug(
+                "Starting ONVIF events for %s: pullpoint=%s, webhooks=%s.",
+                config_entry.data.get(CONF_IP_ADDRESS),
+                pull_point_support is not False,
+                shouldUseWebhooks,
+            )
+            stage = "starting event subscriptions"
+            events_started = await events.async_start(
+                pull_point_support is not False, shouldUseWebhooks
+            )
+        except Exception as e:
+            LOGGER.debug(
+                "ONVIF events for %s failed while %s (%s): %r",
+                config_entry.data.get(CONF_IP_ADDRESS),
+                stage,
+                type(e).__name__,
+                e,
+                exc_info=True,
+            )
+            raise
+        if events_started:
+            LOGGER.debug(
+                "ONVIF events started for %s.", config_entry.data.get(CONF_IP_ADDRESS)
+            )
             if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
                 hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"] = True
                 if hass.data[DOMAIN][config_entry.entry_id]["eventsListener"]:
@@ -2638,6 +2679,12 @@ async def setupEvents(hass, config_entry):
                 )
             return True
         else:
+            LOGGER.debug(
+                "ONVIF events did not start for %s; subscription will be retried "
+                "during camera updates. Enable homeassistant.components.onvif "
+                "debug logging for subscription failure details.",
+                config_entry.data.get(CONF_IP_ADDRESS),
+            )
             return False
 
 

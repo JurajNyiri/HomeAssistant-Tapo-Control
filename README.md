@@ -276,6 +276,15 @@ Motion sensor is added only after a motion is detected for the first time.
 
 It also requires ONVIF support on the device. If the device is not exposing Onvif interface (most likely if it is battery or solar powered), motion events will not work.
 
+If the initial ONVIF connection fails, integration setup continues and ONVIF is retried during camera updates. Motion events and time synchronization require a successful ONVIF connection. Enable debug logging for `custom_components.tapo_control` to see the camera address, failed operation, initialization duration, and exception traceback. For event subscription failures handled internally by Home Assistant, also enable `homeassistant.components.onvif` debug logging:
+
+```yaml
+logger:
+  logs:
+    custom_components.tapo_control: debug
+    homeassistant.components.onvif: debug
+```
+
 - Make sure the camera has motion detection turned on
 - Make sure the camera has privacy mode turned off
 - Make sure the camera can see you and your movement
