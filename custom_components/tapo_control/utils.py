@@ -623,12 +623,33 @@ async def findMedia(hass, entryData, entry, recordingsList=None):
         mediaScanResult = {}
         recordingsByDate = {}
         recordingsWithVideo = []
+        failedDays = []
         for searchResult in recordingsList:
             for key in searchResult:
-                LOGGER.debug(f"Getting media for day {searchResult[key]['date']}...")
-                recordingsForDay = await getRecordings(
-                    hass, entryData, tapoController, searchResult[key]["date"]
-                )
+                day = searchResult[key]["date"]
+                LOGGER.debug(f"Getting media for day {day}...")
+                try:
+                    recordingsForDay = await getRecordings(
+                        hass, entryData, tapoController, day
+                    )
+                except Exception as err:
+                    # One slow or failing day must not throw away every other
+                    # day of the scan: retry it once, then skip it for now.
+                    LOGGER.debug(f"Listing day {day} failed ({err}), retrying once...")
+                    await asyncio.sleep(2)
+                    try:
+                        recordingsForDay = await getRecordings(
+                            hass, entryData, tapoController, day
+                        )
+                    except Exception as err:
+                        LOGGER.warning(
+                            "Could not list recordings of %s for day %s, skipping it for now: %s",
+                            entryData["name"],
+                            day,
+                            err,
+                        )
+                        failedDays.append(day)
+                        continue
                 LOGGER.debug(
                     f"Looping through recordings for day {searchResult[key]['date']}..."
                 )
@@ -662,8 +683,24 @@ async def findMedia(hass, entryData, entry, recordingsList=None):
             await processDownload(
                 hass, entry_id, entryData, recording["startTime"], recording["endTime"]
             )
+        if failedDays:
+            # Keep what was found, but do not mark the scan as done: cleanup
+            # deletes local files missing from mediaScanResult, and the days
+            # that could not be listed would look empty.
+            entryData["mediaScanResult"].update(mediaScanResult)
+            entryData["mediaScanFailures"] = entryData.get("mediaScanFailures", 0) + 1
+            LOGGER.warning(
+                "Media scan for %s is incomplete, %d day(s) could not be listed (%s). "
+                "Recordings found so far are available; the scan will be retried later.",
+                entryData["name"],
+                len(failedDays),
+                ", ".join(failedDays),
+            )
+            return
+
         LOGGER.debug("Found media for " + entryData["name"] + ".")
         entryData["mediaScanResult"] = mediaScanResult
+        entryData["mediaScanFailures"] = 0
         entryData["initialMediaScanDone"] = True
 
         await mediaCleanup(hass, entry, entryData)
@@ -2780,7 +2817,12 @@ async def scheduleAll(hass, device, entry, mediaSync):
         # including when there is no SD card and media sync is disabled.
         now = asyncio.get_running_loop().time()
         lastAttempt = device.get("lastMediaScanAttempt")
-        if lastAttempt is not None and now - lastAttempt < mediaSyncInterval:
+        # Back off after scans that could not list every day, up to one hour.
+        retryInterval = max(
+            mediaSyncInterval,
+            min(mediaSyncInterval * 2 ** min(device.get("mediaScanFailures", 0), 6), 3600),
+        )
+        if lastAttempt is not None and now - lastAttempt < retryInterval:
             return
         device["lastMediaScanAttempt"] = now
         LOGGER.debug("Media scan running")
