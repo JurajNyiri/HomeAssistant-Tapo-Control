@@ -1,4 +1,5 @@
 import voluptuous as vol
+import ipaddress
 import os
 import re
 
@@ -52,6 +53,7 @@ from .const import (
     MEDIA_VIEW_RECORDINGS_ORDER,
     MEDIA_VIEW_RECORDINGS_ORDER_OPTIONS,
     REPORTED_IP_ADDRESS,
+    DEVICE_MAC,
     DOORBELL_UDP_DISCOVERED,
     SOUND_DETECTION_DURATION,
     SOUND_DETECTION_PEAK,
@@ -363,6 +365,40 @@ class FlowHandler(ConfigFlow):
             return self.async_abort(reason="not_tapo_device")
 
         mac_address = dhcp_discovery.macaddress
+        for entry in self._async_current_entries():
+            if entry.data.get(DEVICE_MAC) != mac_address.lower():
+                continue
+            host = entry.data.get(CONF_IP_ADDRESS)
+            if host == dhcp_discovery.ip:
+                return self.async_abort(reason="already_configured")
+            try:
+                ipaddress.ip_address(host)
+            except (TypeError, ValueError):
+                LOGGER.debug(
+                    "[ADD DEVICE][%s] MAC matches entry configured by hostname %s,"
+                    " keeping configured host.",
+                    dhcp_discovery.ip,
+                    host,
+                )
+                return self.async_abort(reason="already_configured")
+            LOGGER.debug(
+                "[ADD DEVICE][%s] MAC matches existing entry, updating host from %s.",
+                dhcp_discovery.ip,
+                host,
+            )
+            new = {**entry.data}
+            new[CONF_IP_ADDRESS] = dhcp_discovery.ip
+            new[REPORTED_IP_ADDRESS] = dhcp_discovery.ip
+            self.hass.config_entries.async_update_entry(
+                entry,
+                data=new,
+                unique_id=DOMAIN
+                + dhcp_discovery.ip
+                + str(entry.data.get(CONTROL_PORT)),
+            )
+            self.hass.config_entries.async_schedule_reload(entry.entry_id)
+            return self.async_abort(reason="already_configured")
+
         await self.async_set_unique_id(mac_address)
         self.context.update({"title_placeholders": {"name": dhcp_discovery.ip}})
         self.tapoHost = dhcp_discovery.ip
@@ -518,6 +554,7 @@ class FlowHandler(ConfigFlow):
                     self.hass,
                 )
                 camData = await getCamData(self.hass, tapoController)
+                self.macAddress = camData["basic_info"]["mac"].lower()
                 reported_ip_address = getIP(camData)
 
                 LOGGER.debug(
@@ -536,6 +573,7 @@ class FlowHandler(ConfigFlow):
                         ENABLE_TIME_SYNC: False,
                         CONF_IP_ADDRESS: host,
                         REPORTED_IP_ADDRESS: reported_ip_address,
+                        DEVICE_MAC: self.macAddress,
                         CONTROL_PORT: controlPort,
                         CONF_USERNAME: cloud_username,
                         CONF_PASSWORD: cloud_password,
@@ -578,6 +616,7 @@ class FlowHandler(ConfigFlow):
                         HAS_STREAM_6: self.tapoHasStream6,
                         HAS_STREAM_7: self.tapoHasStream7,
                         REPORTED_IP_ADDRESS: self.reportedIPAddress,
+                        DEVICE_MAC: self.macAddress,
                         ENABLE_SOUND_DETECTION: enable_sound_detection,
                         SOUND_DETECTION_PEAK: sound_detection_peak,
                         SOUND_DETECTION_DURATION: sound_detection_duration,
@@ -680,6 +719,7 @@ class FlowHandler(ConfigFlow):
                     self.hass,
                 )
                 camData = await getCamData(self.hass, tapoController)
+                self.macAddress = camData["basic_info"]["mac"].lower()
                 self.reportedIPAddress = getIP(camData)
                 LOGGER.debug(
                     "[ADD DEVICE][%s] Cloud password works for control.",
@@ -774,6 +814,7 @@ class FlowHandler(ConfigFlow):
                         self.hass,
                     )
                     camData = await getCamData(self.hass, tapoController)
+                    self.macAddress = camData["basic_info"]["mac"].lower()
                     reported_ip_address = getIP(camData)
                     LOGGER.debug(
                         "[ADD DEVICE][%s] KLAP Account works for control.",
@@ -810,6 +851,7 @@ class FlowHandler(ConfigFlow):
                         ENABLE_TIME_SYNC: False,
                         CONF_IP_ADDRESS: host,
                         REPORTED_IP_ADDRESS: reported_ip_address,
+                        DEVICE_MAC: self.macAddress,
                         CONTROL_PORT: controlPort,
                         CONF_USERNAME: email,
                         CONF_PASSWORD: password,
@@ -1166,6 +1208,7 @@ class FlowHandler(ConfigFlow):
                         )
 
                         camData = await getCamData(self.hass, tapoController)
+                        self.macAddress = camData["basic_info"]["mac"].lower()
                         self.reportedIPAddress = getIP(camData)
                     except Exception as e:
                         if str(e) == "Invalid authentication data":

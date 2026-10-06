@@ -57,6 +57,7 @@ ENABLE_MEDIA_SYNC = "enable_media_sync"
 
 IS_KLAP_DEVICE = "is_klap_device"
 REPORTED_IP_ADDRESS = "reported_ip_address"
+DEVICE_MAC = "device_mac"
 UPDATE_INTERVAL_MAIN = "update_interval_main"
 UPDATE_INTERVAL_BATTERY = "update_interval_battery"
 UPDATE_INTERVAL_MAIN_DEFAULT = 30

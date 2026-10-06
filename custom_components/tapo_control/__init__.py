@@ -54,6 +54,7 @@ from .const import (
     MEDIA_VIEW_RECORDINGS_ORDER,
     MEDIA_SYNC_WATCHDOG_SECONDS,
     REPORTED_IP_ADDRESS,
+    DEVICE_MAC,
     DOORBELL_UDP_DISCOVERED,
     RTSP_TRANS_PROTOCOLS,
     SOUND_DETECTION_DURATION,
@@ -1007,6 +1008,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             chInfo = None
 
         camData = await getCamData(hass, tapoController, chInfo)
+
+        macAddress = camData["basic_info"]["mac"].lower()
+        if entry.data.get(DEVICE_MAC) != macAddress:
+            new = {**entry.data}
+            new[DEVICE_MAC] = macAddress
+            hass.config_entries.async_update_entry(entry, data=new)
+
         LOGGER.debug("Retrieved initial device data.")
         LOGGER.debug("Retrieving camera time.")
         cameraTime = await hass.async_add_executor_job(tapoController.getTime)
