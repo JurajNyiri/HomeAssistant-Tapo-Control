@@ -1360,16 +1360,13 @@ def tryParseInt(value):
 
 
 def getDataForController(hass, entry, controller):
-    for controller in hass.data[DOMAIN][entry.entry_id]["allControllers"]:
-        if controller == hass.data[DOMAIN][entry.entry_id]["controller"]:
-            return hass.data[DOMAIN][entry.entry_id]
-        elif (
-            "childDevices" in hass.data[DOMAIN][entry.entry_id]
-            and hass.data[DOMAIN][entry.entry_id]["childDevices"] is not False
-        ):
-            for childDevice in hass.data[DOMAIN][entry.entry_id]["childDevices"]:
-                if controller == childDevice["controller"]:
-                    return childDevice
+    entryData = hass.data[DOMAIN][entry.entry_id]
+    if controller == entryData["controller"]:
+        return entryData
+    for childDevice in entryData.get("childDevices") or []:
+        if controller == childDevice["controller"]:
+            return childDevice
+    return None
 
 
 def getNightModeMap():
