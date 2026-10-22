@@ -907,6 +907,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                 else:
                                     controllerData["refreshEnabled"] = False
                                     raise ConfigEntryAuthFailed(e)
+                            if controllerData["isRunningOnBattery"]:
+                                # Entities are force-refreshed below, which requests another
+                                # coordinator refresh. Without this, a battery device that
+                                # times out is retried every ~30 s until it answers.
+                                controllerData["lastUpdate"] = (
+                                    datetime.datetime.utcnow().timestamp()
+                                )
                             LOGGER.error(e)
 
                 if tapoController in updateDataForAllControllers:
