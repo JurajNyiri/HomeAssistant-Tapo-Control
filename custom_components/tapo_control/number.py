@@ -716,44 +716,6 @@ class TapoSpotlightIntensity(TapoNumberEntity):
         self.chn_id = chn_id
         self.read_chn_id = str(chn_id) if chn_id else "1"
 
-        ldc_style = entry["camData"].get("ldcStyle")
-        if isinstance(ldc_style, dict):
-            ldc_style = entry["camData"].get("ldcStyle").get(self.read_chn_id)
-            if not ldc_style and chn_id > 1:
-                ldc_style = entry["camData"].get("ldcStyle").get("1")
-
-        smartwtl_level = entry["camData"].get("smartwtl_digital_level")
-        if isinstance(smartwtl_level, dict):
-            smartwtl_level = (
-                entry["camData"].get("smartwtl_digital_level").get(self.read_chn_id)
-            )
-            if not smartwtl_level and chn_id > 1:
-                smartwtl_level = entry["camData"].get("smartwtl_digital_level").get("1")
-
-        if ldc_style:
-            if ldc_style == "standard":
-                LOGGER.debug(
-                    "Determining maximum range for TapoSpotlightIntensity: standard"
-                )
-                self._attr_max_value = 5
-                self._attr_native_max_value = 5
-            else:
-                LOGGER.debug(
-                    "Determining maximum range for TapoSpotlightIntensity: "
-                    + str(ldc_style)
-                )
-                if smartwtl_level is not None:
-                    self._attr_max_value = int(smartwtl_level)
-                    self._attr_native_max_value = int(smartwtl_level)
-                else:
-                    self._attr_max_value = 100
-                    self._attr_native_max_value = 100
-        else:
-            LOGGER.debug(
-                "Determining maximum range for TapoSpotlightIntensity: Default to 100 because of missing style."
-            )
-            self._attr_max_value = 100
-            self._attr_native_max_value = 100
         self._attr_step = 1
         self._hass = hass
         intensity = entry["camData"]["whitelampConfigIntensity"]
@@ -795,6 +757,8 @@ class TapoSpotlightIntensity(TapoNumberEntity):
         if not camData:
             self._attr_state = STATE_UNAVAILABLE
         else:
+            self._attr_max_value = camData["whitelampConfigIntensityMax"]
+            self._attr_native_max_value = self._attr_max_value
             intensity = camData["whitelampConfigIntensity"]
             if isinstance(intensity, dict):
                 intensity = intensity.get(self.read_chn_id)
