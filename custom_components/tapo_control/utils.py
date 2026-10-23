@@ -1,3 +1,4 @@
+from .media_storage import MEDIA_STORAGE_LAYOUT, FLAT, recording_path, recording_files
 import asyncio
 import datetime
 import filecmp
@@ -717,6 +718,7 @@ async def findMedia(hass, entryData, entry, recordingsList=None):
 def saveThumbnail(filePath, image):
     """Publish a complete thumbnail in cold storage from the executor."""
     path = pathlib.Path(filePath)
+    path.parent.mkdir(parents=True, exist_ok=True)
     temporaryPath = path.with_suffix(".tmp")
     try:
         temporaryPath.write_bytes(image)
@@ -771,9 +773,7 @@ async def generateThumb(hass, entry_id, startDate: int, endDate: int, childID=""
                 output_format=IMAGE_JPEG,
             )
         )
-        openHandler = await hass.async_add_executor_job(open, filePathThumb, "wb")
-        with openHandler as binary_file:
-            binary_file.write(image)
+        await hass.async_add_executor_job(saveThumbnail, filePathThumb, image)
     return filePathThumb
 
 
@@ -791,13 +791,13 @@ async def deleteFilesNoLongerPresentInCamera(
         if os.path.exists(coldDirPath + "/" + folder + "/"):
             LOGGER.debug("deleteFilesNoLongerPresentInCamera - path exists")
             listDirFiles = await hass.async_add_executor_job(
-                os.listdir, coldDirPath + "/" + folder + "/"
+                recording_files, coldDirPath + "/" + folder + "/"
             )
             for f in listDirFiles:
                 if not f.endswith(extension):
                     #Files sometimes get deleted during download. Never delete a file a download is still using
                     continue
-                fileName = f.replace(extension, "")
+                fileName = pathlib.Path(f).stem
                 filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
                 if (
                     (entryData["isChild"] is False and fileName.count("-") == 1)
@@ -840,13 +840,13 @@ async def deleteColdFilesOlderThanMaxSyncTime(
         ts = datetime.datetime.utcnow().timestamp()
         if os.path.exists(coldDirPath + "/" + folder + "/"):
             listDirFiles = await hass.async_add_executor_job(
-                os.listdir, coldDirPath + "/" + folder + "/"
+                recording_files, coldDirPath + "/" + folder + "/"
             )
             for f in listDirFiles:
                 if not f.endswith(extension):
                     #Same as above. Files sometimes get deleted during download. Never delete a file a download is still using
                     continue
-                fileName = f.replace(extension, "")
+                fileName = pathlib.Path(f).stem
                 filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
                 splitFileName = fileName.split("-")
                 if (entryData["isChild"] is False and fileName.count("-") == 1) or (
@@ -889,8 +889,8 @@ def cleanupTemporaryThumbnails(coldDirPath, hotDirPath, preload):
     now = time.time()
     expired = []
     expiredHashes = set()
-    for thumbnail in (cold / "thumbs").glob("*.jpg"):
-        if (cold / "videos" / (thumbnail.stem + ".mp4")).exists():
+    for thumbnail in (cold / "thumbs").rglob("*.jpg"):
+        if (cold / "videos" / thumbnail.relative_to(cold / "thumbs").with_suffix(".mp4")).exists():
             continue
         try:
             if preload and now - thumbnail.stat().st_mtime < THUMBNAIL_CACHE_SECONDS:
@@ -1109,7 +1109,11 @@ def getColdFile(
         extension = ".jpg"
     else:
         raise Unresolvable("Incorrect folder specified: " + folder)
-    return coldDirPath + "/" + folder + "/" + fileName + extension
+    entry = hass.config_entries.async_get_entry(entry_id)
+    return str(recording_path(
+        coldDirPath, folder, fileName + extension,
+        entry.data.get(MEDIA_STORAGE_LAYOUT, FLAT), hass.config.time_zone,
+    ))
 
 
 async def getHotFile(
@@ -1186,6 +1190,9 @@ async def getRecording(
         hass, entry_id, startDate, endDate, "videos", childID=childID
     )
     if not os.path.exists(coldFilePath):
+        await hass.async_add_executor_job(
+            partial(pathlib.Path(coldFilePath).parent.mkdir, parents=True, exist_ok=True)
+        )
         # this NEEDS to happen otherwise camera does not send data!
         allRecordings = await hass.async_add_executor_job(tapo.getRecordings, date)
         all_recordings_count = (
@@ -1196,7 +1203,7 @@ async def getRecording(
             startDate,
             endDate,
             timeCorrection,
-            coldDirPath + "/videos/",
+            str(pathlib.Path(coldFilePath).parent) + "/",
             0,
             None,
             None,
@@ -2454,6 +2461,7 @@ async def update_listener(hass, entry):
         MEDIA_SYNC_COLD_STORAGE_PATH: entry.data.get(MEDIA_SYNC_COLD_STORAGE_PATH, ""),
         MEDIA_THUMBNAIL_CACHE: entry.data.get(MEDIA_THUMBNAIL_CACHE, False),
         MEDIA_THUMBNAIL_PRELOAD: entry.data.get(MEDIA_THUMBNAIL_PRELOAD, True),
+        MEDIA_STORAGE_LAYOUT: entry.data.get(MEDIA_STORAGE_LAYOUT, FLAT),
     }
     if entryData["mediaOptions"] != mediaOptions:
         await hass.config_entries.async_reload(entry.entry_id)

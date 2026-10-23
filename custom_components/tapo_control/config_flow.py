@@ -1,3 +1,4 @@
+from .media_storage import MEDIA_STORAGE_LAYOUT, FLAT, DATED
 import voluptuous as vol
 import os
 import re
@@ -1579,6 +1580,9 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 allConfigData[MEDIA_VIEW_DAYS_ORDER] = media_view_days_order
                 allConfigData[MEDIA_VIEW_RECORDINGS_ORDER] = media_view_recordings_order
                 allConfigData[MEDIA_SYNC_HOURS] = media_sync_hours
+                allConfigData[MEDIA_STORAGE_LAYOUT] = user_input.get(
+                    MEDIA_STORAGE_LAYOUT, self.config_entry.data.get(MEDIA_STORAGE_LAYOUT, FLAT)
+                )
                 allConfigData[MEDIA_THUMBNAIL_CACHE] = thumbnail_cache
                 allConfigData[MEDIA_THUMBNAIL_PRELOAD] = thumbnail_preload
                 allConfigData[MEDIA_SYNC_COLD_STORAGE_PATH] = (
@@ -1622,6 +1626,10 @@ class TapoOptionsFlowHandler(OptionsFlow):
                         MEDIA_SYNC_COLD_STORAGE_PATH,
                         description={"suggested_value": media_sync_cold_storage_path},
                     ): str,
+                    vol.Required(
+                        MEDIA_STORAGE_LAYOUT,
+                        default=self.config_entry.data.get(MEDIA_STORAGE_LAYOUT, FLAT),
+                    ): vol.In([FLAT, DATED]),
                     vol.Required(MEDIA_THUMBNAIL_CACHE, default=thumbnail_cache): bool,
                     vol.Required(MEDIA_THUMBNAIL_PRELOAD, default=thumbnail_preload): bool,
                 }

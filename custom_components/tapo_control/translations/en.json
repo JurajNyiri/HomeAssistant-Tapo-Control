@@ -118,12 +118,14 @@
           "media_sync_hours": "Number of hours to keep synchronized",
           "media_sync_cold_storage_path": "Cold storage path",
           "media_thumbnail_cache": "Cache thumbnails",
-          "media_thumbnail_preload": "Preload thumbnails"
+          "media_thumbnail_preload": "Preload thumbnails",
+          "media_storage_layout": "Recording folder layout"
         },
         "description": "Modify settings of recordings media synchronization.\n\nRecordings are stored in the Home Assistant config folder by default (.storage/tapo_control) which is included in backups and can grow quickly. Set a Cold storage path outside of your config (for example /media/tapo_control/front_camera) to avoid bloating backups. Each camera must use a unique cold storage path.\n\nChanging the path moves existing videos and thumbnails and reloads the camera entry.",
         "data_description": {
           "media_thumbnail_cache": "Keep thumbnails for recordings whose videos have not been downloaded. When off, these thumbnails expire after about 5 minutes.",
-          "media_thumbnail_preload": "Fetch thumbnails during startup scans only when caching is also enabled. With caching off, fetch only while browsing. When preloading is off, fetch only while browsing if caching is enabled. Turn both options off to show thumbnails only for downloaded videos."
+          "media_thumbnail_preload": "Fetch thumbnails during startup scans only when caching is also enabled. With caching off, fetch only while browsing. When preloading is off, fetch only while browsing if caching is enabled. Turn both options off to show thumbnails only for downloaded videos.",
+          "media_storage_layout": "Changing this option automatically moves existing videos and thumbnails before synchronization resumes. Switching back to Flat moves them back. Year/month/day uses the recording start date in Home Assistant’s timezone. Existing files are never overwritten if a destination filename conflicts."
         }
       },
       "update_interval": {

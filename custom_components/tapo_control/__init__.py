@@ -1,3 +1,4 @@
+from .media_storage import MEDIA_STORAGE_LAYOUT, FLAT, migrate_layout
 import datetime
 import hashlib
 import asyncio
@@ -625,6 +626,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         del data[MEDIA_SYNC_PREVIOUS_STORAGE_PATH]
         hass.config_entries.async_update_entry(entry, data=data)
 
+    try:
+        await hass.async_add_executor_job(
+            migrate_layout, getConfiguredColdDirPath(entry),
+            entry.data.get(MEDIA_STORAGE_LAYOUT, FLAT), hass.config.time_zone,
+        )
+    except (OSError, ValueError) as err:
+        raise ConfigEntryNotReady(f"Unable to change recording layout: {err}") from err
+
     host = entry.data.get(CONF_IP_ADDRESS)
     controlPort = entry.data.get(CONTROL_PORT)
 
@@ -1048,6 +1057,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 ),
                 MEDIA_THUMBNAIL_CACHE: entry.data.get(MEDIA_THUMBNAIL_CACHE, False),
                 MEDIA_THUMBNAIL_PRELOAD: entry.data.get(MEDIA_THUMBNAIL_PRELOAD, True),
+                MEDIA_STORAGE_LAYOUT: entry.data.get(MEDIA_STORAGE_LAYOUT, FLAT),
             },
             "motionSensorCreated": False,
             "eventsDevice": False,

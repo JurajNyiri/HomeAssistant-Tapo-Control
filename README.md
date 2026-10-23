@@ -152,6 +152,19 @@ For more information and troubleshooting see [Home Assistant ffmpeg documentatio
 
 ## Media Sync
 
+**Configure media → Recording folder layout** selects **Flat** (default) or
+**Year/month/day**. The latter stores recordings as
+`videos/YYYY/MM/DD/<start>-<end>.mp4` and thumbnails under the matching `thumbs`
+folders. Dates use each recording's start timestamp in Home Assistant's configured
+timezone. Filenames and the recording browser remain unchanged.
+
+Changing the layout reloads the integration and moves existing completed videos
+and thumbnails before camera tasks start. Switching back restores the flat layout.
+Migration uses renames within the storage directory, preserves file contents, and
+refuses conflicting destination files. An interrupted migration resumes at the
+next setup. Temporary download files are left untouched. Changing Home Assistant's
+timezone also reorganizes dated folders at the next integration setup.
+
 Integration is capable of synchronizing recordings for fast playback.
 
 Synchronization is turned off by default, you can browse media stored on camera and request it to be played. However, downloading is rather slow, so it is a good idea to enable media synchronization in background. That way, you will be able to play any synchronized media from camera instantly.
