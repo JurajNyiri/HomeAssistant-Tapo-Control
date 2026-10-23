@@ -627,6 +627,9 @@ class TapoDirectCamEntity(TapoCamEntity):
             try:
                 # Leave time for FFmpeg within HA's snapshot timeout.
                 async with asyncio.timeout(4):
+                    # getSnapshot calls this synchronous getter; prime its cache
+                    # off the HA loop so its async transport can run on that loop.
+                    await self.hass.async_add_executor_job(self._controller.getUserID)
                     jpeg = await getSnapshot(self._controller)
                 if jpeg:
                     LOGGER.debug("async_camera_image - Returning native jpeg")
