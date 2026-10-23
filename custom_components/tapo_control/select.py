@@ -1044,7 +1044,10 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
                 self._attr_current_option = "off"
             else:
                 light = "light" in camData["alarm_config"]["mode"]
-                sound = "sound" in camData["alarm_config"]["mode"]
+                sound = (
+                    "sound" in camData["alarm_config"]["mode"]
+                    or "siren" in camData["alarm_config"]["mode"]
+                )
                 if light and sound:
                     self._attr_current_option = "both"
                 elif light and not sound:
@@ -1090,6 +1093,15 @@ class TapoAutomaticAlarmModeSelect(TapoSelectEntity):
                 },
             )
         elif self.typeOfAlarm == "getAlarmConfig":
+            # Battery cameras call sound "siren". Keep recognizing their schema
+            # after a light-only config (or reload), when mode has no sound token.
+            if "siren" in self.alarm_config["mode"] or (
+                "sound" not in self.alarm_config["mode"]
+                and "siren_type" in self.alarm_config
+            ):
+                alarm_mode = [
+                    "siren" if mode == "sound" else mode for mode in alarm_mode
+                ]
             result = await self.hass.async_add_executor_job(
                 self._controller.executeFunction,
                 "setAlarmConfig",
