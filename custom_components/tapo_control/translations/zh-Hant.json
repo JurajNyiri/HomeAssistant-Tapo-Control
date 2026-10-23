@@ -168,5 +168,12 @@
       "cold_storage_path_overlap": "新舊儲存路徑不可互相包含。",
       "cold_storage_move_pending": "儲存資料移動尚未完成。請先解決整合日誌中的錯誤並重新載入，再次變更路徑。"
     }
+  },
+  "entity": {
+    "light": {
+      "nightlight": {
+        "name": "夜燈"
+      }
+    }
   }
 }

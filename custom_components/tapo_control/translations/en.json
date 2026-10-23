@@ -222,5 +222,12 @@
         }
       }
     }
+  },
+  "entity": {
+    "light": {
+      "nightlight": {
+        "name": "Nightlight"
+      }
+    }
   }
 }

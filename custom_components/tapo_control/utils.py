@@ -2260,6 +2260,18 @@ async def getCamData(hass, controller, chInfo=None):
     camData["whitelampStatus"] = whitelampStatus
 
     try:
+        nightlight_status = data["getNightlightStatus"][0]
+        if nightlight_status["state"] not in ("on", "off"):
+            raise ValueError("Invalid nightlight state")
+        intensity = int(nightlight_status["intensity"])
+        if not 0 <= intensity <= 100:
+            raise ValueError("Invalid nightlight intensity")
+        nightlight_status = {**nightlight_status, "intensity": intensity}
+    except (KeyError, IndexError, TypeError, ValueError):
+        nightlight_status = None
+    camData["nightlight_status"] = nightlight_status
+
+    try:
         sdCardData = []
         for hdd in data["getSdCardStatus"][0]["harddisk_manage"]["hd_info"]:
             sdCardData.append(hdd["hd_info_1"])

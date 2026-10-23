@@ -1,6 +1,6 @@
 from homeassistant.core import HomeAssistant
 
-from homeassistant.components.light import ColorMode
+from homeassistant.components.light import ColorMode, LightEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.const import (
@@ -82,6 +82,9 @@ async def async_setup_entry(
             LOGGER.debug("Adding tapoWhitelightSwitch...")
             lights.append(tapoWhitelight)
 
+        if entry["camData"].get("nightlight_status") is not None:
+            lights.append(TapoNightlight(entry, hass, config_entry))
+
         return lights
 
     lights = await setupEntities(entry)
@@ -89,6 +92,53 @@ async def async_setup_entry(
         lights.extend(await setupEntities(childDevice))
 
     async_add_entities(lights)
+
+
+class TapoNightlight(TapoLightEntity):
+    _attr_has_entity_name = True
+    _attr_translation_key = "nightlight"
+    _attr_color_mode = ColorMode.BRIGHTNESS
+    _attr_supported_color_modes = {ColorMode.BRIGHTNESS}
+
+    # Use HA's translated name instead of TapoEntity's legacy name property.
+    name = LightEntity.name
+
+    def __init__(self, entry: dict, hass: HomeAssistant, config_entry):
+        super().__init__("Nightlight", entry, hass, config_entry, "mdi:lightbulb-night")
+
+    async def async_update(self) -> None:
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_on(self, **kwargs) -> None:
+        if kwargs.get(ATTR_BRIGHTNESS) == 0:
+            await self.async_turn_off()
+            return
+        if ATTR_BRIGHTNESS in kwargs:
+            intensity = max(1, round(kwargs[ATTR_BRIGHTNESS] * 100 / 255))
+            await self._hass.async_add_executor_job(
+                self._controller.setNightlightConfig, intensity
+            )
+        if ATTR_BRIGHTNESS not in kwargs or not self._attr_is_on:
+            await self._hass.async_add_executor_job(
+                self._controller.manualNightlightOp, True
+            )
+        await self._coordinator.async_request_refresh()
+
+    async def async_turn_off(self, **kwargs) -> None:
+        await self._hass.async_add_executor_job(
+            self._controller.manualNightlightOp, False
+        )
+        await self._coordinator.async_request_refresh()
+
+    def updateTapo(self, camData):
+        status = camData.get("nightlight_status") if camData else None
+        self._attr_available = status is not None
+        if status is None:
+            self._attr_state = STATE_UNAVAILABLE
+            return
+        self._attr_is_on = status["state"] == "on"
+        self._attr_brightness = round(status["intensity"] * 255 / 100)
+        self._attr_state = status["state"]
 
 
 class TapoWhitelight(TapoLightEntity):

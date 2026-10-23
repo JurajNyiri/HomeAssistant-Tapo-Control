@@ -8,7 +8,7 @@
   ],
   "version": "7.2.11",
   "requirements": [
-    "pytapo==3.4.29",
+    "pytapo==3.4.30",
     "python-kasa[speedups]>=0.10.2"
   ],
   "dependencies": [

@@ -116,5 +116,12 @@
       "cold_storage_path_overlap": "Der alte und der neue Speicherpfad dürfen nicht ineinander liegen.",
       "cold_storage_move_pending": "Eine Speicherverschiebung steht noch aus. Behebe den Fehler im Integrationsprotokoll und lade den Eintrag neu, bevor du den Pfad erneut änderst."
     }
+  },
+  "entity": {
+    "light": {
+      "nightlight": {
+        "name": "Nachtlicht"
+      }
+    }
   }
 }

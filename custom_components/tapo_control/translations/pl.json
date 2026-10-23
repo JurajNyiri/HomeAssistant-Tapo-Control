@@ -180,5 +180,12 @@
       "cold_storage_path_overlap": "Stara i nowa ścieżka nie mogą być zagnieżdżone.",
       "cold_storage_move_pending": "Przenoszenie danych nie zostało zakończone. Rozwiąż błąd w dzienniku integracji i przeładuj wpis przed ponowną zmianą ścieżki."
     }
+  },
+  "entity": {
+    "light": {
+      "nightlight": {
+        "name": "Lampka nocna"
+      }
+    }
   }
 }

@@ -80,7 +80,7 @@ Doorbells, Cameras (for each lens, if supported):
 
 - Up to 4 camera entities: HD and SD, using RTSP standard or TP-Link proprietary video protocol. If you choose to use direct entities, it is recommended to disable `Use Stream from Home Assistant` in options for the best performance and battery life.
 - Binary sensor for motion after the motion is detected for the first time and a binary sensor for doorbell press
-- Light entity, if the camera supports a floodlight switch
+- Light entity, if the camera supports a floodlight switch and nightlight light entity with on/off and brightness control
 - Buttons for Calibrate, Format, Manual Alarm start & stop, Moving the camera, Reboot and syncing time
 - Switch entities for Auto track, Automatic Reboot, Flip setting, LED Indicator, Lens Distortion Correction, (Rich) Notifications, Recording, Microphone Mute, Microphone Noise Cancelling, Automatically Upgrade Firmware, HDR mode, Alarm Trigger Event types, Privacy Zones, Diagnose Mode, Smart Track specific switches, Smart Dual Track specific switches, Preset Patrol Mode, Audio Recording and Privacy mode
 - Select entities for Automatic Alarm, Automatic Reboot Time, Light Frequency, Motion Detection, Night Vision, Spotlight Intensity, Alarm Type, Quick Response, Smart Dual Track Method and Move to Preset

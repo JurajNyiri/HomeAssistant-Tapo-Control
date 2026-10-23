@@ -177,5 +177,12 @@
       "cold_storage_path_overlap": "Les anciens et nouveaux chemins de stockage ne doivent pas être imbriqués.",
       "cold_storage_move_pending": "Un déplacement est en attente. Corrigez l’erreur dans les journaux de l’intégration et rechargez-la avant de modifier à nouveau le chemin."
     }
+  },
+  "entity": {
+    "light": {
+      "nightlight": {
+        "name": "Veilleuse"
+      }
+    }
   }
 }

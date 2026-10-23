@@ -104,5 +104,12 @@
       "cold_storage_path_overlap": "Os caminhos antigo e novo não podem estar contidos um no outro.",
       "cold_storage_move_pending": "Existe uma mudança de armazenamento pendente. Resolva o erro nos registos da integração e recarregue antes de alterar novamente o caminho."
     }
+  },
+  "entity": {
+    "light": {
+      "nightlight": {
+        "name": "Luz de presença"
+      }
+    }
   }
 }
