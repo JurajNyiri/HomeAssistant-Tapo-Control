@@ -76,7 +76,7 @@
         },
         "description": "Modificar configurações da sua Tapo câmera.\n\nUsar stream do Home Assistant:\nSim - Maior delay de reprodução, menor uso de CPU, permite controle de reprodução\nNão - delay de reprodução muito curto, maior uso de CPU, sem controle de reprodução",
         "data_description": {
-          "direct_stream_arguments": "Opções avançadas para fluxos diretos e imagens. Um mapeamento vazio restaura os valores padrão. -vsync: null omite este parâmetro. Suportados: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Aplica-se a novos fluxos; recarregue a integração para parar os existentes."
+          "direct_stream_arguments": "Opções avançadas para fluxos diretos e imagens. Um mapeamento vazio restaura os valores padrão. -vsync: null omite este parâmetro. Suportados: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Aplica-se a novos fluxos; recarregue a integração para parar os existentes. As imagens nativas da câmera não são afetadas."
         }
       },
       "media": {

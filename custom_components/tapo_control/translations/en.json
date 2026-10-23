@@ -162,7 +162,7 @@
         },
         "description": "Modify settings of your Tapo Camera.\n\nUse stream from Home Assistant:\nYes - Longer playback delay, lower CPU usage, allows playback control\nNo - Very short playback delay, higher CPU usage, no playback control",
         "data_description": {
-          "direct_stream_arguments": "Advanced overrides for direct streams and snapshots. An empty mapping restores defaults. Set -vsync to null to omit it. Supported: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Applies when a new stream starts; reload the integration to stop existing streams."
+          "direct_stream_arguments": "Advanced overrides for direct streams and snapshots. An empty mapping restores defaults. Set -vsync to null to omit it. Supported: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Applies when a new stream starts; reload the integration to stop existing streams. Native camera snapshots are unaffected."
         }
       }
     },

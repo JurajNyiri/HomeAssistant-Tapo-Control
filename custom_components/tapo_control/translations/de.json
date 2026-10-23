@@ -88,7 +88,7 @@
         },
         "description": "Passe die Einstellungen deiner Tapo-Kamera an.\n\nVerwende den Stream von Home Assistant:\nJa - Längere Wiedergabeverzögerung, geringere CPU-Auslastung, ermöglicht Wiedergabesteuerung.\nNein - Sehr kurze Wiedergabeverzögerung, höhere CPU-Auslastung, keine Wiedergabesteuerung.",
         "data_description": {
-          "direct_stream_arguments": "Erweiterte Einstellungen für direkte Streams und Momentaufnahmen. Eine leere Zuordnung stellt die Standardwerte wieder her. -vsync: null lässt diesen Parameter weg. Unterstützt: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Gilt für neue Streams; Integration neu laden, um bestehende Streams zu beenden."
+          "direct_stream_arguments": "Erweiterte Einstellungen für direkte Streams und Momentaufnahmen. Eine leere Zuordnung stellt die Standardwerte wieder her. -vsync: null lässt diesen Parameter weg. Unterstützt: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Gilt für neue Streams; Integration neu laden, um bestehende Streams zu beenden. Native Kamera-Momentaufnahmen bleiben davon unberührt."
         }
       },
       "media": {

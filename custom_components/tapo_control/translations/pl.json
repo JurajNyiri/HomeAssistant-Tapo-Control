@@ -160,7 +160,7 @@
         },
         "description": "Zmień ustawienia swojej kamery Tapo.\n\nUżyj strumienia z Home Assistant:\nTak – dłuższe opóźnienie odtwarzania, mniejsze użycie CPU, możliwość sterowania odtwarzaniem\nNie – bardzo krótkie opóźnienie odtwarzania, większe użycie CPU, brak sterowania odtwarzaniem",
         "data_description": {
-          "direct_stream_arguments": "Zaawansowane ustawienia strumieni bezpośrednich i migawek. Pusta mapa przywraca wartości domyślne. -vsync: null pomija ten parametr. Obsługiwane: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Dotyczy nowych strumieni; przeładuj integrację, aby zatrzymać istniejące."
+          "direct_stream_arguments": "Zaawansowane ustawienia strumieni bezpośrednich i migawek. Pusta mapa przywraca wartości domyślne. -vsync: null pomija ten parametr. Obsługiwane: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Dotyczy nowych strumieni; przeładuj integrację, aby zatrzymać istniejące. Nie wpływa to na natywne migawki z kamery."
         }
       }
     },

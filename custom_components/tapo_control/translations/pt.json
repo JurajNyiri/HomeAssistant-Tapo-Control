@@ -76,7 +76,7 @@
         },
         "description": "Modificar definições da sua câmara Tapo.\n\nUtilizar streaming do Home Assistant:\n- Sim: Maior atraso de reprodução, menor utilização de CPU, permite controlo de reprodução\n- Não: Atraso de reprodução muito curto, maior utilização de CPU, sem controlo de reprodução",
         "data_description": {
-          "direct_stream_arguments": "Opções avançadas para fluxos diretos e imagens. Um mapeamento vazio repõe os valores predefinidos. -vsync: null omite este parâmetro. Suportados: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Aplica-se a novos fluxos; recarregue a integração para parar os existentes."
+          "direct_stream_arguments": "Opções avançadas para fluxos diretos e imagens. Um mapeamento vazio repõe os valores predefinidos. -vsync: null omite este parâmetro. Suportados: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Aplica-se a novos fluxos; recarregue a integração para parar os existentes. As imagens nativas da câmara não são afetadas."
         }
       },
       "media": {

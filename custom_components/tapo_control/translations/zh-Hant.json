@@ -148,7 +148,7 @@
         },
         "description": "修改您的 Tapo 攝影機設定\n\n使用 Home Assistant 的串流:\nYes - 播放延遲較長，CPU 使用率較低，允許播放控制。\nNo - 播放延遲非常短，CPU 使用率較高，不允許播放控制。",
         "data_description": {
-          "direct_stream_arguments": "直接串流與快照的進階設定。使用空白對應表還原預設值。將 -vsync 設為 null 可省略此參數。支援：-loglevel、-probesize、-analyzeduration、-frames:v、-map-video、-vsync、-c:v、-f。新串流啟動時生效；重新載入整合可停止現有串流。"
+          "direct_stream_arguments": "直接串流與快照的進階設定。使用空白對應表還原預設值。將 -vsync 設為 null 可省略此參數。支援：-loglevel、-probesize、-analyzeduration、-frames:v、-map-video、-vsync、-c:v、-f。新串流啟動時生效；重新載入整合可停止現有串流。 不影響相機原生快照。"
         }
       }
     },
