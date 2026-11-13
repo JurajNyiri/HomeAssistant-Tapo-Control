@@ -122,6 +122,11 @@
       "nightlight": {
         "name": "Nachtlicht"
       }
+    },
+    "media_player": {
+      "music_player": {
+        "name": "Musikplayer"
+      }
     }
   }
 }
