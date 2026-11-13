@@ -110,6 +110,11 @@
       "nightlight": {
         "name": "Luz de presença"
       }
+    },
+    "media_player": {
+      "music_player": {
+        "name": "Leitor de música"
+      }
     }
   }
 }

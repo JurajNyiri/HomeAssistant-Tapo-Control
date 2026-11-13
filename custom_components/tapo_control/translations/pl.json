@@ -186,6 +186,11 @@
       "nightlight": {
         "name": "Lampka nocna"
       }
+    },
+    "media_player": {
+      "music_player": {
+        "name": "Odtwarzacz muzyki"
+      }
     }
   }
 }

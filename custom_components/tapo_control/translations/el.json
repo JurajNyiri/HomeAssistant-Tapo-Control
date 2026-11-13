@@ -183,6 +183,11 @@
       "nightlight": {
         "name": "Φως νυκτός"
       }
+    },
+    "media_player": {
+      "music_player": {
+        "name": "Πρόγραμμα αναπαραγωγής μουσικής"
+      }
     }
   }
 }

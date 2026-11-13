@@ -163,6 +163,11 @@
       "nightlight": {
         "name": "Ночник"
       }
+    },
+    "media_player": {
+      "music_player": {
+        "name": "Музыкальный плеер"
+      }
     }
   }
 }

@@ -110,6 +110,11 @@
       "nightlight": {
         "name": "Luz noturna"
       }
+    },
+    "media_player": {
+      "music_player": {
+        "name": "Reprodutor de música"
+      }
     }
   }
 }
