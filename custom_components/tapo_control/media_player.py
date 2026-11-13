@@ -22,24 +22,15 @@ async def async_setup_entry(
     LOGGER.debug("Setting up media players")
     entry: dict = hass.data[DOMAIN][config_entry.entry_id]
 
-    async def setupEntities(entry):
+    def setupEntities(entry):
         if entry["camData"].get("music_config") is None:
             return []
-        try:
-            music_list = await hass.async_add_executor_job(
-                entry["controller"].getMusicList
-            )
-            songs = sorted(music_list["music_list"], key=lambda s: s["index"])
-            song_names = [song["music_name"] for song in songs]
-        except Exception as err:
-            LOGGER.warning(f"Failed to get music list: {err}")
-            song_names = []
         LOGGER.debug("Adding TapoMusicPlayer...")
-        return [TapoMusicPlayer(entry, hass, song_names)]
+        return [TapoMusicPlayer(entry, hass)]
 
-    media_players = await setupEntities(entry)
+    media_players = setupEntities(entry)
     for childDevice in entry["childDevices"]:
-        media_players.extend(await setupEntities(childDevice))
+        media_players.extend(setupEntities(childDevice))
 
     async_add_entities(media_players)
 
@@ -56,9 +47,9 @@ class TapoMusicPlayer(MediaPlayerEntity, TapoEntity):
     # Use HA's translated name instead of TapoEntity's legacy name property.
     name = MediaPlayerEntity.name
 
-    def __init__(self, entry: dict, hass: HomeAssistant, song_names: list):
+    def __init__(self, entry: dict, hass: HomeAssistant):
         self._hass = hass
-        self._song_names = song_names
+        self._song_names = []
         self._song_count = 0
         self._song_index = None
         self._attr_supported_features = (
@@ -69,10 +60,8 @@ class TapoMusicPlayer(MediaPlayerEntity, TapoEntity):
             | MediaPlayerEntityFeature.NEXT_TRACK
             | MediaPlayerEntityFeature.PREVIOUS_TRACK
             | MediaPlayerEntityFeature.REPEAT_SET
+            | MediaPlayerEntityFeature.SELECT_SOURCE
         )
-        if song_names:
-            self._attr_supported_features |= MediaPlayerEntityFeature.SELECT_SOURCE
-            self._attr_source_list = song_names
         entry["entities"].append({"entity": self, "entry": entry})
         self.updateTapo(entry["camData"])
 
@@ -87,6 +76,10 @@ class TapoMusicPlayer(MediaPlayerEntity, TapoEntity):
         self._attr_available = music_config is not None
         if music_config is None:
             return
+        # The list is refreshed with every update, so songs uploaded in the
+        # Tapo app show up without restarting Home Assistant.
+        self._song_names = camData.get("music_list") or []
+        self._attr_source_list = self._song_names or None
         self._attr_state = (
             MediaPlayerState.PLAYING
             if music_config["play_state"] == "Playing"

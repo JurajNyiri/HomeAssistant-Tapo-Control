@@ -2274,6 +2274,9 @@ async def getCamData(hass, controller, chInfo=None):
     try:
         music_config = data["getMusicConfig"][0]
         if music_config["play_state"] not in ("Playing", "Pause"):
+            LOGGER.warning(
+                f"Invalid music play state: {music_config['play_state']}"
+            )
             raise ValueError("Invalid music play state")
         music_config = {
             **music_config,
@@ -2283,6 +2286,15 @@ async def getCamData(hass, controller, chInfo=None):
     except (KeyError, IndexError, TypeError, ValueError):
         music_config = None
     camData["music_config"] = music_config
+
+    try:
+        songs = sorted(
+            data["getMusicList"][0]["music_list"], key=lambda song: song["index"]
+        )
+        music_list = [song["music_name"] for song in songs]
+    except (KeyError, IndexError, TypeError):
+        music_list = None
+    camData["music_list"] = music_list
 
     try:
         sdCardData = []
