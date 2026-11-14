@@ -396,8 +396,7 @@ async def preloadRecordingThumbnails(
             return
         tasks = (entryData.get("manualDownloadTask"), entryData.get("mediaSyncTask"))
         if (
-            entryData.get("thumbnailPreloadStopped")
-            or entryData.get("isDownloadingStream")
+            entryData.get("isDownloadingStream")
             or entryData.get("runningMediaSync")
             or any(task and not task.done() for task in tasks)
         ):
@@ -424,7 +423,10 @@ async def _preloadRecordingThumbnails(hass, entryData, entry_id, recordingsByDat
     thumbnails = {}
     thumbnailDates = {}
     thumbnailRecordings = {}
+    stoppedDays = entryData.setdefault("thumbnailPreloadStoppedDays", set())
     for date, recordings in recordingsByDate.items():
+        if date in stoppedDays:
+            continue
         checked = processed.setdefault(date, set())
         current = {
             (int(recording["startTime"]), int(recording["endTime"]))
@@ -565,7 +567,8 @@ async def _preloadRecordingThumbnails(hass, entryData, entry_id, recordingsByDat
                         )
                     else:
                         missingCount += 1
-                        entryData["thumbnailPreloadStopped"] = True
+                        # other days may still have thumbnails, e.g. newer ones on a hub
+                        stoppedDays.add(date)
                         LOGGER.debug(
                             "Thumbnail %s/%s for %s: no JPEG returned after %.3fs "
                             "for start_time=%s (no-data timeout=%ss). "
@@ -609,7 +612,7 @@ async def findMedia(hass, entryData, entry, recordingsList=None):
     LOGGER.debug("Finding media for " + entryData["name"] + "...")
     entryData["initialMediaScanDone"] = False
     entryData["thumbnailProcessed"] = {}
-    entryData["thumbnailPreloadStopped"] = False
+    entryData["thumbnailPreloadStoppedDays"] = set()
     childID = ""
     if entryData["isChild"]:
         childID = entryData["camData"]["basic_info"]["dev_id"]
@@ -2921,15 +2924,18 @@ async def scheduleAll(hass, device, entry, mediaSync):
         device["lastMediaScanAttempt"] = now
         LOGGER.debug("Media scan running")
         device["initialMediaScanRunning"] = True
+        entry.async_create_background_task(
+            hass, scanMedia(hass, device, entry), "findMedia"
+        )
+
+
+async def scanMedia(hass, device, entry):
+    """Scan one device of an entry at a time, a hub's cameras share its session."""
+    lock = hass.data[DOMAIN][entry.entry_id].setdefault("mediaScanLock", asyncio.Lock())
+    async with lock:
         try:
             recordingsList = await hass.async_add_executor_job(
                 device["controller"].getRecordingsList
-            )
-            device["mediaSyncAvailable"] = True
-            entry.async_create_background_task(
-                hass,
-                findMedia(hass, device, entry, recordingsList),
-                "findMedia",
             )
         except Exception as err:
             device["initialMediaScanRunning"] = False
@@ -2942,6 +2948,9 @@ async def scheduleAll(hass, device, entry, mediaSync):
             else:
                 LOGGER.info(errMsg)
                 LOGGER.info(device["name"] + ": " + str(err))
+            return
+        device["mediaSyncAvailable"] = True
+        await findMedia(hass, device, entry, recordingsList)
 
 
 async def check_functionality(entry, hass, cls, check_function):
