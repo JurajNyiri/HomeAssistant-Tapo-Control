@@ -207,6 +207,26 @@ def registerController(
     )
 
 
+def shareHubSession(hubController: Tapo, childController: Tapo):
+    """Let a camera behind a hub (H200) use the hub controller's login session.
+
+    Every child controller talks to the hub's own address with the same account. With a
+    transport each, every login made by one of them invalidates the others' session (-40401),
+    so each update starts with a fresh secure login and the hub spends its time on handshakes,
+    to the point where it answers too slowly and shows as unavailable. Sharing the hub's
+    transport gives one session for all of them, and its send lock queues their requests.
+    The child's own session, made while pytapo set it up, is cleared.
+    """
+    childTransport = childController.transport
+    if childTransport is hubController.transport:
+        return
+    childController.transport = hubController.transport
+    try:
+        childController.asyncHandler.executeAsyncExecutorJob(childTransport.close)
+    except Exception as err:
+        LOGGER.debug(f"Closing the child's own session failed: {err}")
+
+
 def isOpen(ip, port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(3)
@@ -2762,6 +2782,10 @@ async def update_listener(hass, entry):
             )
             hass.data[DOMAIN][entry.entry_id]["controller"] = tapoController
             hass.data[DOMAIN][entry.entry_id]["allControllers"].append(tapoController)
+            for childDevice in hass.data[DOMAIN][entry.entry_id]["childDevices"]:
+                await hass.async_add_executor_job(
+                    shareHubSession, tapoController, childDevice["controller"]
+                )
     except Exception:
         LOGGER.error(
             "Authentication to Tapo camera failed."

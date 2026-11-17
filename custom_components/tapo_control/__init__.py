@@ -92,6 +92,7 @@ from .utils import (
     isBatteryPowered,
     mediaCleanup,
     registerController,
+    shareHubSession,
     getCamData,
     isRtspStreamWorking,
     setupOnvif,
@@ -1124,6 +1125,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             childDevice["device_id"],
                             None,
                             hass,
+                        )
+                        await hass.async_add_executor_job(
+                            shareHubSession, tapoController, tapoChildController
                         )
                         LOGGER.debug("Child controller set up.")
                         hass.data[DOMAIN][entry.entry_id]["allControllers"].append(
