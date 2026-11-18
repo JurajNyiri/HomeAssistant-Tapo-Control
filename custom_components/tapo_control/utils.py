@@ -737,7 +737,7 @@ async def processDownload(
         hass, entry_id, startDate, endDate, "videos", childID=childID
     )
 
-    if not os.path.exists(coldFilePath):
+    if not await hass.async_add_executor_job(os.path.exists, coldFilePath):
         raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
 
     if filePath not in entryData["downloadedStreams"]:
@@ -759,7 +759,7 @@ async def generateThumb(hass, entry_id, startDate: int, endDate: int, childID=""
     filePathThumb = getColdFile(
         hass, entry_id, startDate, endDate, "thumbs", childID=childID
     )
-    if not os.path.exists(filePathThumb):
+    if not await hass.async_add_executor_job(os.path.exists, filePathThumb):
         filePathVideo = getColdFile(
             hass, entry_id, startDate, endDate, "videos", childID=childID
         )
@@ -1226,7 +1226,7 @@ async def getRecording(
     coldFilePath = getColdFile(
         hass, entry_id, startDate, endDate, "videos", childID=childID
     )
-    if not os.path.exists(coldFilePath):
+    if not await hass.async_add_executor_job(os.path.exists, coldFilePath):
         # this NEEDS to happen otherwise camera does not send data!
         allRecordings = await hass.async_add_executor_job(tapo.getRecordings, date)
         all_recordings_count = (
