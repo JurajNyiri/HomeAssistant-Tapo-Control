@@ -1151,6 +1151,47 @@ async def getWebFile(
     return f"/local/{fileWebPath}"
 
 
+async def downloadInThread(hass: HomeAssistant, downloader: Downloader, callback):
+    """Run a pytapo download on its own event loop in an executor thread.
+
+    pytapo decrypts and demuxes every chunk and runs ffprobe/ffmpeg
+    synchronously inside the download coroutine, which would otherwise block
+    the Home Assistant event loop for the whole download.
+    """
+    state = {}
+
+    def threadsafeCallback(status):
+        hass.loop.call_soon_threadsafe(callback, status)
+
+    def run():
+        loop = asyncio.new_event_loop()
+        try:
+            task = loop.create_task(downloader.downloadFile(threadsafeCallback))
+            state["loop"], state["task"] = loop, task
+            if state.get("cancelled"):
+                task.cancel()
+            return loop.run_until_complete(task)
+        finally:
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.run_until_complete(loop.shutdown_default_executor())
+            loop.close()
+
+    future = hass.async_add_executor_job(run)
+    try:
+        return await asyncio.shield(future)
+    except asyncio.CancelledError:
+        # Stop the download in its thread and wait for it before re-raising,
+        # so unload and the media sync watchdog do not leave it running.
+        state["cancelled"] = True
+        if "task" in state:
+            state["loop"].call_soon_threadsafe(state["task"].cancel)
+        try:
+            await future
+        except BaseException:
+            pass
+        raise
+
+
 async def getRecording(
     hass: HomeAssistant,
     tapo: Tapo,
@@ -1205,7 +1246,9 @@ async def getRecording(
 
         entryData["isDownloadingStream"] = True
         try:
-            downloadedFile = await downloader.downloadFile(
+            downloadedFile = await downloadInThread(
+                hass,
+                downloader,
                 processDownloadStatus(
                     hass,
                     entry_id,
