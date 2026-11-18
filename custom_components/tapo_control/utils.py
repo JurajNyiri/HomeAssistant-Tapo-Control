@@ -3,10 +3,12 @@ import datetime
 import filecmp
 import hashlib
 import pathlib
+import re
 import onvif
 import os
 import shutil
 import socket
+import tempfile
 import time
 import urllib.parse
 import uuid
@@ -347,7 +349,19 @@ async def getRecordings(hass, entryData, tapoController, date):
     return recordingsForDay
 
 
+def validateDeviceID(device_id):
+    """Reject device IDs that cannot safely form a path component."""
+    if (
+        not isinstance(device_id, str)
+        or re.fullmatch(r"[A-Za-z0-9_-]+", device_id) is None
+    ):
+        raise ValueError("Invalid device ID: use ASCII letters, digits, '_' or '-'")
+    return device_id
+
+
 def getEntryStorageFile(config_entry, child_id=""):
+    if child_id != "":
+        validateDeviceID(child_id)
     return f"tapo_control_{config_entry.entry_id}{child_id}"
 
 
@@ -717,12 +731,17 @@ async def findMedia(hass, entryData, entry, recordingsList=None):
 def saveThumbnail(filePath, image):
     """Publish a complete thumbnail in cold storage from the executor."""
     path = pathlib.Path(filePath)
-    temporaryPath = path.with_suffix(".tmp")
+    temporaryPath = None
     try:
-        temporaryPath.write_bytes(image)
+        with tempfile.NamedTemporaryFile(
+            mode="wb", dir=path.parent, prefix=".tapo-", suffix=".tmp", delete=False
+        ) as temporary:
+            temporaryPath = pathlib.Path(temporary.name)
+            temporary.write(image)
         temporaryPath.replace(path)
     finally:
-        temporaryPath.unlink(missing_ok=True)
+        if temporaryPath is not None:
+            temporaryPath.unlink(missing_ok=True)
 
 
 async def processDownload(
@@ -771,9 +790,7 @@ async def generateThumb(hass, entry_id, startDate: int, endDate: int, childID=""
                 output_format=IMAGE_JPEG,
             )
         )
-        openHandler = await hass.async_add_executor_job(open, filePathThumb, "wb")
-        with openHandler as binary_file:
-            binary_file.write(image)
+        await hass.async_add_executor_job(saveThumbnail, filePathThumb, image)
     return filePathThumb
 
 
@@ -1079,6 +1096,10 @@ def processDownloadStatus(
 
 
 def getFileName(startDate: int, endDate: int, encrypted=False, childID=""):
+    if childID != "":
+        validateDeviceID(childID)
+    startDate = int(startDate)
+    endDate = int(endDate)
     if encrypted:
         return hashlib.md5(
             (str(childID) + str(startDate) + str(endDate)).encode()
@@ -1109,7 +1130,12 @@ def getColdFile(
         extension = ".jpg"
     else:
         raise Unresolvable("Incorrect folder specified: " + folder)
-    return coldDirPath + "/" + folder + "/" + fileName + extension
+    coldFilePath = coldDirPath + "/" + folder + "/" + fileName + extension
+    if not pathlib.Path(coldFilePath).resolve().is_relative_to(
+        pathlib.Path(coldDirPath).resolve()
+    ):
+        raise ValueError("Media path escapes cold storage")
+    return coldFilePath
 
 
 async def getHotFile(
@@ -1127,6 +1153,10 @@ async def getHotFile(
     extension = pathlib.Path(coldFilePath).suffix
     fileNameEncrypted = getFileName(startDate, endDate, True, childID=childID)
     hotFilePath = f"{hotDirPath}/{folder}/{fileNameEncrypted}{UUID}{extension}"
+    if not pathlib.Path(hotFilePath).resolve().is_relative_to(
+        pathlib.Path(hotDirPath).resolve()
+    ):
+        raise ValueError("Media path escapes hot storage")
 
     if not os.path.exists(hotFilePath):
         if not os.path.exists(coldFilePath):
@@ -1526,6 +1556,9 @@ async def getCamData(hass, controller, chInfo=None):
         camData["basic_info"] = convertBasicInfo(data["get_device_info"][0])
     else:
         camData["basic_info"] = data["getDeviceInfo"][0]["device_info"]["basic_info"]
+
+    if "dev_id" in camData["basic_info"]:
+        validateDeviceID(camData["basic_info"]["dev_id"])
 
     try:
         motion_detection_data = data["getDetectionConfig"][0]["motion_detection"][
@@ -2222,6 +2255,9 @@ async def getCamData(hass, controller, chInfo=None):
         childDevices = data["getChildDeviceList"][0]
     except Exception:
         childDevices = None
+    if childDevices:
+        for childDevice in childDevices.get("child_device_list", []):
+            validateDeviceID(childDevice["device_id"])
     camData["childDevices"] = childDevices
 
     try:
