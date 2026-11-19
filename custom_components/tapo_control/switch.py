@@ -897,7 +897,7 @@ class TapoAlarmEventTypeSwitch(TapoSwitchEntity):
             False,
         )
         if "error_code" not in result or result["error_code"] == 0:
-            self._attr_state = "on"
+            self._attr_state = "off"
         self.async_write_ha_state()
         await self._coordinator.async_request_refresh()
 
