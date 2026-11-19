@@ -292,8 +292,10 @@ class TapoNoiseBinarySensor(TapoBinarySensorEntity):
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
         # ffmpeg runs as a separate process; without closing it here it outlives HA.
-        self._hass.bus.async_listen_once(
-            EVENT_HOMEASSISTANT_STOP, self._async_stop_noise_detection
+        self.async_on_remove(
+            self._hass.bus.async_listen_once(
+                EVENT_HOMEASSISTANT_STOP, self._async_stop_noise_detection
+            )
         )
 
     async def async_will_remove_from_hass(self) -> None:
