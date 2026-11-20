@@ -909,8 +909,16 @@ def cleanupTemporaryThumbnails(coldDirPath, hotDirPath, preload):
     now = time.time()
     expired = []
     expiredHashes = set()
+    # One listing instead of a check per thumbnail; this runs every minute
+    # and the videos can be on a network share
+    try:
+        videos = set(os.listdir(cold / "videos"))
+    except FileNotFoundError:
+        videos = set()
     for thumbnail in (cold / "thumbs").glob("*.jpg"):
-        if (cold / "videos" / (thumbnail.stem + ".mp4")).exists():
+        video = thumbnail.stem + ".mp4"
+        # A video missing from the listing may have been written since
+        if video in videos or (cold / "videos" / video).exists():
             continue
         try:
             if preload and now - thumbnail.stat().st_mtime < THUMBNAIL_CACHE_SECONDS:
