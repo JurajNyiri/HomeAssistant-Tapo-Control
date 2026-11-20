@@ -143,6 +143,10 @@ After the call, check the camera entity's `record_plan` attribute and the schedu
 
 </details>
 
+## Two-way audio (preview)
+
+Requires Home Assistant 2026.11+, a camera with a speaker, and a configured **Cloud Password**. Enable **Settings > System > Labs > Two-way audio**, then open an existing camera's live view over **HTTPS**, allow microphone access, and use the microphone control.
+
 ## Sound Detection
 
 Integration is capable of analysing sound from camera microphone and expose noise detected via binary_sensor.

@@ -7,12 +7,15 @@ from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from typing import Callable
 from pytapo.media_stream.snapshot import getSnapshot
 from pytapo.media_stream.streamer import Streamer
+from pytapo.media_stream.webrtc import WebRTCSession
 
 from homeassistant.const import STATE_UNAVAILABLE, CONF_USERNAME, CONF_PASSWORD
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.components.camera import (
     CameraEntityFeature,
     Camera,
+    WebRTCAnswer,
+    WebRTCError,
 )
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS, DATA_FFMPEG
 from homeassistant.config_entries import ConfigEntry
@@ -23,6 +26,12 @@ from homeassistant.util import slugify
 from homeassistant.components.stream import (
     Stream,
 )
+
+try:
+    from homeassistant.components.camera import CameraEntityCapabilities
+except ImportError:
+    # Keep supporting Home Assistant versions before the 2026.11 preview.
+    CameraEntityCapabilities = None
 
 from .const import (
     CONF_RTSP_TRANSPORT,
@@ -176,7 +185,6 @@ async def async_setup_entry(
                 async_add_entities(telephotoEntities)
 
         if not entry["isParent"]:
-
             allChnInfo = entry.get("camData", {}).get("allChnInfo", {})
             if allChnInfo:
                 channel_info = allChnInfo.get("system", {}).get("chn_info", {})
@@ -300,6 +308,16 @@ class TapoCamEntity(Camera):
         self._attr_should_poll = True
         self._is_cam_entity = True
         self._is_noise_sensor = False
+        self._webrtc_sessions = {}
+        self._two_way_audio = bool(
+            CameraEntityCapabilities is not None
+            and self._controller.cloudPassword
+            and entry["camData"].get("speakerVolume") is not None
+        )
+        if CameraEntityCapabilities is not None:
+            self._attr_camera_entity_capabilities = CameraEntityCapabilities(
+                two_way_audio=self._two_way_audio
+            )
 
         self.updateTapo(entry["camData"])
 
@@ -309,11 +327,14 @@ class TapoCamEntity(Camera):
 
     async def async_will_remove_from_hass(self) -> None:
         self._enabled = False
+        await asyncio.gather(
+            *(session.close() for session in list(self._webrtc_sessions.values()))
+        )
         await super().async_will_remove_from_hass()
 
     @property
     def supported_features(self):
-        if self._enable_stream:
+        if self._enable_stream or self._two_way_audio:
             return CameraEntityFeature.STREAM | CameraEntityFeature.ON_OFF
         else:
             return CameraEntityFeature.ON_OFF
@@ -352,7 +373,52 @@ class TapoCamEntity(Camera):
         await self._coordinator.async_request_refresh()
 
     async def async_create_stream(self) -> Stream | None:
+        if not self._enable_stream:
+            return None
         return await super().async_create_stream()
+
+    async def async_handle_async_webrtc_offer(
+        self, offer_sdp, session_id, send_message
+    ):
+        source = None if self._directStream else await self.stream_source()
+        config = self.async_get_webrtc_client_configuration()
+
+        def on_error(error):
+            send_message(WebRTCError("tapo_talk_failed", str(error)))
+
+        session = WebRTCSession(
+            self._controller,
+            source=source,
+            quality="HD" if self._stream_id in ("stream1", "stream6") else "VGA",
+            video_stream=getattr(self, "videoStream", 0),
+            ff_args=self._direct_stream_arguments() if self._directStream else None,
+            rtsp_transport=self.stream_options.get(CONF_RTSP_TRANSPORT) or "tcp",
+            two_way_audio=self._two_way_audio,
+            ice_servers=[
+                server.to_dict() for server in config.configuration.ice_servers
+            ],
+            on_error=on_error,
+            on_close=lambda: self._webrtc_sessions.pop(session_id, None),
+        )
+        self._webrtc_sessions[session_id] = session
+        try:
+            send_message(WebRTCAnswer(await session.answer(offer_sdp)))
+        except Exception as error:
+            await session.close()
+            message = (
+                str(error).replace(source, "[camera stream]") if source else str(error)
+            )
+            LOGGER.warning("WebRTC failed for %s: %s", self.entity_id, message)
+            send_message(WebRTCError("tapo_webrtc_failed", message))
+
+    async def async_on_webrtc_candidate(self, session_id, candidate):
+        if session := self._webrtc_sessions.get(session_id):
+            await session.add_candidate(candidate.to_dict())
+
+    @callback
+    def close_webrtc_session(self, session_id):
+        if session := self._webrtc_sessions.get(session_id):
+            self.hass.async_create_task(session.close())
 
     def updateTapo(self, camData):
         LOGGER.debug("updateTapo - camera")
@@ -778,6 +844,8 @@ class TapoDirectCamEntity(TapoCamEntity):
         return source
 
     async def async_create_stream(self) -> Stream | None:
+        if not self._enable_stream:
+            return None
         await self._ensure_av_pipe()
         self._HAstream = await super().async_create_stream()
         self._HAstream.set_update_callback(self._on_stream_state)
