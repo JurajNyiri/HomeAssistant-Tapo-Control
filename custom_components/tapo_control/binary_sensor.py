@@ -15,7 +15,12 @@ from homeassistant.components.ffmpeg import (
     get_ffmpeg_manager,
 )
 
-from homeassistant.const import STATE_ON, STATE_OFF, CONF_IP_ADDRESS
+from homeassistant.const import (
+    STATE_ON,
+    STATE_OFF,
+    CONF_IP_ADDRESS,
+    EVENT_HOMEASSISTANT_STOP,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.util.enum import try_parse_enum
@@ -283,6 +288,23 @@ class TapoNoiseBinarySensor(TapoBinarySensorEntity):
         self._attr_state = STATE_UNAVAILABLE
 
         LOGGER.debug("TapoNoiseBinarySensor - init - end")
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        # ffmpeg runs as a separate process; without closing it here it outlives HA.
+        self.async_on_remove(
+            self._hass.bus.async_listen_once(
+                EVENT_HOMEASSISTANT_STOP, self._async_stop_noise_detection
+            )
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        await self._async_stop_noise_detection()
+        await super().async_will_remove_from_hass()
+
+    async def _async_stop_noise_detection(self, _event=None) -> None:
+        LOGGER.debug("stopNoiseDetection")
+        await self._noiseSensor.close()
 
     async def startNoiseDetection(self):
         LOGGER.debug("startNoiseDetection")
