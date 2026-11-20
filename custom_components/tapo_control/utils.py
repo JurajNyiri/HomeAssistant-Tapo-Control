@@ -1098,6 +1098,19 @@ def processDownloadStatus(
     return processUpdate
 
 
+def isPathInside(path, directory):
+    """Whether path stays inside directory, decided on the text of the paths alone.
+
+    Media sync calls this for every recording on the event loop. Path.resolve()
+    looks up every component on the file system (twice per call), which on a
+    network share blocked the loop for seconds. The file names are built from
+    numbers and a validated device ID, so a lexical check is enough to catch
+    "..", absolute or otherwise escaping names.
+    """
+    directory = os.path.normpath(directory)
+    return os.path.commonpath([directory, os.path.normpath(path)]) == directory
+
+
 def getFileName(startDate: int, endDate: int, encrypted=False, childID=""):
     if childID != "":
         validateDeviceID(childID)
@@ -1134,9 +1147,7 @@ def getColdFile(
     else:
         raise Unresolvable("Incorrect folder specified: " + folder)
     coldFilePath = coldDirPath + "/" + folder + "/" + fileName + extension
-    if not pathlib.Path(coldFilePath).resolve().is_relative_to(
-        pathlib.Path(coldDirPath).resolve()
-    ):
+    if not isPathInside(coldFilePath, coldDirPath):
         raise ValueError("Media path escapes cold storage")
     return coldFilePath
 
@@ -1156,9 +1167,7 @@ async def getHotFile(
     extension = pathlib.Path(coldFilePath).suffix
     fileNameEncrypted = getFileName(startDate, endDate, True, childID=childID)
     hotFilePath = f"{hotDirPath}/{folder}/{fileNameEncrypted}{UUID}{extension}"
-    if not pathlib.Path(hotFilePath).resolve().is_relative_to(
-        pathlib.Path(hotDirPath).resolve()
-    ):
+    if not isPathInside(hotFilePath, hotDirPath):
         raise ValueError("Media path escapes hot storage")
 
     if not os.path.exists(hotFilePath):
