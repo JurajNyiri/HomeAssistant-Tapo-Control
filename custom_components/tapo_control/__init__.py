@@ -1333,6 +1333,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                                     ENABLE_MEDIA_SYNC
                                                 ]
                                                 if enableMediaSync:
+                                                    # Recordings already in cold storage return without
+                                                    # awaiting anything; yield so a day with many of them
+                                                    # does not hold the event loop.
+                                                    await asyncio.sleep(0)
                                                     LOGGER.debug("getRecording -1")
                                                     await getRecording(
                                                         hass,
