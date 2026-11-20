@@ -6,7 +6,7 @@
   "codeowners": [
     "@JurajNyiri"
   ],
-  "version": "7.2.16",
+  "version": "7.3.0",
   "requirements": [
     "pytapo==3.4.34",
     "aiortc==1.16.0",
