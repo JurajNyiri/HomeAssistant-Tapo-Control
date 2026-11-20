@@ -846,6 +846,35 @@ async def generateThumb(
     return filePathThumb
 
 
+def listDirIfExists(dirPath):
+    """Names in dirPath, or none if it does not exist (executor)."""
+    try:
+        return os.listdir(dirPath)
+    except FileNotFoundError:
+        return []
+
+
+def listDirWithMtime(dirPath, extension):
+    """(name, modification time) of the files with extension in dirPath (executor)."""
+    files = []
+    for f in listDirIfExists(dirPath):
+        if f.endswith(extension):
+            try:
+                files.append((f, os.stat(os.path.join(dirPath, f)).st_mtime))
+            except FileNotFoundError:
+                continue
+    return files
+
+
+def removeFiles(filePaths):
+    """Remove files, ignoring ones already gone (executor)."""
+    for filePath in filePaths:
+        try:
+            os.remove(filePath)
+        except FileNotFoundError:
+            continue
+
+
 # todo: findMedia needs to run periodically because of this function!!!
 async def deleteFilesNoLongerPresentInCamera(
     hass, entry_id, entryData, extension, folder
@@ -857,11 +886,12 @@ async def deleteFilesNoLongerPresentInCamera(
     if entryData["initialMediaScanDone"] is True:
         LOGGER.debug("deleteFilesNoLongerPresentInCamera - Initial scanning done.")
         coldDirPath = getColdDirPathForEntry(hass, entry_id)
-        if os.path.exists(coldDirPath + "/" + folder + "/"):
+        listDirFiles = await hass.async_add_executor_job(
+            listDirIfExists, coldDirPath + "/" + folder + "/"
+        )
+        toRemove = []
+        if listDirFiles:
             LOGGER.debug("deleteFilesNoLongerPresentInCamera - path exists")
-            listDirFiles = await hass.async_add_executor_job(
-                os.listdir, coldDirPath + "/" + folder + "/"
-            )
             for f in listDirFiles:
                 if not f.endswith(extension):
                     #Files sometimes get deleted during download. Never delete a file a download is still using
@@ -886,7 +916,8 @@ async def deleteFilesNoLongerPresentInCamera(
                         fileName,
                         None,
                     )
-                    os.remove(filePath)
+                    toRemove.append(filePath)
+        await hass.async_add_executor_job(removeFiles, toRemove)
 
 
 async def deleteColdFilesOlderThanMaxSyncTime(
@@ -907,14 +938,14 @@ async def deleteColdFilesOlderThanMaxSyncTime(
         mediaSyncTime = int(mediaSyncHours) * 60 * 60
         entry_id = entry.entry_id
         ts = datetime.datetime.utcnow().timestamp()
-        if os.path.exists(coldDirPath + "/" + folder + "/"):
-            listDirFiles = await hass.async_add_executor_job(
-                os.listdir, coldDirPath + "/" + folder + "/"
-            )
-            for f in listDirFiles:
-                if not f.endswith(extension):
-                    #Same as above. Files sometimes get deleted during download. Never delete a file a download is still using
-                    continue
+        # Only files with the extension: files sometimes get deleted during
+        # download, never delete a file a download is still using.
+        listDirFiles = await hass.async_add_executor_job(
+            listDirWithMtime, coldDirPath + "/" + folder + "/", extension
+        )
+        toRemove = []
+        if listDirFiles:
+            for f, last_modified in listDirFiles:
                 fileName = f.replace(extension, "")
                 filePath = os.path.join(coldDirPath + "/" + folder + "/", f)
                 splitFileName = fileName.split("-")
@@ -923,7 +954,6 @@ async def deleteColdFilesOlderThanMaxSyncTime(
                     and childID in fileName
                 ):
                     endTS = int(fileName.split("-")[len(splitFileName) - 1])
-                    last_modified = os.stat(filePath).st_mtime
                     if (endTS < (int(ts) - (int(mediaSyncTime) + timeCorrection))) and (
                         ts - last_modified > int(mediaSyncTime)
                     ):
@@ -940,7 +970,7 @@ async def deleteColdFilesOlderThanMaxSyncTime(
                             fileName,
                             None,
                         )
-                        os.remove(filePath)
+                        toRemove.append(filePath)
                 else:
                     LOGGER.debug(
                         "[deleteColdFilesOlderThanMaxSyncTime] Ignoring "
@@ -949,6 +979,7 @@ async def deleteColdFilesOlderThanMaxSyncTime(
                         + fileName
                         + ") because of incorrect file name format..."
                     )
+        await hass.async_add_executor_job(removeFiles, toRemove)
 
 
 def cleanupTemporaryThumbnails(coldDirPath, hotDirPath, preload):
@@ -1055,10 +1086,9 @@ async def mediaCleanup(hass, entry, deviceData):
 
 async def deleteDir(hass, dirPath):
     if (
-        os.path.exists(dirPath)
-        and os.path.isdir(dirPath)
-        and dirPath != "/"
+        dirPath != "/"
         and "tapo_control/" in dirPath
+        and await hass.async_add_executor_job(os.path.isdir, dirPath)
     ):
         LOGGER.debug("Deleting folder " + dirPath + "...")
         await hass.async_add_executor_job(shutil.rmtree, dirPath)
@@ -1066,25 +1096,25 @@ async def deleteDir(hass, dirPath):
 
 async def deleteFilesOlderThan(hass: HomeAssistant, dirPath, deleteOlderThan):
     now = datetime.datetime.utcnow().timestamp()
-    if os.path.exists(dirPath):
-
-        listDirFiles = await hass.async_add_executor_job(os.listdir, dirPath)
-        for f in listDirFiles:
-            filePath = os.path.join(dirPath, f)
-            last_modified = os.stat(filePath).st_mtime
-            if now - last_modified > deleteOlderThan:
-                LOGGER.debug("[deleteFilesOlderThan] Removing " + filePath + "...")
-                os.remove(filePath)
+    listDirFiles = await hass.async_add_executor_job(listDirWithMtime, dirPath, "")
+    toRemove = []
+    for f, last_modified in listDirFiles:
+        filePath = os.path.join(dirPath, f)
+        if now - last_modified > deleteOlderThan:
+            LOGGER.debug("[deleteFilesOlderThan] Removing " + filePath + "...")
+            toRemove.append(filePath)
+    await hass.async_add_executor_job(removeFiles, toRemove)
 
 
 async def deleteFilesNotIncluding(hass: HomeAssistant, dirPath, includingString):
-    if os.path.exists(dirPath):
-        listDirFiles = await hass.async_add_executor_job(os.listdir, dirPath)
-        for f in listDirFiles:
-            filePath = os.path.join(dirPath, f)
-            if includingString not in filePath:
-                LOGGER.debug("[deleteFilesOlderThan] Removing " + filePath + "...")
-                os.remove(filePath)
+    listDirFiles = await hass.async_add_executor_job(listDirIfExists, dirPath)
+    toRemove = []
+    for f in listDirFiles:
+        filePath = os.path.join(dirPath, f)
+        if includingString not in filePath:
+            LOGGER.debug("[deleteFilesOlderThan] Removing " + filePath + "...")
+            toRemove.append(filePath)
+    await hass.async_add_executor_job(removeFiles, toRemove)
 
 
 async def async_update_sync_sensors(hass: HomeAssistant, entry_id: str, device: dict):
@@ -1219,8 +1249,8 @@ async def getHotFile(
     if not isPathInside(hotFilePath, hotDirPath):
         raise ValueError("Media path escapes hot storage")
 
-    if not os.path.exists(hotFilePath):
-        if not os.path.exists(coldFilePath):
+    if not await hass.async_add_executor_job(os.path.exists, hotFilePath):
+        if not await hass.async_add_executor_job(os.path.exists, coldFilePath):
             raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
         await hass.async_add_executor_job(shutil.copyfile, coldFilePath, hotFilePath)
     return hotFilePath
