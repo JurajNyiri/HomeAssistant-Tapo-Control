@@ -1346,6 +1346,16 @@ async def getRecording(
         if downloadedFile["currentAction"] == "Recording in progress":
             raise Unresolvable("Recording is currently in progress.")
 
+        if coldFiles is not None:
+            # A preloaded thumbnail may have been cleaned up during the download
+            coldFiles["thumbs"].discard(
+                os.path.basename(
+                    getColdFile(
+                        hass, entry_id, startDate, endDate, "thumbs", childID=childID
+                    )
+                )
+            )
+
         completion_message = "Finished download"
         entryData["downloadProgress"] = completion_message
         if progress_callback is not None:
