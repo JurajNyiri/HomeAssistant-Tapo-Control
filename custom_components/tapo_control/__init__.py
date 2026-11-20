@@ -107,7 +107,7 @@ from pytapo.version import PYTAPO_VERSION
 
 from datetime import timedelta
 
-from .utils import getRecording
+from .utils import getColdFiles, getRecording
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
@@ -1284,6 +1284,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         tapoController.getRecordingsList
                     )
                     LOGGER.debug("getRecordingsList -2")
+                    coldFiles = await getColdFiles(hass, entry.entry_id)
 
                     ts = datetime.datetime.utcnow().timestamp()
                     for searchResult in recordingsList:
@@ -1347,6 +1348,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                                                         ],
                                                         recordingCount,
                                                         totalRecordingsToDownload,
+                                                        coldFiles=coldFiles,
                                                     )
                                                     LOGGER.debug("getRecording -2")
                                                     device["lastMediaSyncActivity"] = (
