@@ -35,7 +35,6 @@ except ImportError:
 
 from .const import (
     CONF_RTSP_TRANSPORT,
-    ENABLE_STREAM,
     SERVICE_SAVE_PRESET,
     SCHEMA_SERVICE_SAVE_PRESET,
     SERVICE_DELETE_PRESET,
@@ -302,7 +301,6 @@ class TapoCamEntity(Camera):
         self._stream_label = stream_label or fallback_label
         self._stream_unique_id = stream_unique_id or fallback_uid
         self._extra_arguments = config_entry.data.get(CONF_EXTRA_ARGUMENTS)
-        self._enable_stream = config_entry.data.get(ENABLE_STREAM)
         self._attr_extra_state_attributes = dict(entry["camData"]["basic_info"])
         self._attr_icon = "mdi:cctv"
         self._attr_should_poll = True
@@ -334,10 +332,7 @@ class TapoCamEntity(Camera):
 
     @property
     def supported_features(self):
-        if self._enable_stream or self._two_way_audio:
-            return CameraEntityFeature.STREAM | CameraEntityFeature.ON_OFF
-        else:
-            return CameraEntityFeature.ON_OFF
+        return CameraEntityFeature.STREAM | CameraEntityFeature.ON_OFF
 
     @property
     def name(self) -> str:
@@ -373,8 +368,6 @@ class TapoCamEntity(Camera):
         await self._coordinator.async_request_refresh()
 
     async def async_create_stream(self) -> Stream | None:
-        if not self._enable_stream:
-            return None
         return await super().async_create_stream()
 
     async def async_handle_async_webrtc_offer(
@@ -678,11 +671,15 @@ class TapoDirectCamEntity(TapoCamEntity):
         return self._enabled_by_default
 
     async def async_will_remove_from_hass(self) -> None:
+        self._enabled = False
         if self._streamer:
             await self._streamer.stop()
         if self._stream_task:
             self._stream_task.cancel()
         await super().async_will_remove_from_hass()
+        if self._stream_fd is not None:
+            os.close(self._stream_fd)
+            self._stream_fd = None
 
     async def async_camera_image(
         self, width: int | None = None, height: int | None = None
@@ -813,6 +810,10 @@ class TapoDirectCamEntity(TapoCamEntity):
                 LOGGER.warning(err)
                 pass
 
+        if self._stream_fd is not None:
+            os.close(self._stream_fd)
+            self._stream_fd = None
+
         LOGGER.debug("_ensure_av_pipe: launching NEW Streamer")
         self._streamer = Streamer(
             self._controller,
@@ -821,9 +822,18 @@ class TapoDirectCamEntity(TapoCamEntity):
             logFunction=self.logFunction,
             ff_args=self._direct_stream_arguments(),
         )
-        info = await self._streamer.start()
-
-        self._stream_fd: int = info["read_fd"]
+        # HA reads this pipe directly; an asyncio stdout reader would consume
+        # the beginning of the stream before HA can read its codec headers.
+        read_fd, write_fd = os.pipe()
+        try:
+            info = await self._streamer.start(stdout=write_fd)
+        except BaseException:
+            os.close(read_fd)
+            await self._streamer.stop()
+            raise
+        finally:
+            os.close(write_fd)
+        self._stream_fd = read_fd
 
         if self._HAstream is not None:
             newSource = await self.stream_source()
@@ -844,8 +854,6 @@ class TapoDirectCamEntity(TapoCamEntity):
         return source
 
     async def async_create_stream(self) -> Stream | None:
-        if not self._enable_stream:
-            return None
         await self._ensure_av_pipe()
         self._HAstream = await super().async_create_stream()
         self._HAstream.set_update_callback(self._on_stream_state)
@@ -853,6 +861,6 @@ class TapoDirectCamEntity(TapoCamEntity):
         return self._HAstream
 
     def _on_stream_state(self):
-        if not self._HAstream.available:
+        if self._enabled and not self._HAstream.available:
             LOGGER.debug("%s: HA stream unavailable: restarting", self.entity_id)
             asyncio.create_task(self._ensure_av_pipe(newStream=True))

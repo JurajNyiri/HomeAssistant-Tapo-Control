@@ -84,6 +84,7 @@ MEDIA_VIEW_DAYS_ORDER_OPTIONS = ["Ascending", "Descending"]
 MEDIA_VIEW_RECORDINGS_ORDER_OPTIONS = ["Ascending", "Descending"]
 
 ENABLE_WEBHOOKS = "enable_webhooks"
+# Legacy key retained for migrations; camera streaming is always enabled.
 ENABLE_STREAM = "enable_stream"
 ENABLE_SOUND_DETECTION = "enable_sound_detection"
 SOUND_DETECTION_PEAK = "sound_detection_peak"

@@ -57,7 +57,6 @@
           "enable_motion_sensor": "Enable motion sensor",
           "enable_webhooks": "Enable webhooks",
           "enable_time_sync": "Automatically synchronise time",
-          "enable_stream": "Use Stream from Home Assistant (restart required)",
           "enable_sound_detection": "Enable sound threshold detection (restart required)",
           "sound_detection_peak": "[Sound Detection] Peak in dB. 0 is very loud and -100 is low.",
           "sound_detection_duration": "[Sound Detection] How long the noise needs to be over the peak to trigger the state.",
@@ -149,7 +148,6 @@
           "password": "Password",
           "enable_motion_sensor": "Enable motion sensor",
           "enable_webhooks": "Enable webhooks",
-          "enable_stream": "Use Stream from Home Assistant (restart required)",
           "show_on_map": "Show camera on map",
           "cloud_password": "Cloud Password (Optional)",
           "extra_arguments": "Extra arguments for ffmpeg (restart required)",
@@ -160,7 +158,7 @@
           "rtsp_transport": "RTSP transport mechanism",
           "direct_stream_arguments": "Direct stream FFmpeg parameters"
         },
-        "description": "Modify settings of your Tapo Camera.\n\nUse stream from Home Assistant:\nYes - Longer playback delay, lower CPU usage, allows playback control\nNo - Very short playback delay, higher CPU usage, no playback control",
+        "description": "Modify settings of your Tapo Camera.",
         "data_description": {
           "direct_stream_arguments": "Advanced overrides for direct streams and snapshots. An empty mapping restores defaults. Set -vsync to null to omit it. Supported: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Applies when a new stream starts; reload the integration to stop existing streams. Native camera snapshots are unaffected."
         }

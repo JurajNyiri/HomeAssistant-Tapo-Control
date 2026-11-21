@@ -22,7 +22,7 @@ camera_image: camera.bedroom_hd
 
 ![Example 2](example2.png)
 
-Very simple example which just shows a camera image and toggles light. It now uses the live stream of the camera.
+This shows live video instead of refreshing snapshots. The built-in player uses native WebRTC when available.
 
 ```yaml
 type: picture-entity
@@ -30,6 +30,33 @@ entity: light.bedroom
 camera_image: camera.bedroom_hd
 camera_view: live
 ```
+
+### Native live view
+
+Use the built-in player for live video and audio.
+
+```yaml
+type: picture-entity
+entity: camera.bedroom_sd
+camera_view: live
+tap_action:
+  action: more-info
+```
+
+### Advanced Camera Card
+
+Set `live_provider: ha` to use the Home Assistant stream.
+
+```yaml
+type: custom:advanced-camera-card
+cameras:
+  - camera_entity: camera.bedroom_sd
+    live_provider: ha
+```
+
+### AlexxIT WebRTC Camera
+
+This card uses its own go2rtc connection. Configure an RTSP camera entity or a separate go2rtc stream using the [card documentation](https://github.com/AlexxIT/WebRTC#custom-card). Direct entities do not expose a network stream URL for go2rtc.
 
 ### Picture Glance with live view and scripts, tap and hold actions
 
@@ -102,15 +129,20 @@ set_bedroom_camera_home:
         entity_id: switch.bedroom_privacy
 ```
 
-### Camera control example with webrtc and scripts using stack-in-card
+### Camera controls with native live view and scripts using stack-in-card
+
+This uses the built-in camera player. The layout requires `stack-in-card`.
 
 ![Example 5](example5.png)
 
 ```yaml
 type: custom:stack-in-card
 cards:
-  - type: custom:webrtc-camera
+  - type: picture-entity
     entity: camera.bedroom_sd
+    camera_view: live
+    tap_action:
+      action: more-info
   - type: horizontal-stack
     cards:
       - type: button

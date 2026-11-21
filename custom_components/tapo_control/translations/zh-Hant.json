@@ -47,7 +47,6 @@
           "enable_motion_sensor": "啟用動態感測器",
           "enable_webhooks": "啟用 webhooks",
           "enable_time_sync": "自動同步時間",
-          "enable_stream": "使用 Home Assistant 的串流功能（需要重新啟動）",
           "enable_sound_detection": "啟用聲音閾值檢測（需要重新啟動）",
           "sound_detection_peak": "[聲音檢測] 峰值以分貝（dB）為單位。0 表示非常大聲，-100 表示很小聲。",
           "sound_detection_duration": "[聲音檢測] 噪音需要超過峰值多長時間才會觸發狀態。",
@@ -135,7 +134,6 @@
           "password": "密碼",
           "enable_motion_sensor": "啟用動態感測器",
           "enable_webhooks": "啟用 webhooks",
-          "enable_stream": "使用 Home Assistant 的串流功能（需要重新啟動）",
           "show_on_map": "在地圖上顯示攝影機",
           "cloud_password": "雲端密碼（可選）",
           "extra_arguments": "FFmpeg 額外參數（需重新啟動）",
@@ -146,7 +144,7 @@
           "rtsp_transport": "RTSP 傳輸機制",
           "direct_stream_arguments": "直接串流 FFmpeg 參數"
         },
-        "description": "修改您的 Tapo 攝影機設定\n\n使用 Home Assistant 的串流:\nYes - 播放延遲較長，CPU 使用率較低，允許播放控制。\nNo - 播放延遲非常短，CPU 使用率較高，不允許播放控制。",
+        "description": "修改您的 Tapo 攝影機設定",
         "data_description": {
           "direct_stream_arguments": "直接串流與快照的進階設定。使用空白對應表還原預設值。將 -vsync 設為 null 可省略此參數。支援：-loglevel、-probesize、-analyzeduration、-frames:v、-map-video、-vsync、-c:v、-f。新串流啟動時生效；重新載入整合可停止現有串流。 不影響相機原生快照。"
         }

@@ -55,7 +55,6 @@
           "enable_motion_sensor": "Włącz sensor ruchu",
           "enable_webhooks": "Włącz webhooki",
           "enable_time_sync": "Automatyczna synchronizacja czasu",
-          "enable_stream": "Użyj strumienia z Home Assistant (wymagany restart)",
           "enable_sound_detection": "Włącz detekcję dźwięku (wymagany restart)",
           "sound_detection_peak": "[Detekcja dźwięku] Próg szczytu w dB (0 = bardzo głośno, −100 = cicho)",
           "sound_detection_duration": "[Detekcja dźwięku] Czas, przez jaki hałas musi przekraczać próg, aby wyzwolić stan",
@@ -147,7 +146,6 @@
           "password": "Hasło",
           "enable_motion_sensor": "Włącz sensor ruchu",
           "enable_webhooks": "Włącz webhooki",
-          "enable_stream": "Użyj strumienia z Home Assistant (wymagany restart)",
           "show_on_map": "Pokaż kamerę na mapie",
           "cloud_password": "Hasło do chmury (opcjonalnie)",
           "extra_arguments": "Dodatkowe argumenty dla ffmpeg (wymagany restart)",
@@ -158,7 +156,7 @@
           "rtsp_transport": "Mechanizm transportu RTSP",
           "direct_stream_arguments": "Parametry FFmpeg strumieni bezpośrednich"
         },
-        "description": "Zmień ustawienia swojej kamery Tapo.\n\nUżyj strumienia z Home Assistant:\nTak – dłuższe opóźnienie odtwarzania, mniejsze użycie CPU, możliwość sterowania odtwarzaniem\nNie – bardzo krótkie opóźnienie odtwarzania, większe użycie CPU, brak sterowania odtwarzaniem",
+        "description": "Zmień ustawienia swojej kamery Tapo.",
         "data_description": {
           "direct_stream_arguments": "Zaawansowane ustawienia strumieni bezpośrednich i migawek. Pusta mapa przywraca wartości domyślne. -vsync: null pomija ten parametr. Obsługiwane: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Dotyczy nowych strumieni; przeładuj integrację, aby zatrzymać istniejące. Nie wpływa to na natywne migawki z kamery."
         }

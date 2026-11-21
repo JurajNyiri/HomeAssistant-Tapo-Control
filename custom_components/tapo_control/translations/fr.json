@@ -55,7 +55,6 @@
           "enable_motion_sensor": "Activer le détecteur de mouvement",
           "enable_webhooks": "Activer les webhooks",
           "enable_time_sync": "Synchroniser automatiquement l'heure",
-          "enable_stream": "Utiliser le flux de Home Assistant (redémarrage requis)",
           "enable_sound_detection": "Activer la détection du seuil sonore (redémarrage requis)",
           "sound_detection_peak": "[Détection sonore] Pic en dB. 0 est très fort et -100 est faible.",
           "sound_detection_duration": "[Détection sonore] Combien de temps le bruit doit-il dépasser le pic pour déclencher l'état.",
@@ -144,7 +143,6 @@
           "password": "Mot de passe",
           "enable_motion_sensor": "Activer le détecteur de mouvement",
           "enable_webhooks": "Activer les webhooks",
-          "enable_stream": "Utiliser le flux de Home Assistant (redémarrage requis)",
           "show_on_map": "Afficher la caméra sur la carte",
           "cloud_password": "Mot de passe Cloud (facultatif)",
           "extra_arguments": "Arguments supplémentaires pour ffmpeg (redémarrage requis)",
@@ -155,7 +153,7 @@
           "rtsp_transport": "Mécanisme de transport RTSP",
           "direct_stream_arguments": "Paramètres FFmpeg des flux directs"
         },
-        "description": "Modifier les paramètres de votre caméra Tapo.\n\nUtiliser le flux de Home Assistant:\nOui - Délai de lecture plus long, utilisation réduite du processeur, permet le contrôle de la lecture\nNon - Délai de lecture très court, utilisation plus élevée du processeur, aucun contrôle de lecture",
+        "description": "Modifier les paramètres de votre caméra Tapo.",
         "data_description": {
           "direct_stream_arguments": "Réglages avancés des flux directs et des instantanés. Une correspondance vide rétablit les valeurs par défaut. -vsync: null omet ce paramètre. Paramètres pris en charge : -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Applicable aux nouveaux flux ; rechargez l’intégration pour arrêter les flux existants. Les instantanés natifs de la caméra ne sont pas affectés."
         }

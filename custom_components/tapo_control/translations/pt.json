@@ -26,7 +26,6 @@
         "data": {
           "enable_motion_sensor": "Ativar sensor de movimento",
           "enable_time_sync": "Sincronizar hora automaticamente",
-          "enable_stream": "Utilizar streaming do Home Assistant (requer reinício)",
           "enable_sound_detection": "Ativar deteção de limite de som (requer reinício)",
           "sound_detection_peak": "[Deteção de som] Pico em dB. 0 é muito alto e -100 é baixo.",
           "sound_detection_duration": "[Deteção de som] Quanto tempo o ruído necessita de estar acima do pico para ativar o estado.",
@@ -65,7 +64,6 @@
           "username": "Nome de Utilizador",
           "password": "Palavra-passe",
           "enable_motion_sensor": "Ativar sensor de movimento",
-          "enable_stream": "Utilizar streaming do Home Assistant (requer reinício)",
           "show_on_map": "Mostrar câmara no mapa",
           "enable_sound_detection": "Ativar deteção de limite de som (requer reinício)",
           "cloud_password": "Palavra-passe de cloud (opcional)",
@@ -74,7 +72,7 @@
           "sound_detection_reset": "[Deteção de som] Tempo para repor o estado depois de não haver ruído acima do pico.",
           "direct_stream_arguments": "Parâmetros FFmpeg dos fluxos diretos"
         },
-        "description": "Modificar definições da sua câmara Tapo.\n\nUtilizar streaming do Home Assistant:\n- Sim: Maior atraso de reprodução, menor utilização de CPU, permite controlo de reprodução\n- Não: Atraso de reprodução muito curto, maior utilização de CPU, sem controlo de reprodução",
+        "description": "Modificar definições da sua câmara Tapo.",
         "data_description": {
           "direct_stream_arguments": "Opções avançadas para fluxos diretos e imagens. Um mapeamento vazio repõe os valores predefinidos. -vsync: null omite este parâmetro. Suportados: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Aplica-se a novos fluxos; recarregue a integração para parar os existentes. As imagens nativas da câmara não são afetadas."
         }
