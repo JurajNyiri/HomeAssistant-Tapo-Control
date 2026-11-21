@@ -278,6 +278,7 @@ class TapoCamEntity(Camera):
         self.stream_options[CONF_RTSP_TRANSPORT] = config_entry.data.get(
             CONF_RTSP_TRANSPORT
         )
+        self.stream_options["use_wallclock_as_timestamps"] = True
         self._controller = entry["controller"]
         self._coordinator = entry["coordinator"]
         self._entry = entry
@@ -663,6 +664,7 @@ class TapoDirectCamEntity(TapoCamEntity):
         self._streamer: Streamer | None = None
         self._stream_fd: int | None = None
         self._stream_task: asyncio.Task | None = None
+        self._stream_lock = asyncio.Lock()
         self._enabled_by_default = enabledByDefault
         self.videoStream = videoStream
 
@@ -672,14 +674,21 @@ class TapoDirectCamEntity(TapoCamEntity):
 
     async def async_will_remove_from_hass(self) -> None:
         self._enabled = False
-        if self._streamer:
-            await self._streamer.stop()
-        if self._stream_task:
-            self._stream_task.cancel()
+        async with self._stream_lock:
+            if self._HAstream is not None:
+                await self._HAstream.stop()
+                if self._HAstream.dynamic_stream_settings.preload_stream:
+                    # A removed entity must also stop a preloaded worker.
+                    await self._HAstream._stop()
+            # Release a blocked writer before waiting for FFmpeg to exit.
+            if self._stream_fd is not None:
+                os.close(self._stream_fd)
+                self._stream_fd = None
+            if self._streamer:
+                await self._streamer.stop()
+            if self._stream_task:
+                self._stream_task.cancel()
         await super().async_will_remove_from_hass()
-        if self._stream_fd is not None:
-            os.close(self._stream_fd)
-            self._stream_fd = None
 
     async def async_camera_image(
         self, width: int | None = None, height: int | None = None
@@ -794,59 +803,64 @@ class TapoDirectCamEntity(TapoCamEntity):
         LOGGER.debug(data)
 
     async def _ensure_av_pipe(self, newStream=False) -> None:
-        LOGGER.debug("_ensure_av_pipe() called")
+        async with self._stream_lock:
+            LOGGER.debug("_ensure_av_pipe() called")
 
-        if self._streamer and self._streamer.running and not newStream:
-            LOGGER.debug("_ensure_av_pipe: already running (fd=%s)", self._stream_fd)
-            return
+            if self._streamer and self._streamer.running and not newStream:
+                LOGGER.debug(
+                    "_ensure_av_pipe: already running (fd=%s)", self._stream_fd
+                )
+                return
 
-        if self._streamer:
-            LOGGER.debug("_ensure_av_pipe: stopping previous Streamer")
+            # Close the unused read end first, so FFmpeg can exit even when its
+            # output pipe filled up after HA stopped consuming the previous stream.
+            if self._stream_fd is not None:
+                os.close(self._stream_fd)
+                self._stream_fd = None
+
+            if self._streamer:
+                LOGGER.debug("_ensure_av_pipe: stopping previous Streamer")
+                try:
+                    await self._streamer.stop()
+                    if self._stream_task:
+                        self._stream_task.cancel()
+                except Exception as err:
+                    LOGGER.warning(err)
+                    pass
+
+            LOGGER.debug("_ensure_av_pipe: launching NEW Streamer")
+            self._streamer = Streamer(
+                self._controller,
+                includeAudio=False,
+                quality=self._directQuality,
+                logFunction=self.logFunction,
+                ff_args=self._direct_stream_arguments(),
+            )
+            # HA reads this pipe directly; an asyncio stdout reader would consume
+            # the beginning of the stream before HA can read its codec headers.
+            read_fd, write_fd = os.pipe()
             try:
+                info = await self._streamer.start(stdout=write_fd)
+            except BaseException:
+                os.close(read_fd)
                 await self._streamer.stop()
-                if self._stream_task:
-                    self._stream_task.cancel()
-            except Exception as err:
-                LOGGER.warning(err)
-                pass
+                raise
+            finally:
+                os.close(write_fd)
+            self._stream_fd = read_fd
 
-        if self._stream_fd is not None:
-            os.close(self._stream_fd)
-            self._stream_fd = None
+            if self._HAstream is not None:
+                newSource = await self.stream_source()
+                self._HAstream.update_source(newSource)
 
-        LOGGER.debug("_ensure_av_pipe: launching NEW Streamer")
-        self._streamer = Streamer(
-            self._controller,
-            includeAudio=False,
-            quality=self._directQuality,
-            logFunction=self.logFunction,
-            ff_args=self._direct_stream_arguments(),
-        )
-        # HA reads this pipe directly; an asyncio stdout reader would consume
-        # the beginning of the stream before HA can read its codec headers.
-        read_fd, write_fd = os.pipe()
-        try:
-            info = await self._streamer.start(stdout=write_fd)
-        except BaseException:
-            os.close(read_fd)
-            await self._streamer.stop()
-            raise
-        finally:
-            os.close(write_fd)
-        self._stream_fd = read_fd
+            os.set_inheritable(self._stream_fd, True)
+            self._stream_task = info["streamProcess"]
 
-        if self._HAstream is not None:
-            newSource = await self.stream_source()
-            self._HAstream.update_source(newSource)
-
-        os.set_inheritable(self._stream_fd, True)
-        self._stream_task = info["streamProcess"]
-
-        LOGGER.debug(
-            "_ensure_av_pipe: ready (fd=%s, task=%s)",
-            self._stream_fd,
-            self._stream_task,
-        )
+            LOGGER.debug(
+                "_ensure_av_pipe: ready (fd=%s, task=%s)",
+                self._stream_fd,
+                self._stream_task,
+            )
 
     async def stream_source(self) -> str | None:
         source = f"pipe:{self._stream_fd}"
