@@ -315,7 +315,7 @@ tap_action:
   action: more-info
 ```
 
-With the experimental native WebRTC option enabled, video is decoded and re-encoded on the Home Assistant host for both RTSP and Direct entities. Higher resolutions and more simultaneous live views increase CPU use. Try SD, close unused live views (especially on battery cameras), and check Home Assistant CPU usage and the camera's network connection.
+With the experimental native WebRTC option enabled, viewers of the same stream share one camera connection and decoder. Video is still encoded for each viewer on the Home Assistant host. Higher resolutions and more simultaneous live views increase CPU use. Try SD, close unused live views (especially on battery cameras), and check Home Assistant CPU usage and the camera's network connection.
 
 Delay depends on the camera, network and available processing power.
 
