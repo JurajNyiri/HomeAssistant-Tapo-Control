@@ -324,7 +324,9 @@ Delay depends on the camera, network and available processing power.
 
 Native WebRTC live views support camera audio for both RTSP and Direct entities. Unmute the player and check the camera's **Microphone Mute** and **Microphone Volume** settings.
 
-MJPEG has no audio, and the Direct HLS path remains video-only. Use the native WebRTC live view for sound.
+**RTSP recordings made with `camera.record` have no audio when the camera uses A-law**, which Home Assistant's stream recorder does not support. This also affects RTSP HLS playback; native WebRTC live views support sound.
+
+Use a **Direct** camera entity to record with audio. Direct streams convert camera audio to AAC for Home Assistant recordings and HLS playback. MJPEG has no audio.
 
 </details>
 
