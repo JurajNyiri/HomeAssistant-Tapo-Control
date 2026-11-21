@@ -118,6 +118,9 @@
     "media_player": {
       "music_player": {
         "name": "Leitor de música"
+      },
+      "speaker": {
+        "name": "Altifalante"
       }
     }
   }

@@ -191,6 +191,9 @@
     "media_player": {
       "music_player": {
         "name": "Lecteur de musique"
+      },
+      "speaker": {
+        "name": "Haut-parleur"
       }
     }
   }

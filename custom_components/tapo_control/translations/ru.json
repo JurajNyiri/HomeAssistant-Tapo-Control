@@ -171,6 +171,9 @@
     "media_player": {
       "music_player": {
         "name": "Музыкальный плеер"
+      },
+      "speaker": {
+        "name": "Динамик"
       }
     }
   }

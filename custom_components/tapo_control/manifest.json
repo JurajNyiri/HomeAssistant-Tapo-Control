@@ -8,11 +8,12 @@
   ],
   "version": "7.3.5",
   "requirements": [
-    "pytapo==3.4.37",
+    "pytapo==3.4.38",
     "python-kasa[speedups]>=0.10.2"
   ],
   "dependencies": [
     "ffmpeg",
+    "media_source",
     "onvif",
     "stream",
     "network"

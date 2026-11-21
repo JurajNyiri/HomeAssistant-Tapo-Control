@@ -82,6 +82,7 @@ Doorbells, Cameras (for each lens, if supported):
 - Binary sensor for motion after the motion is detected for the first time and a binary sensor for doorbell press
 - Light entity, if the camera supports a floodlight switch and nightlight light entity with on/off and brightness control
 - Media player entity, if the camera has a built-in music player (e.g. C840): play/pause, previous/next track, track selection, repeat (song or playlist) and volume
+- Speaker media player for playing audio and TTS on cameras with a speaker and a configured Cloud Password
 - Buttons for Calibrate, Format, Manual Alarm start & stop, Moving the camera, Reboot and syncing time
 - Switch entities for Auto track, Automatic Reboot, Flip setting, LED Indicator, Lens Distortion Correction, (Rich) Notifications, Recording, Microphone Mute, Microphone Noise Cancelling, Automatically Upgrade Firmware, HDR mode, Alarm Trigger Event types, Privacy Zones, Diagnose Mode, Smart Track specific switches, Smart Dual Track specific switches, Preset Patrol Mode, Audio Recording and Privacy mode
 - Select entities for Automatic Alarm, Automatic Reboot Time, Light Frequency, Motion Detection, Night Vision, Spotlight Intensity, Alarm Type, Quick Response, Smart Dual Track Method and Move to Preset
@@ -148,6 +149,19 @@ After the call, check the camera entity's `record_plan` attribute and the schedu
 Native WebRTC and talk are **opt-in**. In the integration options, choose **Configure device** and enable **Native WebRTC and two-way audio (experimental)**. This player may increase CPU use.
 
 Talk requires Home Assistant 2026.11+, a camera with a speaker, and a configured **Cloud Password**. Enable **Settings > System > Labs > Two-way audio**, then open the camera's more-info dialog over **HTTPS**, allow microphone access, and use the microphone control.
+
+## Speaker playback
+
+Use the **Speaker** media player to play audio from Home Assistant's media browser, `media_player.play_media`, or `tts.speak`. Playback requires a configured **Cloud Password** and FFmpeg; native WebRTC can stay disabled. Starting two-way talk stops speaker playback.
+
+```yaml
+action: media_player.play_media
+target:
+  entity_id: media_player.your_camera_speaker
+data:
+  media_content_id: media-source://media_source/local/sound.mp3
+  media_content_type: audio/mpeg
+```
 
 ## Sound Detection
 

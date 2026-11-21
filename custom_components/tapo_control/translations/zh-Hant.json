@@ -182,6 +182,9 @@
     "media_player": {
       "music_player": {
         "name": "音樂播放器"
+      },
+      "speaker": {
+        "name": "喇叭"
       }
     }
   }
