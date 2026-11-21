@@ -1139,12 +1139,12 @@ class TapoDualCamLinkage(TapoSelectEntity):
 
     def updateTapo(self, camData):
         LOGGER.debug(f"TapoDualCamLinkage updateTapo 1")
-        LOGGER.debug(f"Enabled: {camData["dualCamLinkageEnabled"]}")
-        LOGGER.debug(f"Type: {camData["dualCamLinkageType"]}")
         if not camData:
             LOGGER.debug("TapoDualCamLinkage updateTapo 2")
             self._attr_state = STATE_UNAVAILABLE
         else:
+            LOGGER.debug("Enabled: %s", camData["dualCamLinkageEnabled"])
+            LOGGER.debug("Type: %s", camData.get("dualCamLinkageType"))
             LOGGER.debug("TapoDualCamLinkage updateTapo 3")
             if camData["dualCamLinkageEnabled"] == "off":
                 LOGGER.debug("TapoDualCamLinkage updateTapo 4")
