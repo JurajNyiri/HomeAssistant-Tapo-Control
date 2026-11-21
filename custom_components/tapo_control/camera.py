@@ -831,7 +831,7 @@ class TapoDirectCamEntity(TapoCamEntity):
             LOGGER.debug("_ensure_av_pipe: launching NEW Streamer")
             self._streamer = Streamer(
                 self._controller,
-                includeAudio=False,
+                includeAudio=True,
                 quality=self._directQuality,
                 logFunction=self.logFunction,
                 ff_args=self._direct_stream_arguments(),
