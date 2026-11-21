@@ -9,7 +9,7 @@ from homeassistant.helpers import config_validation as cv
 TPLINK_DOMAIN = "tplink"
 
 CONTROL_PORT = "control_port"
-PYTAPO_REQUIRED_VERSION = "3.4.35"
+PYTAPO_REQUIRED_VERSION = "3.4.36"
 DOMAIN = "tapo_control"
 DOMAIN_CONFIG = DOMAIN + "_config"
 BRAND = "TP-Link"
@@ -37,6 +37,7 @@ CONF_CUSTOM_STREAM_SD = "custom_stream_sd"
 CONF_CUSTOM_STREAM_6 = "custom_stream6"
 CONF_CUSTOM_STREAM_7 = "custom_stream7"
 CONF_DIRECT_STREAM_ARGUMENTS = "direct_stream_arguments"
+CONF_NATIVE_WEBRTC = "native_webrtc"
 CONF_SHOW_ON_MAP = "show_on_map"
 # Arguments supported by pytapo Streamer when audio is disabled.
 DIRECT_STREAM_ARGUMENTS = (

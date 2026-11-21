@@ -64,9 +64,13 @@
           "custom_stream_sd": "Niestandardowy strumień (SD)",
           "custom_stream6": "Niestandardowy strumień (teleobiektyw HD)",
           "custom_stream7": "Niestandardowy strumień (teleobiektyw SD)",
-          "rtsp_transport": "Mechanizm transportu RTSP"
+          "rtsp_transport": "Mechanizm transportu RTSP",
+          "native_webrtc": "Natywne WebRTC i dźwięk dwukierunkowy (eksperymentalne)"
         },
-        "description": "Prawie gotowe!\nZostało kilka ostatnich opcji…"
+        "description": "Prawie gotowe!\nZostało kilka ostatnich opcji…",
+        "data_description": {
+          "native_webrtc": "Używa odtwarzacza integracji i umożliwia rozmowę przez obsługiwane kamery. Może zwiększyć użycie procesora."
+        }
       }
     },
     "error": {
@@ -154,11 +158,13 @@
           "custom_stream6": "Niestandardowy strumień (teleobiektyw HD)",
           "custom_stream7": "Niestandardowy strumień (teleobiektyw SD)",
           "rtsp_transport": "Mechanizm transportu RTSP",
-          "direct_stream_arguments": "Parametry FFmpeg strumieni bezpośrednich"
+          "direct_stream_arguments": "Parametry FFmpeg strumieni bezpośrednich",
+          "native_webrtc": "Natywne WebRTC i dźwięk dwukierunkowy (eksperymentalne)"
         },
         "description": "Zmień ustawienia swojej kamery Tapo.",
         "data_description": {
-          "direct_stream_arguments": "Zaawansowane ustawienia strumieni bezpośrednich i migawek. Pusta mapa przywraca wartości domyślne. -vsync: null pomija ten parametr. Obsługiwane: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Dotyczy nowych strumieni; przeładuj integrację, aby zatrzymać istniejące. Nie wpływa to na natywne migawki z kamery."
+          "direct_stream_arguments": "Zaawansowane ustawienia strumieni bezpośrednich i migawek. Pusta mapa przywraca wartości domyślne. -vsync: null pomija ten parametr. Obsługiwane: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Dotyczy nowych strumieni; przeładuj integrację, aby zatrzymać istniejące. Nie wpływa to na natywne migawki z kamery.",
+          "native_webrtc": "Używa odtwarzacza integracji i umożliwia rozmowę przez obsługiwane kamery. Może zwiększyć użycie procesora."
         }
       }
     },

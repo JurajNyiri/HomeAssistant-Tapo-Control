@@ -56,9 +56,13 @@
           "custom_stream_sd": "自定義串流連結（SD）",
           "custom_stream6": "自定義串流連結（長焦 HD）",
           "custom_stream7": "自定義串流連結（長焦 SD）",
-          "rtsp_transport": "RTSP 傳輸機制"
+          "rtsp_transport": "RTSP 傳輸機制",
+          "native_webrtc": "原生 WebRTC 與雙向語音（實驗性）"
         },
-        "description": "快完成了！\n只剩最後一步了！"
+        "description": "快完成了！\n只剩最後一步了！",
+        "data_description": {
+          "native_webrtc": "使用整合的即時播放器，並允許透過支援的攝影機通話。可能增加 CPU 使用量。"
+        }
       }
     },
     "error": {
@@ -142,11 +146,13 @@
           "custom_stream6": "自定義串流連結（長焦 HD）",
           "custom_stream7": "自定義串流連結（長焦 SD）",
           "rtsp_transport": "RTSP 傳輸機制",
-          "direct_stream_arguments": "直接串流 FFmpeg 參數"
+          "direct_stream_arguments": "直接串流 FFmpeg 參數",
+          "native_webrtc": "原生 WebRTC 與雙向語音（實驗性）"
         },
         "description": "修改您的 Tapo 攝影機設定",
         "data_description": {
-          "direct_stream_arguments": "直接串流與快照的進階設定。使用空白對應表還原預設值。將 -vsync 設為 null 可省略此參數。支援：-loglevel、-probesize、-analyzeduration、-frames:v、-map-video、-vsync、-c:v、-f。新串流啟動時生效；重新載入整合可停止現有串流。 不影響相機原生快照。"
+          "direct_stream_arguments": "直接串流與快照的進階設定。使用空白對應表還原預設值。將 -vsync 設為 null 可省略此參數。支援：-loglevel、-probesize、-analyzeduration、-frames:v、-map-video、-vsync、-c:v、-f。新串流啟動時生效；重新載入整合可停止現有串流。 不影響相機原生快照。",
+          "native_webrtc": "使用整合的即時播放器，並允許透過支援的攝影機通話。可能增加 CPU 使用量。"
         }
       }
     },

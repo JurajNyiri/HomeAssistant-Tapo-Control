@@ -61,6 +61,7 @@ from .const import (
     CONF_CUSTOM_STREAM_7,
     CONF_DIRECT_STREAM_ARGUMENTS,
     CONF_SHOW_ON_MAP,
+    CONF_NATIVE_WEBRTC,
     DIRECT_STREAM_ARGUMENTS,
     HAS_STREAM_6,
     HAS_STREAM_7,
@@ -100,7 +101,9 @@ class FlowHandler(ConfigFlow):
         )
         host = self.reauth_entry.data[CONF_IP_ADDRESS]
         controlPort = self.reauth_entry.data[CONTROL_PORT]
-        if not areCameraPortsOpened(host, controlPort=controlPort):
+        if not await self.hass.async_add_executor_job(
+            areCameraPortsOpened, host, controlPort
+        ):
             LOGGER.debug(
                 "[REAUTH][%s] Some of the required ports are closed.",
                 host,
@@ -431,6 +434,7 @@ class FlowHandler(ConfigFlow):
         enable_webhooks = True
         enable_time_sync = False
         enable_sound_detection = False
+        native_webrtc = False
         sound_detection_peak = -30
         sound_detection_duration = 1
         sound_detection_reset = 10
@@ -477,6 +481,7 @@ class FlowHandler(ConfigFlow):
                 rtsp_transport = user_input[CONF_RTSP_TRANSPORT]
             else:
                 rtsp_transport = RTSP_TRANS_PROTOCOLS[0]
+            native_webrtc = user_input.get(CONF_NATIVE_WEBRTC, False)
             host = self.tapoHost
             controlPort = self.tapoControlPort
             cloud_password = self.tapoCloudPassword
@@ -542,6 +547,7 @@ class FlowHandler(ConfigFlow):
                         CONF_CUSTOM_STREAM_SD: "",
                         CONF_CUSTOM_STREAM_6: "",
                         CONF_CUSTOM_STREAM_7: "",
+                        CONF_NATIVE_WEBRTC: native_webrtc,
                         CONF_RTSP_TRANSPORT: "tcp",
                         UPDATE_INTERVAL_MAIN: UPDATE_INTERVAL_MAIN_DEFAULT,
                         UPDATE_INTERVAL_BATTERY: UPDATE_INTERVAL_BATTERY_DEFAULT,
@@ -579,6 +585,7 @@ class FlowHandler(ConfigFlow):
                         CONF_CUSTOM_STREAM_SD: "",
                         CONF_CUSTOM_STREAM_6: "",
                         CONF_CUSTOM_STREAM_7: "",
+                        CONF_NATIVE_WEBRTC: native_webrtc,
                         CONF_RTSP_TRANSPORT: rtsp_transport,
                         UPDATE_INTERVAL_MAIN: UPDATE_INTERVAL_MAIN_DEFAULT,
                         UPDATE_INTERVAL_BATTERY: UPDATE_INTERVAL_BATTERY_DEFAULT,
@@ -625,6 +632,7 @@ class FlowHandler(ConfigFlow):
                         SOUND_DETECTION_RESET,
                         description={"suggested_value": sound_detection_reset},
                     ): int,
+                    vol.Optional(CONF_NATIVE_WEBRTC, default=False): bool,
                     vol.Optional(
                         CONF_EXTRA_ARGUMENTS,
                         description={"suggested_value": extra_arguments},
@@ -867,7 +875,7 @@ class FlowHandler(ConfigFlow):
                     raise Exception("already_configured")
 
                 LOGGER.debug("[ADD DEVICE][%s] Verifying port %s.", host, controlPort)
-                if isOpen(host, controlPort):
+                if await self.hass.async_add_executor_job(isOpen, host, controlPort):
                     LOGGER.debug(
                         "[ADD DEVICE][%s] Port %s is opened, verifying access to control of camera.",
                         host,
@@ -892,7 +900,9 @@ class FlowHandler(ConfigFlow):
                                 "[ADD DEVICE][%s] Verifying ports all required camera ports.",
                                 host,
                             )
-                            if not areCameraPortsOpened(host, controlPort=controlPort):
+                            if not await self.hass.async_add_executor_job(
+                                areCameraPortsOpened, host, controlPort
+                            ):
                                 LOGGER.debug(
                                     "[ADD DEVICE][%s] Some of the required ports are closed.",
                                     host,
@@ -1091,7 +1101,9 @@ class FlowHandler(ConfigFlow):
                             "[ADD DEVICE][%s] Verifying ports all required camera ports.",
                             host,
                         )
-                        if not areCameraPortsOpened(host, controlPort=controlPort):
+                        if not await self.hass.async_add_executor_job(
+                            areCameraPortsOpened, host, controlPort
+                        ):
                             LOGGER.debug(
                                 "[ADD DEVICE][%s] Some of the required ports are closed.",
                                 host,
@@ -1628,6 +1640,8 @@ class TapoOptionsFlowHandler(OptionsFlow):
         enable_motion_sensor = self.config_entry.data[ENABLE_MOTION_SENSOR]
         enable_webhooks = self.config_entry.data[ENABLE_WEBHOOKS]
         show_on_map = self.config_entry.data.get(CONF_SHOW_ON_MAP, True)
+        native_webrtc = self.config_entry.data.get(CONF_NATIVE_WEBRTC, False)
+        previous_native_webrtc = native_webrtc
         enable_time_sync = self.config_entry.data[ENABLE_TIME_SYNC]
         extra_arguments = self.config_entry.data[CONF_EXTRA_ARGUMENTS]
         custom_stream_hd = self.config_entry.data.get(CONF_CUSTOM_STREAM_HD, "")
@@ -1643,6 +1657,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
         if user_input is not None:
             try:
                 show_on_map = user_input.get(CONF_SHOW_ON_MAP, show_on_map)
+                native_webrtc = user_input.get(CONF_NATIVE_WEBRTC, native_webrtc)
                 direct_stream_arguments = user_input.get(
                     CONF_DIRECT_STREAM_ARGUMENTS, {}
                 )
@@ -1935,6 +1950,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
 
                 allConfigData = {**self.config_entry.data}
                 allConfigData[CONF_SHOW_ON_MAP] = show_on_map
+                allConfigData[CONF_NATIVE_WEBRTC] = native_webrtc
                 allConfigData[ENABLE_MOTION_SENSOR] = enable_motion_sensor
                 allConfigData[ENABLE_WEBHOOKS] = enable_webhooks
                 allConfigData[CONF_IP_ADDRESS] = ip_address
@@ -1959,9 +1975,11 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     + str(controlPort),
                 )
 
-                if ipChanged or rtspEnablementChanged:
+                if ipChanged or rtspEnablementChanged or (
+                    native_webrtc != previous_native_webrtc
+                ):
                     LOGGER.debug(
-                        "[%s] IP or RTSP Enablement Changed, reloading entry...",
+                        "[%s] IP, RTSP or native WebRTC setting changed, reloading entry...",
                         ip_address,
                     )
                     await self.hass.config_entries.async_reload(
@@ -2022,6 +2040,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
                         description={"suggested_value": enable_webhooks},
                     ): bool,
                     vol.Optional(CONF_SHOW_ON_MAP, default=show_on_map): bool,
+                    vol.Optional(CONF_NATIVE_WEBRTC, default=native_webrtc): bool,
                     vol.Optional(
                         CONF_EXTRA_ARGUMENTS,
                         description={"suggested_value": extra_arguments},

@@ -35,9 +35,13 @@
           "custom_stream_sd": "Benutzerdefinierter Stream-Link (SD)",
           "custom_stream6": "Benutzerdefinierter Stream-Link (Teleobjektiv HD)",
           "custom_stream7": "Benutzerdefinierter Stream-Link (Teleobjektiv SD)",
-          "rtsp_transport": "RTSP-Transportmechanismus"
+          "rtsp_transport": "RTSP-Transportmechanismus",
+          "native_webrtc": "Natives WebRTC und Zwei-Wege-Audio (experimentell)"
         },
-        "description": "Fast geschafft!\nNur noch ein paar letzte Einstellungen..."
+        "description": "Fast geschafft!\nNur noch ein paar letzte Einstellungen...",
+        "data_description": {
+          "native_webrtc": "Verwendet den Live-Player der Integration und ermöglicht Sprechen auf unterstützten Kameras. Kann die CPU-Auslastung erhöhen."
+        }
       }
     },
     "error": {
@@ -82,11 +86,13 @@
           "custom_stream6": "Benutzerdefinierter Stream-Link (Teleobjektiv HD)",
           "custom_stream7": "Benutzerdefinierter Stream-Link (Teleobjektiv SD)",
           "rtsp_transport": "RTSP-Transportmechanismus",
-          "direct_stream_arguments": "FFmpeg-Parameter für direkte Streams"
+          "direct_stream_arguments": "FFmpeg-Parameter für direkte Streams",
+          "native_webrtc": "Natives WebRTC und Zwei-Wege-Audio (experimentell)"
         },
         "description": "Passe die Einstellungen deiner Tapo-Kamera an.",
         "data_description": {
-          "direct_stream_arguments": "Erweiterte Einstellungen für direkte Streams und Momentaufnahmen. Eine leere Zuordnung stellt die Standardwerte wieder her. -vsync: null lässt diesen Parameter weg. Unterstützt: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Gilt für neue Streams; Integration neu laden, um bestehende Streams zu beenden. Native Kamera-Momentaufnahmen bleiben davon unberührt."
+          "direct_stream_arguments": "Erweiterte Einstellungen für direkte Streams und Momentaufnahmen. Eine leere Zuordnung stellt die Standardwerte wieder her. -vsync: null lässt diesen Parameter weg. Unterstützt: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Gilt für neue Streams; Integration neu laden, um bestehende Streams zu beenden. Native Kamera-Momentaufnahmen bleiben davon unberührt.",
+          "native_webrtc": "Verwendet den Live-Player der Integration und ermöglicht Sprechen auf unterstützten Kameras. Kann die CPU-Auslastung erhöhen."
         }
       },
       "media": {

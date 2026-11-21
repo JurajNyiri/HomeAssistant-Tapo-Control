@@ -1,13 +1,13 @@
 import asyncio
 import os
 from functools import partial
+from importlib import import_module
 
 from haffmpeg.camera import CameraMjpeg
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from typing import Callable
 from pytapo.media_stream.snapshot import getSnapshot
 from pytapo.media_stream.streamer import Streamer
-from pytapo.media_stream.webrtc import WebRTCSession
 
 from homeassistant.const import STATE_UNAVAILABLE, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.core import HomeAssistant, callback
@@ -20,6 +20,7 @@ from homeassistant.components.camera import (
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS, DATA_FFMPEG
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers import entity_platform
+from homeassistant.requirements import async_process_requirements
 from homeassistant.helpers.aiohttp_client import async_aiohttp_proxy_stream
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.util import slugify
@@ -51,6 +52,7 @@ from .const import (
     CONF_CUSTOM_STREAM_7,
     CONF_DIRECT_STREAM_ARGUMENTS,
     CONF_SHOW_ON_MAP,
+    CONF_NATIVE_WEBRTC,
 )
 from .utils import (
     async_force_entry_refresh,
@@ -119,6 +121,18 @@ async def async_setup_entry(
         "set_record_plan",
     )
 
+    native_webrtc = config_entry.data.get(CONF_NATIVE_WEBRTC, False)
+    if native_webrtc:
+        await async_process_requirements(
+            hass, DOMAIN, ["aiortc==1.16.0"], is_built_in=False
+        )
+    rtsp_entity_class = (
+        TapoNativeRTSPCamEntity if native_webrtc else TapoRTSPCamEntity
+    )
+    direct_entity_class = (
+        TapoNativeDirectCamEntity if native_webrtc else TapoDirectCamEntity
+    )
+
     async def setupEntities(entry):
         hasRTSPEntities = False
         chn_id_0 = None
@@ -133,10 +147,10 @@ async def async_setup_entry(
             len(config_entry.data[CONF_USERNAME]) > 0
             and len(config_entry.data[CONF_PASSWORD]) > 0
         ):
-            hdStream = TapoRTSPCamEntity(
+            hdStream = rtsp_entity_class(
                 hass, config_entry, entry, "stream1", chn_id=chn_id_0
             )
-            sdStream = TapoRTSPCamEntity(
+            sdStream = rtsp_entity_class(
                 hass, config_entry, entry, "stream2", chn_id=chn_id_0
             )
 
@@ -153,7 +167,7 @@ async def async_setup_entry(
             )
             if not entry["isChild"] and has_stream6:
                 telephotoEntities.append(
-                    TapoRTSPCamEntity(
+                    rtsp_entity_class(
                         hass,
                         config_entry,
                         entry,
@@ -165,7 +179,7 @@ async def async_setup_entry(
                 )
             if not entry["isChild"] and has_stream7:
                 telephotoEntities.append(
-                    TapoRTSPCamEntity(
+                    rtsp_entity_class(
                         hass,
                         config_entry,
                         entry,
@@ -202,7 +216,7 @@ async def async_setup_entry(
                 chn_0_alias = None
                 chn_1_alias = None
 
-            directStreamHD = TapoDirectCamEntity(
+            directStreamHD = direct_entity_class(
                 hass,
                 config_entry,
                 entry,
@@ -211,7 +225,7 @@ async def async_setup_entry(
                 stream_label=f"{chn_0_alias} HD" if chn_0_alias is not None else None,
                 chn_id=chn_id_0,
             )
-            directStreamSD = TapoDirectCamEntity(
+            directStreamSD = direct_entity_class(
                 hass,
                 config_entry,
                 entry,
@@ -225,7 +239,7 @@ async def async_setup_entry(
             async_add_entities([directStreamHD, directStreamSD])
 
             if channel_info:
-                directMinorStreamHD = TapoDirectCamEntity(
+                directMinorStreamHD = direct_entity_class(
                     hass,
                     config_entry,
                     entry,
@@ -237,7 +251,7 @@ async def async_setup_entry(
                     ),
                     chn_id=chn_id_1,
                 )
-                directMinorStreamSD = TapoDirectCamEntity(
+                directMinorStreamSD = direct_entity_class(
                     hass,
                     config_entry,
                     entry,
@@ -260,6 +274,59 @@ async def async_setup_entry(
     await setupEntities(entry)
     for childDevice in entry["childDevices"]:
         await setupEntities(childDevice)
+
+
+class TapoNativeWebRTC:
+    """Opt-in native signaling; ordinary cameras retain HA provider selection."""
+
+    async def async_handle_async_webrtc_offer(
+        self, offer_sdp, session_id, send_message
+    ):
+        module = await self.hass.async_add_executor_job(
+            import_module, "pytapo.media_stream.webrtc"
+        )
+        source = None if self._directStream else await self.stream_source()
+        config = self.async_get_webrtc_client_configuration()
+
+        def on_error(error):
+            message = (
+                str(error).replace(source, "[camera stream]") if source else str(error)
+            )
+            send_message(WebRTCError("tapo_talk_failed", message))
+
+        session = module.WebRTCSession(
+            self._controller,
+            source=source,
+            quality="HD" if self._stream_id in ("stream1", "stream6") else "VGA",
+            video_stream=getattr(self, "videoStream", 0),
+            ff_args=self._direct_stream_arguments() if self._directStream else None,
+            rtsp_transport=self.stream_options.get(CONF_RTSP_TRANSPORT) or "tcp",
+            two_way_audio=self._two_way_audio,
+            ice_servers=[
+                server.to_dict() for server in config.configuration.ice_servers
+            ],
+            on_error=on_error,
+            on_close=lambda: self._webrtc_sessions.pop(session_id, None),
+        )
+        self._webrtc_sessions[session_id] = session
+        try:
+            send_message(WebRTCAnswer(await session.answer(offer_sdp)))
+        except Exception as error:
+            await session.close()
+            message = (
+                str(error).replace(source, "[camera stream]") if source else str(error)
+            )
+            LOGGER.warning("WebRTC failed for %s: %s", self.entity_id, message)
+            send_message(WebRTCError("tapo_webrtc_failed", message))
+
+    async def async_on_webrtc_candidate(self, session_id, candidate):
+        if session := self._webrtc_sessions.get(session_id):
+            await session.add_candidate(candidate.to_dict())
+
+    @callback
+    def close_webrtc_session(self, session_id):
+        if session := self._webrtc_sessions.get(session_id):
+            self.hass.async_create_task(session.close())
 
 
 class TapoCamEntity(Camera):
@@ -309,7 +376,8 @@ class TapoCamEntity(Camera):
         self._is_noise_sensor = False
         self._webrtc_sessions = {}
         self._two_way_audio = bool(
-            CameraEntityCapabilities is not None
+            isinstance(self, TapoNativeWebRTC)
+            and CameraEntityCapabilities is not None
             and self._controller.cloudPassword
             and entry["camData"].get("speakerVolume") is not None
         )
@@ -370,49 +438,6 @@ class TapoCamEntity(Camera):
 
     async def async_create_stream(self) -> Stream | None:
         return await super().async_create_stream()
-
-    async def async_handle_async_webrtc_offer(
-        self, offer_sdp, session_id, send_message
-    ):
-        source = None if self._directStream else await self.stream_source()
-        config = self.async_get_webrtc_client_configuration()
-
-        def on_error(error):
-            send_message(WebRTCError("tapo_talk_failed", str(error)))
-
-        session = WebRTCSession(
-            self._controller,
-            source=source,
-            quality="HD" if self._stream_id in ("stream1", "stream6") else "VGA",
-            video_stream=getattr(self, "videoStream", 0),
-            ff_args=self._direct_stream_arguments() if self._directStream else None,
-            rtsp_transport=self.stream_options.get(CONF_RTSP_TRANSPORT) or "tcp",
-            two_way_audio=self._two_way_audio,
-            ice_servers=[
-                server.to_dict() for server in config.configuration.ice_servers
-            ],
-            on_error=on_error,
-            on_close=lambda: self._webrtc_sessions.pop(session_id, None),
-        )
-        self._webrtc_sessions[session_id] = session
-        try:
-            send_message(WebRTCAnswer(await session.answer(offer_sdp)))
-        except Exception as error:
-            await session.close()
-            message = (
-                str(error).replace(source, "[camera stream]") if source else str(error)
-            )
-            LOGGER.warning("WebRTC failed for %s: %s", self.entity_id, message)
-            send_message(WebRTCError("tapo_webrtc_failed", message))
-
-    async def async_on_webrtc_candidate(self, session_id, candidate):
-        if session := self._webrtc_sessions.get(session_id):
-            await session.add_candidate(candidate.to_dict())
-
-    @callback
-    def close_webrtc_session(self, session_id):
-        if session := self._webrtc_sessions.get(session_id):
-            self.hass.async_create_task(session.close())
 
     def updateTapo(self, camData):
         LOGGER.debug("updateTapo - camera")
@@ -675,19 +700,22 @@ class TapoDirectCamEntity(TapoCamEntity):
     async def async_will_remove_from_hass(self) -> None:
         self._enabled = False
         async with self._stream_lock:
-            if self._HAstream is not None:
-                await self._HAstream.stop()
-                if self._HAstream.dynamic_stream_settings.preload_stream:
-                    # A removed entity must also stop a preloaded worker.
-                    await self._HAstream._stop()
-            # Release a blocked writer before waiting for FFmpeg to exit.
-            if self._stream_fd is not None:
-                os.close(self._stream_fd)
-                self._stream_fd = None
+            # Ending the producer releases HA's reader; keep its source FD valid
+            # until the reader has stopped.
             if self._streamer:
                 await self._streamer.stop()
             if self._stream_task:
                 self._stream_task.cancel()
+            if self._HAstream is not None:
+                # A pending source restart must not clear HA's shutdown signal.
+                self._HAstream._fast_restart_once = False
+                await self._HAstream.stop()
+                if self._HAstream.dynamic_stream_settings.preload_stream:
+                    # A removed entity must also stop a preloaded worker.
+                    await self._HAstream._stop()
+            if self._stream_fd is not None:
+                os.close(self._stream_fd)
+                self._stream_fd = None
         await super().async_will_remove_from_hass()
 
     async def async_camera_image(
@@ -784,12 +812,7 @@ class TapoDirectCamEntity(TapoCamEntity):
         except Exception as err:
             LOGGER.debug("Direct stream ended with an error: %s", err)
         finally:
-            proc = info["ffmpegProcess"]
-            if proc.returncode is None:
-                proc.kill()
-                await proc.wait()
-            # pytapo.stop() awaits the same task; a failed task must not prevent
-            # the process cleanup above.
+            # pytapo also releases unread output before waiting for FFmpeg.
             try:
                 await streamer.stop()
             except Exception as err:
@@ -804,6 +827,8 @@ class TapoDirectCamEntity(TapoCamEntity):
 
     async def _ensure_av_pipe(self, newStream=False) -> None:
         async with self._stream_lock:
+            if not self._enabled:
+                return
             LOGGER.debug("_ensure_av_pipe() called")
 
             if self._streamer and self._streamer.running and not newStream:
@@ -851,7 +876,11 @@ class TapoDirectCamEntity(TapoCamEntity):
 
             if self._HAstream is not None:
                 newSource = await self.stream_source()
-                self._HAstream.update_source(newSource)
+                if self._HAstream._thread and self._HAstream._thread.is_alive():
+                    self._HAstream.update_source(newSource)
+                else:
+                    # update_source() queues a restart even for an idle worker.
+                    self._HAstream.source = newSource
 
             os.set_inheritable(self._stream_fd, True)
             self._stream_task = info["streamProcess"]
@@ -878,3 +907,11 @@ class TapoDirectCamEntity(TapoCamEntity):
         if self._enabled and not self._HAstream.available:
             LOGGER.debug("%s: HA stream unavailable: restarting", self.entity_id)
             asyncio.create_task(self._ensure_av_pipe(newStream=True))
+
+
+class TapoNativeRTSPCamEntity(TapoNativeWebRTC, TapoRTSPCamEntity):
+    """Existing RTSP entity with native WebRTC explicitly enabled."""
+
+
+class TapoNativeDirectCamEntity(TapoNativeWebRTC, TapoDirectCamEntity):
+    """Existing Direct entity with native WebRTC explicitly enabled."""

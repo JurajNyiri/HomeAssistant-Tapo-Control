@@ -145,7 +145,9 @@ After the call, check the camera entity's `record_plan` attribute and the schedu
 
 ## Two-way audio (preview)
 
-Requires Home Assistant 2026.11+, a camera with a speaker, and a configured **Cloud Password**. Enable **Settings > System > Labs > Two-way audio**, then open the camera's more-info dialog over **HTTPS**, allow microphone access, and use the microphone control.
+Native WebRTC and talk are **opt-in**. In the integration options, choose **Configure device** and enable **Native WebRTC and two-way audio (experimental)**. This player may increase CPU use.
+
+Talk requires Home Assistant 2026.11+, a camera with a speaker, and a configured **Cloud Password**. Enable **Settings > System > Labs > Two-way audio**, then open the camera's more-info dialog over **HTTPS**, allow microphone access, and use the microphone control.
 
 ## Sound Detection
 
@@ -241,7 +243,7 @@ Depending on the camera and configuration, the integration exposes:
 - HD Stream (Direct)
 - SD Stream (Direct)
 
-Direct streams use the proprietary TP-Link protocol; the other entities use RTSP. Both support video and audio in Home Assistant's native WebRTC player. For custom cards, see the [dashboard examples](examples/EXAMPLES_LOVELACE.md).
+Direct streams use the proprietary TP-Link protocol; the other entities use RTSP. Live views use Home Assistant's normal playback by default. Native WebRTC is available as an experimental opt-in. For custom cards, see the [dashboard examples](examples/EXAMPLES_LOVELACE.md).
 
 ### Why use the Direct streams?
 
@@ -313,7 +315,7 @@ tap_action:
   action: more-info
 ```
 
-Native WebRTC decodes and re-encodes video on the Home Assistant host for both RTSP and Direct entities. Higher resolutions and more simultaneous live views increase CPU use. Try SD, close unused live views (especially on battery cameras), and check Home Assistant CPU usage and the camera's network connection.
+With the experimental native WebRTC option enabled, video is decoded and re-encoded on the Home Assistant host for both RTSP and Direct entities. Higher resolutions and more simultaneous live views increase CPU use. Try SD, close unused live views (especially on battery cameras), and check Home Assistant CPU usage and the camera's network connection.
 
 Delay depends on the camera, network and available processing power.
 
@@ -322,7 +324,7 @@ Delay depends on the camera, network and available processing power.
 <details>
   <summary>No audio in camera stream</summary>
 
-Native WebRTC live views support camera audio for both RTSP and Direct entities. Unmute the player and check the camera's **Microphone Mute** and **Microphone Volume** settings.
+The optional native WebRTC player supports camera audio for both RTSP and Direct entities. Unmute the player and check the camera's **Microphone Mute** and **Microphone Volume** settings.
 
 **RTSP recordings made with `camera.record` have no audio when the camera uses A-law**, which Home Assistant's stream recorder does not support. This also affects RTSP HLS playback; native WebRTC live views support sound.
 
