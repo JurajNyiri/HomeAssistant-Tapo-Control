@@ -621,15 +621,62 @@ async def _preloadRecordingThumbnails(hass, entryData, entry_id, recordingsByDat
             )
 
 
+def checkInsideStorage(path, storageDirPath):
+    """Raise if path, symlinks followed, leaves the storage directory (executor).
+
+    The lexical isPathInside() check runs on the event loop for every
+    recording; this one looks at the file system and belongs in the executor.
+    """
+    storage = os.path.realpath(storageDirPath)
+    real = os.path.realpath(path)
+    if os.path.commonpath([storage, real]) != storage:
+        raise ValueError("Media path escapes storage: " + path)
+
+
+def prepareColdDir(coldDirPath, folder):
+    """Create videos/ or thumbs/ and check where it really points (executor)."""
+    path = os.path.join(coldDirPath, folder)
+    # Creating it also refreshes a stale listing of a network share.
+    os.makedirs(path, 0o777, exist_ok=True)
+    checkInsideStorage(path, coldDirPath)
+    return path
+
+
 def listColdFiles(coldDirPath):
-    """Return the file names in videos/ and thumbs/ of cold storage (executor)."""
+    """Return the file names in videos/ and thumbs/ of cold storage (executor).
+
+    Symlinked files are left out, so they count as missing.
+    """
     files = {}
     for folder in ("videos", "thumbs"):
-        path = os.path.join(coldDirPath, folder)
-        # Creating it also refreshes a stale listing of a network share.
-        os.makedirs(path, 0o777, exist_ok=True)
-        files[folder] = set(os.listdir(path))
+        path = prepareColdDir(coldDirPath, folder)
+        with os.scandir(path) as entries:
+            files[folder] = {entry.name for entry in entries if not entry.is_symlink()}
     return files
+
+
+def coldFileOnDisk(filePath):
+    """Whether a cold storage file exists as a real file inside it (executor)."""
+    if os.path.islink(filePath):
+        return False
+    if not os.path.exists(filePath):
+        return False
+    # filePath is <cold storage>/<folder>/<file>
+    checkInsideStorage(filePath, os.path.dirname(os.path.dirname(filePath)))
+    return True
+
+
+def copyColdFile(coldFilePath, hotFilePath, coldDirPath):
+    """Copy a cold storage file without following a symlink to it (executor)."""
+    checkInsideStorage(os.path.dirname(coldFilePath), coldDirPath)
+    try:
+        source = os.open(coldFilePath, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    except OSError as err:
+        if os.path.islink(coldFilePath):
+            raise ValueError("Media file is a symlink: " + coldFilePath) from err
+        raise
+    with os.fdopen(source, "rb") as src, open(hotFilePath, "wb") as dst:
+        shutil.copyfileobj(src, dst)
 
 
 async def getColdFiles(hass, entry_id):
@@ -778,7 +825,7 @@ async def coldFileExists(hass, filePath, coldFiles, folder):
     """
     if coldFiles is not None and os.path.basename(filePath) in coldFiles[folder]:
         return True
-    if not await hass.async_add_executor_job(os.path.exists, filePath):
+    if not await hass.async_add_executor_job(coldFileOnDisk, filePath):
         return False
     if coldFiles is not None:
         coldFiles[folder].add(os.path.basename(filePath))
@@ -1182,9 +1229,9 @@ def isPathInside(path, directory):
 
     Media sync calls this for every recording on the event loop. Path.resolve()
     looks up every component on the file system (twice per call), which on a
-    network share blocked the loop for seconds. The file names are built from
-    numbers and a validated device ID, so a lexical check is enough to catch
-    "..", absolute or otherwise escaping names.
+    network share blocked the loop for seconds. This catches "..", absolute
+    or otherwise escaping names; symlinks are checked in the executor where
+    the folders are listed and the files are used (checkInsideStorage).
     """
     directory = os.path.normpath(directory)
     return os.path.commonpath([directory, os.path.normpath(path)]) == directory
@@ -1250,9 +1297,14 @@ async def getHotFile(
         raise ValueError("Media path escapes hot storage")
 
     if not await hass.async_add_executor_job(os.path.exists, hotFilePath):
-        if not await hass.async_add_executor_job(os.path.exists, coldFilePath):
+        if not await hass.async_add_executor_job(coldFileOnDisk, coldFilePath):
             raise Unresolvable("Failed to get file from cold storage: " + coldFilePath)
-        await hass.async_add_executor_job(shutil.copyfile, coldFilePath, hotFilePath)
+        await hass.async_add_executor_job(
+            copyColdFile,
+            coldFilePath,
+            hotFilePath,
+            getColdDirPathForEntry(hass, entry_id),
+        )
     return hotFilePath
 
 
@@ -1301,9 +1353,7 @@ async def getRecording(
         #If the cold path is on an smb share or something similar, the videos folder gets cached but can break if something on the nas changes (folder removal or network hiccups)
         #Therefore simply create the folder unconditionally and fail fast if it already exists. This also helps in recaching the files in the folder.
         #With coldFiles, listColdFiles did this once for the whole run.
-        await hass.async_add_executor_job(
-            pathlib.Path(coldDirPath + "/videos").mkdir, 0o777, True, True
-        )
+        await hass.async_add_executor_job(prepareColdDir, coldDirPath, "videos")
 
     coldFilePath = getColdFile(
         hass, entry_id, startDate, endDate, "videos", childID=childID
