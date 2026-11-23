@@ -1,5 +1,8 @@
 import asyncio
+import logging
 import os
+import shlex
+import time
 from functools import partial
 from importlib import import_module
 
@@ -15,6 +18,7 @@ from homeassistant.components.camera import (
     CameraEntityFeature,
     Camera,
     WebRTCAnswer,
+    WebRTCClientConfiguration,
     WebRTCError,
 )
 from homeassistant.components.ffmpeg import CONF_EXTRA_ARGUMENTS, DATA_FFMPEG
@@ -36,6 +40,7 @@ except ImportError:
 
 from .const import (
     CONF_RTSP_TRANSPORT,
+    RTSP_TRANS_PROTOCOLS,
     SERVICE_SAVE_PRESET,
     SCHEMA_SERVICE_SAVE_PRESET,
     SERVICE_DELETE_PRESET,
@@ -287,6 +292,11 @@ class TapoNativeWebRTC:
     async def async_handle_async_webrtc_offer(
         self, offer_sdp, session_id, send_message
     ):
+        LOGGER.debug(
+            "[%s] Native WebRTC stream requested (%s)",
+            self.entity_id,
+            "Direct" if self._directStream else "RTSP",
+        )
         module = await self.hass.async_add_executor_job(
             import_module, "pytapo.media_stream.webrtc"
         )
@@ -442,7 +452,20 @@ class TapoCamEntity(Camera):
         await self._coordinator.async_request_refresh()
 
     async def async_create_stream(self) -> Stream | None:
+        LOGGER.debug(
+            "[%s] Home Assistant stream requested (HLS or recording)", self.entity_id
+        )
         return await super().async_create_stream()
+
+    @callback
+    def _async_get_webrtc_client_configuration(self) -> WebRTCClientConfiguration:
+        if provider := self.webrtc_provider:
+            LOGGER.debug(
+                "[%s] Home Assistant WebRTC setup requested (provider: %s)",
+                self.entity_id,
+                provider.domain,
+            )
+        return super()._async_get_webrtc_client_configuration()
 
     def updateTapo(self, camData):
         LOGGER.debug("updateTapo - camera")
@@ -613,42 +636,82 @@ class TapoRTSPCamEntity(TapoCamEntity):
             chn_id,
         )
 
-    async def async_camera_image(self, width=None, height=None):
-        LOGGER.debug("async_camera_image - camera")
-        ffmpeg = ImageFrame(self._ffmpeg.binary)
+    def _ffmpeg_input(self) -> tuple[str, str]:
         streaming_url = getStreamSource(
             self._config_entry,
             self._stream_id,
         )
-        image = await asyncio.shield(
+        transport = self.stream_options.get(CONF_RTSP_TRANSPORT)
+        if (
+            transport in RTSP_TRANS_PROTOCOLS
+            and streaming_url.startswith(("rtsp://", "rtsps://"))
+            and not any(char.isspace() for char in streaming_url)
+        ):
+            # Pass transport as an FFmpeg input option before -i.
+            return (
+                f"-rtsp_transport {transport} -i {shlex.quote(streaming_url)}",
+                transport,
+            )
+        return streaming_url, "from FFmpeg input"
+
+    async def async_camera_image(self, width=None, height=None):
+        ffmpeg_input, transport = self._ffmpeg_input()
+        LOGGER.debug(
+            "[%s] RTSP snapshot requested (transport: %s)", self.entity_id, transport
+        )
+        ffmpeg = ImageFrame(self._ffmpeg.binary)
+        return await asyncio.shield(
             ffmpeg.get_image(
-                streaming_url,
+                ffmpeg_input,
                 output_format=IMAGE_JPEG,
                 extra_cmd=self._extra_arguments,
             )
         )
-        return image
 
     async def handle_async_mjpeg_stream(self, request):
-        LOGGER.debug("handle_async_mjpeg_stream - camera")
-        streaming_url = getStreamSource(
-            self._config_entry,
-            self._stream_id,
+        LOGGER.debug("[%s] MJPEG stream requested (RTSP)", self.entity_id)
+        ffmpeg_input, transport = self._ffmpeg_input()
+        LOGGER.debug(
+            "[%s] Opening RTSP MJPEG (transport: %s, extra FFmpeg arguments: %s)",
+            self.entity_id,
+            transport,
+            bool(self._extra_arguments),
         )
         stream = CameraMjpeg(self._ffmpeg.binary)
-        await stream.open_camera(
-            streaming_url,
-            extra_cmd=self._extra_arguments,
-        )
+        if not await stream.open_camera(ffmpeg_input, extra_cmd=self._extra_arguments):
+            LOGGER.debug("[%s] RTSP MJPEG could not start FFmpeg", self.entity_id)
+            return None
+
+        process = stream.process
+        debug_reader = None
         try:
             stream_reader = await stream.get_reader()
+            content_type = self._ffmpeg.ffmpeg_stream_content_type
+            LOGGER.debug(
+                "[%s] RTSP MJPEG FFmpeg started (PID %s, content type: %s)",
+                self.entity_id,
+                process.pid,
+                content_type,
+            )
+            if LOGGER.isEnabledFor(logging.DEBUG):
+                debug_reader = _MjpegDebugReader(stream_reader, self.entity_id)
             return await async_aiohttp_proxy_stream(
                 self.hass,
                 request,
-                stream_reader,
-                self._ffmpeg.ffmpeg_stream_content_type,
+                debug_reader if debug_reader is not None else stream_reader,
+                content_type,
             )
         finally:
+            if debug_reader is not None:
+                LOGGER.debug(
+                    "[%s] RTSP MJPEG ended after %.1fs (received output: %s, "
+                    "stdout EOF: %s, FFmpeg exit code: %s)",
+                    self.entity_id,
+                    time.monotonic() - debug_reader.started_at,
+                    debug_reader.received_output,
+                    stream_reader.at_eof(),
+                    process.returncode,
+                )
             await stream.close()
 
     async def stream_source(self):
@@ -656,6 +719,28 @@ class TapoRTSPCamEntity(TapoCamEntity):
             self._config_entry,
             self._stream_id,
         )
+
+
+class _MjpegDebugReader:
+    """Log when the MJPEG proxy reads its first FFmpeg output."""
+
+    def __init__(self, reader: asyncio.StreamReader, entity_id: str):
+        self._reader = reader
+        self._entity_id = entity_id
+        self.started_at = time.monotonic()
+        self.received_output = False
+
+    async def read(self, size: int) -> bytes:
+        data = await self._reader.read(size)
+        if data and not self.received_output:
+            self.received_output = True
+            LOGGER.debug(
+                "[%s] RTSP MJPEG received first FFmpeg output after %.1fs (%s bytes)",
+                self._entity_id,
+                time.monotonic() - self.started_at,
+                len(data),
+            )
+        return data
 
 
 class TapoDirectCamEntity(TapoCamEntity):
@@ -775,7 +860,7 @@ class TapoDirectCamEntity(TapoCamEntity):
             await self._stop_direct_stream(streamer, info)
 
     async def handle_async_mjpeg_stream(self, request):
-        LOGGER.debug("Direct MJPEG: request")
+        LOGGER.debug("[%s] MJPEG stream requested (Direct)", self.entity_id)
         streamer = Streamer(
             self._controller,
             includeAudio=False,
