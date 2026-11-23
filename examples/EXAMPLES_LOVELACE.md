@@ -22,7 +22,7 @@ camera_image: camera.bedroom_hd
 
 ![Example 2](example2.png)
 
-This shows live video instead of refreshing snapshots. Home Assistant selects the playback provider; the integration's native WebRTC player is opt-in.
+This shows live video using the integration's playback setting. See [Live view mode](../README.md#live-view-mode).
 
 ```yaml
 type: picture-entity
@@ -33,7 +33,7 @@ camera_view: live
 
 ### Native live view
 
-Use the built-in player for live video and audio.
+Use the built-in player for live video. Audio is available in supported modes.
 
 ```yaml
 type: picture-entity

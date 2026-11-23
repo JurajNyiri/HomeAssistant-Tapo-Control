@@ -1,5 +1,14 @@
 {
   "title": "Tapo: Contrôle Caméras",
+  "selector": {
+    "live_view_mode": {
+      "options": {
+        "home_assistant": "Home Assistant (automatique)",
+        "native_webrtc": "WebRTC natif (expérimental)",
+        "mjpeg": "MJPEG (vidéo uniquement)"
+      }
+    }
+  },
   "config": {
     "flow_title": "Tapo: Contrôle Caméras {name}",
     "step": {
@@ -65,11 +74,11 @@
           "custom_stream6": "Lien de flux personnalisé (téléobjectif HD)",
           "custom_stream7": "Lien de flux personnalisé (téléobjectif SD)",
           "rtsp_transport": "Mécanisme de transport RTSP",
-          "native_webrtc": "WebRTC natif et audio bidirectionnel (expérimental)"
+          "live_view_mode": "Mode de vue en direct"
         },
         "description": "Presque terminé!\nEncore quelques options finales...",
         "data_description": {
-          "native_webrtc": "Utilise le lecteur de l’intégration et permet de parler sur les caméras compatibles. Peut augmenter l’utilisation du processeur."
+          "live_view_mode": "**Home Assistant (automatique)** est le mode par défaut. Home Assistant utilise HLS ou un fournisseur WebRTC disponible, comme go2rtc.\n\n**WebRTC natif (expérimental)** utilise le lecteur de l’intégration et prend en charge l’audio bidirectionnel sur les caméras compatibles. Il peut solliciter davantage le processeur.\n\n**MJPEG (vidéo uniquement)** diffuse des images JPEG pour la vue en direct. Choisissez un autre mode pour l’audio ou l’enregistrement via Home Assistant."
         }
       }
     },
@@ -156,12 +165,12 @@
           "custom_stream7": "Lien de flux personnalisé (téléobjectif SD)",
           "rtsp_transport": "Mécanisme de transport RTSP",
           "direct_stream_arguments": "Paramètres FFmpeg des flux directs",
-          "native_webrtc": "WebRTC natif et audio bidirectionnel (expérimental)"
+          "live_view_mode": "Mode de vue en direct"
         },
         "description": "Modifier les paramètres de votre caméra Tapo.",
         "data_description": {
           "direct_stream_arguments": "Réglages avancés des flux directs et des instantanés. Une correspondance vide rétablit les valeurs par défaut. -vsync: null omet ce paramètre. Paramètres pris en charge : -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Applicable aux nouveaux flux ; rechargez l’intégration pour arrêter les flux existants. Les instantanés natifs de la caméra ne sont pas affectés.",
-          "native_webrtc": "Utilise le lecteur de l’intégration et permet de parler sur les caméras compatibles. Peut augmenter l’utilisation du processeur."
+          "live_view_mode": "**Home Assistant (automatique)** est le mode par défaut. Home Assistant utilise HLS ou un fournisseur WebRTC disponible, comme go2rtc.\n\n**WebRTC natif (expérimental)** utilise le lecteur de l’intégration et prend en charge l’audio bidirectionnel sur les caméras compatibles. Il peut solliciter davantage le processeur.\n\n**MJPEG (vidéo uniquement)** diffuse des images JPEG pour la vue en direct. Choisissez un autre mode pour l’audio ou l’enregistrement via Home Assistant."
         }
       }
     },

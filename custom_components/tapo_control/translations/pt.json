@@ -1,5 +1,14 @@
 {
   "title": "Tapo: Controlo de Câmaras",
+  "selector": {
+    "live_view_mode": {
+      "options": {
+        "home_assistant": "Home Assistant (automático)",
+        "native_webrtc": "WebRTC nativo (experimental)",
+        "mjpeg": "MJPEG (apenas vídeo)"
+      }
+    }
+  },
   "config": {
     "flow_title": "Tapo: Controlo de Câmaras {name}",
     "step": {
@@ -30,11 +39,11 @@
           "sound_detection_peak": "[Deteção de som] Pico em dB. 0 é muito alto e -100 é baixo.",
           "sound_detection_duration": "[Deteção de som] Quanto tempo o ruído necessita de estar acima do pico para ativar o estado.",
           "sound_detection_reset": "[Deteção de som] Tempo para repor o estado depois de não haver ruído acima do pico.",
-          "native_webrtc": "WebRTC nativo e áudio bidirecional (experimental)"
+          "live_view_mode": "Modo de visualização em direto"
         },
         "description": "Quase lá!\nSó mais algumas opções...",
         "data_description": {
-          "native_webrtc": "Utiliza o leitor da integração e permite falar nas câmaras compatíveis. Pode aumentar a utilização do processador."
+          "live_view_mode": "**Home Assistant (automático)** é o modo predefinido. O Home Assistant escolhe HLS ou um fornecedor WebRTC disponível, como o go2rtc.\n\n**WebRTC nativo (experimental)** utiliza o leitor da integração e suporta áudio bidirecional em câmaras compatíveis. Pode aumentar a utilização do processador.\n\n**MJPEG (apenas vídeo)** transmite imagens JPEG para visualização em direto. Escolha outro modo para ouvir áudio ou gravar através do Home Assistant."
         }
       }
     },
@@ -75,12 +84,12 @@
           "sound_detection_duration": "[Deteção de som] Quanto tempo o ruído necessita de estar acima do pico para ativar o estado.",
           "sound_detection_reset": "[Deteção de som] Tempo para repor o estado depois de não haver ruído acima do pico.",
           "direct_stream_arguments": "Parâmetros FFmpeg dos fluxos diretos",
-          "native_webrtc": "WebRTC nativo e áudio bidirecional (experimental)"
+          "live_view_mode": "Modo de visualização em direto"
         },
         "description": "Modificar definições da sua câmara Tapo.",
         "data_description": {
           "direct_stream_arguments": "Opções avançadas para fluxos diretos e imagens. Um mapeamento vazio repõe os valores predefinidos. -vsync: null omite este parâmetro. Suportados: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Aplica-se a novos fluxos; recarregue a integração para parar os existentes. As imagens nativas da câmara não são afetadas.",
-          "native_webrtc": "Utiliza o leitor da integração e permite falar nas câmaras compatíveis. Pode aumentar a utilização do processador."
+          "live_view_mode": "**Home Assistant (automático)** é o modo predefinido. O Home Assistant escolhe HLS ou um fornecedor WebRTC disponível, como o go2rtc.\n\n**WebRTC nativo (experimental)** utiliza o leitor da integração e suporta áudio bidirecional em câmaras compatíveis. Pode aumentar a utilização do processador.\n\n**MJPEG (apenas vídeo)** transmite imagens JPEG para visualização em direto. Escolha outro modo para ouvir áudio ou gravar através do Home Assistant."
         }
       },
       "media": {

@@ -1,5 +1,14 @@
 {
   "title": "Tapo: Kamerasteuerung",
+  "selector": {
+    "live_view_mode": {
+      "options": {
+        "home_assistant": "Home Assistant (automatisch)",
+        "native_webrtc": "Natives WebRTC (experimentell)",
+        "mjpeg": "MJPEG (nur Video)"
+      }
+    }
+  },
   "config": {
     "flow_title": "Tapo: Kamerasteuerung {name}",
     "step": {
@@ -36,11 +45,11 @@
           "custom_stream6": "Benutzerdefinierter Stream-Link (Teleobjektiv HD)",
           "custom_stream7": "Benutzerdefinierter Stream-Link (Teleobjektiv SD)",
           "rtsp_transport": "RTSP-Transportmechanismus",
-          "native_webrtc": "Natives WebRTC und Zwei-Wege-Audio (experimentell)"
+          "live_view_mode": "Live-Ansichtsmodus"
         },
         "description": "Fast geschafft!\nNur noch ein paar letzte Einstellungen...",
         "data_description": {
-          "native_webrtc": "Verwendet den Live-Player der Integration und ermöglicht Sprechen auf unterstützten Kameras. Kann die CPU-Auslastung erhöhen."
+          "live_view_mode": "**Home Assistant (automatisch)** ist die Standardeinstellung. Home Assistant wählt HLS oder einen verfügbaren WebRTC-Anbieter wie go2rtc.\n\n**Natives WebRTC (experimentell)** verwendet den Player der Integration und unterstützt Zwei-Wege-Audio bei kompatiblen Kameras. Die CPU-Auslastung kann steigen.\n\n**MJPEG (nur Video)** überträgt JPEG-Bilder für die Live-Ansicht. Wähle für Audio oder Aufnahmen über Home Assistant einen anderen Modus."
         }
       }
     },
@@ -87,12 +96,12 @@
           "custom_stream7": "Benutzerdefinierter Stream-Link (Teleobjektiv SD)",
           "rtsp_transport": "RTSP-Transportmechanismus",
           "direct_stream_arguments": "FFmpeg-Parameter für direkte Streams",
-          "native_webrtc": "Natives WebRTC und Zwei-Wege-Audio (experimentell)"
+          "live_view_mode": "Live-Ansichtsmodus"
         },
         "description": "Passe die Einstellungen deiner Tapo-Kamera an.",
         "data_description": {
           "direct_stream_arguments": "Erweiterte Einstellungen für direkte Streams und Momentaufnahmen. Eine leere Zuordnung stellt die Standardwerte wieder her. -vsync: null lässt diesen Parameter weg. Unterstützt: -loglevel, -probesize, -analyzeduration, -frames:v, -map-video, -vsync, -c:v, -f. Gilt für neue Streams; Integration neu laden, um bestehende Streams zu beenden. Native Kamera-Momentaufnahmen bleiben davon unberührt.",
-          "native_webrtc": "Verwendet den Live-Player der Integration und ermöglicht Sprechen auf unterstützten Kameras. Kann die CPU-Auslastung erhöhen."
+          "live_view_mode": "**Home Assistant (automatisch)** ist die Standardeinstellung. Home Assistant wählt HLS oder einen verfügbaren WebRTC-Anbieter wie go2rtc.\n\n**Natives WebRTC (experimentell)** verwendet den Player der Integration und unterstützt Zwei-Wege-Audio bei kompatiblen Kameras. Die CPU-Auslastung kann steigen.\n\n**MJPEG (nur Video)** überträgt JPEG-Bilder für die Live-Ansicht. Wähle für Audio oder Aufnahmen über Home Assistant einen anderen Modus."
         }
       },
       "media": {

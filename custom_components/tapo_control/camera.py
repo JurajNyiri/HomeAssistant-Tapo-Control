@@ -51,8 +51,11 @@ from .const import (
     CONF_CUSTOM_STREAM_6,
     CONF_CUSTOM_STREAM_7,
     CONF_DIRECT_STREAM_ARGUMENTS,
+    CONF_LIVE_VIEW_MODE,
     CONF_SHOW_ON_MAP,
-    CONF_NATIVE_WEBRTC,
+    LIVE_VIEW_HOME_ASSISTANT,
+    LIVE_VIEW_MJPEG,
+    LIVE_VIEW_NATIVE_WEBRTC,
 )
 from .utils import (
     async_force_entry_refresh,
@@ -121,17 +124,19 @@ async def async_setup_entry(
         "set_record_plan",
     )
 
-    native_webrtc = config_entry.data.get(CONF_NATIVE_WEBRTC, False)
-    if native_webrtc:
+    live_view_mode = config_entry.data.get(CONF_LIVE_VIEW_MODE, LIVE_VIEW_HOME_ASSISTANT)
+    if live_view_mode == LIVE_VIEW_NATIVE_WEBRTC:
         await async_process_requirements(
             hass, DOMAIN, ["aiortc==1.16.0"], is_built_in=False
         )
-    rtsp_entity_class = (
-        TapoNativeRTSPCamEntity if native_webrtc else TapoRTSPCamEntity
-    )
-    direct_entity_class = (
-        TapoNativeDirectCamEntity if native_webrtc else TapoDirectCamEntity
-    )
+        rtsp_entity_class = TapoNativeRTSPCamEntity
+        direct_entity_class = TapoNativeDirectCamEntity
+    elif live_view_mode == LIVE_VIEW_MJPEG:
+        rtsp_entity_class = TapoMJPEGRTSPCamEntity
+        direct_entity_class = TapoMJPEGDirectCamEntity
+    else:
+        rtsp_entity_class = TapoRTSPCamEntity
+        direct_entity_class = TapoDirectCamEntity
 
     async def setupEntities(entry):
         hasRTSPEntities = False
@@ -915,3 +920,23 @@ class TapoNativeRTSPCamEntity(TapoNativeWebRTC, TapoRTSPCamEntity):
 
 class TapoNativeDirectCamEntity(TapoNativeWebRTC, TapoDirectCamEntity):
     """Existing Direct entity with native WebRTC explicitly enabled."""
+
+
+class TapoMJPEG:
+    """Use the entity's MJPEG proxy for live view."""
+
+    @property
+    def supported_features(self):
+        return CameraEntityFeature.ON_OFF
+
+    async def async_create_stream(self) -> Stream | None:
+        # HA may attempt to preload a stream even without the STREAM feature.
+        return None
+
+
+class TapoMJPEGRTSPCamEntity(TapoMJPEG, TapoRTSPCamEntity):
+    """RTSP camera with MJPEG live view."""
+
+
+class TapoMJPEGDirectCamEntity(TapoMJPEG, TapoDirectCamEntity):
+    """Direct camera with MJPEG live view."""

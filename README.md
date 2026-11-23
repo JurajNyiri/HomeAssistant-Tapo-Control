@@ -146,7 +146,7 @@ After the call, check the camera entity's `record_plan` attribute and the schedu
 
 ## Two-way audio (preview)
 
-Native WebRTC and talk are **opt-in**. In the integration options, choose **Configure device** and enable **Native WebRTC and two-way audio (experimental)**. This player may increase CPU use.
+In the integration options, open **Configure device** and set **Live view mode** to **Native WebRTC (experimental)**. This player may increase CPU use.
 
 Talk requires Home Assistant 2026.11+, a camera with a speaker, and a configured **Cloud Password**. Enable **Settings > System > Labs > Two-way audio**, then open the camera's more-info dialog over **HTTPS**, allow microphone access, and use the microphone control.
 
@@ -257,7 +257,15 @@ Depending on the camera and configuration, the integration exposes:
 - HD Stream (Direct)
 - SD Stream (Direct)
 
-Direct streams use the proprietary TP-Link protocol; the other entities use RTSP. Live views use Home Assistant's normal playback by default. Native WebRTC is available as an experimental opt-in. For custom cards, see the [dashboard examples](examples/EXAMPLES_LOVELACE.md).
+Direct streams use the proprietary TP-Link protocol. The other entities use RTSP. For custom cards, see the [dashboard examples](examples/EXAMPLES_LOVELACE.md).
+
+### Live view mode
+
+Open **Configure device** to choose a mode.
+
+- **Home Assistant (automatic)** is the default. Home Assistant uses HLS or a WebRTC provider such as go2rtc.
+- **Native WebRTC (experimental)** uses the integration's player and enables two-way audio on supported cameras.
+- **MJPEG (video only)** streams JPEG frames for live view and supports snapshots. Choose another mode for audio or `camera.record`.
 
 ### Why use the Direct streams?
 

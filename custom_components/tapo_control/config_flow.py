@@ -60,9 +60,12 @@ from .const import (
     CONF_CUSTOM_STREAM_6,
     CONF_CUSTOM_STREAM_7,
     CONF_DIRECT_STREAM_ARGUMENTS,
+    CONF_LIVE_VIEW_MODE,
     CONF_SHOW_ON_MAP,
-    CONF_NATIVE_WEBRTC,
     DIRECT_STREAM_ARGUMENTS,
+    LIVE_VIEW_HOME_ASSISTANT,
+    LIVE_VIEW_MJPEG,
+    LIVE_VIEW_NATIVE_WEBRTC,
     HAS_STREAM_6,
     HAS_STREAM_7,
     CONF_RTSP_TRANSPORT,
@@ -79,11 +82,26 @@ from .const import (
 )
 
 
+LIVE_VIEW_MODE_SELECTOR = selector(
+    {
+        "select": {
+            "options": [
+                LIVE_VIEW_HOME_ASSISTANT,
+                LIVE_VIEW_NATIVE_WEBRTC,
+                LIVE_VIEW_MJPEG,
+            ],
+            "mode": "dropdown",
+            "translation_key": CONF_LIVE_VIEW_MODE,
+        }
+    }
+)
+
+
 @HANDLERS.register(DOMAIN)
 class FlowHandler(ConfigFlow):
     """Handle a config flow."""
 
-    VERSION = 25
+    VERSION = 26
 
     def __init__(self):
         self.tapoHasStream6 = False
@@ -434,7 +452,6 @@ class FlowHandler(ConfigFlow):
         enable_webhooks = True
         enable_time_sync = False
         enable_sound_detection = False
-        native_webrtc = False
         sound_detection_peak = -30
         sound_detection_duration = 1
         sound_detection_reset = 10
@@ -481,7 +498,7 @@ class FlowHandler(ConfigFlow):
                 rtsp_transport = user_input[CONF_RTSP_TRANSPORT]
             else:
                 rtsp_transport = RTSP_TRANS_PROTOCOLS[0]
-            native_webrtc = user_input.get(CONF_NATIVE_WEBRTC, False)
+            live_view_mode = user_input.get(CONF_LIVE_VIEW_MODE, LIVE_VIEW_HOME_ASSISTANT)
             host = self.tapoHost
             controlPort = self.tapoControlPort
             cloud_password = self.tapoCloudPassword
@@ -547,7 +564,7 @@ class FlowHandler(ConfigFlow):
                         CONF_CUSTOM_STREAM_SD: "",
                         CONF_CUSTOM_STREAM_6: "",
                         CONF_CUSTOM_STREAM_7: "",
-                        CONF_NATIVE_WEBRTC: native_webrtc,
+                        CONF_LIVE_VIEW_MODE: live_view_mode,
                         CONF_RTSP_TRANSPORT: "tcp",
                         UPDATE_INTERVAL_MAIN: UPDATE_INTERVAL_MAIN_DEFAULT,
                         UPDATE_INTERVAL_BATTERY: UPDATE_INTERVAL_BATTERY_DEFAULT,
@@ -585,7 +602,7 @@ class FlowHandler(ConfigFlow):
                         CONF_CUSTOM_STREAM_SD: "",
                         CONF_CUSTOM_STREAM_6: "",
                         CONF_CUSTOM_STREAM_7: "",
-                        CONF_NATIVE_WEBRTC: native_webrtc,
+                        CONF_LIVE_VIEW_MODE: live_view_mode,
                         CONF_RTSP_TRANSPORT: rtsp_transport,
                         UPDATE_INTERVAL_MAIN: UPDATE_INTERVAL_MAIN_DEFAULT,
                         UPDATE_INTERVAL_BATTERY: UPDATE_INTERVAL_BATTERY_DEFAULT,
@@ -632,7 +649,9 @@ class FlowHandler(ConfigFlow):
                         SOUND_DETECTION_RESET,
                         description={"suggested_value": sound_detection_reset},
                     ): int,
-                    vol.Optional(CONF_NATIVE_WEBRTC, default=False): bool,
+                    vol.Optional(
+                        CONF_LIVE_VIEW_MODE, default=LIVE_VIEW_HOME_ASSISTANT
+                    ): LIVE_VIEW_MODE_SELECTOR,
                     vol.Optional(
                         CONF_EXTRA_ARGUMENTS,
                         description={"suggested_value": extra_arguments},
@@ -818,6 +837,7 @@ class FlowHandler(ConfigFlow):
                         CONF_CUSTOM_STREAM_SD: "",
                         CONF_CUSTOM_STREAM_6: "",
                         CONF_CUSTOM_STREAM_7: "",
+                        CONF_LIVE_VIEW_MODE: LIVE_VIEW_HOME_ASSISTANT,
                         CONF_RTSP_TRANSPORT: "tcp",
                         UPDATE_INTERVAL_MAIN: UPDATE_INTERVAL_MAIN_DEFAULT,
                         UPDATE_INTERVAL_BATTERY: UPDATE_INTERVAL_BATTERY_DEFAULT,
@@ -1640,8 +1660,10 @@ class TapoOptionsFlowHandler(OptionsFlow):
         enable_motion_sensor = self.config_entry.data[ENABLE_MOTION_SENSOR]
         enable_webhooks = self.config_entry.data[ENABLE_WEBHOOKS]
         show_on_map = self.config_entry.data.get(CONF_SHOW_ON_MAP, True)
-        native_webrtc = self.config_entry.data.get(CONF_NATIVE_WEBRTC, False)
-        previous_native_webrtc = native_webrtc
+        previous_live_view_mode = self.config_entry.data.get(
+            CONF_LIVE_VIEW_MODE, LIVE_VIEW_HOME_ASSISTANT
+        )
+        live_view_mode = previous_live_view_mode
         enable_time_sync = self.config_entry.data[ENABLE_TIME_SYNC]
         extra_arguments = self.config_entry.data[CONF_EXTRA_ARGUMENTS]
         custom_stream_hd = self.config_entry.data.get(CONF_CUSTOM_STREAM_HD, "")
@@ -1657,7 +1679,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
         if user_input is not None:
             try:
                 show_on_map = user_input.get(CONF_SHOW_ON_MAP, show_on_map)
-                native_webrtc = user_input.get(CONF_NATIVE_WEBRTC, native_webrtc)
+                live_view_mode = user_input.get(CONF_LIVE_VIEW_MODE, live_view_mode)
                 direct_stream_arguments = user_input.get(
                     CONF_DIRECT_STREAM_ARGUMENTS, {}
                 )
@@ -1950,7 +1972,7 @@ class TapoOptionsFlowHandler(OptionsFlow):
 
                 allConfigData = {**self.config_entry.data}
                 allConfigData[CONF_SHOW_ON_MAP] = show_on_map
-                allConfigData[CONF_NATIVE_WEBRTC] = native_webrtc
+                allConfigData[CONF_LIVE_VIEW_MODE] = live_view_mode
                 allConfigData[ENABLE_MOTION_SENSOR] = enable_motion_sensor
                 allConfigData[ENABLE_WEBHOOKS] = enable_webhooks
                 allConfigData[CONF_IP_ADDRESS] = ip_address
@@ -1976,10 +1998,10 @@ class TapoOptionsFlowHandler(OptionsFlow):
                 )
 
                 if ipChanged or rtspEnablementChanged or (
-                    native_webrtc != previous_native_webrtc
+                    live_view_mode != previous_live_view_mode
                 ):
                     LOGGER.debug(
-                        "[%s] IP, RTSP or native WebRTC setting changed, reloading entry...",
+                        "[%s] IP, RTSP or live view mode changed, reloading entry...",
                         ip_address,
                     )
                     await self.hass.config_entries.async_reload(
@@ -2040,7 +2062,9 @@ class TapoOptionsFlowHandler(OptionsFlow):
                         description={"suggested_value": enable_webhooks},
                     ): bool,
                     vol.Optional(CONF_SHOW_ON_MAP, default=show_on_map): bool,
-                    vol.Optional(CONF_NATIVE_WEBRTC, default=native_webrtc): bool,
+                    vol.Optional(
+                        CONF_LIVE_VIEW_MODE, default=live_view_mode
+                    ): LIVE_VIEW_MODE_SELECTOR,
                     vol.Optional(
                         CONF_EXTRA_ARGUMENTS,
                         description={"suggested_value": extra_arguments},

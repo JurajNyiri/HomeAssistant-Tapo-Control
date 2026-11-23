@@ -36,6 +36,9 @@ from .const import (
     CONF_CUSTOM_STREAM_SD,
     CONF_CUSTOM_STREAM_6,
     CONF_CUSTOM_STREAM_7,
+    CONF_LIVE_VIEW_MODE,
+    LIVE_VIEW_HOME_ASSISTANT,
+    LIVE_VIEW_NATIVE_WEBRTC,
     ENABLE_WEBHOOKS,
     IS_KLAP_DEVICE,
     LOGGER,
@@ -488,6 +491,15 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
                 data=new,
                 version=25,
             )
+
+    if config_entry.version == 25:
+        new = {**config_entry.data}
+        native_webrtc = new.pop("native_webrtc", False)
+        new.setdefault(
+            CONF_LIVE_VIEW_MODE,
+            LIVE_VIEW_NATIVE_WEBRTC if native_webrtc else LIVE_VIEW_HOME_ASSISTANT,
+        )
+        hass.config_entries.async_update_entry(config_entry, data=new, version=26)
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
