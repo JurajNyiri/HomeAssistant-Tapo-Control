@@ -269,7 +269,7 @@ Open **Configure device** to choose a mode.
 
 To play an existing go2rtc restream in **Native WebRTC (experimental)** mode, set the custom RTSP stream link to that restream, for example `rtsp://192.168.150.34:8554/office`. In **Configure device**, set **go2rtc API URL for Native WebRTC playback** to the API address of the same server, for example `http://192.168.150.34:1984`. 
 
-Communication that sends microphone audio still uses the Tapo integration.
+Communication that sends microphone audio still uses the Tapo integration. See the [go2rtc setup guide](examples/GO2RTC.md) for configuration and verification steps.
 
 ### Why use the Direct streams?
 
