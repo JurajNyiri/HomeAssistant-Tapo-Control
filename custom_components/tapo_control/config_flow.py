@@ -1673,7 +1673,8 @@ class TapoOptionsFlowHandler(OptionsFlow):
         direct_stream_arguments = self.config_entry.data.get(
             CONF_DIRECT_STREAM_ARGUMENTS, {}
         )
-        rtsp_transport = self.config_entry.data[CONF_RTSP_TRANSPORT]
+        previous_rtsp_transport = self.config_entry.data[CONF_RTSP_TRANSPORT]
+        rtsp_transport = previous_rtsp_transport
         ip_address = self.config_entry.data[CONF_IP_ADDRESS]
         controlPort = self.config_entry.data[CONTROL_PORT]
         if user_input is not None:
@@ -1996,6 +1997,10 @@ class TapoOptionsFlowHandler(OptionsFlow):
                     + (reported_ip_address if reported_ip_address else ip_address)
                     + str(controlPort),
                 )
+
+                # The update listener reloads transport changes before refreshing the camera.
+                if rtsp_transport != previous_rtsp_transport:
+                    return self.async_create_entry(title="", data=None)
 
                 if ipChanged or rtspEnablementChanged or (
                     live_view_mode != previous_live_view_mode

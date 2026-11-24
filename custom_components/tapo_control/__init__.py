@@ -1045,6 +1045,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "chInfo": chInfo,
             "usingCloudPassword": cloud_password != "",
             "allControllers": [tapoController],
+            CONF_RTSP_TRANSPORT: entry.data.get(CONF_RTSP_TRANSPORT),
             "update_listener": entry.add_update_listener(update_listener),
             "coordinator": tapoCoordinator,
             "camData": camData,

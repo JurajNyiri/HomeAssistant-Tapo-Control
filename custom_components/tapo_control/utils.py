@@ -65,6 +65,7 @@ from .const import (
     CONF_CUSTOM_STREAM_SD,
     CONF_CUSTOM_STREAM_6,
     CONF_CUSTOM_STREAM_7,
+    CONF_RTSP_TRANSPORT,
     MEDIA_SYNC_COLD_STORAGE_PATH,
     MEDIA_SYNC_HOURS,
     MEDIA_THUMBNAIL_CACHE,
@@ -2703,7 +2704,10 @@ async def update_listener(hass, entry):
         MEDIA_THUMBNAIL_CACHE: entry.data.get(MEDIA_THUMBNAIL_CACHE, False),
         MEDIA_THUMBNAIL_PRELOAD: entry.data.get(MEDIA_THUMBNAIL_PRELOAD, True),
     }
-    if entryData["mediaOptions"] != mediaOptions:
+    if (
+        entryData["mediaOptions"] != mediaOptions
+        or entryData[CONF_RTSP_TRANSPORT] != entry.data.get(CONF_RTSP_TRANSPORT)
+    ):
         await hass.config_entries.async_reload(entry.entry_id)
         return
     host = entry.data.get(CONF_IP_ADDRESS)
