@@ -141,6 +141,7 @@
       },
       "auth": {
         "data": {
+          "go2rtc_api_url": "用於原生 WebRTC 播放的 go2rtc API 網址",
           "ip_address": "IP位址",
           "control_port": "控制埠",
           "username": "使用者名稱",
@@ -178,6 +179,7 @@
       "incorrect_peak_value": "錯誤的聲音檢測峰值。",
       "incorrect_options_action": "選擇了錯誤的動作",
       "invalid_direct_stream_arguments": "請輸入支援的 FFmpeg 參數與非空文字或數值的對應表。只有 -vsync 可以設為 null。",
+      "invalid_go2rtc_api_url": "請輸入含有 http:// 或 https:// 與 API 連接埠的 go2rtc 伺服器網址，或將欄位留空。",
       "cold_storage_path_overlap": "新舊儲存路徑不可互相包含。",
       "cold_storage_move_pending": "儲存資料移動尚未完成。請先解決整合日誌中的錯誤並重新載入，再次變更路徑。"
     }

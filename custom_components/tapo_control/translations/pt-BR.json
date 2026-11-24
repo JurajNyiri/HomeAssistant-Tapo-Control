@@ -73,6 +73,7 @@
     "step": {
       "auth": {
         "data": {
+          "go2rtc_api_url": "URL da API go2rtc para reprodução WebRTC nativa",
           "ip_address": "Endereço IP",
           "username": "Nome de Usuário",
           "password": "Senha",
@@ -114,6 +115,7 @@
       "camera_requires_admin": "Sua câmera precisa de senha cloud para controle",
       "incorrect_peak_value": "Valor de pico de detecção de som incorreto.",
       "invalid_direct_stream_arguments": "Insira um mapeamento de parâmetros FFmpeg suportados para texto não vazio ou números. Apenas -vsync pode ser null.",
+      "invalid_go2rtc_api_url": "Informe o endereço do servidor go2rtc com http:// ou https:// e a porta da API ou deixe o campo em branco.",
       "cold_storage_path_overlap": "Os caminhos antigo e novo não podem estar contidos um no outro.",
       "cold_storage_move_pending": "Há uma mudança de armazenamento pendente. Resolva o erro nos registros da integração e recarregue antes de alterar o caminho novamente."
     }

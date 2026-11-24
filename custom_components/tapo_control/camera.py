@@ -5,6 +5,7 @@ import shlex
 import time
 from functools import partial
 from importlib import import_module
+from urllib.parse import unquote, urlsplit
 
 from haffmpeg.camera import CameraMjpeg
 from haffmpeg.tools import IMAGE_JPEG, ImageFrame
@@ -27,6 +28,7 @@ from homeassistant.helpers import entity_platform
 from homeassistant.requirements import async_process_requirements
 from homeassistant.helpers.aiohttp_client import async_aiohttp_proxy_stream
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.importlib import async_import_module
 from homeassistant.util import slugify
 from homeassistant.components.stream import (
     Stream,
@@ -53,10 +55,9 @@ from .const import (
     BRAND,
     HAS_STREAM_6,
     HAS_STREAM_7,
-    CONF_CUSTOM_STREAM_6,
-    CONF_CUSTOM_STREAM_7,
     CONF_DIRECT_STREAM_ARGUMENTS,
     CONF_LIVE_VIEW_MODE,
+    CONF_GO2RTC_API_URL,
     CONF_SHOW_ON_MAP,
     LIVE_VIEW_HOME_ASSISTANT,
     LIVE_VIEW_MJPEG,
@@ -65,8 +66,11 @@ from .const import (
 from .utils import (
     async_force_entry_refresh,
     build_device_info,
+    get_custom_stream_source,
     getStreamSource,
 )
+
+GO2RTC_PLAYBACK_MODULE = f"{__package__}.go2rtc_playback"
 
 
 def _clear_location_coordinates(attributes: dict) -> None:
@@ -132,8 +136,13 @@ async def async_setup_entry(
     live_view_mode = config_entry.data.get(CONF_LIVE_VIEW_MODE, LIVE_VIEW_HOME_ASSISTANT)
     if live_view_mode == LIVE_VIEW_NATIVE_WEBRTC:
         await async_process_requirements(
-            hass, DOMAIN, ["aiortc==1.16.0"], is_built_in=False
+            hass,
+            DOMAIN,
+            ["aiortc==1.16.0", "go2rtc-client==0.4.0"],
+            is_built_in=False,
         )
+        # Register the playback session before the browser can send trickled ICE.
+        await async_import_module(hass, GO2RTC_PLAYBACK_MODULE)
         rtsp_entity_class = TapoNativeRTSPCamEntity
         direct_entity_class = TapoNativeDirectCamEntity
     elif live_view_mode == LIVE_VIEW_MJPEG:
@@ -144,7 +153,6 @@ async def async_setup_entry(
         direct_entity_class = TapoDirectCamEntity
 
     async def setupEntities(entry):
-        hasRTSPEntities = False
         chn_id_0 = None
         chn_id_1 = None
         ch_info = entry.get("chInfo") or []
@@ -153,61 +161,36 @@ async def async_setup_entry(
                 chn_id_0 = ch_info[0].get("chn_id")
             if len(ch_info) > 1:
                 chn_id_1 = ch_info[1].get("chn_id")
-        if (
-            len(config_entry.data[CONF_USERNAME]) > 0
-            and len(config_entry.data[CONF_PASSWORD]) > 0
-        ):
-            hdStream = rtsp_entity_class(
-                hass, config_entry, entry, "stream1", chn_id=chn_id_0
-            )
-            sdStream = rtsp_entity_class(
-                hass, config_entry, entry, "stream2", chn_id=chn_id_0
+        has_camera_rtsp = (
+            not entry["controller"].isKLAP
+            and bool(config_entry.data.get(CONF_USERNAME))
+            and bool(config_entry.data.get(CONF_PASSWORD))
+        )
+        streams = [("stream1", True, chn_id_0), ("stream2", True, chn_id_0)]
+        if not entry["isChild"]:
+            streams.extend(
+                [
+                    ("stream6", config_entry.data.get(HAS_STREAM_6), chn_id_1),
+                    ("stream7", config_entry.data.get(HAS_STREAM_7), chn_id_1),
+                ]
             )
 
-            entry["entities"].append({"entity": hdStream, "entry": entry})
-            entry["entities"].append({"entity": sdStream, "entry": entry})
-            hasRTSPEntities = True
-            async_add_entities([hdStream, sdStream])
-            telephotoEntities = []
-            has_stream6 = config_entry.data.get(HAS_STREAM_6) or bool(
-                config_entry.data.get(CONF_CUSTOM_STREAM_6)
+        rtsp_entities = []
+        for stream, has_default, chn_id in streams:
+            # Custom links belong to the config entry, not to individual hub children.
+            has_custom_source = not entry["isChild"] and get_custom_stream_source(
+                config_entry, stream
             )
-            has_stream7 = config_entry.data.get(HAS_STREAM_7) or bool(
-                config_entry.data.get(CONF_CUSTOM_STREAM_7)
-            )
-            if not entry["isChild"] and has_stream6:
-                telephotoEntities.append(
-                    rtsp_entity_class(
-                        hass,
-                        config_entry,
-                        entry,
-                        stream="stream6",
-                        stream_label="Telephoto HD",
-                        stream_unique_id="telephoto_hd",
-                        chn_id=chn_id_1,
-                    )
+            if (has_camera_rtsp and has_default) or has_custom_source:
+                entity = rtsp_entity_class(
+                    hass, config_entry, entry, stream, chn_id=chn_id
                 )
-            if not entry["isChild"] and has_stream7:
-                telephotoEntities.append(
-                    rtsp_entity_class(
-                        hass,
-                        config_entry,
-                        entry,
-                        stream="stream7",
-                        stream_label="Telephoto SD",
-                        stream_unique_id="telephoto_sd",
-                        chn_id=chn_id_1,
-                    )
-                )
-            if len(telephotoEntities) > 0:
-                hasRTSPEntities = True
-                for telephotoEntity in telephotoEntities:
-                    entry["entities"].append(
-                        {"entity": telephotoEntity, "entry": entry}
-                    )
-                async_add_entities(telephotoEntities)
+                entry["entities"].append({"entity": entity, "entry": entry})
+                rtsp_entities.append(entity)
+        if rtsp_entities:
+            async_add_entities(rtsp_entities)
 
-        if not entry["isParent"]:
+        if not entry["isParent"] and not entry["controller"].isKLAP:
             allChnInfo = entry.get("camData", {}).get("allChnInfo", {})
             if allChnInfo:
                 channel_info = allChnInfo.get("system", {}).get("chn_info", {})
@@ -231,7 +214,7 @@ async def async_setup_entry(
                 config_entry,
                 entry,
                 "stream1",
-                enabledByDefault=not hasRTSPEntities,
+                enabledByDefault=not has_camera_rtsp,
                 stream_label=f"{chn_0_alias} HD" if chn_0_alias is not None else None,
                 chn_id=chn_id_0,
             )
@@ -254,7 +237,7 @@ async def async_setup_entry(
                     config_entry,
                     entry,
                     "stream6",
-                    enabledByDefault=not hasRTSPEntities,
+                    enabledByDefault=not has_camera_rtsp,
                     videoStream=1,
                     stream_label=(
                         f"{chn_1_alias} HD" if chn_1_alias is not None else None
@@ -289,9 +272,64 @@ async def async_setup_entry(
 class TapoNativeWebRTC:
     """Opt-in native signaling; ordinary cameras retain HA provider selection."""
 
+    def _go2rtc_stream_name(self, source):
+        if not (
+            source
+            and get_custom_stream_source(self._config_entry, self._stream_id) == source
+        ):
+            return None
+
+        try:
+            url = urlsplit(source)
+        except ValueError:
+            return None
+        name = unquote(url.path.removeprefix("/"))
+        # go2rtc treats a src with a protocol as a dynamic stream definition.
+        if url.scheme not in ("rtsp", "rtsps") or not name or ":" in name:
+            return None
+
+        return name
+
+    async def _async_handle_playback_offer(
+        self, session_class, api_url, name, offer_sdp, session_id, send_message
+    ):
+        config = self.async_get_webrtc_client_configuration()
+        session = session_class(
+            self.hass,
+            api_url,
+            name,
+            send_message,
+            on_close=lambda: self._webrtc_sessions.pop(session_id, None),
+        )
+        self._webrtc_sessions[session_id] = session
+
+        try:
+            await session.start(offer_sdp, config.configuration.ice_servers)
+        except asyncio.CancelledError:
+            await session.close()
+            raise
+        except Exception:
+            await session.fail("Could not connect to the go2rtc WebRTC API.")
+
     async def async_handle_async_webrtc_offer(
         self, offer_sdp, session_id, send_message
     ):
+        source = None if self._directStream else await self.stream_source()
+        if (api_url := self._config_entry.data.get(CONF_GO2RTC_API_URL)) and (
+            name := self._go2rtc_stream_name(source)
+        ):
+            module = await async_import_module(self.hass, GO2RTC_PLAYBACK_MODULE)
+            if module.is_playback_offer(offer_sdp):
+                await self._async_handle_playback_offer(
+                    module.Go2RtcPlaybackSession,
+                    api_url,
+                    name,
+                    offer_sdp,
+                    session_id,
+                    send_message,
+                )
+                return
+
         LOGGER.debug(
             "[%s] Native WebRTC stream requested (%s)",
             self.entity_id,
@@ -300,7 +338,6 @@ class TapoNativeWebRTC:
         module = await self.hass.async_add_executor_job(
             import_module, "pytapo.media_stream.webrtc"
         )
-        source = None if self._directStream else await self.stream_source()
         config = self.async_get_webrtc_client_configuration()
 
         def on_error(error):

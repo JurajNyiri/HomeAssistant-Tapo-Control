@@ -61,10 +61,7 @@ from .const import (
     LOGGER,
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
-    CONF_CUSTOM_STREAM_HD,
-    CONF_CUSTOM_STREAM_SD,
-    CONF_CUSTOM_STREAM_6,
-    CONF_CUSTOM_STREAM_7,
+    CUSTOM_STREAM_OPTIONS,
     CONF_RTSP_TRANSPORT,
     MEDIA_SYNC_COLD_STORAGE_PATH,
     MEDIA_SYNC_HOURS,
@@ -130,22 +127,20 @@ async def async_force_entry_refresh(hass: HomeAssistant, entry: dict) -> None:
     await entry["coordinator"].async_request_refresh()
 
 
+def get_custom_stream_source(entry, stream):
+    return entry.data.get(CUSTOM_STREAM_OPTIONS.get(stream), "")
+
+
+def get_custom_stream_links(data):
+    return {key: data.get(key, "") for key in CUSTOM_STREAM_OPTIONS.values()}
+
+
 def getStreamSource(entry, stream):
-    custom_stream_hd = entry.data.get(CONF_CUSTOM_STREAM_HD, "")
-    custom_stream_sd = entry.data.get(CONF_CUSTOM_STREAM_SD, "")
-    telephoto_custom_stream6 = entry.data.get(CONF_CUSTOM_STREAM_6, "")
-    telephoto_custom_stream7 = entry.data.get(CONF_CUSTOM_STREAM_7, "")
+    if custom_source := get_custom_stream_source(entry, stream):
+        return custom_source
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
     host = entry.data.get(CONF_IP_ADDRESS)
-    if stream == "stream6" and telephoto_custom_stream6:
-        return telephoto_custom_stream6
-    if stream == "stream7" and telephoto_custom_stream7:
-        return telephoto_custom_stream7
-    if stream == "stream1" and custom_stream_hd:
-        return custom_stream_hd
-    if stream == "stream2" and custom_stream_sd:
-        return custom_stream_sd
     username = urllib.parse.quote_plus(username)
     password = urllib.parse.quote_plus(password)
     streamURL = f"rtsp://{username}:{password}@{host}:554/{stream}"
@@ -2707,6 +2702,7 @@ async def update_listener(hass, entry):
     if (
         entryData["mediaOptions"] != mediaOptions
         or entryData[CONF_RTSP_TRANSPORT] != entry.data.get(CONF_RTSP_TRANSPORT)
+        or entryData["custom_stream_links"] != get_custom_stream_links(entry.data)
     ):
         await hass.config_entries.async_reload(entry.entry_id)
         return

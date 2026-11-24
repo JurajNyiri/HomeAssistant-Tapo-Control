@@ -267,9 +267,13 @@ Open **Configure device** to choose a mode.
 - **Native WebRTC (experimental)** uses the integration's player and enables two-way audio on supported cameras.
 - **MJPEG (video only)** streams JPEG frames for live view and supports snapshots. Choose another mode for audio or `camera.record`.
 
+To play an existing go2rtc restream in **Native WebRTC (experimental)** mode, set the custom RTSP stream link to that restream, for example `rtsp://192.168.150.34:8554/office`. In **Configure device**, set **go2rtc API URL for Native WebRTC playback** to the API address of the same server, for example `http://192.168.150.34:1984`. 
+
+Communication that sends microphone audio still uses the Tapo integration.
+
 ### Why use the Direct streams?
 
-1. If you have a device which does not have RTSP functionality, it is the only way. This includes battery devices, solar devices, as well as devices working through a hub.
+1. For cameras without built-in RTSP or a custom stream link, including some battery, solar, and hub-connected models.
 2. If you have used up [all your RTSP streams](https://www.tp-link.com/cz/support/faq/2742/) and/or your RTSP streams are unstable in Home Assistant.
 
 If both work, choose the source that is more stable for your camera.
@@ -337,7 +341,7 @@ tap_action:
   action: more-info
 ```
 
-With the experimental native WebRTC option enabled, viewers of the same stream share one camera connection and decoder. Video is still encoded for each viewer on the Home Assistant host. Higher resolutions and more simultaneous live views increase CPU use. Try SD, close unused live views (especially on battery cameras), and check Home Assistant CPU usage and the camera's network connection.
+When pytapo handles native WebRTC playback, viewers of the same stream share one camera connection and decoder. Video is still encoded for each viewer on the Home Assistant host. Higher resolutions and more simultaneous live views increase CPU use. Try SD, close unused live views (especially on battery cameras), and check Home Assistant CPU usage and the camera's network connection.
 
 Delay depends on the camera, network and available processing power.
 

@@ -79,6 +79,7 @@
       },
       "auth": {
         "data": {
+          "go2rtc_api_url": "go2rtc-API-URL für die native WebRTC-Wiedergabe",
           "ip_address": "IP Adresse",
           "username": "Benutzername",
           "password": "Passwort",
@@ -126,6 +127,7 @@
       "camera_requires_admin": "Die Kamera erfordert das Cloud-Passwort für die Steuerung.",
       "incorrect_peak_value": "Ungültiger Schwellenwert für den Geräuschsensor.",
       "invalid_direct_stream_arguments": "Unterstützte FFmpeg-Parameter als Zuordnung mit nicht leeren Texten oder Zahlen eingeben. Nur -vsync darf null sein.",
+      "invalid_go2rtc_api_url": "Gib die go2rtc-Serveradresse mit http:// oder https:// und dem API-Port ein oder lasse das Feld leer.",
       "cold_storage_path_overlap": "Der alte und der neue Speicherpfad dürfen nicht ineinander liegen.",
       "cold_storage_move_pending": "Eine Speicherverschiebung steht noch aus. Behebe den Fehler im Integrationsprotokoll und lade den Eintrag neu, bevor du den Pfad erneut änderst."
     }

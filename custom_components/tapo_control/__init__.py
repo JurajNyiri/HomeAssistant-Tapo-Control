@@ -82,6 +82,7 @@ from .utils import (
     deleteDir,
     getColdDirPathForEntry,
     getConfiguredColdDirPath,
+    get_custom_stream_links,
     moveMediaStorage,
     cleanupThumbnailCache,
     getDataForController,
@@ -1034,6 +1035,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         LOGGER.debug(f"Timezone offset is {timezoneOffset}.")
 
         LOGGER.debug("Setting up entry data.")
+        custom_stream_links = get_custom_stream_links(entry.data)
         hass.data[DOMAIN][entry.entry_id] = {
             "setup_retries": 0,
             "reauth_retries": 0,
@@ -1046,6 +1048,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "usingCloudPassword": cloud_password != "",
             "allControllers": [tapoController],
             CONF_RTSP_TRANSPORT: entry.data.get(CONF_RTSP_TRANSPORT),
+            "custom_stream_links": custom_stream_links,
             "update_listener": entry.add_update_listener(update_listener),
             "coordinator": tapoCoordinator,
             "camData": camData,
@@ -1187,6 +1190,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                         )
                 else:
                     LOGGER.debug("No child devices found.")
+        if tapoController.isKLAP is False or any(custom_stream_links.values()):
             LOGGER.debug("Setting up camera entities.")
             await hass.async_create_task(
                 hass.config_entries.async_forward_entry_setups(entry, ["camera"])

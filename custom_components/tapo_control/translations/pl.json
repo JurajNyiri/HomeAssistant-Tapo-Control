@@ -153,6 +153,7 @@
       },
       "auth": {
         "data": {
+          "go2rtc_api_url": "Adres URL API go2rtc do natywnego odtwarzania WebRTC",
           "ip_address": "Adres IP",
           "control_port": "Port sterowania",
           "username": "Nazwa użytkownika",
@@ -190,6 +191,7 @@
       "incorrect_peak_value": "Nieprawidłowa wartość progu detekcji dźwięku.",
       "incorrect_options_action": "Wybrano nieprawidłową akcję",
       "invalid_direct_stream_arguments": "Wprowadź mapę obsługiwanych parametrów FFmpeg z niepustym tekstem lub liczbami. Tylko -vsync może mieć wartość null.",
+      "invalid_go2rtc_api_url": "Wpisz adres serwera go2rtc z http:// lub https:// i portem API albo pozostaw pole puste.",
       "cold_storage_path_overlap": "Stara i nowa ścieżka nie mogą być zagnieżdżone.",
       "cold_storage_move_pending": "Przenoszenie danych nie zostało zakończone. Rozwiąż błąd w dzienniku integracji i przeładuj wpis przed ponowną zmianą ścieżki."
     }

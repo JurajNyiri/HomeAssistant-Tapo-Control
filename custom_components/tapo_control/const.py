@@ -36,8 +36,15 @@ CONF_CUSTOM_STREAM_HD = "custom_stream_hd"
 CONF_CUSTOM_STREAM_SD = "custom_stream_sd"
 CONF_CUSTOM_STREAM_6 = "custom_stream6"
 CONF_CUSTOM_STREAM_7 = "custom_stream7"
+CUSTOM_STREAM_OPTIONS = {
+    "stream1": CONF_CUSTOM_STREAM_HD,
+    "stream2": CONF_CUSTOM_STREAM_SD,
+    "stream6": CONF_CUSTOM_STREAM_6,
+    "stream7": CONF_CUSTOM_STREAM_7,
+}
 CONF_DIRECT_STREAM_ARGUMENTS = "direct_stream_arguments"
 CONF_LIVE_VIEW_MODE = "live_view_mode"
+CONF_GO2RTC_API_URL = "go2rtc_api_url"
 LIVE_VIEW_HOME_ASSISTANT = "home_assistant"
 LIVE_VIEW_NATIVE_WEBRTC = "native_webrtc"
 LIVE_VIEW_MJPEG = "mjpeg"
