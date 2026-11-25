@@ -174,6 +174,7 @@ def registerController(
     device_id=None,
     is_klap=None,
     hass=None,
+    transport=None,
 ):
     selected_transport_method = (
         hass.data.get(DOMAIN_CONFIG, {}).get(CONF_TRANSPORT_METHOD)
@@ -199,6 +200,7 @@ def registerController(
         isKLAP=is_klap,
         hass=hass,
         transportMethod=selected_transport_method,
+        transport=transport,
     )
 
 
@@ -2758,6 +2760,8 @@ async def update_listener(hass, entry):
             )
             hass.data[DOMAIN][entry.entry_id]["controller"] = tapoController
             hass.data[DOMAIN][entry.entry_id]["allControllers"].append(tapoController)
+            for childDevice in hass.data[DOMAIN][entry.entry_id]["childDevices"]:
+                childDevice["controller"].transport = tapoController.transport
     except Exception:
         LOGGER.error(
             "Authentication to Tapo camera failed."
