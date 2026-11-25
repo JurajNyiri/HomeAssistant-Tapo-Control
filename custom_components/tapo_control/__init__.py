@@ -1127,6 +1127,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             childDevice["device_id"],
                             None,
                             hass,
+                            tapoController.transport,
                         )
                         LOGGER.debug("Child controller set up.")
                         hass.data[DOMAIN][entry.entry_id]["allControllers"].append(
