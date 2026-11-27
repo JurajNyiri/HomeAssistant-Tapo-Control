@@ -6,9 +6,9 @@
   "codeowners": [
     "@JurajNyiri"
   ],
-  "version": "7.3.12",
+  "version": "7.3.13",
   "requirements": [
-    "pytapo==3.4.42",
+    "pytapo==3.4.43",
     "python-kasa[speedups]>=0.10.2"
   ],
   "dependencies": [
@@ -38,6 +38,7 @@
     }
   ],
   "loggers": [
-    "custom_components.tapo_control"
+    "custom_components.tapo_control",
+    "pytapo.media_stream.talk"
   ]
 }
