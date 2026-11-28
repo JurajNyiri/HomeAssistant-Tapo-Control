@@ -740,6 +740,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         async def async_update_data():
             LOGGER.debug("async_update_data - entry")
+            if entry.entry_id not in hass.data.get(DOMAIN, {}):
+                return  # entry already unloaded (e.g. while Home Assistant shuts down)
             tapoController = hass.data[DOMAIN][entry.entry_id]["controller"]
             host = entry.data.get(CONF_IP_ADDRESS)
             username = entry.data.get(CONF_USERNAME)
